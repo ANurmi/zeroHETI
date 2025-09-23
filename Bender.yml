@@ -11,6 +11,7 @@ dependencies:
   riscv-dbg: { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.8.1 }
   apb_uart: { git: "https://github.com/pulp-platform/apb_uart.git", version: 0.2.1 }
   obi: { git: "https://github.com/pulp-platform/obi.git", version: 0.1.7 }
+  vbench: { git: "https://github.com/ANurmi/vbench", rev: "main" }
 
 sources:
   # Source files grouped in levels. Files in level 0 have no dependencies on files in this
