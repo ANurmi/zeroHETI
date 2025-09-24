@@ -7,4 +7,6 @@ lint_off -rule DECLFILENAME -file "*/.bender/*" -match "*"
 lint_off -rule REDEFMACRO -file "*/rt-ibex*/*" -match "*"
 lint_off -rule MODDUP -file "*/axi-*/*" -match "*"
 
-
+lint_off -rule PINMISSING -file "*/rt_ibex_pcs_memory.sv" -match "*"
+lint_off -rule PINMISSING -file "*/ibex_core.sv" -match "*"
+lint_off -rule PINMISSING -file "*/ibex_top.sv" -match "*"
