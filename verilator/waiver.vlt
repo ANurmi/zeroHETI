@@ -1,0 +1,10 @@
+`verilator_config
+
+// Waive warnings from Bender dependencies as they can't be fixed here.
+lint_off -rule EOFNEWLINE -file "*/.bender/*" -match "*"
+lint_off -rule DECLFILENAME -file "*/.bender/*" -match "*"
+
+lint_off -rule REDEFMACRO -file "*/rt-ibex*/*" -match "*"
+lint_off -rule MODDUP -file "*/axi-*/*" -match "*"
+
+
