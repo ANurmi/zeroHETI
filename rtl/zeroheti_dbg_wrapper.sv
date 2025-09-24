@@ -1,13 +1,18 @@
 module zeroheti_dbg_wrapper #()(
   input  logic clk_i,
-  input  logic rst_ni
+  input  logic rst_ni,
+  input  logic jtag_tck_i,
+  input  logic jtag_tms_i,
+  input  logic jtag_trst_ni,
+  input  logic jtag_td_i,
+  output logic jtag_td_o
 );
 
 dmi_jtag #(
   .IdcodeValue ( 32'hFEEDC0D3 )
 ) i_dmi_jtag (
-  .clk_i            (),
-  .rst_ni           (),
+  .clk_i,
+  .rst_ni,
   .testmode_i       (),
   .dmi_rst_no       (),
   .dmi_req_valid_o  (),
@@ -16,11 +21,11 @@ dmi_jtag #(
   .dmi_resp_valid_i (),
   .dmi_resp_ready_o (),
   .dmi_resp_i       (),
-  .tck_i            (),
-  .tms_i            (),
-  .trst_ni          (),
-  .td_i             (),
-  .td_o             (),
+  .tck_i            (jtag_tck_i),
+  .tms_i            (jtag_tms_i),
+  .trst_ni          (jtag_trst_ni),
+  .td_i             (jtag_td_i),
+  .td_o             (jtag_td_o),
   .tdo_oe_o         ()
 );
 
