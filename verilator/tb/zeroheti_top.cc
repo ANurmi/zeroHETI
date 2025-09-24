@@ -20,7 +20,9 @@ int main(int argc, char** argv) {
 
   Testbench<Vzeroheti_top>* tb = new Testbench<Vzeroheti_top>();
 
-  tb->open_trace("./waveform.fst");
+  printf("zeroHETI\n");
+
+  tb->open_trace("../build/verilator_build/waveform.fst");
   for (int it=0;it<100;it++) tb->tick();
   tb->reset();
   tb->jtag_softreset();
