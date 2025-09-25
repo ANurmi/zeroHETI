@@ -51,7 +51,7 @@ class TbZeroHeti: public Testbench<Vzeroheti_top> {
             }
 
             printf("[TB] JTAG test done\n");
-*/
         }
 
+*/
 };
