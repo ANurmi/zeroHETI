@@ -24,9 +24,10 @@ int main(int argc, char** argv) {
   tb->print_logo();
 
   for (int it=0;it<100;it++) tb->tick();
+
   tb->reset();
-  tb->jtag_softreset();
-  for (int it=0;it<100;it++) tb->tick();
+  tb->jtag_reset_master();
+  tb->jtag_init();
 
   delete tb;
 

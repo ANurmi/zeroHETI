@@ -1,6 +1,7 @@
 module zeroheti_dbg_wrapper #()(
   input  logic clk_i,
   input  logic rst_ni,
+  input  logic testmode_i,
   input  logic jtag_tck_i,
   input  logic jtag_tms_i,
   input  logic jtag_trst_ni,
@@ -13,7 +14,7 @@ dmi_jtag #(
 ) i_dmi_jtag (
   .clk_i,
   .rst_ni,
-  .testmode_i       (),
+  .testmode_i,
   .dmi_rst_no       (),
   .dmi_req_valid_o  (),
   .dmi_req_ready_i  (),
@@ -32,7 +33,7 @@ dmi_jtag #(
 dm_obi_top #() i_dm_obi_top (
   .clk_i,
   .rst_ni,
-  .testmode_i         (),
+  .testmode_i,
   .ndmreset_o         (),
   .dmactive_o         (),
   .debug_req_o        (),
