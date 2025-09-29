@@ -54,7 +54,7 @@ clean:
 .PHONY: lint
 lint:
 	verilator --lint-only --top-module $(TOP_MODULE) \
-	$(INCLUDES) $(WAIVER) $(SOURCES)
+	$(VDEFS) $(INCLUDES) $(WAIVER) $(SOURCES)
 	@echo "Verilator lint [OK]"
 
 .PHONY: verilate

@@ -11,6 +11,22 @@ module zeroheti_core import zeroheti_pkg::*; #(
   output logic jtag_td_o
 );
 
+OBI_BUS if_bus (), lsu_bus (), sba_bus ();
+OBI_BUS dbg_mem_bus (), inst_bus (), data_bus (), apb_bus ();
+
+zeroheti_core_xbar #(
+) i_xbar (
+  .clk_i,
+  .rst_ni,
+  .cpu_if   (if_bus),
+  .cpu_lsu  (lsu_bus),
+  .sba_mgr  (sba_bus),
+  .dbg_sbr  (dbg_mem_bus),
+  .inst_sbr (inst_bus),
+  .data_sbr (data_bus),
+  .apb_sbr  (apb_bus)
+);
+
 `ifndef SYNTHESIS
 ibex_top_tracing #(
 `else
@@ -50,13 +66,13 @@ ibex_top #(
   .test_en_i              (testmode_i),
   .boot_addr_i            (Cfg.boot_addr),
 
-  .instr_req_o            (),
-  .instr_addr_o           (),
-  .instr_gnt_i            (),
-  .instr_rvalid_i         (),
-  .instr_rdata_i          (),
-  .instr_rdata_intg_i     (),
-  .instr_err_i            (),
+  .instr_req_o            (if_bus.req),
+  .instr_addr_o           (if_bus.addr),
+  .instr_gnt_i            (if_bus.gnt),
+  .instr_rvalid_i         (if_bus.rvalid),
+  .instr_rdata_i          (if_bus.rdata),
+  .instr_rdata_intg_i     (7'b0),
+  .instr_err_i            (if_bus.err),
 
   .data_req_o             (),
   .data_gnt_i             (),
@@ -78,16 +94,16 @@ ibex_top #(
   .irq_shv_i              (),
   .irq_priv_i             (),
 
-  .scramble_key_valid_i   (),
-  .scramble_key_i         (),
-  .scramble_nonce_i       (),
+  .scramble_key_valid_i   (1'b0),
+  .scramble_key_i         (128'b0),
+  .scramble_nonce_i       (64'b0),
   .scramble_req_o         (),
 
   .debug_req_i            (),
   .debug_mode_o           (),
   .crash_dump_o           (),
   .double_fault_seen_o    (),
-  .fetch_enable_i         (),
+  .fetch_enable_i         (4'b0101),
   .core_sleep_o           (),
 
   .alert_minor_o          (),
@@ -106,6 +122,11 @@ zeroheti_dbg_wrapper #(
   .jtag_trst_ni,
   .jtag_td_i,
   .jtag_td_o
+);
+
+obi_sram_intf #() i_imem (
+  .clk_i,
+  .rst_ni
 );
 
 endmodule : zeroheti_core
