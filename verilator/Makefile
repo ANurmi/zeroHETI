@@ -14,7 +14,13 @@ WAIVER          ?= ./waiver.vlt
 
 CFLAGS           = -I$(shell bender path vbench)/src
 
+VDEFS ?= \
+  +define+VERILATOR=1 \
+  +define+RVFI \
+  +define+COMMON_CELLS_ASSERTS_OFF
+
 VFLAGS           = \
+  $(VDEFS) \
   --cc \
   --trace-fst \
   --trace-structs \

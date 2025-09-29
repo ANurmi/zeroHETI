@@ -7,7 +7,7 @@ package:
     - "Antti Nurmi <antti.nurmi@tuni.fi>"
 
 dependencies:
-  rt-ibex: { git: "https://github.com/soc-hub-fi/rt-ibex.git", rev: "e6addcabdc69e4720b55b050fe31725570a63102" }
+  rt-ibex: { git: "https://github.com/soc-hub-fi/rt-ibex.git", rev: "814583a0d90ec2cabaa37f8996de0dfd7ac8af4b" }
   riscv-dbg: { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.8.1 }
   apb_uart: { git: "https://github.com/pulp-platform/apb_uart.git", version: 0.2.1 }
   obi: { git: "https://github.com/pulp-platform/obi.git", version: 0.1.7 }
@@ -16,5 +16,7 @@ dependencies:
 sources:
   - target: rtl
     files:
+      - rtl/zeroheti_pkg.sv
       - rtl/zeroheti_dbg_wrapper.sv
+      - rtl/zeroheti_core.sv
       - rtl/zeroheti_top.sv

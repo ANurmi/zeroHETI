@@ -8,7 +8,8 @@ module zeroheti_top #()(
   output logic jtag_td_o
 );
 
-zeroheti_dbg_wrapper #() i_debug (
+//zeroheti_dbg_wrapper #() i_debug (
+zeroheti_core #() i_core (
   .clk_i,
   .rst_ni,
   .testmode_i (1'b0),
