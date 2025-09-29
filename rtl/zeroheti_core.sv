@@ -44,11 +44,11 @@ ibex_top #(
 ) i_rt_ibex (
   .clk_i,
   .rst_ni,
-  .scan_rst_ni            (),
-  .ram_cfg_i              (),
-  .hart_id_i              (),
+  .scan_rst_ni            (1'b0),
+  .ram_cfg_i              (10'b0),
+  .hart_id_i              (Cfg.hart_id),
   .test_en_i              (testmode_i),
-  .boot_addr_i            (),
+  .boot_addr_i            (Cfg.boot_addr),
 
   .instr_req_o            (),
   .instr_addr_o           (),
@@ -95,7 +95,9 @@ ibex_top #(
   .alert_major_bus_o      ()
 );
 
-zeroheti_dbg_wrapper #() i_debug (
+zeroheti_dbg_wrapper #(
+
+) i_debug (
   .clk_i,
   .rst_ni,
   .testmode_i,

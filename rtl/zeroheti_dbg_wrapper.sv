@@ -1,4 +1,4 @@
-module zeroheti_dbg_wrapper #()(
+module zeroheti_dbg_wrapper import zeroheti_pkg::*; #()(
   input  logic clk_i,
   input  logic rst_ni,
   input  logic testmode_i,
@@ -9,19 +9,25 @@ module zeroheti_dbg_wrapper #()(
   output logic jtag_td_o
 );
 
+logic          dmi_rst_n;
+dm::dmi_req_t  dmi_req;
+logic          dmi_req_ready, dmi_req_valid;
+dm::dmi_resp_t dmi_rsp;
+logic          dmi_rsp_ready, dmi_rsp_valid;
+
 dmi_jtag #(
   .IdcodeValue ( 32'hFEEDC0D3 )
 ) i_dmi_jtag (
   .clk_i,
   .rst_ni,
   .testmode_i,
-  .dmi_rst_no       (),
-  .dmi_req_valid_o  (),
-  .dmi_req_ready_i  (),
-  .dmi_req_o        (),
-  .dmi_resp_valid_i (),
-  .dmi_resp_ready_o (),
-  .dmi_resp_i       (),
+  .dmi_rst_no       (dmi_rst_n),
+  .dmi_req_valid_o  (dmi_req_valid),
+  .dmi_req_ready_i  (dmi_req_ready),
+  .dmi_req_o        (dmi_req),
+  .dmi_resp_valid_i (dmi_rsp_valid),
+  .dmi_resp_ready_o (dmi_rsp_ready),
+  .dmi_resp_i       (dmi_rsp),
   .tck_i            (jtag_tck_i),
   .tms_i            (jtag_tms_i),
   .trst_ni          (jtag_trst_ni),
@@ -30,7 +36,9 @@ dmi_jtag #(
   .tdo_oe_o         ()
 );
 
-dm_obi_top #() i_dm_obi_top (
+dm_obi_top #(
+  .DmBaseAddress (AddrMap.dbg.base)
+) i_dm_obi_top (
   .clk_i,
   .rst_ni,
   .testmode_i,
@@ -40,13 +48,13 @@ dm_obi_top #() i_dm_obi_top (
   .unavailable_i      (),
   .hartinfo_i         (),
 
-  .dmi_rst_ni         (),
-  .dmi_req_valid_i    (),
-  .dmi_req_ready_o    (),
-  .dmi_req_i          (),
-  .dmi_resp_valid_o   (),
-  .dmi_resp_ready_i   (),
-  .dmi_resp_o         (),
+  .dmi_rst_ni         (dmi_rst_n),
+  .dmi_req_valid_i    (dmi_req_valid),
+  .dmi_req_ready_o    (dmi_req_ready),
+  .dmi_req_i          (dmi_req),
+  .dmi_resp_valid_o   (dmi_rsp_valid),
+  .dmi_resp_ready_i   (dmi_rsp_ready),
+  .dmi_resp_o         (dmi_rsp),
 
   .slave_req_i        (),
   .slave_gnt_o        (),
