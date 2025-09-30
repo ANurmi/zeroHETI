@@ -9,12 +9,22 @@ lint_off -rule MODDUP -file "*/axi-*/*" -match "*"
 lint_off -rule WIDTHEXPAND -file "*/axi-*/*" -match "*"
 lint_off -rule WIDTHTRUNC -file "*/axi-*/*" -match "*"
 
+lint_off -rule LITENDIAN -file "*/obi-*/*" -match "*"
+lint_off -rule WIDTHEXPAND -file "*/obi-*/*" -match "*"
+lint_off -rule WIDTHTRUNC -file "*/obi-*/*" -match "*"
+//lint_off -rule UNOPTFLAT -file "*/obi-*/*" -match "*"
+
+lint_off -rule UNSIGNED -file "*/tech_cells_generic-*/*" -match "*"
+lint_off -rule WIDTHEXPAND -file "*/tech_cells_generic-*/*" -match "*"
+lint_off -rule WIDTHTRUNC -file "*/tech_cells_generic-*/*" -match "*"
+
 lint_off -rule PINMISSING -file "*/rt_ibex_pcs_memory.sv" -match "*"
 lint_off -rule IMPLICIT -file "*/rt_ibex_pcs_lifo_latch.sv" -match "*"
 lint_off -rule PINMISSING -file "*/ibex_core.sv" -match "*"
 lint_off -rule PINMISSING -file "*/ibex_top.sv" -match "*"
 
 lint_off -rule UNOPTFLAT -file "*/common_cells-*/*" -match "*"
+lint_off -rule UNSIGNED -file "*/common_cells-*/*" -match "*"
 lint_off -rule CMPCONST -file "*/common_cells-*/*" -match "*"
 lint_off -rule WIDTHEXPAND -file "*/riscv-dbg-*/*" -match "*"
 lint_off -rule WIDTHTRUNC -file "*/common_cells-*/*" -match "*"

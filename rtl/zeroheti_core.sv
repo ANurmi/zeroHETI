@@ -126,7 +126,8 @@ zeroheti_dbg_wrapper #(
 
 obi_sram_intf #() i_imem (
   .clk_i,
-  .rst_ni
+  .rst_ni,
+  .sbr     (inst_bus)
 );
 
 endmodule : zeroheti_core
