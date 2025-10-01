@@ -16,7 +16,8 @@ localparam int unsigned ImSrc = 32'd2;
 OBI_BUS if_demux [IfDst]();
 OBI_BUS im_mux   [ImSrc]();
 
-
+obi_connection #(.Cut(1'b0)) i_con_if_im (.clk_i, .rst_ni, .Src(cpu_if), .Dst(inst_sbr));
+/*
 obi_demux_intf #(
   .NumMgrPorts (IfDst)
 ) i_if_demux (
@@ -27,7 +28,7 @@ obi_demux_intf #(
   .mgr_ports         (if_demux)
 );
 
-obi_join if_im_join ( .Src (if_demux[0]), .Dst (im_mux[0]) );
+
 
 obi_mux_intf #(
   .NumSbrPorts (ImSrc)
@@ -38,6 +39,7 @@ obi_mux_intf #(
   .sbr_ports (im_mux),
   .mgr_port  (inst_sbr)
 );
+*/
 
 endmodule : zeroheti_core_xbar
 

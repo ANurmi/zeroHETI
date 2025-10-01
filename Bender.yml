@@ -18,6 +18,7 @@ sources:
     files:
       - rtl/zeroheti_pkg.sv
       - rtl/obi_join.sv
+      - rtl/obi_connection.sv
       - rtl/obi_sram_intf.sv
       - rtl/zeroheti_dbg_wrapper.sv
       - rtl/zeroheti_core_xbar.sv

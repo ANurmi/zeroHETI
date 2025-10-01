@@ -13,15 +13,26 @@ module obi_sram_intf #(
 localparam int unsigned ByteWidth = 8;
 localparam int unsigned NumPorts  = 1;
 localparam int unsigned Latency   = 1;
-localparam string       SimInit   = "random";
+localparam              SimInit   = "random";
 
 logic [31:0] offset_addr;
 logic [29:0] word_addr;
 logic [AddrWidth-1:0] sram_addr;
 
+logic rvalid_q;
+
 assign offset_addr = sbr.addr - BaseAddr;
 assign word_addr   = offset_addr[31:2];
 assign sram_addr   = word_addr[AddrWidth-1:0];
+
+// Assume zero-wait state memory -> rvalid follows req immediately
+always_ff @( posedge clk_i ) begin
+  if (~rst_ni) begin
+    rvalid_q <= 1'b0;
+  end else begin
+    rvalid_q <= sbr.req;
+  end
+end
 
 tc_sram #(
   .NumWords  (NumWords),
@@ -40,6 +51,8 @@ tc_sram #(
   .wdata_i (sbr.wdata),
   .rdata_o (sbr.rdata)
 );
+
+assign sbr.rvalid = rvalid_q;
 
 endmodule : obi_sram_intf
 
