@@ -12,7 +12,7 @@ lint_off -rule WIDTHTRUNC -file "*/axi-*/*" -match "*"
 lint_off -rule LITENDIAN -file "*/obi-*/*" -match "*"
 lint_off -rule WIDTHEXPAND -file "*/obi-*/*" -match "*"
 lint_off -rule WIDTHTRUNC -file "*/obi-*/*" -match "*"
-//lint_off -rule UNOPTFLAT -file "*/obi-*/*" -match "*"
+lint_off -rule UNOPTFLAT -file "*/obi-*/*" -match "*"
 
 lint_off -rule LITENDIAN -file "*/rtl/obi_*" -match "*"
 lint_off -rule WIDTHEXPAND -file "*/rtl/obi_*" -match "*"

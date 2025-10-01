@@ -11,23 +11,50 @@ module zeroheti_core import zeroheti_pkg::*; #(
   output logic jtag_td_o
 );
 
-OBI_BUS if_bus (), lsu_bus (), sba_bus ();
-OBI_BUS dbg_mem_bus (), inst_bus (), data_bus (), apb_bus ();
+localparam int unsigned NumSbrPorts  = 32'd3;
+localparam int unsigned NumMgrPorts  = 32'd5;
+localparam int unsigned NumAddrRules = 32'd5;
+
+localparam bit [NumSbrPorts-1:0][NumMgrPorts-1:0] Connectivity = '1; // TODO: minimal required connectivity
+
+typedef struct packed {
+  int unsigned idx;
+  logic [31:0] start_addr;
+  logic [31:0] end_addr;
+} addr_map_rule_t;
+
+localparam addr_map_rule_t [NumAddrRules-1:0] CoreAddrMap = '{
+  '{idx: 0, start_addr: AddrMap.dbg.base,  end_addr: AddrMap.dbg.last},
+  '{idx: 1, start_addr: AddrMap.imem.base, end_addr: AddrMap.imem.last},
+  '{idx: 2, start_addr: AddrMap.dmem.base, end_addr: AddrMap.dmem.last},
+  // TODO: map other APB peripherals
+  '{idx: 3, start_addr: AddrMap.clic.base, end_addr: AddrMap.clic.last},
+  '{idx: 4, start_addr: AddrMap.ext.base,  end_addr: AddrMap.ext.last}
+};
+
+OBI_BUS mgr_bus [NumSbrPorts]();
+OBI_BUS sbr_bus [NumMgrPorts]();
 
 logic debug_req;
 
-zeroheti_core_xbar #(
+obi_xbar_intf #(
+  .NumSbrPorts     (NumSbrPorts),
+  .NumMgrPorts     (NumMgrPorts),
+  .NumMaxTrans     (32'd1),
+  .NumAddrRules    (NumAddrRules),
+  .addr_map_rule_t (addr_map_rule_t),
+  .Connectivity    (Connectivity)
 ) i_xbar (
   .clk_i,
   .rst_ni,
-  .cpu_if   (if_bus),
-  .cpu_lsu  (lsu_bus),
-  .sba_mgr  (sba_bus),
-  .dbg_sbr  (dbg_mem_bus),
-  .inst_sbr (inst_bus),
-  .data_sbr (data_bus),
-  .apb_sbr  (apb_bus)
+  .testmode_i,
+  .addr_map_i       (CoreAddrMap),
+  .en_default_idx_i (3'b0),
+  .default_idx_i    (9'b0),
+  .sbr_ports        (mgr_bus),
+  .mgr_ports        (sbr_bus)
 );
+
 
 `ifndef SYNTHESIS
 ibex_top_tracing #(
@@ -68,13 +95,13 @@ ibex_top #(
   .test_en_i              (testmode_i),
   .boot_addr_i            (Cfg.boot_addr),
 
-  .instr_req_o            (if_bus.req),
-  .instr_addr_o           (if_bus.addr),
-  .instr_gnt_i            (if_bus.gnt),
-  .instr_rvalid_i         (if_bus.rvalid),
-  .instr_rdata_i          (if_bus.rdata),
+  .instr_req_o            (mgr_bus[1].req),
+  .instr_addr_o           (mgr_bus[1].addr),
+  .instr_gnt_i            (mgr_bus[1].gnt),
+  .instr_rvalid_i         (mgr_bus[1].rvalid),
+  .instr_rdata_i          (mgr_bus[1].rdata),
   .instr_rdata_intg_i     (7'b0),
-  .instr_err_i            (if_bus.err),
+  .instr_err_i            (mgr_bus[1].err),
 
   .data_req_o             (),
   .data_gnt_i             (),
@@ -125,13 +152,15 @@ zeroheti_dbg_wrapper #(
   .jtag_td_i,
   .jtag_td_o,
   .ndmreset_o  (),
-  .debug_req_o (debug_req)
+  .debug_req_o (debug_req),
+  .mem_sbr     (sbr_bus[0]),
+  .sba_mgr     (mgr_bus[0])
 );
 
 obi_sram_intf #() i_imem (
   .clk_i,
   .rst_ni,
-  .sbr     (inst_bus)
+  .sbr     (sbr_bus[1])
 );
 
 endmodule : zeroheti_core

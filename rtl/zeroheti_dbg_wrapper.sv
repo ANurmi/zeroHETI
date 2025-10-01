@@ -8,7 +8,9 @@ module zeroheti_dbg_wrapper import zeroheti_pkg::*; #()(
   input  logic jtag_td_i,
   output logic jtag_td_o,
   output logic ndmreset_o,
-  output logic debug_req_o
+  output logic debug_req_o,
+  OBI_BUS.Subordinate mem_sbr,
+  OBI_BUS.Manager     sba_mgr
 );
 
 logic          dmi_rst_n;
@@ -58,16 +60,16 @@ dm_obi_top #(
   .dmi_resp_ready_i   (dmi_rsp_ready),
   .dmi_resp_o         (dmi_rsp),
 
-  .slave_req_i        (),
-  .slave_gnt_o        (),
-  .slave_addr_i       (),
-  .slave_we_i         (),
-  .slave_be_i         (),
-  .slave_wdata_i      (),
-  .slave_aid_i        (),
-  .slave_rvalid_o     (),
-  .slave_rdata_o      (),
-  .slave_rid_o        (),
+  .slave_req_i        (mem_sbr.req),
+  .slave_gnt_o        (mem_sbr.gnt),
+  .slave_addr_i       (mem_sbr.addr),
+  .slave_we_i         (mem_sbr.we),
+  .slave_be_i         (mem_sbr.be),
+  .slave_wdata_i      (mem_sbr.wdata),
+  .slave_aid_i        (mem_sbr.aid),
+  .slave_rvalid_o     (mem_sbr.rvalid),
+  .slave_rdata_o      (mem_sbr.rdata),
+  .slave_rid_o        (mem_sbr.rid),
 
   .master_req_o       (),
   .master_addr_o      (),
