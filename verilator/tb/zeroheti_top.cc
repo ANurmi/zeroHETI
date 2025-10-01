@@ -28,6 +28,7 @@ int main(int argc, char** argv) {
   tb->reset();
   tb->jtag_reset_master();
   tb->jtag_init();
+  tb->jtag_halt_hart();
   for (int it=0;it<100;it++) tb->tick();
  // tb->jtag_wait_eoc();
 

@@ -14,6 +14,8 @@ module zeroheti_core import zeroheti_pkg::*; #(
 OBI_BUS if_bus (), lsu_bus (), sba_bus ();
 OBI_BUS dbg_mem_bus (), inst_bus (), data_bus (), apb_bus ();
 
+logic debug_req;
+
 zeroheti_core_xbar #(
 ) i_xbar (
   .clk_i,
@@ -99,7 +101,7 @@ ibex_top #(
   .scramble_nonce_i       (64'b0),
   .scramble_req_o         (),
 
-  .debug_req_i            (),
+  .debug_req_i            (debug_req),
   .debug_mode_o           (),
   .crash_dump_o           (),
   .double_fault_seen_o    (),
@@ -121,7 +123,9 @@ zeroheti_dbg_wrapper #(
   .jtag_tms_i,
   .jtag_trst_ni,
   .jtag_td_i,
-  .jtag_td_o
+  .jtag_td_o,
+  .ndmreset_o  (),
+  .debug_req_o (debug_req)
 );
 
 obi_sram_intf #() i_imem (

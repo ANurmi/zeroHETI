@@ -14,6 +14,10 @@ lint_off -rule WIDTHEXPAND -file "*/obi-*/*" -match "*"
 lint_off -rule WIDTHTRUNC -file "*/obi-*/*" -match "*"
 //lint_off -rule UNOPTFLAT -file "*/obi-*/*" -match "*"
 
+lint_off -rule LITENDIAN -file "*/rtl/obi_*" -match "*"
+lint_off -rule WIDTHEXPAND -file "*/rtl/obi_*" -match "*"
+lint_off -rule WIDTHTRUNC -file "*/rtl/obi_*" -match "*"
+
 lint_off -rule UNSIGNED -file "*/tech_cells_generic-*/*" -match "*"
 lint_off -rule WIDTHEXPAND -file "*/tech_cells_generic-*/*" -match "*"
 lint_off -rule WIDTHTRUNC -file "*/tech_cells_generic-*/*" -match "*"

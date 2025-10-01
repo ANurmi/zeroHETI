@@ -6,7 +6,9 @@ module zeroheti_dbg_wrapper import zeroheti_pkg::*; #()(
   input  logic jtag_tms_i,
   input  logic jtag_trst_ni,
   input  logic jtag_td_i,
-  output logic jtag_td_o
+  output logic jtag_td_o,
+  output logic ndmreset_o,
+  output logic debug_req_o
 );
 
 logic          dmi_rst_n;
