@@ -8,7 +8,8 @@ module zeroheti_core import zeroheti_pkg::*; #(
   input  logic jtag_tms_i,
   input  logic jtag_trst_ni,
   input  logic jtag_td_i,
-  output logic jtag_td_o
+  output logic jtag_td_o,
+  APB.Master   apb_mgr
 );
 
 localparam int unsigned NumSbrPorts  = 32'd3;
@@ -16,6 +17,20 @@ localparam int unsigned NumMgrPorts  = 32'd5;
 localparam int unsigned NumAddrRules = 32'd5;
 
 localparam bit [NumSbrPorts-1:0][NumMgrPorts-1:0] Connectivity = '1; // TODO: minimal required connectivity
+/*
+obi_cut_intf i_obi_cut (
+  .clk_i,
+  .rst_ni,
+  .obi_s  (sbr_bus[3]),
+  .obi_m  (apb_cut)
+);*/
+
+obi_to_apb_intf i_obi_to_apb (
+  .clk_i,
+  .rst_ni,
+  .obi_i  (sbr_bus[3]),
+  .apb_o  (apb_mgr)
+);
 
 typedef struct packed {
   int unsigned idx;
@@ -28,12 +43,13 @@ localparam addr_map_rule_t [NumAddrRules-1:0] CoreAddrMap = '{
   '{idx: 1, start_addr: AddrMap.imem.base, end_addr: AddrMap.imem.last},
   '{idx: 2, start_addr: AddrMap.dmem.base, end_addr: AddrMap.dmem.last},
   // TODO: map other APB peripherals
-  '{idx: 3, start_addr: AddrMap.clic.base, end_addr: AddrMap.clic.last},
+  '{idx: 3, start_addr: AddrMap.clic.base, end_addr: AddrMap.uart.last},
   '{idx: 4, start_addr: AddrMap.ext.base,  end_addr: AddrMap.ext.last}
 };
 
 OBI_BUS mgr_bus [NumSbrPorts]();
 OBI_BUS sbr_bus [NumMgrPorts]();
+//OBI_BUS apb_cut ();
 
 logic debug_req;
 

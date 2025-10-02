@@ -17,10 +17,10 @@ sources:
   - target: rtl
     files:
       - rtl/zeroheti_pkg.sv
-        #- rtl/obi_join.sv
-        #- rtl/obi_connection.sv
+      - rtl/mock_uart.sv
       - rtl/obi_sram_intf.sv
+      - rtl/obi_cut_intf.sv
+      - rtl/obi_to_apb_intf.sv
       - rtl/zeroheti_dbg_wrapper.sv
-        #- rtl/zeroheti_core_xbar.sv
       - rtl/zeroheti_core.sv
       - rtl/zeroheti_top.sv
