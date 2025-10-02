@@ -35,16 +35,14 @@ int main(int argc, char** argv) {
       std::cout << "[TB] ERROR! ELF not found in path " << elfpath << std::endl << std::endl;
     } else {
       std::cout << "[TB] ELF path is " << elfpath << std::endl;
-
-      for (int it=0;it<100;it++) tb->tick();
       tb->open_trace("../build/verilator_build/waveform.fst");
+
       tb->reset();
       tb->jtag_reset_master();
       tb->jtag_init();
-      tb->jtag_halt_hart();
-      tb->jtag_resume_hart_from(0x1000);
-      for (int it=0;it<100;it++) tb->tick();
-    //tb->jtag_wait_eoc();
+
+      tb->jtag_run_elf(elfpath.string());
+      tb->jtag_wait_eoc();
     }
   
   }

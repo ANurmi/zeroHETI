@@ -71,16 +71,16 @@ dm_obi_top #(
   .slave_rdata_o      (mem_sbr.rdata),
   .slave_rid_o        (mem_sbr.rid),
 
-  .master_req_o       (),
-  .master_addr_o      (),
-  .master_we_o        (),
-  .master_wdata_o     (),
-  .master_be_o        (),
-  .master_gnt_i       (),
-  .master_rdata_i     (),
-  .master_rvalid_i    (),
-  .master_err_i       (),
-  .master_other_err_i ()
+  .master_req_o       (sba_mgr.req),
+  .master_addr_o      (sba_mgr.addr),
+  .master_we_o        (sba_mgr.we),
+  .master_wdata_o     (sba_mgr.wdata),
+  .master_be_o        (sba_mgr.be),
+  .master_gnt_i       (sba_mgr.gnt),
+  .master_rdata_i     (sba_mgr.rdata),
+  .master_rvalid_i    (sba_mgr.rvalid),
+  .master_err_i       (sba_mgr.err),
+  .master_other_err_i (1'b0)
 );
 
 endmodule : zeroheti_dbg_wrapper

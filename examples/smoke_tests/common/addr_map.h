@@ -1,0 +1,1 @@
+#define CLIC_BASE 0x00009000

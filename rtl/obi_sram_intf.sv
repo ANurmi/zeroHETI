@@ -52,6 +52,7 @@ tc_sram #(
   .rdata_o (sbr.rdata)
 );
 
+assign sbr.gnt    = sbr.req;
 assign sbr.rvalid = rvalid_q;
 
 endmodule : obi_sram_intf
