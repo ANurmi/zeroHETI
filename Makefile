@@ -1,6 +1,12 @@
+SW_DIR ?= examples/smoke_tests
+
 .PHONY: ips
 ips:
 	bender update
+
+.PHONY: elf
+elf:
+	@$(MAKE) -C $(SW_DIR) elf --no-print-directory
 
 .PHONY: vlint
 vlint:
