@@ -48,7 +48,7 @@ dm_obi_top #(
   .testmode_i,
   .ndmreset_o         (),
   .dmactive_o         (),
-  .debug_req_o        (),
+  .debug_req_o,
   .unavailable_i      (),
   .hartinfo_i         (),
 
