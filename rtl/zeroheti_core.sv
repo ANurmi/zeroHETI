@@ -1,5 +1,5 @@
-module zeroheti_core import zeroheti_pkg::*; #(
-  core_cfg_t Cfg = DefaultCfg
+module zeroheti_core import zeroheti_pkg::AddrMap; #(
+  zeroheti_pkg::core_cfg_t Cfg = zeroheti_pkg::DefaultCfg
 )(
   input  logic clk_i,
   input  logic rst_ni,
@@ -173,10 +173,20 @@ zeroheti_dbg_wrapper #(
   .sba_mgr     (mgr_bus[0])
 );
 
-obi_sram_intf #() i_imem (
+obi_sram_intf #(
+  .BaseAddr (AddrMap.imem.base)
+) i_imem (
   .clk_i,
   .rst_ni,
   .sbr     (sbr_bus[1])
+);
+
+obi_sram_intf #(
+  .BaseAddr (AddrMap.dmem.base)
+) i_dmem (
+  .clk_i,
+  .rst_ni,
+  .sbr     (sbr_bus[2])
 );
 
 endmodule : zeroheti_core

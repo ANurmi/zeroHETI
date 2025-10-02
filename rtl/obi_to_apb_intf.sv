@@ -18,6 +18,8 @@ module obi_to_apb_intf #(
   typedef enum logic [1:0] {SETUP, ACCESS, HANDSHAKE} state_e;
   state_e state_d, state_q;
 
+  logic [31:0] rdata_q, rdata_d;
+
   // Feed these through.
   assign apb_o.paddr  = obi_i.addr;
   assign apb_o.pwrite = obi_i.we;
@@ -26,7 +28,10 @@ module obi_to_apb_intf #(
   assign apb_o.pstrb  = obi_i.be;
 
   assign obi_i.err    = apb_o.pslverr;
-  assign obi_i.rdata  = apb_o.prdata;
+
+  // Need to register prdata to match rvalid
+  assign obi_i.rdata  = rdata_q;
+  assign rdata_d      = apb_o.prdata;
 
   // Tie PPROT to {0: unprivileged, 1: non-secure, 0: data}
   assign apb_o.pprot   = 3'b010;
@@ -61,6 +66,10 @@ module obi_to_apb_intf #(
     end else begin
       state_q <= state_d;
     end
+  end
+
+  always_ff @(posedge clk_i) begin
+      rdata_q <= rdata_d;
   end
 
 endmodule : obi_to_apb_intf

@@ -9,6 +9,7 @@ compile:
 .PHONY: link
 link:
 	$(RVGCC) \
+	$(ARCH_FLAGS) \
 	-T$(LINKER) \
 	-nostartfiles \
 	$(INCLUDE_DIR) \

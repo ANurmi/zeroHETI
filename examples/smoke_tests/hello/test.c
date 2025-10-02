@@ -1,14 +1,13 @@
-#include "common.h"
 #include "addr_map.h"
+#include "common.h"
 
 int main() {
 
-  //write_u32(0xA000, 0xDEADBEEF);
-  uint32_t test_0 = read_u32(0x5000);
-  uint16_t test_1 = read_u16(0x5000);
-  uint8_t  test_2 = read_u8(0x5000);
+  init_uart(0x0, 0x0);
 
-  write_u32(0xA000, 0xDEADBEEF);
+  for (int i=0; i<100; i++) asm("nop");
+  print_uart("[UART] Hello from zeroHETI!\n");
+  write_serial('\n');
 
   return 0;
 }
