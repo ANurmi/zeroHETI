@@ -19,10 +19,7 @@ link:
 	#Clean up
 	rm $(BUILD_DIR)/crt0.o $(BUILD_DIR)/$(TEST).o
 
-.PHONY: objdump
-objdump:
-	$(TOOLCHAIN)objdump $(BUILD_DIR)/$(TEST).elf -d > $(BUILD_DIR)/$(TEST).asm
 
 .PHONY: test
-test: compile link objdump
+test: compile link
 

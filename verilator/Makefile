@@ -14,6 +14,8 @@ WAIVER          ?= ./waiver.vlt
 
 CFLAGS           = -I$(shell bender path vbench)/src
 
+LOAD            ?= JTAG
+
 VDEFS ?= \
   +define+VERILATOR=1 \
   +define+RVFI \
@@ -57,13 +59,24 @@ lint:
 	$(VDEFS) $(INCLUDES) $(WAIVER) $(SOURCES)
 	@echo "Verilator lint [OK]"
 
+#.PHONY: $(TEST)
+#$(TEST):
+#	touch $(VERIL_BUILD_DIR)/test_just.hex
+#	cp $(BUILD_DIR)/sw/$(TEST).elf $(VERIL_BUILD_DIR) && \
+#	riscv32-unknown-elf-objcopy $(VERIL_BUILD_DIR)/$(TEST).elf -O binary $(VERIL_BUILD_DIR)/test.bin && \
+#	xxd -e $(VERIL_BUILD_DIR)/test.bin $(VERIL_BUILD_DIR)/test.hex && \
+#	cut -c 11-45 $(VERIL_BUILD_DIR)/test.hex > $(VERIL_BUILD_DIR)/test_pruned.hex && \
+#	sed -E 's/ /\n/g' $(VERIL_BUILD_DIR)/test_pruned.hex > $(VERIL_BUILD_DIR)/test_just.hex && \
+#	head -$(shell wc -w < $(VERIL_BUILD_DIR)/test_just.hex) $(VERIL_BUILD_DIR)/test_just.hex > $(VERIL_BUILD_DIR)/verilator_stim.hex
+#	#rm $(VERIL_BUILD_DIR)/test*
+
 .PHONY: verilate
-verilate: init
+verilate: init #$(TEST)
 	verilator $(VFLAGS) $(INCLUDES) \
 	--top-module $(TOP_MODULE) \
 	$(WAIVER) $(SOURCES)
 
 .PHONY: simv
 simv:
-	$(VERIL_BUILD_DIR)/obj_dir/V$(TOP_MODULE) $(TEST)
+	$(VERIL_BUILD_DIR)/obj_dir/V$(TOP_MODULE) $(TEST) $(LOAD)
 

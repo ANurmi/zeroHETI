@@ -19,22 +19,26 @@ SECTIONS
     *(.text*)
     _etext = .;
     *(.rodata*)
+    . = ALIGN(4);
   } > IMEM
 
   .data : ALIGN(4)
   {
     *(.data*);
+    . = ALIGN(4);
   } > DMEM
 
   .sdata : ALIGN(4)
   {
     *(.sdata*);
+    . = ALIGN(4);
   } > DMEM
 
   .bss (NOLOAD) :
   {
     *(.bss*)
     *(COMMON)
+    . = ALIGN(4);
   } > DMEM
  
   .stack (NOLOAD) : 

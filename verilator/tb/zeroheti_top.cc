@@ -31,6 +31,9 @@ int main(int argc, char** argv) {
     std::filesystem::path elfpath = std::string("../build/sw/") + Elf + ".elf";
     bool elfPathExists = std::filesystem::exists(elfpath);
 
+    const std::string Load(argv[2]);
+    std::cout << "[TB] Load: " << Load << std::endl;
+    
     if(!elfPathExists) {
       std::cout << "[TB] ERROR! ELF not found in path " << elfpath << std::endl << std::endl;
     } else {
@@ -41,7 +44,15 @@ int main(int argc, char** argv) {
       tb->jtag_reset_master();
       tb->jtag_init();
 
-      tb->jtag_run_elf(elfpath.string());
+      if (Load == "JTAG") {
+        tb->jtag_run_elf(elfpath.string());
+      } else {
+        tb->jtag_halt_hart();
+        std::cout << "[TB] Running elaboration-time preloaded program from entry point in " 
+                  << elfpath.string()
+                  << std::endl;
+        tb->jtag_resume_hart_from(tb->get_entry(elfpath.string()));
+      }
       tb->jtag_wait_eoc();
     }
   
