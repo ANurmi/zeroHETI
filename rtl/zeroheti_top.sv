@@ -100,14 +100,16 @@ assign demux_apb[3].pready = 1'b1;
 typedef enum bit {JTAG, READMEM} load_e;
 load_e LoadType;
 
-initial begin
+initial begin : simulation_loader
 
   LoadType = `LOAD;
 
   if (LoadType == READMEM) begin
     @(posedge rst_ni);
-    $display("Toimii");
-    $fatal();
+    $display("Initializing program with $readmemh");
+    $display("APPLICABLE TO SIMULATED DESIGNS ONLY");
+    $readmemh("../build/verilator_build/imem_stim.hex", i_core.i_imem.i_sram.sram);
+    $readmemh("../build/verilator_build/dmem_stim.hex", i_core.i_dmem.i_sram.sram);
   end
 end
 

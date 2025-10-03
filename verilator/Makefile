@@ -16,6 +16,9 @@ CFLAGS           = -I$(shell bender path vbench)/src
 
 LOAD            ?= READMEM
 
+IMEM_WORDS       = 4096
+DMEM_START       = $(shell echo $$(($(IMEM_WORDS) + 1)))
+
 VDEFS ?= \
   +define+VERILATOR=1 \
 	+define+LOAD=$(LOAD) \
@@ -64,8 +67,8 @@ lint:
 .PHONY: $(TEST)
 $(TEST):
 	cp $(BUILD_DIR)/sw/$(TEST).hex $(VERIL_BUILD_DIR)/verilator_stim.hex
-	echo "All good"
-	#exit 1
+	head -$(IMEM_WORDS)    $(VERIL_BUILD_DIR)/verilator_stim.hex > $(VERIL_BUILD_DIR)/imem_stim.hex
+	tail -n +$(DMEM_START) $(VERIL_BUILD_DIR)/verilator_stim.hex > $(VERIL_BUILD_DIR)/dmem_stim.hex
 
 .PHONY: verilate
 verilate: init $(TEST)
