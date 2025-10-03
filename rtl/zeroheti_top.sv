@@ -50,6 +50,19 @@ apb_demux_intf #(
   .select_i (demux_sel)
 );
 
+apb_zhic #() i_zhic (
+  .clk_i,
+  .rst_ni,
+  .penable_i (demux_apb[0].penable),
+  .pwrite_i  (demux_apb[0].pwrite),
+  .paddr_i   (demux_apb[0].paddr),
+  .psel_i    (demux_apb[0].psel),
+  .pwdata_i  (demux_apb[0].pwdata),
+  .prdata_o  (demux_apb[0].prdata),
+  .pready_o  (demux_apb[0].pready),
+  .pslverr_o (demux_apb[0].pslverr)
+);
+
 `ifdef VERILATOR
 mock_uart i_mock_uart (
   .clk_i,
@@ -105,7 +118,7 @@ apb_mtimer i_mtimer (
   .timer_irq_o ()
 );
 
-assign demux_apb[0].pready = 1'b1;
+//assign demux_apb[0].pready = 1'b1;
 //assign demux_apb[1].pready = 1'b1;
 //assign demux_apb[2].pready = 1'b1;
 assign demux_apb[3].pready = 1'b1;

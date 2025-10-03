@@ -43,7 +43,7 @@ localparam addr_map_rule_t [NumAddrRules-1:0] CoreAddrMap = '{
   '{idx: 1, start_addr: AddrMap.imem.base, end_addr: AddrMap.imem.last},
   '{idx: 2, start_addr: AddrMap.dmem.base, end_addr: AddrMap.dmem.last},
   // TODO: map other APB peripherals
-  '{idx: 3, start_addr: AddrMap.clic.base, end_addr: AddrMap.mtimer.last},
+  '{idx: 3, start_addr: AddrMap.zhic.base, end_addr: AddrMap.mtimer.last},
   '{idx: 4, start_addr: AddrMap.ext.base,  end_addr: AddrMap.ext.last}
 };
 
@@ -100,7 +100,7 @@ ibex_top #(
   .DbgTriggerEn     (0),
   .DmHaltAddr       (dm::HaltAddress),
   .DmExceptionAddr  (dm::ExceptionAddress),
-  .MClicBaseAddr    (zeroheti_pkg::AddrMap.clic.base),
+  .MClicBaseAddr    (zeroheti_pkg::AddrMap.zhic.base),
   .BranchTargetALU  (Cfg.bt_alu)
 ) i_rt_ibex (
   .clk_i,
