@@ -95,5 +95,24 @@ assign demux_apb[0].pready = 1'b1;
 assign demux_apb[2].pready = 1'b1;
 assign demux_apb[3].pready = 1'b1;
 
+`ifndef SYNTHESIS
+
+typedef enum bit {JTAG, READMEM} load_e;
+load_e LoadType;
+
+initial begin
+
+  LoadType = `LOAD;
+
+  if (LoadType == READMEM) begin
+    @(posedge rst_ni);
+    $display("Toimii");
+    $fatal();
+  end
+end
+
+`endif
+
+
 endmodule : zeroheti_top
 
