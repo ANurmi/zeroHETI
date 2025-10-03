@@ -29,23 +29,26 @@ typedef struct packed {
   addr_rule_t dmem;
   addr_rule_t clic;
   addr_rule_t uart;
+  addr_rule_t mtimer;
   addr_rule_t ext;
 } addr_map_t;
 
-localparam addr_rule_t DbgAddr  = '{ base : 32'h0000_0000, last : 32'h0000_1000 };
-localparam addr_rule_t ImemAddr = '{ base : 32'h0000_1000, last : 32'h0000_5000 };
-localparam addr_rule_t DmemAddr = '{ base : 32'h0000_5000, last : 32'h0000_9000 };
-localparam addr_rule_t ClicAddr = '{ base : 32'h0000_9000, last : 32'h0000_A000 };
-localparam addr_rule_t UartAddr = '{ base : 32'h0000_A000, last : 32'h0000_A100 };
-localparam addr_rule_t ExtAddr  = '{ base : 32'h0001_0000, last : 32'hFFFF_FFFF };
+localparam addr_rule_t DbgAddr    = '{ base : 32'h0000_0000, last : 32'h0000_1000 };
+localparam addr_rule_t ImemAddr   = '{ base : 32'h0000_1000, last : 32'h0000_5000 };
+localparam addr_rule_t DmemAddr   = '{ base : 32'h0000_5000, last : 32'h0000_9000 };
+localparam addr_rule_t ClicAddr   = '{ base : 32'h0000_9000, last : 32'h0000_A000 };
+localparam addr_rule_t UartAddr   = '{ base : 32'h0000_A000, last : 32'h0000_A100 };
+localparam addr_rule_t MtimerAddr = '{ base : 32'h0000_A100, last : 32'h0000_A114 };
+localparam addr_rule_t ExtAddr    = '{ base : 32'h0001_0000, last : 32'hFFFF_FFFF };
 
 localparam addr_map_t AddrMap = '{
-  dbg  : DbgAddr,
-  imem : ImemAddr,
-  dmem : DmemAddr,
-  clic : ClicAddr,
-  uart : UartAddr,
-  ext  : ExtAddr
+  dbg    : DbgAddr,
+  imem   : ImemAddr,
+  dmem   : DmemAddr,
+  clic   : ClicAddr,
+  uart   : UartAddr,
+  mtimer : MtimerAddr,
+  ext    : ExtAddr
 };
 
 

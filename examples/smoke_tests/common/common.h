@@ -21,7 +21,7 @@ uint16_t read_u16 (uint32_t addr) {
 }
 
 uint32_t read_u32 (uint32_t addr) {
-  return *(uint32_t*)(addr);
+  return *(volatile uint32_t*)(addr);
 }
 
 void init_uart(uint32_t freq, uint32_t baud){

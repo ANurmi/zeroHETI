@@ -34,7 +34,8 @@ zeroheti_core #() i_core (
 
 always_comb begin : apb_decode
   unique case (core_apb.paddr) inside
-  [AddrMap.uart.base:AddrMap.uart.last]: demux_sel = SelWidth'('d2);
+  [AddrMap.uart.base  :AddrMap.uart.last-1  ]: demux_sel = SelWidth'('d2);
+  [AddrMap.mtimer.base:AddrMap.mtimer.last-1]: demux_sel = SelWidth'('d1);
   default: demux_sel = SelWidth'('d0);
   endcase
 end
@@ -90,9 +91,23 @@ apb_uart i_apb_uart (
 
 `endif
 
+apb_mtimer i_mtimer (
+  .clk_i,
+  .rst_ni,
+  .penable_i   (demux_apb[2].penable),
+  .pwrite_i    (demux_apb[2].pwrite),
+  .paddr_i     (demux_apb[2].paddr),
+  .psel_i      (demux_apb[2].psel),
+  .pwdata_i    (demux_apb[2].pwdata),
+  .prdata_o    (demux_apb[2].prdata),
+  .pready_o    (demux_apb[2].pready),
+  .pslverr_o   (demux_apb[2].pslverr),
+  .timer_irq_o ()
+);
+
 assign demux_apb[0].pready = 1'b1;
 //assign demux_apb[1].pready = 1'b1;
-assign demux_apb[2].pready = 1'b1;
+//assign demux_apb[2].pready = 1'b1;
 assign demux_apb[3].pready = 1'b1;
 
 `ifndef SYNTHESIS
