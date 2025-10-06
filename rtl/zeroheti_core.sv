@@ -29,10 +29,11 @@ obi_cut_intf i_obi_cut (
   .obi_m  (apb_cut)
 );*/
 
-logic irq_heti, irq_ack;
-logic [Cfg.num_irqs-1:0] irq;
-logic    [PrioWidth-1:0] irq_level;
-logic     [IrqWidth-1:0] irq_id;
+logic irq_heti, irq_ack, irq_valid;
+logic [CoreCfg.num_irqs-1:0] core_irq;
+logic         [IrqWidth-1:0] irq_id;
+logic        [PrioWidth-1:0] irq_level;
+logic         [IrqWidth-1:0] irq_id_claim;
 
 obi_hetic #(
   .NrIrqLines (Cfg.num_irqs),
@@ -40,10 +41,11 @@ obi_hetic #(
 ) i_hetic (
   .clk_i,
   .rst_ni,
-  .irq_o      (irq),
   .irq_heti_o (irq_heti),
   .irq_nest_o (/*not used yet*/),
-  .irq_id_i   (irq_id),
+  .irq_id_o   (irq_id),
+  .irq_valid_o(irq_valid),
+  .irq_id_i   (irq_id_claim),
   .irq_ack_i  (irq_ack),
   .obi_sbr    (sbr_bus[3])
 );
@@ -73,9 +75,15 @@ localparam addr_map_rule_t [NumAddrRules-1:0] CoreAddrMap = '{
 
 OBI_BUS mgr_bus [NumSbrPorts]();
 OBI_BUS sbr_bus [NumMgrPorts]();
-//OBI_BUS apb_cut ();
 
 logic debug_req;
+
+always_comb begin : g_core_irq
+  core_irq = '0;
+  if (irq_valid) begin
+    core_irq[irq_id] = 1'b1;
+  end
+end
 
 obi_xbar_intf #(
   .NumSbrPorts     (NumSbrPorts),
@@ -156,8 +164,8 @@ ibex_top #(
   .data_wdata_intg_o      (),
 
   .irq_is_pcs_i           (irq_heti),
-  .irq_i                  (irq),
-  .irq_id_o               (irq_id),
+  .irq_i                  (core_irq),
+  .irq_id_o               (irq_id_claim),
   .irq_ack_o              (irq_ack),
   .irq_level_i            (8'(irq_level)),
   .irq_shv_i              (1'b1),

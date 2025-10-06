@@ -4,17 +4,18 @@ module obi_hetic #(
   localparam int unsigned IrqWidth   = $clog2(NrIrqLines),
   localparam int unsigned PrioWidth  = $clog2(NrIrqPrios)
 )(
-  input  logic                  clk_i,
-  input  logic                  rst_ni,
-  OBI_BUS.Subordinate           obi_sbr,
-  output logic                  irq_heti_o,
-  output logic                  irq_nest_o,
-  output logic [NrIrqLines-1:0] irq_o,
-  input  logic   [IrqWidth-1:0] irq_id_i,
-  input  logic                  irq_ack_i
+  input  logic                clk_i,
+  input  logic                rst_ni,
+  OBI_BUS.Subordinate         obi_sbr,
+  output logic                irq_valid_o,
+  output logic                irq_heti_o,
+  output logic                irq_nest_o,
+  output logic [IrqWidth-1:0] irq_id_o,
+  input  logic [IrqWidth-1:0] irq_id_i,
+  input  logic                irq_ack_i
 );
 
-localparam int unsigned PadWidth = 24-IrqWidth;
+localparam int unsigned PadWidth = 24-PrioWidth;
 
 logic [10:0] line_idx;
 
@@ -104,6 +105,8 @@ always_comb begin : apb_access
     end
   end : write
 end : apb_access
+
+/*TODO: arb tree */
 
 endmodule : obi_hetic
 
