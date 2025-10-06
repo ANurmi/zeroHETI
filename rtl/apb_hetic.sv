@@ -1,4 +1,4 @@
-module apb_zhic #()(
+module apb_hetic #()(
   input  logic        clk_i,
   input  logic        rst_ni,
   input  logic        penable_i,
@@ -10,5 +10,5 @@ module apb_zhic #()(
   output logic        pready_o,
   output logic        pslverr_o
 );
-endmodule : apb_zhic
+endmodule : apb_hetic
 

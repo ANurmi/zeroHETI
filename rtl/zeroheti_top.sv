@@ -50,7 +50,7 @@ apb_demux_intf #(
   .select_i (demux_sel)
 );
 
-apb_zhic #() i_zhic (
+apb_hetic #() i_hetic (
   .clk_i,
   .rst_ni,
   .penable_i (demux_apb[0].penable),

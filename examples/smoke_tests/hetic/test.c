@@ -4,7 +4,7 @@
 int main() {
 
   init_uart(0x0, 0x0);
-  print_uart("[UART] zeroHETI interrupt controller (ZHIC) test\n");
+  print_uart("[UART] Heterogeneous interrupt controller (HetIC) test\n");
 
   return 0;
 }
