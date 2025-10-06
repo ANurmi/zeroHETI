@@ -1,4 +1,4 @@
-#define CLIC_BASE 0x00009000
+#define HETIC_BASE 0x00009000
 
 #define UART_BASE 0x0000A000
 #define UART_RBR              UART_BASE + 0
