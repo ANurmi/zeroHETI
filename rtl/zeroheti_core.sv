@@ -1,22 +1,27 @@
 module zeroheti_core import zeroheti_pkg::AddrMap; #(
-  zeroheti_pkg::core_cfg_t Cfg = zeroheti_pkg::DefaultCfg
+  parameter  zeroheti_pkg::core_cfg_t Cfg = zeroheti_pkg::DefaultCfg,
+  localparam int unsigned IrqWidth        = $clog2(Cfg.num_irqs),
+  localparam int unsigned PrioWidth       = $clog2(Cfg.num_prio)
 )(
-  input  logic clk_i,
-  input  logic rst_ni,
-  input  logic testmode_i,
-  input  logic jtag_tck_i,
-  input  logic jtag_tms_i,
-  input  logic jtag_trst_ni,
-  input  logic jtag_td_i,
-  output logic jtag_td_o,
-  APB.Master   apb_mgr
+  input  logic                    clk_i,
+  input  logic                    rst_ni,
+  input  logic                    testmode_i,
+  input  logic                    jtag_tck_i,
+  input  logic                    jtag_tms_i,
+  input  logic                    jtag_trst_ni,
+  input  logic                    jtag_td_i,
+  output logic                    jtag_td_o,
+  APB.Master                      apb_mgr
 );
 
 localparam int unsigned NumSbrPorts  = 32'd3;
-localparam int unsigned NumMgrPorts  = 32'd5;
-localparam int unsigned NumAddrRules = 32'd5;
+localparam int unsigned NumMgrPorts  = 32'd6;
+localparam int unsigned NumAddrRules = NumMgrPorts; // works for single, continuous regions
 
-localparam bit [NumSbrPorts-1:0][NumMgrPorts-1:0] Connectivity = '1; // TODO: minimal required connectivity
+localparam bit [NumSbrPorts-1:0][NumMgrPorts-1:0] Connectivity = '{'{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
+                                                                   '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
+                                                                   '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}
+                                                                  }; // TODO: minimal required connectivity
 /*
 obi_cut_intf i_obi_cut (
   .clk_i,
@@ -25,10 +30,29 @@ obi_cut_intf i_obi_cut (
   .obi_m  (apb_cut)
 );*/
 
+logic irq_heti, irq_ack;
+logic [Cfg.num_irqs-1:0] irq;
+logic    [PrioWidth-1:0] irq_level;
+logic     [IrqWidth-1:0] irq_id;
+
+obi_hetic #(
+  .NrIrqLines (Cfg.num_irqs),
+  .NrIrqPrios (Cfg.num_prio)
+) i_hetic (
+  .clk_i,
+  .rst_ni,
+  .irq_o      (irq),
+  .irq_heti_o (irq_heti),
+  .irq_nest_o (/*not used yet*/),
+  .irq_id_i   (irq_id),
+  .irq_ack_i  (irq_ack),
+  .obi_sbr    (sbr_bus[3])
+);
+
 obi_to_apb_intf i_obi_to_apb (
   .clk_i,
   .rst_ni,
-  .obi_i  (sbr_bus[3]),
+  .obi_i  (sbr_bus[4]),
   .apb_o  (apb_mgr)
 );
 
@@ -39,12 +63,13 @@ typedef struct packed {
 } addr_map_rule_t;
 
 localparam addr_map_rule_t [NumAddrRules-1:0] CoreAddrMap = '{
-  '{idx: 0, start_addr: AddrMap.dbg.base,  end_addr: AddrMap.dbg.last},
-  '{idx: 1, start_addr: AddrMap.imem.base, end_addr: AddrMap.imem.last},
-  '{idx: 2, start_addr: AddrMap.dmem.base, end_addr: AddrMap.dmem.last},
+  '{idx: 0, start_addr: AddrMap.dbg.base,   end_addr: AddrMap.dbg.last},
+  '{idx: 1, start_addr: AddrMap.imem.base,  end_addr: AddrMap.imem.last},
+  '{idx: 2, start_addr: AddrMap.dmem.base,  end_addr: AddrMap.dmem.last},
+  '{idx: 3, start_addr: AddrMap.hetic.base, end_addr: AddrMap.hetic.last},
   // TODO: map other APB peripherals
-  '{idx: 3, start_addr: AddrMap.hetic.base, end_addr: AddrMap.mtimer.last},
-  '{idx: 4, start_addr: AddrMap.ext.base,  end_addr: AddrMap.ext.last}
+  '{idx: 4, start_addr: AddrMap.uart.base,  end_addr: AddrMap.mtimer.last},
+  '{idx: 5, start_addr: AddrMap.ext.base,   end_addr: AddrMap.ext.last}
 };
 
 OBI_BUS mgr_bus [NumSbrPorts]();
@@ -131,13 +156,13 @@ ibex_top #(
   .data_rdata_intg_i      (7'b0),
   .data_wdata_intg_o      (),
 
-  .irq_is_pcs_i           (),
-  .irq_i                  (),
-  .irq_id_o               (),
-  .irq_ack_o              (),
-  .irq_level_i            (),
-  .irq_shv_i              (),
-  .irq_priv_i             (),
+  .irq_is_pcs_i           (irq_heti),
+  .irq_i                  (irq),
+  .irq_id_o               (irq_id),
+  .irq_ack_o              (irq_ack),
+  .irq_level_i            (8'(irq_level)),
+  .irq_shv_i              (1'b1),
+  .irq_priv_i             (2'b11),
 
   .scramble_key_valid_i   (1'b0),
   .scramble_key_i         (128'b0),

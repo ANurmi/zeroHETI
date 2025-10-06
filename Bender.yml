@@ -19,7 +19,7 @@ sources:
       - rtl/zeroheti_pkg.sv
       - rtl/mock_uart.sv
       - rtl/apb_mtimer.sv
-      - rtl/apb_hetic.sv
+      - rtl/obi_hetic.sv
       - rtl/obi_sram_intf.sv
       - rtl/obi_cut_intf.sv
       - rtl/obi_to_apb_intf.sv

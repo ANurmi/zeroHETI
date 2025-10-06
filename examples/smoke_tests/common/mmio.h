@@ -25,9 +25,11 @@ uint32_t read_u32 (uint32_t addr) {
 }
 
 void set_bit(uint32_t addr, uint8_t pos){
-  write_u8(addr, 0x1);
+  uint8_t write_val = read_u8(addr) | ((uint32_t)0x1 << pos);
+  write_u8(addr, write_val);
 }
 void clear_bit(uint32_t addr, uint8_t pos){
-
+  uint8_t write_val = read_u8(addr) & ~((uint32_t)0x1 << pos);
+  write_u8(addr, write_val);
 }
 

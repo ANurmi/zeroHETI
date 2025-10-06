@@ -5,6 +5,7 @@ typedef struct packed {
   bit bt_alu;
   bit wb_stage;
   int unsigned num_irqs;
+  int unsigned num_prio;
   int unsigned hart_id;
   logic [31:0] boot_addr;
 } core_cfg_t;
@@ -14,6 +15,7 @@ localparam core_cfg_t DefaultCfg = '{
   bt_alu    : 0,
   wb_stage  : 0,
   num_irqs  : 32,
+  num_prio  : 32,
   hart_id   : 0,
   boot_addr : 32'h0800
 };
