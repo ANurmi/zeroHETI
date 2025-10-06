@@ -19,9 +19,8 @@ localparam int unsigned NumMgrPorts  = 32'd6;
 localparam int unsigned NumAddrRules = NumMgrPorts; // works for single, continuous regions
 
 localparam bit [NumSbrPorts-1:0][NumMgrPorts-1:0] Connectivity = '{'{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
-                                                                   '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
-                                                                   '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}
-                                                                  }; // TODO: minimal required connectivity
+                                                                   '{1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1},
+                                                                   '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}};
 /*
 obi_cut_intf i_obi_cut (
   .clk_i,
