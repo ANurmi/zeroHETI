@@ -1,0 +1,5 @@
+# Ignore built files
+/target/
+
+# This is a library target => ignore Cargo.lock
+Cargo.lock
