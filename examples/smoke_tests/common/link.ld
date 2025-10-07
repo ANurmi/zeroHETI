@@ -8,7 +8,7 @@ MEMORY
   DMEM (rwx) : ORIGIN = 0x00005000, LENGTH = 0x4000
 }
 
-STACK_SIZE = 0x1000; 
+STACK_SIZE = 0x1000;
 
 SECTIONS
 {
@@ -40,8 +40,8 @@ SECTIONS
     *(COMMON)
     . = ALIGN(4);
   } > DMEM
- 
-  .stack (NOLOAD) : 
+
+  .stack (NOLOAD) :
   {
     . = ALIGN(4);
     stack = . + STACK_SIZE;
