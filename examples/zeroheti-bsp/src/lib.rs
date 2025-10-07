@@ -7,6 +7,7 @@ pub mod mmap;
 pub mod mmio;
 #[cfg(feature = "panic")]
 pub mod panic;
+pub mod register;
 pub mod tb;
 #[cfg(feature = "ufmt")]
 mod ufmt_sprint;
