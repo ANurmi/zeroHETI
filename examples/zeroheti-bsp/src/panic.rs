@@ -9,7 +9,10 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     let mut uart = unsafe { crate::apb_uart::ApbUart::instance() };
 
     #[cfg(feature = "core-fmt")]
-    write!(uart, "{}", info);
+    {
+        use embedded_io::Write;
+        unsafe { write!(uart, "{}", info).unwrap_unchecked() };
+    }
     #[cfg(feature = "ufmt")]
     write!(uart, "panic occurred");
 
