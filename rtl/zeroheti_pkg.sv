@@ -35,6 +35,13 @@ typedef struct packed {
   addr_rule_t ext;
 } addr_map_t;
 
+localparam int unsigned ImemSize = ImemAddr.last - ImemAddr.base;
+localparam int unsigned DmemSize = DmemAddr.last - DmemAddr.base;
+// imem size in words
+localparam int unsigned ImemWSize = ImemSize / 4;
+// dmem size in words
+localparam int unsigned DmemWSize = DmemSize / 4;
+
 localparam addr_rule_t DbgAddr    = '{ base : 32'h0000_0000, last : 32'h0000_1000 };
 localparam addr_rule_t ImemAddr   = '{ base : 32'h0000_1000, last : 32'h0000_5000 };
 localparam addr_rule_t DmemAddr   = '{ base : 32'h0000_5000, last : 32'h0000_9000 };
