@@ -1,11 +1,13 @@
 # zeroHETI
 
 ## Prerequisites
+
 - [Bender](https://github.com/pulp-platform/bender) for dependency management.
 - [Verilator](https://github.com/verilator/verilator) for RTL simulation (5.008 prefered).
 - [RISC-V GNU Toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain) for software compilation. Precompiled packages should suffice for now.
 
 ## Quickstart
+
 Pull dependencies with `make ips`
 
 Software examples are compiled with `make elf TEST=<testname>`
