@@ -1,5 +1,6 @@
 #include "addr_map.h"
-#include "common.h"
+#include "mmio.h"
+#include "uart.h"
 
 int main() {
 
