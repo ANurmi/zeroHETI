@@ -70,15 +70,28 @@ always_comb begin : apb_access
   rdata_d  = rdata_q;
 
   if (read_event) begin : read
-    rdata_d = {PadWidth'('b0),
-                lines_q[line_idx].prio,
-                2'b0,
-                lines_q[line_idx].nest,
-                lines_q[line_idx].heti,
-                lines_q[line_idx].trig,
-                lines_q[line_idx].ip,
-                lines_q[line_idx].ie
-              };
+    if (be_high == 0) begin
+      rdata_d = {PadWidth'('b0),
+                  lines_q[line_idx].prio,
+                  2'b0,
+                  lines_q[line_idx].nest,
+                  lines_q[line_idx].heti,
+                  lines_q[line_idx].trig,
+                  lines_q[line_idx].ip,
+                  lines_q[line_idx].ie
+                };
+    end else begin
+      rdata_d = {
+                  8'(lines_q[line_idx].prio),
+                  2'b0,
+                  lines_q[line_idx].nest,
+                  lines_q[line_idx].heti,
+                  lines_q[line_idx].trig,
+                  lines_q[line_idx].ip,
+                  lines_q[line_idx].ie,
+                  16'b0
+                };
+    end
 
   end : read
   else if (write_event) begin : write
