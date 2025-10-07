@@ -90,7 +90,7 @@ pub fn toggle_u32(addr: usize, toggle_bits: u32) {
 #[inline(always)]
 pub fn mask_u8(addr: usize, mask: u8) {
     let r = unsafe { core::ptr::read_volatile(addr as *const u8) };
-    unsafe { core::ptr::write_volatile(addr as *mut _, r | mask) }
+    unsafe { core::ptr::write_volatile(addr as *mut u8, r | mask) }
 }
 
 /// Unmasks specified bits from given register
@@ -101,5 +101,5 @@ pub fn mask_u8(addr: usize, mask: u8) {
 #[inline(always)]
 pub fn unmask_u8(addr: usize, unmask: u8) {
     let r = unsafe { core::ptr::read_volatile(addr as *const u8) };
-    unsafe { core::ptr::write_volatile(addr as *mut _, r & !unmask) }
+    unsafe { core::ptr::write_volatile(addr as *mut u8, r & !unmask) }
 }
