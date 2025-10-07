@@ -1,6 +1,6 @@
-#define HETIC_BASE 0x00009000
+#define HETIC_BASE 0x00001000
 
-#define UART_BASE 0x0000A000
+#define UART_BASE 0x00002000
 #define UART_RBR              UART_BASE + 0
 #define UART_THR              UART_BASE + 0
 #define UART_INTERRUPT_ENABLE UART_BASE + 4
@@ -13,7 +13,7 @@
 #define UART_DLAB_LSB         UART_BASE + 0
 #define UART_DLAB_MSB         UART_BASE + 4
 
-#define MTIMER_BASE 0x0000A100
+#define MTIMER_BASE 0x00002100
 #define MTIMER_TIME_LO  MTIMER_BASE + 0
 #define MTIMER_TIME_HI  MTIMER_BASE + 4
 #define MTIMER_CMP_LO   MTIMER_BASE + 8
