@@ -16,7 +16,7 @@ CFLAGS           = -I$(shell bender path vbench)/src
 
 LOAD            ?= READMEM
 
-IMEM_WORDS       = 4096
+IMEM_WORDS       = 5120
 DMEM_START       = $(shell echo $$(($(IMEM_WORDS) + 1)))
 
 VDEFS ?= \
