@@ -47,6 +47,7 @@ obi_hetic #(
   .irq_valid_o(irq_valid),
   .irq_id_i   (irq_id_claim),
   .irq_ack_i  (irq_ack),
+  .irq_level_o(irq_level),
   .obi_sbr    (sbr_bus[3])
 );
 

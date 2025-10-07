@@ -13,6 +13,7 @@ module obi_hetic #(
   output logic [IrqWidth-1:0]  irq_id_o,
   input  logic [IrqWidth-1:0]  irq_id_i,
   input  logic                 irq_ack_i,
+  output logic [PrioWidth-1:0] irq_level_o
 );
 
 localparam int unsigned PadWidth = 24-PrioWidth;
@@ -64,7 +65,7 @@ always_ff @(posedge clk_i) begin
   end
 end
 
-always_comb begin : apb_access
+always_comb begin : main_comb
 
   lines_d  = lines_q;
   rdata_d  = rdata_q;
@@ -117,7 +118,12 @@ always_comb begin : apb_access
       lines_d[line_idx].ie   = obi_sbr.wdata[0];
     end
   end : write
-end : apb_access
+
+  // Claim acknowledged interrupt
+  if (irq_ack_i) begin
+    lines_d[irq_id_i].ip = 1'b0;
+  end
+end : main_comb
 
 /*TODO: arb tree */
 
