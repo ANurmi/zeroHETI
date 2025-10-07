@@ -14,6 +14,7 @@ mod ufmt_sprint;
 #[cfg(feature = "ufmt")]
 pub use ufmt;
 
+pub use riscv;
 #[cfg(feature = "rt")]
 pub use riscv_rt as rt;
 
