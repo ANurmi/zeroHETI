@@ -125,7 +125,11 @@ always_comb begin : main_comb
   end
 end : main_comb
 
+// HACK: forward interrupt signal to core at id 0
+assign irq_valid_o = lines_q[3].ie & lines_q[3].ip;
+assign irq_id_o = 3;
+assign irq_level_o = lines_q[3].prio;
+
 /*TODO: arb tree */
 
 endmodule : obi_hetic
-
