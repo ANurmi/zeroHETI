@@ -26,7 +26,7 @@ objdump:
 .PHONY: hex
 hex:
 	$(TOOLCHAIN)objcopy $(BUILD_DIR)/$(TEST).elf -O binary $(BUILD_DIR)/tmp.bin
-	xxd -e $(BUILD_DIR)/tmp.bin $(BUILD_DIR)/tmp.hex
+	xxd -R never -e $(BUILD_DIR)/tmp.bin $(BUILD_DIR)/tmp.hex
 	cut -c 11-45 $(BUILD_DIR)/tmp.hex > $(BUILD_DIR)/tmp_pruned.hex
 	sed -E 's/ /\n/g' $(BUILD_DIR)/tmp_pruned.hex > $(BUILD_DIR)/tmp_align.hex
 
