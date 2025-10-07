@@ -12,6 +12,6 @@ Pull dependencies with `make ips`
 
 Software examples are compiled with `make elf TEST=<testname>`
 
-The Verilator model is compiled with `make verilate`. Supplying `TEST` at this stage will directly load the elf `TEST` into the design through a simulatation backdoor. The simulation is run with `make simv TEST=<testname>`. The default program load is the compile-time preload, but can be overwriten by supplying `LOAD=JTAG`
+The Verilator model is compiled with `make verilate`. Supplying `TEST` at this stage will directly load the elf `TEST` into the design through a simulation backdoor. The simulation is run with `make simv TEST=<testname>`. The default program load is the compile-time preload, but can be overwriten by supplying `LOAD=JTAG`
 
 The targets can be chained into a neat one-liner: `make elf verilate simv TEST=<testname> (LOAD={JTAG})`
