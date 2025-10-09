@@ -4,16 +4,17 @@ module obi_hetic #(
   localparam int unsigned IrqWidth   = $clog2(NrIrqLines),
   localparam int unsigned PrioWidth  = $clog2(NrIrqPrios)
 )(
-  input  logic                 clk_i,
-  input  logic                 rst_ni,
-  OBI_BUS.Subordinate          obi_sbr,
-  output logic                 irq_valid_o,
-  output logic                 irq_heti_o,
-  output logic                 irq_nest_o,
-  output logic [IrqWidth-1:0]  irq_id_o,
-  input  logic [IrqWidth-1:0]  irq_id_i,
-  input  logic                 irq_ack_i,
-  output logic [PrioWidth-1:0] irq_level_o
+  input  logic                  clk_i,
+  input  logic                  rst_ni,
+  OBI_BUS.Subordinate           obi_sbr,
+  input  logic [NrIrqLines-1:0] ext_irqs_i,
+  output logic                  irq_valid_o,
+  output logic                  irq_heti_o,
+  output logic                  irq_nest_o,
+  output logic [IrqWidth-1:0]   irq_id_o,
+  input  logic [IrqWidth-1:0]   irq_id_i,
+  input  logic                  irq_ack_i,
+  output logic [PrioWidth-1:0]  irq_level_o
 );
 
 localparam int unsigned PadWidth = 24-PrioWidth;
@@ -35,13 +36,17 @@ irq_line_t [NrIrqLines-1:0] lines_d, lines_q;
 
 logic be_high;
 
+logic [NrIrqLines-1:0]                trig_type;
+logic [NrIrqLines-1:0]                trig_polarity;
 logic [NrIrqLines-1:0]                valid;
 logic [NrIrqLines-1:0][PrioWidth-1:0] prios;
 
 // Interrupt must be pended and enabled to be valid
 for (genvar i=0;i<NrIrqLines;i++) begin
-  assign valid[i] = lines_q[i].ie & lines_q[i].ip;
-  assign prios[i] = lines_q[i].prio;
+  assign valid[i]         = lines_q[i].ie & lines_q[i].ip;
+  assign prios[i]         = lines_q[i].prio;
+  assign trig_type[i]     = lines_q[i].trig[0];
+  assign trig_polarity[i] = lines_q[i].trig[1];
 end
 
 
@@ -134,6 +139,17 @@ always_comb begin : main_comb
     lines_d[irq_id_i].ip = 1'b0;
   end
 end : main_comb
+
+irq_gateway #(
+  .NrInputs  (NrIrqLines)
+) i_gateway (
+  .clk_i,
+  .rst_ni,
+  .trig_type_i     (trig_type),
+  .trig_polarity_i (trig_polarity),
+  .irqs_i          (ext_irqs_i),
+  .irqs_o          ()
+);
 
 irq_arbiter #(
   .NrInputs  (NrIrqLines),

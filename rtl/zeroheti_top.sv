@@ -12,6 +12,7 @@ module zeroheti_top import zeroheti_pkg::AddrMap; #()(
 
 localparam zeroheti_pkg::core_cfg_t CoreCfg = zeroheti_pkg::DefaultCfg;
 
+localparam int unsigned NrIrqs     = CoreCfg.num_irqs;
 localparam int unsigned ApbWidth   = 32;
 localparam int unsigned DataWidth  = 32;
 localparam int unsigned NrApbPerip = 4;
@@ -21,6 +22,13 @@ APB core_apb ();
 APB demux_apb [NrApbPerip]();
 
 logic [SelWidth-1:0] demux_sel;
+logic   [NrIrqs-1:0] ext_irqs;
+logic                mtime_irq;
+
+always_comb begin : irq_mapping
+  ext_irqs    = '0;
+  ext_irqs[7] = mtime_irq;
+end : irq_mapping
 
 zeroheti_core #(
   .Cfg (CoreCfg)
@@ -33,6 +41,7 @@ zeroheti_core #(
   .jtag_trst_ni,
   .jtag_td_i,
   .jtag_td_o,
+  .ext_irqs_i  (ext_irqs),
   .apb_mgr     (core_apb)
 );
 
@@ -54,29 +63,6 @@ apb_demux_intf #(
   .mst      (demux_apb),
   .select_i (demux_sel)
 );
-
-/*
-apb_hetic #(
-  .NrIrqLines (CoreCfg.num_irqs),
-  .NrIrqPrios (CoreCfg.num_prio)
-) i_hetic (
-  .clk_i,
-  .rst_ni,
-  .penable_i  (demux_apb[0].penable),
-  .pwrite_i   (demux_apb[0].pwrite),
-  .paddr_i    (demux_apb[0].paddr),
-  .psel_i     (demux_apb[0].psel),
-  .pwdata_i   (demux_apb[0].pwdata),
-  .prdata_o   (demux_apb[0].prdata),
-  .pready_o   (demux_apb[0].pready),
-  .pslverr_o  (demux_apb[0].pslverr),
-  .irq_heti_o (irq_heti),
-  .irq_nest_o (/*not used yet),
-  .irq_o      (irq),
-  .irq_id_i   (irq_id),
-  .irq_ack_i  (irq_ack)
-);
-*/
 
 
 `ifdef VERILATOR
@@ -131,7 +117,7 @@ apb_mtimer i_mtimer (
   .prdata_o    (demux_apb[2].prdata),
   .pready_o    (demux_apb[2].pready),
   .pslverr_o   (demux_apb[2].pslverr),
-  .timer_irq_o ()
+  .timer_irq_o (mtime_irq)
 );
 
 //assign demux_apb[0].pready = 1'b1;

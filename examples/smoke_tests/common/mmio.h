@@ -33,3 +33,13 @@ void clear_bit(uint32_t addr, uint8_t pos){
   write_u8(addr, write_val);
 }
 
+// APB bus does not have byte enable, therefore we cannot
+// use code that emits byte or halfword memory operations.
+void set_bit_apb(uint32_t addr, uint8_t pos){
+  uint32_t write_val = read_u32(addr) | ((uint32_t)0x1 << pos);
+  write_u32(addr, write_val);
+}
+void clear_bit_apb(uint32_t addr, uint8_t pos){
+  uint32_t write_val = read_u32(addr) & ~((uint32_t)0x1 << pos);
+  write_u32(addr, write_val);
+}

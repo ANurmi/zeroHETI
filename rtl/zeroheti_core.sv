@@ -3,24 +3,27 @@ module zeroheti_core import zeroheti_pkg::AddrMap; #(
   localparam int unsigned IrqWidth        = $clog2(Cfg.num_irqs),
   localparam int unsigned PrioWidth       = $clog2(Cfg.num_prio)
 )(
-  input  logic                    clk_i,
-  input  logic                    rst_ni,
-  input  logic                    testmode_i,
-  input  logic                    jtag_tck_i,
-  input  logic                    jtag_tms_i,
-  input  logic                    jtag_trst_ni,
-  input  logic                    jtag_td_i,
-  output logic                    jtag_td_o,
-  APB.Master                      apb_mgr
+  input  logic                        clk_i,
+  input  logic                        rst_ni,
+  input  logic                        testmode_i,
+  input  logic                        jtag_tck_i,
+  input  logic                        jtag_tms_i,
+  input  logic                        jtag_trst_ni,
+  input  logic                        jtag_td_i,
+  output logic                        jtag_td_o,
+  input  logic [CoreCfg.num_irqs-1:0] ext_irqs_i,
+  APB.Master                          apb_mgr
 );
 
 localparam int unsigned NumSbrPorts  = 32'd3;
 localparam int unsigned NumMgrPorts  = 32'd6;
 localparam int unsigned NumAddrRules = NumMgrPorts; // works for single, continuous regions
 
-localparam bit [NumSbrPorts-1:0][NumMgrPorts-1:0] Connectivity = '{'{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
-                                                                   '{1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1},
-                                                                   '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}};
+localparam bit [NumSbrPorts-1:0][NumMgrPorts-1:0] Connectivity = '{
+  '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
+  '{1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1},
+  '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}
+};
 /*
 obi_cut_intf i_obi_cut (
   .clk_i,
@@ -28,6 +31,7 @@ obi_cut_intf i_obi_cut (
   .obi_s  (sbr_bus[3]),
   .obi_m  (apb_cut)
 );*/
+
 
 logic irq_heti, irq_ack, irq_valid;
 logic [CoreCfg.num_irqs-1:0] core_irq;
@@ -41,6 +45,7 @@ obi_hetic #(
 ) i_hetic (
   .clk_i,
   .rst_ni,
+  .ext_irqs_i,
   .irq_heti_o (irq_heti),
   .irq_nest_o (/*not used yet*/),
   .irq_id_o   (irq_id),
