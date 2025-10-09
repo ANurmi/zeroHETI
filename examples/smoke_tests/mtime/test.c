@@ -18,11 +18,11 @@ int main() {
   for (int i=0; i<100; i++) asm("nop");
   print_uart("[UART] zeroHETI mtime test\n");
 
-  set_trig_type(7, LEVEL);
-  set_trig_type(7, EDGE);
+  //set_trig_type(7, LEVEL);
+  //set_trig_type(7, EDGE);
 
-  set_trig_pol(7, NEG);
-  set_trig_pol(7, POS);
+  //set_trig_pol(7, NEG);
+  //set_trig_pol(7, POS);
 
   set_mtimer_cmp(50);
   set_mtimer_prescaler(0x1);

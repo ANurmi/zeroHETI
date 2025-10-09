@@ -39,10 +39,13 @@ logic be_high;
 logic [NrIrqLines-1:0]                trig_type;
 logic [NrIrqLines-1:0]                trig_polarity;
 logic [NrIrqLines-1:0]                valid;
+logic [NrIrqLines-1:0]                ip;
+logic [NrIrqLines-1:0]                gated;
 logic [NrIrqLines-1:0][PrioWidth-1:0] prios;
 
 // Interrupt must be pended and enabled to be valid
 for (genvar i=0;i<NrIrqLines;i++) begin
+  assign ip[i]            = lines_q[i].ip;
   assign valid[i]         = lines_q[i].ie & lines_q[i].ip;
   assign prios[i]         = lines_q[i].prio;
   assign trig_type[i]     = lines_q[i].trig[0];
@@ -84,6 +87,7 @@ always_comb begin : main_comb
 
   lines_d  = lines_q;
   rdata_d  = rdata_q;
+
 
   if (read_event) begin : read
     if (be_high == 0) begin
@@ -134,6 +138,13 @@ always_comb begin : main_comb
     end
   end : write
 
+  // React to external interrupt from gateway
+  if (|gated) begin
+    for(int i=0; i<NrIrqLines; i++) begin
+      if(gated[i]) lines_d[i].ip = 1'b1;
+    end
+  end
+
   // Claim acknowledged interrupt
   if (irq_ack_i) begin
     lines_d[irq_id_i].ip = 1'b0;
@@ -147,8 +158,9 @@ irq_gateway #(
   .rst_ni,
   .trig_type_i     (trig_type),
   .trig_polarity_i (trig_polarity),
+  .ip_i            (ip),
   .irqs_i          (ext_irqs_i),
-  .irqs_o          ()
+  .irqs_o          (gated)
 );
 
 irq_arbiter #(
