@@ -23,6 +23,7 @@ sources:
       - rtl/obi_sram_intf.sv
       - rtl/obi_cut_intf.sv
       - rtl/obi_to_apb_intf.sv
+      - rtl/irq_arbiter.sv
       - rtl/zeroheti_dbg_wrapper.sv
       - rtl/zeroheti_core.sv
       - rtl/zeroheti_top.sv

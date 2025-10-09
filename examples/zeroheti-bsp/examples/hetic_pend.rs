@@ -30,9 +30,18 @@ fn main() -> ! {
 
     sprintln!("[{}]", core::file!());
 
+    set_prio(22, 6);
+    set_ip(22);
+
+    set_prio(17, 1);
+    set_ip(17);
+
     set_prio(3, 8);
     set_ip(3);
+
     set_ie(3);
+    set_ie(22);
+    set_ie(17);
 
     unsafe { riscv::interrupt::enable() };
     for _ in 0..100 {

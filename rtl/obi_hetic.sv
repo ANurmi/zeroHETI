@@ -35,6 +35,16 @@ irq_line_t [NrIrqLines-1:0] lines_d, lines_q;
 
 logic be_high;
 
+logic [NrIrqLines-1:0]                valid;
+logic [NrIrqLines-1:0][PrioWidth-1:0] prios;
+
+// Interrupt must be pended and enabled to be valid
+for (genvar i=0;i<NrIrqLines;i++) begin
+  assign valid[i] = lines_q[i].ie & lines_q[i].ip;
+  assign prios[i] = lines_q[i].prio;
+end
+
+
 logic [31:0] rdata_d, rdata_q;
 logic        rvalid_q;
 
@@ -125,11 +135,16 @@ always_comb begin : main_comb
   end
 end : main_comb
 
-// HACK: forward interrupt signal to core at id 0
-assign irq_valid_o = lines_q[3].ie & lines_q[3].ip;
-assign irq_id_o = 3;
-assign irq_level_o = lines_q[3].prio;
+irq_arbiter #(
+  .NrInputs  (NrIrqLines),
+  .PrioWidth (PrioWidth)
+) i_arb_tree ( 
+  .valid_i (valid),
+  .prio_i  (prios),
+  .prio_o  (irq_level_o),
+  .valid_o (irq_valid_o),
+  .idx_o   (irq_id_o)
+);
 
-/*TODO: arb tree */
 
 endmodule : obi_hetic
