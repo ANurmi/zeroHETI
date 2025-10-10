@@ -20,6 +20,10 @@ verilate:
 simv:
 	$(MAKE) -C verilator simv
 
+.PHONY: fpga
+fpga:
+	@$(MAKE) -C fpga syn --no-print-directory
+
 .PHONY: clean_build
 clean_build:
 	rm -fr build
