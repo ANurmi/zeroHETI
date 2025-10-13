@@ -10,7 +10,7 @@ set FPGA_SIM_DEFINES $::env(FPGA_SIM_DEFINES)
 
 set FREQ_TARGET      $::env(FREQ_TARGET)
 
-set DUT_TOP        zeroheti_top
+set DUT_TOP        zeroheti_pynq
 
 source ${FPGA_TCL_DIR}/common.tcl
 source ${FPGA_TCL_DIR}/pynq-z1.tcl
