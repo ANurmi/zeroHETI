@@ -79,7 +79,7 @@ function sel_e arbitrate(
   logic valid_a, 
   logic valid_b, 
   logic [PrioWidth-1:0] prio_a, 
-  logic [PrioWidth-1:0] prio_b, 
+  logic [PrioWidth-1:0] prio_b 
 );
   sel_e sel;
   sel = SEL_A;
