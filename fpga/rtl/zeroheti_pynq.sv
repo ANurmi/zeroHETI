@@ -25,15 +25,15 @@ top_clock i_top_clock (
 );
 
 zeroheti_top (
-  clk_i     (top_clk),
-  rst_ni    (zh_rstn),
-  jtag_tck_i,
-  jtag_tms_i,
-  jtag_trst_ni,
-  jtag_td_i,
-  jtag_td_o,
-  uart_rx_i,
-  uart_tx_o
+  .clk_i     (top_clk),
+  .rst_ni    (zh_rstn),
+  .jtag_tck_i,
+  .jtag_tms_i,
+  .jtag_trst_ni,
+  .jtag_td_i,
+  .jtag_td_o,
+  .uart_rx_i,
+  .uart_tx_o
 );
 
 endmodule : zeroheti_pynq

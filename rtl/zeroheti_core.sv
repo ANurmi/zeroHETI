@@ -3,16 +3,16 @@ module zeroheti_core import zeroheti_pkg::AddrMap; #(
   localparam int unsigned IrqWidth        = $clog2(Cfg.num_irqs),
   localparam int unsigned PrioWidth       = $clog2(Cfg.num_prio)
 )(
-  input  logic                        clk_i,
-  input  logic                        rst_ni,
-  input  logic                        testmode_i,
-  input  logic                        jtag_tck_i,
-  input  logic                        jtag_tms_i,
-  input  logic                        jtag_trst_ni,
-  input  logic                        jtag_td_i,
-  output logic                        jtag_td_o,
-  input  logic [CoreCfg.num_irqs-1:0] ext_irqs_i,
-  APB.Master                          apb_mgr
+  input  logic                    clk_i,
+  input  logic                    rst_ni,
+  input  logic                    testmode_i,
+  input  logic                    jtag_tck_i,
+  input  logic                    jtag_tms_i,
+  input  logic                    jtag_trst_ni,
+  input  logic                    jtag_td_i,
+  output logic                    jtag_td_o,
+  input  logic [Cfg.num_irqs-1:0] ext_irqs_i,
+  APB.Master                      apb_mgr
 );
 
 localparam int unsigned NumSbrPorts  = 32'd3;
@@ -34,10 +34,10 @@ obi_cut_intf i_obi_cut (
 
 
 logic irq_heti, irq_ack, irq_valid;
-logic [CoreCfg.num_irqs-1:0] core_irq;
-logic         [IrqWidth-1:0] irq_id;
-logic        [PrioWidth-1:0] irq_level;
-logic         [IrqWidth-1:0] irq_id_claim;
+logic [Cfg.num_irqs-1:0] core_irq;
+logic     [IrqWidth-1:0] irq_id;
+logic    [PrioWidth-1:0] irq_level;
+logic     [IrqWidth-1:0] irq_id_claim;
 
 obi_hetic #(
   .NrIrqLines (Cfg.num_irqs),
