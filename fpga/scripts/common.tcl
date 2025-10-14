@@ -8,3 +8,6 @@ proc print_file {} {
   puts [info script]
 }
 
+
+set FPGA_BOARD               $::env(FPGA_BOARD)
+set FPGA_BOARD_CONFIG_SCRIPT $::env(FPGA_BOARD_CONFIG_SCRIPT)

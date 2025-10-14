@@ -3,7 +3,7 @@
 
 set FPGA_TCL_DIR     $::env(FPGA_TCL_DIR)
 set FPGA_BUILD_DIR   $::env(FPGA_BUILD_DIR)
-set PROJECT          $::env(PROJECT)
+set PROJECT_NAME     $::env(PROJECT_NAME)
 
 set FPGA_SYN_DEFINES $::env(FPGA_SYN_DEFINES)
 set FPGA_SIM_DEFINES $::env(FPGA_SIM_DEFINES)
@@ -20,7 +20,7 @@ print_file
 puts "\nStarting zeroHETI FPGA flow"
 puts "Target Frequency: ${FREQ_TARGET} MHz\n"
 
-create_project ${PROJECT} ${FPGA_BUILD_DIR} -force -part ${XLNX_PRT_ID}
+create_project ${PROJECT_NAME} ${FPGA_BUILD_DIR} -force -part ${XLNX_PRT_ID}
 set_property board_part ${XLNX_BRD_ID} [current_project]
 
 # auto-detect memory macros

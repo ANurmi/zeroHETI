@@ -1,6 +1,11 @@
-export REPO_DIR        ?= $(PWD)
-export FPGA_BUILD_DIR  ?= $(REPO_DIR)/build/fpga
-export FPGA_TCL_DIR    ?= $(REPO_DIR)/fpga/scripts
+export REPO_DIR                 ?= $(PWD)
+export FPGA_BUILD_DIR           ?= $(REPO_DIR)/build/fpga
+export FPGA_TCL_DIR             ?= $(REPO_DIR)/fpga/scripts
+export FPGA_IP_DIR              ?= $(REPO_DIR)/fpga/ips
+export FPGA_IP_BUILD_DIR        ?= $(FPGA_BUILD_DIR)/ips
+export FPGA_BOARD_CONFIG_SCRIPT ?= $(REPO_DIR)/fpga/scripts/pynq-z1.tcl
+export FPGA_BOARD               ?= PYNQ-Z1
+
 export BOARD_FILES_DIR ?= $(REPO_DIR)/fpga/board_files
 
 export COMMON_CELLS_DIR ?= $(shell bender path common_cells)
@@ -11,8 +16,13 @@ export RTIBEX_DIR       ?= $(shell bender path rt-ibex)
 export REGIF_DIR        ?= $(shell bender path register_interface)
 
 export SRC_FILES       ?= $(shell bender script flist -t fpga -t rtl)
-export PROJECT         ?= zeroHETI
+export PROJECT_NAME    ?= zeroHETI
 export FREQ_TARGET     ?= 25
+
+# List of FPGA IPs used in design !!MAKE SURE THESE ARE SEPARATED BY EXACTLY ONE SPACE!!
+export FPGA_IP_LIST ?= \
+	top_clock
+
 
 # Project synthesis defines
 export FPGA_SYN_DEFINES ?= \
@@ -31,14 +41,22 @@ export FPGA_SIM_DEFINES ?= \
 init:
 	@mkdir -p $(FPGA_BUILD_DIR)
 
+.PHONY: all_ips
+all_ips: init $(FPGA_IP_LIST)
+	@echo "running all_ips recipe"
+
+# call corresponding Makefile for each IP in FPGA_IP_LIST
+$(FPGA_IP_LIST):
+	$(MAKE) -C $(FPGA_IP_DIR)/$@ build_ip IP_PROJECT=$@
+
 .PHONY: clean
 clean:
 	@rm -fr $(FPGA_BUILD_DIR)
 
 .PHONY: syn
-syn: clean init
+syn: clean init all_ips
 	vivado -mode batch -source $(FPGA_TCL_DIR)/run.tcl -notrace \
-	-log $(FPGA_BUILD_DIR)/vivado_$(PROJECT).log \
-	-journal $(FPGA_BUILD_DIR)/vivado_$(PROJECT).jou
+	-log $(FPGA_BUILD_DIR)/vivado_$(PROJECT_NAME).log \
+	-journal $(FPGA_BUILD_DIR)/vivado_$(PROJECT_NAME).jou
 
 
