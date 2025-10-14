@@ -39,3 +39,45 @@ foreach {IP} ${FPGA_IP_LIST} {
 
 # Elaboration 
 synth_design -rtl -sfcu -name rtl_1
+
+# Synthesis
+set_msg_config -id {Timing 38-282} -new_severity {ERROR}
+
+# Configure synthesis strategy
+set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY none [get_runs synth_1];
+# # Use single file compilation unit mode to prevent issues with import pkg::* statements in the codebase
+set_property -name {STEPS.SYNTH_DESIGN.ARGS.MORE OPTIONS} -value -sfcu -objects [get_runs synth_1];
+#
+# # Launch synthesis
+launch_runs synth_1;
+wait_on_run synth_1;
+open_run synth_1 -name netlist_1;
+# # prevents need to run synth again
+set_property needs_refresh false [get_runs synth_1];
+
+# ------------------------------------------------------------------------------
+# Run Place and Route (Implementation)
+# ------------------------------------------------------------------------------
+
+# Configure implementation strategy
+set_property "steps.opt_design.args.directive" "Default" [get_runs impl_1]
+set_property "steps.place_design.args.directive" "Default" [get_runs impl_1]
+set_property "steps.route_design.args.directive" "Default" [get_runs impl_1]
+set_property "steps.phys_opt_design.args.is_enabled" true [get_runs impl_1]
+set_property "steps.phys_opt_design.args.directive" "Default" [get_runs impl_1]
+set_property "steps.post_route_phys_opt_design.args.is_enabled" true [get_runs impl_1]
+set_property "steps.post_route_phys_opt_design.args.directive" "Default" [get_runs impl_1]
+
+# Launch implementation
+launch_runs impl_1 -verbose;
+wait_on_run impl_1
+
+# ------------------------------------------------------------------------------
+# Generate bitstream
+# ------------------------------------------------------------------------------
+
+launch_runs impl_1 -to_step write_bitstream
+wait_on_run impl_1
+#
+open_run impl_1
+

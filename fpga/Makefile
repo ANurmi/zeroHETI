@@ -16,7 +16,7 @@ export AXI_DIR          ?= $(shell bender path axi)
 export RTIBEX_DIR       ?= $(shell bender path rt-ibex)
 export REGIF_DIR        ?= $(shell bender path register_interface)
 
-export SRC_FILES       ?= $(shell bender script flist -t fpga -t rtl)
+export SRC_FILES       ?= $(shell bender script flist -t fpga -t rtl -t tech_cells_generic_exclude_deprecated)
 export PROJECT_NAME    ?= zeroHETI
 export FREQ_TARGET     ?= 25
 

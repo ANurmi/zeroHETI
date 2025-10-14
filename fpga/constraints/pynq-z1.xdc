@@ -26,10 +26,10 @@ set_input_jitter jtag_tck 1.000;
 # Do not time asynchrous IO paths
 set_false_path -from [get_ports rst_i];
 set_false_path -from [get_ports jtag_trst_ni];
-set_false_path -from [get_ports gpio_input_i[*]];
+#set_false_path -from [get_ports gpio_input_i[*]];
 set_false_path -from [get_ports uart_rx_i];
 set_false_path -to   [get_ports uart_tx_o];
-set_false_path -to   [get_ports gpio_output_o[*]];
+#set_false_path -to   [get_ports gpio_output_o[*]];
 
 # Minimize routing delay from IO -> cells by increasing external delay
 set_input_delay  -clock jtag_tck -clock_fall 5.000 [get_ports jtag_td_i];
@@ -40,7 +40,7 @@ set_max_delay -to   [get_ports jtag_td_o]  20.000;
 set_max_delay -from [get_ports jtag_tms_i] 20.000;
 set_max_delay -from [get_ports jtag_td_i]  20.000;
 
-create_generated_clock -source [get_pins i_rt_top/i_peripheral_subsystem/i_clk_div/i_bugce/I0] -divide_by 2 [get_pins i_rt_top/i_peripheral_subsystem/i_clk_div/i_bugce/O]
+#create_generated_clock -source [get_pins i_rt_top/i_peripheral_subsystem/i_clk_div/i_bugce/I0] -divide_by 2 [get_pins i_rt_top/i_peripheral_subsystem/i_clk_div/i_bugce/O]
 
 # Prevent timing analysis between asynchronous clocks which have correctly implement CDC constructs in place
 set_clock_groups -asynchronous \
@@ -73,14 +73,14 @@ set_property -dict { PACKAGE_PIN P18   IOSTANDARD LVCMOS33 } [get_ports uart_rx_
 set_property -dict { PACKAGE_PIN N17   IOSTANDARD LVCMOS33 } [get_ports uart_tx_o ]; #IO_L23P_T3_34 Sch=ck_io[13]
 
 ## GPIO ------------------------------------------------------------------------
-set_property -dict {PACKAGE_PIN D19  IOSTANDARD LVCMOS33} [get_ports gpio_input_i[0]  ]; #IO_L4P_T0_35 Sch=btn[0]
-set_property -dict {PACKAGE_PIN D20  IOSTANDARD LVCMOS33} [get_ports gpio_input_i[1]  ]; #IO_L4N_T0_35 Sch=btn[1]
-set_property -dict {PACKAGE_PIN L20  IOSTANDARD LVCMOS33} [get_ports gpio_input_i[2]  ]; #IO_L9N_T1_DQS_AD3N_35 Sch=btn[2]
-set_property -dict {PACKAGE_PIN L19  IOSTANDARD LVCMOS33} [get_ports gpio_input_i[3]  ]; #IO_L9P_T1_DQS_AD3P_35 Sch=btn[3]
-set_property -dict {PACKAGE_PIN R14  IOSTANDARD LVCMOS33} [get_ports gpio_output_o[0] ]; #IO_L6N_T0_VREF_34 Sch=led[0]
-set_property -dict {PACKAGE_PIN P14  IOSTANDARD LVCMOS33} [get_ports gpio_output_o[1] ]; #IO_L6P_T0_34 Sch=led[1]
-set_property -dict {PACKAGE_PIN N16  IOSTANDARD LVCMOS33} [get_ports gpio_output_o[2] ]; #IO_L21N_T3_DQS_AD14N_35 Sch=led[2]
-set_property -dict {PACKAGE_PIN M14  IOSTANDARD LVCMOS33} [get_ports gpio_output_o[3] ]; #IO_L23P_T3_35 Sch=led[3]
+#set_property -dict {PACKAGE_PIN D19  IOSTANDARD LVCMOS33} [get_ports gpio_input_i[0]  ]; #IO_L4P_T0_35 Sch=btn[0]
+#set_property -dict {PACKAGE_PIN D20  IOSTANDARD LVCMOS33} [get_ports gpio_input_i[1]  ]; #IO_L4N_T0_35 Sch=btn[1]
+#set_property -dict {PACKAGE_PIN L20  IOSTANDARD LVCMOS33} [get_ports gpio_input_i[2]  ]; #IO_L9N_T1_DQS_AD3N_35 Sch=btn[2]
+#set_property -dict {PACKAGE_PIN L19  IOSTANDARD LVCMOS33} [get_ports gpio_input_i[3]  ]; #IO_L9P_T1_DQS_AD3P_35 Sch=btn[3]
+#set_property -dict {PACKAGE_PIN R14  IOSTANDARD LVCMOS33} [get_ports gpio_output_o[0] ]; #IO_L6N_T0_VREF_34 Sch=led[0]
+#set_property -dict {PACKAGE_PIN P14  IOSTANDARD LVCMOS33} [get_ports gpio_output_o[1] ]; #IO_L6P_T0_34 Sch=led[1]
+#set_property -dict {PACKAGE_PIN N16  IOSTANDARD LVCMOS33} [get_ports gpio_output_o[2] ]; #IO_L21N_T3_DQS_AD14N_35 Sch=led[2]
+#set_property -dict {PACKAGE_PIN M14  IOSTANDARD LVCMOS33} [get_ports gpio_output_o[3] ]; #IO_L23P_T3_35 Sch=led[3]
 
 #-------------------------------------------------------------------------------
 # BOARD REFERENCE CONSTRAINTS
