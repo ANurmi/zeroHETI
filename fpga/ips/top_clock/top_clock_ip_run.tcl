@@ -13,47 +13,12 @@ puts "\n---------------------------------------------------------"
 puts "top_clock_ip_run.tcl - Starting..."
 puts "---------------------------------------------------------\n"
 
-# ------------------------------------------------------------------------------
-# Check/set basic variables
-# ------------------------------------------------------------------------------
+source $::env(FPGA_TCL_DIR)/util.tcl
+source $::env(FPGA_TCL_DIR)/env.tcl
 
-# check tcl directory has been defined
-if [info exists ::env(FPGA_TCL_DIR)] {
-    set FPGA_TCL_DIR $::env(FPGA_TCL_DIR);
-} else {
-    puts "ERROR - Variable FPGA_TCL_DIR is not globally defined in Makefile!\n";
-    return 1;
-}
+set IP_PROJECT               $::env(IP_PROJECT)
 
-# check Subsystem project name has been defined
-if [info exists ::env(PROJECT_NAME)] {
-    set PROJECT_NAME $::env(PROJECT_NAME);
-} else {
-    puts "ERROR - Variable PROJECT_NAME is not globally defined in Makefile!\n";
-    return 1;
-}
-
-# check Vivado project name has been defined
-if [info exists ::env(IP_PROJECT)] {
-    set IP_PROJECT $::env(IP_PROJECT);
-} else {
-    puts "ERROR - Variable IP_PROJECT is not globally defined in Makefile!\n";
-    return 1;
-}
-
-
-# check Vivado project name has been defined
-if [info exists ::env(FREQ_TARGET)] {
-    set FREQ_TARGET $::env(FREQ_TARGET);
-} else {
-    puts "ERROR - Variable FREQ_TARGET is not globally defined in Makefile!\n";
-    return 1;
-}
-
-set FPGA_COMMON_SCRIPT ${FPGA_TCL_DIR}/common.tcl
-
-## read in common and board specific variables 
-source ${FPGA_COMMON_SCRIPT}
+# read in common and board specific variables
 source ${FPGA_BOARD_CONFIG_SCRIPT}
 
 # ------------------------------------------------------------------------------

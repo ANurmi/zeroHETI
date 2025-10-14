@@ -4,6 +4,7 @@ export FPGA_TCL_DIR             ?= $(REPO_DIR)/fpga/scripts
 export FPGA_IP_DIR              ?= $(REPO_DIR)/fpga/ips
 export FPGA_IP_BUILD_DIR        ?= $(FPGA_BUILD_DIR)/ips
 export FPGA_BOARD_CONFIG_SCRIPT ?= $(REPO_DIR)/fpga/scripts/pynq-z1.tcl
+export FPGA_CONSTR_DIR          ?= $(REPO_DIR)/fpga/constraints
 export FPGA_BOARD               ?= PYNQ-Z1
 
 export BOARD_FILES_DIR ?= $(REPO_DIR)/fpga/board_files

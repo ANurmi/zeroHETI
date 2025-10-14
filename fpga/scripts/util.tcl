@@ -8,6 +8,11 @@ proc print_file {} {
   puts [info script]
 }
 
-
-set FPGA_BOARD               $::env(FPGA_BOARD)
-set FPGA_BOARD_CONFIG_SCRIPT $::env(FPGA_BOARD_CONFIG_SCRIPT)
+proc set_checked {var} {
+  if [info exists ::env(var)] {
+    set var $::env(var);
+  } else {
+    puts "ERROR - Variable ${var} is not globally defined in Makefile!\n";
+    return 1;
+  }
+}
