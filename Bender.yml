@@ -30,4 +30,5 @@ sources:
       - rtl/zeroheti_top.sv
   - target: fpga
     files:
+      - fpga/rtl/prim_clock_gating.sv
       - fpga/rtl/zeroheti_pynq.sv

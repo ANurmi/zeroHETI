@@ -37,5 +37,5 @@ foreach {IP} ${FPGA_IP_LIST} {
   read_ip ${FPGA_IP_BUILD_DIR}/${IP}/${IP}.srcs/sources_1/ip/${IP}/${IP}.xci;
 }
 
-# Run synthesis
-
+# Elaboration 
+synth_design -rtl -sfcu -name rtl_1
