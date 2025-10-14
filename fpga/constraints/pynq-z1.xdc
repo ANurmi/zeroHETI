@@ -36,9 +36,9 @@ set_input_delay  -clock jtag_tck -clock_fall 5.000 [get_ports jtag_td_i];
 set_input_delay  -clock jtag_tck -clock_fall 5.000 [get_ports jtag_tms_i];
 set_output_delay -clock jtag_tck             5.000 [get_ports jtag_td_o];
 
-set_max_delay -to   [get_ports jtag_td_o]  20.000;
-set_max_delay -from [get_ports jtag_tms_i] 20.000;
-set_max_delay -from [get_ports jtag_td_i]  20.000;
+set_max_delay -to   [get_ports jtag_td_o]  30.000;
+set_max_delay -from [get_ports jtag_tms_i] 30.000;
+set_max_delay -from [get_ports jtag_td_i]  30.000;
 
 #create_generated_clock -source [get_pins i_rt_top/i_peripheral_subsystem/i_clk_div/i_bugce/I0] -divide_by 2 [get_pins i_rt_top/i_peripheral_subsystem/i_clk_div/i_bugce/O]
 
