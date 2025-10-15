@@ -22,7 +22,6 @@ DMEM_START       = $(shell echo $$(($(IMEM_WORDS) + 1)))
 VDEFS ?= \
   +define+VERILATOR=1 \
 	+define+LOAD=$(LOAD) \
-  +define+RVFI \
   +define+COMMON_CELLS_ASSERTS_OFF
 
 VFLAGS           = \
@@ -74,6 +73,7 @@ $(TEST):
 .PHONY: verilate
 verilate: init $(TEST)
 	verilator $(VFLAGS) $(INCLUDES) \
+  +define+RVFI \
 	--top-module $(TOP_MODULE) \
 	$(WAIVER) $(SOURCES)
 
