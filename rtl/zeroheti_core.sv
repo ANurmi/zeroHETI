@@ -32,6 +32,8 @@ obi_cut_intf i_obi_cut (
   .obi_m  (apb_cut)
 );*/
 
+OBI_BUS mgr_bus [NumSbrPorts]();
+OBI_BUS sbr_bus [NumMgrPorts]();
 
 logic irq_heti, irq_ack, irq_valid;
 logic [Cfg.num_irqs-1:0] core_irq;
@@ -78,9 +80,6 @@ localparam addr_map_rule_t [NumAddrRules-1:0] CoreAddrMap = '{
   '{idx: 4, start_addr: AddrMap.uart.base,  end_addr: AddrMap.mtimer.last},
   '{idx: 5, start_addr: AddrMap.ext.base,   end_addr: AddrMap.ext.last}
 };
-
-OBI_BUS mgr_bus [NumSbrPorts]();
-OBI_BUS sbr_bus [NumMgrPorts]();
 
 logic debug_req;
 
