@@ -7,7 +7,7 @@ package:
     - "Antti Nurmi <antti.nurmi@tuni.fi>"
 
 dependencies:
-  rt-ibex: { git: "https://github.com/soc-hub-fi/rt-ibex.git", rev: "073e59c4c56f791aefcdcb2005ae6da2b925faac" }
+  rt-ibex: { git: "https://github.com/soc-hub-fi/rt-ibex.git", rev: "348b3e79cf64a476780003879c3c97f520502db8" }
   riscv-dbg: { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.8.1 }
   apb_uart: { git: "https://github.com/pulp-platform/apb_uart.git", version: 0.2.1 }
   obi: { git: "https://github.com/pulp-platform/obi.git", version: 0.1.7 }
