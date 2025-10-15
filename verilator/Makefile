@@ -61,6 +61,7 @@ clean:
 .PHONY: lint
 lint:
 	verilator --lint-only --top-module $(TOP_MODULE) \
+	+define+SYNTHESIS \
 	$(VDEFS) $(INCLUDES) $(WAIVER) $(SOURCES)
 	@echo "Verilator lint [OK]"
 
