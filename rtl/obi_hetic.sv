@@ -63,7 +63,7 @@ assign read_event     = obi_sbr.req & ~obi_sbr.we;
 assign obi_sbr.gnt    = obi_sbr.req;
 assign obi_sbr.rvalid = rvalid_q;
 assign obi_sbr.rdata  = rdata_q;
-assign oib_sbr.err    = 1'b0;
+assign obi_sbr.err    = 1'b0;
 
 // Assume zero-wait state memory -> rvalid follows req immediately
 always_ff @( posedge clk_i ) begin
