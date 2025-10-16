@@ -75,6 +75,7 @@ localparam addr_map_rule_t [NumAddrRules-1:0] CoreAddrMap = '{
 };
 
 // TODO: add ext port when needed
+assign sbr_bus[5].gnt    = 1'b0;
 assign sbr_bus[5].err    = 1'b0;
 assign sbr_bus[5].rvalid = 1'b0;
 
