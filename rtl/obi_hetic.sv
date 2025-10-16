@@ -175,5 +175,8 @@ irq_arbiter #(
   .idx_o   (irq_id_o)
 );
 
+assign irq_heti_o = lines_q[irq_id_o].heti;
+assign irq_nest_o = lines_q[irq_id_o].nest;
+
 
 endmodule : obi_hetic

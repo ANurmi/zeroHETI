@@ -120,10 +120,12 @@ apb_mtimer i_mtimer (
   .timer_irq_o (mtime_irq)
 );
 
-//assign demux_apb[0].pready = 1'b1;
+assign demux_apb[0].pready  = 1'b1;
+assign demux_apb[0].pslverr = 1'b0;
 //assign demux_apb[1].pready = 1'b1;
 //assign demux_apb[2].pready = 1'b1;
-assign demux_apb[3].pready = 1'b1;
+assign demux_apb[3].pready  = 1'b1;
+assign demux_apb[3].pslverr = 1'b0;
 
 `ifndef SYNTHESIS
 

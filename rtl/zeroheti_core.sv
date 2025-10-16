@@ -74,6 +74,10 @@ localparam addr_map_rule_t [NumAddrRules-1:0] CoreAddrMap = '{
   '{idx: 5, start_addr: AddrMap.ext.base,   end_addr: AddrMap.ext.last}
 };
 
+// TODO: add ext port when needed
+assign sbr_bus[5].err    = 1'b0;
+assign sbr_bus[5].rvalid = 1'b0;
+
 logic debug_req;
 
 always_comb begin : g_core_irq
@@ -186,8 +190,11 @@ ibex_top #(
   .alert_major_bus_o      ()
 );
 
-zeroheti_dbg_wrapper #(
+assign mgr_bus[1].be    = 4'b0;
+assign mgr_bus[1].we    = 1'b0;
+assign mgr_bus[1].wdata = 32'b0;
 
+zeroheti_dbg_wrapper #(
 ) i_debug (
   .clk_i,
   .rst_ni,
