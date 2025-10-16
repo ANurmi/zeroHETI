@@ -65,7 +65,7 @@ apb_demux_intf #(
 );
 
 
-`ifdef VERILATOR
+`ifdef MOCK_UART 
 mock_uart i_mock_uart (
   .clk_i,
   .rst_ni,
@@ -79,7 +79,6 @@ mock_uart i_mock_uart (
   .pslverr_o (demux_apb[1].pslverr)
 );
 `else
-
 apb_uart i_apb_uart (
   .CLK      (clk_i),
   .RSTN     (rst_ni),

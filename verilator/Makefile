@@ -21,6 +21,7 @@ DMEM_START       = $(shell echo $$(($(IMEM_WORDS) + 1)))
 
 VDEFS ?= \
   +define+VERILATOR=1 \
+  +define+MOCK_UART \
 	+define+LOAD=$(LOAD) \
   +define+COMMON_CELLS_ASSERTS_OFF
 
