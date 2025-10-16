@@ -54,6 +54,7 @@ tc_sram #(
 
 assign sbr.gnt    = sbr.req;
 assign sbr.rvalid = rvalid_q;
+assign sbr.err    = 1'b0;
 
 endmodule : obi_sram_intf
 

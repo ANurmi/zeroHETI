@@ -83,5 +83,7 @@ dm_obi_top #(
   .master_other_err_i (1'b0)
 );
 
+assign mem_sbr.err = 1'b0;
+
 endmodule : zeroheti_dbg_wrapper
 

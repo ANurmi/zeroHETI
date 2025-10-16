@@ -24,13 +24,6 @@ localparam bit [NumSbrPorts-1:0][NumMgrPorts-1:0] Connectivity = '{
   '{1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1},
   '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}
 };
-/*
-obi_cut_intf i_obi_cut (
-  .clk_i,
-  .rst_ni,
-  .obi_s  (sbr_bus[3]),
-  .obi_m  (apb_cut)
-);*/
 
 OBI_BUS mgr_bus [NumSbrPorts]();
 OBI_BUS sbr_bus [NumMgrPorts]();
@@ -212,7 +205,8 @@ zeroheti_dbg_wrapper #(
 
 obi_sram_intf #(
   .BaseAddr (AddrMap.imem.base),
-  .NumWords (zeroheti_pkg::ImemWSize)
+  .NumWords (zeroheti_pkg::ImemWSize),
+  .ImplKey  ("zeroheti_lp_sram")
 ) i_imem (
   .clk_i,
   .rst_ni,
@@ -221,7 +215,8 @@ obi_sram_intf #(
 
 obi_sram_intf #(
   .BaseAddr (AddrMap.dmem.base),
-  .NumWords (zeroheti_pkg::DmemWSize)
+  .NumWords (zeroheti_pkg::DmemWSize),
+  .ImplKey  ("zeroheti_lp_sram")
 ) i_dmem (
   .clk_i,
   .rst_ni,
