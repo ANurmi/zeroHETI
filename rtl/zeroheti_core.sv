@@ -205,8 +205,7 @@ zeroheti_dbg_wrapper #(
 
 obi_sram_intf #(
   .BaseAddr (AddrMap.imem.base),
-  .NumWords (zeroheti_pkg::ImemWSize),
-  .ImplKey  ("zeroheti_lp_sram")
+  .NumWords (zeroheti_pkg::ImemWSize)
 ) i_imem (
   .clk_i,
   .rst_ni,
@@ -215,8 +214,7 @@ obi_sram_intf #(
 
 obi_sram_intf #(
   .BaseAddr (AddrMap.dmem.base),
-  .NumWords (zeroheti_pkg::DmemWSize),
-  .ImplKey  ("zeroheti_lp_sram")
+  .NumWords (zeroheti_pkg::DmemWSize)
 ) i_dmem (
   .clk_i,
   .rst_ni,

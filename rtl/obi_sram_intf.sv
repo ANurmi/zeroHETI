@@ -40,7 +40,8 @@ tc_sram #(
   .ByteWidth (ByteWidth),
   .NumPorts  (NumPorts),
   .Latency   (Latency),
-  .SimInit   (SimInit)
+  .SimInit   (SimInit),
+  .ImplKey   ("zeroheti_lp_sram")
 ) i_sram (
   .clk_i,
   .rst_ni,
