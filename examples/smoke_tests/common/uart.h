@@ -1,7 +1,8 @@
 
 void init_uart(uint32_t freq, uint32_t baud){
 
-    uint32_t divisor = 0x700; // need to sort out compiler+div//freq / (baud << 4);
+    // TODO: fix compiler ABI
+    uint32_t divisor = 0x20; //freq / (baud << 4);
 
     write_u8(UART_INTERRUPT_ENABLE, 0x00); // disable uart interrupt
     write_u8(UART_LINE_CONTROL, 0x80);     // Enable DLAB (set baud rate divisor)
