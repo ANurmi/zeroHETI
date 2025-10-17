@@ -10,6 +10,7 @@
 #define POS   0
 #define NEG   1
 
+#define MTIME_IDX 7
 
 int main() {
 
@@ -28,7 +29,11 @@ int main() {
   set_mtimer_prescaler(0x1);
   set_mtimer_prescaler(0x3);
   start_mtimer();
-  for (int i=0; i<100; i++) asm("nop");
   
-  return 0;
+  while(!get_ip(MTIME_IDX)) {
+    print_uart("[UART] polling for mtimer.ip\n");
+  }
+  print_uart("[UART] IRQ 7 pended by machine timer (mtimer)\n");
+  
+return 0;
 }

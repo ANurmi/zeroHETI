@@ -13,11 +13,17 @@
 void set_ip(uint8_t idx) {
   set_bit(HETIC_BASE + LINE_SIZE*idx, IP_OFFSET);
 }
+uint8_t get_ip(uint8_t idx) {
+  return read_u8(HETIC_BASE + LINE_SIZE*idx) & (1 << IP_OFFSET);
+}
 void clear_ip(uint8_t idx) {
   clear_bit(HETIC_BASE + LINE_SIZE*idx, IP_OFFSET);
 }
 void set_ie(uint8_t idx) {
   set_bit(HETIC_BASE + LINE_SIZE*idx, IE_OFFSET);
+}
+uint8_t get_ie(uint8_t idx) {
+  return read_u8(HETIC_BASE + LINE_SIZE*idx) & (1 << IE_OFFSET);
 }
 void clear_ie(uint8_t idx) {
   clear_bit(HETIC_BASE + LINE_SIZE*idx, IE_OFFSET);
