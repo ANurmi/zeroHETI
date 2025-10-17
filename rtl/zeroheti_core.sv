@@ -121,7 +121,7 @@ ibex_top #(
   .RV32M            (ibex_pkg::RV32MNone),
   .RV32B            (ibex_pkg::RV32BNone),
   .WritebackStage   (Cfg.wb_stage),
-  .RegFile          (ibex_pkg::RegFileWindowFF),
+  .RegFile          (ibex_pkg::RegFileFF),
   .ICache           (1'b0),
   .ICacheECC        (1'b0),
   .ICacheScramble   (1'b0),
