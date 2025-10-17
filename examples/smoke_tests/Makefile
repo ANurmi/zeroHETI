@@ -1,5 +1,6 @@
 export BUILD_DIR   =$(CURDIR)/../../build/sw
-export TOOLCHAIN   =riscv32-unknown-elf-
+export XLEN        =32
+export TOOLCHAIN   =riscv$(XLEN)-unknown-elf-
 export RVGCC       =$(TOOLCHAIN)gcc
 # Global defaults, redefine on test-spefic level if needed
 export CRT0        =$(CURDIR)/common/crt0.S
@@ -26,13 +27,14 @@ objdump:
 .PHONY: hex
 hex:
 	$(TOOLCHAIN)objcopy $(BUILD_DIR)/$(TEST).elf -O binary $(BUILD_DIR)/tmp.bin
-	xxd -e $(BUILD_DIR)/tmp.bin $(BUILD_DIR)/tmp.hex
-	cut -c 11-45 $(BUILD_DIR)/tmp.hex > $(BUILD_DIR)/tmp_pruned.hex
-	sed -E 's/ /\n/g' $(BUILD_DIR)/tmp_pruned.hex > $(BUILD_DIR)/tmp_align.hex
+	xxd -ps $(BUILD_DIR)/tmp.bin $(BUILD_DIR)/tmp.hex
+	tr -d '\n' < $(BUILD_DIR)/tmp.hex > $(BUILD_DIR)/tmp_nl.hex
+	sed -r 's/(.{8})/\1\n/g' < $(BUILD_DIR)/tmp_nl.hex > $(BUILD_DIR)/tmp_be.hex
+	sed -E 's/(..)(..)(..)(..)/\4\3\2\1/' < $(BUILD_DIR)/tmp_be.hex > $(BUILD_DIR)/tmp_le.hex
 
 .PHONY: trim
 trim:
-	head -$(shell wc -w < $(BUILD_DIR)/tmp_align.hex) $(BUILD_DIR)/tmp_align.hex > $(BUILD_DIR)/$(TEST).hex
+	head -$(shell wc -w < $(BUILD_DIR)/tmp_le.hex) $(BUILD_DIR)/tmp_le.hex > $(BUILD_DIR)/$(TEST).hex
 	rm $(BUILD_DIR)/tmp*
 
 .PHONY: test
