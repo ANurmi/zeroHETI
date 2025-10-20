@@ -4,6 +4,7 @@ typedef struct packed {
   bit rve;
   bit bt_alu;
   bit wb_stage;
+  ibex_pkg::rv32m_e mul;
   int unsigned num_irqs;
   int unsigned num_prio;
   int unsigned hart_id;
@@ -14,6 +15,40 @@ localparam core_cfg_t DefaultCfg = '{
   rve       : 1,
   bt_alu    : 0,
   wb_stage  : 0,
+  mul       : ibex_pkg::RV32MNone,
+  num_irqs  : 32,
+  num_prio  : 32,
+  hart_id   : 0,
+  boot_addr : 32'h0800
+};
+
+localparam core_cfg_t EmcCfg = '{
+  rve       : 1,
+  bt_alu    : 1,
+  wb_stage  : 1,
+  mul       : ibex_pkg::RV32MFast,
+  num_irqs  : 32,
+  num_prio  : 32,
+  hart_id   : 0,
+  boot_addr : 32'h0800
+};
+
+localparam core_cfg_t IcCfg = '{
+  rve       : 0,
+  bt_alu    : 0,
+  wb_stage  : 0,
+  mul       : ibex_pkg::RV32MNone,
+  num_irqs  : 32,
+  num_prio  : 32,
+  hart_id   : 0,
+  boot_addr : 32'h0800
+};
+
+localparam core_cfg_t ImcCfg = '{
+  rve       : 0,
+  bt_alu    : 1,
+  wb_stage  : 1,
+  mul       : ibex_pkg::RV32MSingleCycle,
   num_irqs  : 32,
   num_prio  : 32,
   hart_id   : 0,

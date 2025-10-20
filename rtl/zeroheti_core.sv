@@ -118,7 +118,7 @@ ibex_top #(
   .MHPMCounterNum   (0),
   .MHPMCounterWidth (40),
   .RV32E            (Cfg.rve),
-  .RV32M            (ibex_pkg::RV32MNone),
+  .RV32M            (Cfg.mul),
   .RV32B            (ibex_pkg::RV32BNone),
   .WritebackStage   (Cfg.wb_stage),
   .RegFile          (ibex_pkg::RegFileFF),
