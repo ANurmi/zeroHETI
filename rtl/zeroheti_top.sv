@@ -1,4 +1,6 @@
-module zeroheti_top import zeroheti_pkg::AddrMap; #()(
+module zeroheti_top import zeroheti_pkg::AddrMap; #(
+  parameter zeroheti_pkg::core_cfg_t CoreCfg = zeroheti_pkg::DefaultCfg
+)(
   input  logic clk_i,
   input  logic rst_ni,
   input  logic jtag_tck_i,
@@ -9,8 +11,6 @@ module zeroheti_top import zeroheti_pkg::AddrMap; #()(
   input  logic uart_rx_i,
   output logic uart_tx_o
 );
-
-localparam zeroheti_pkg::core_cfg_t CoreCfg = zeroheti_pkg::DefaultCfg;
 
 localparam int unsigned NrIrqs     = CoreCfg.num_irqs;
 localparam int unsigned ApbWidth   = 32;
