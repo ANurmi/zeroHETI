@@ -50,3 +50,12 @@ void set_trig_pol(uint8_t idx, uint8_t type) {
 void set_prio (uint8_t idx, uint8_t prio) {
   write_u8(HETIC_BASE + LINE_SIZE*idx + 1, prio);
 }
+
+void interrupts_enable() {
+  asm("csrsi mstatus, 8");
+}
+
+void interrupts_disable() {
+  asm("csrci mstatus, 8");
+}
+
