@@ -4,6 +4,7 @@ pub mod apb_uart;
 #[cfg(feature = "core-fmt")]
 mod core_sprint;
 pub mod hetic;
+pub mod interrupt;
 pub mod mmap;
 pub mod mmio;
 pub mod mtimer;
