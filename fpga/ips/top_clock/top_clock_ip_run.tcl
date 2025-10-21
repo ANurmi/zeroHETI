@@ -59,7 +59,7 @@ create_ip_run \
     [get_files -of_objects [get_fileset sources_1] ${IP_PROJECT}.srcs/sources_1/ip/${IP_PROJECT}/${IP_PROJECT}.xci]
 
 launch_run -jobs 8 ${IP_PROJECT}_synth_1
-wait_on_run ${IP_PROJECT}_synth_1 
+wait_on_run ${IP_PROJECT}_synth_1
 
 puts "\n---------------------------------------------------------"
 puts "top_clock_ip_run.tcl - Complete!"

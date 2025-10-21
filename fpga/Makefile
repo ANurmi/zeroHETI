@@ -30,12 +30,12 @@ export FPGA_SYN_DEFINES ?= \
 	FPGA=1 \
 	SYNTHESIS=1 \
 	COMMON_CELLS_ASSERTS_OFF=1
- 		
+
 # Project simulation defines
 export FPGA_SIM_DEFINES ?= \
  	XSIM=1 \
 	SYNTHESIS=1 \
- 	FPGA=1 
+ 	FPGA=1
 
 
 .PHONY: init
