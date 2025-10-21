@@ -87,6 +87,14 @@ fn main() {
         for ext in &extensions {
             println!("cargo:rustc-cfg=riscv{}", ext);
         }
+
+        // Collect extensions to an environment variable that can be printed from the program
+        println!(
+            "cargo::rustc-env=RISCV_EXTS={}",
+            extensions
+                .iter()
+                .fold(String::new(), |acc, x| acc + &x.to_string())
+        );
     }
 
     println!("cargo:rerun-if-changed=build.rs");
