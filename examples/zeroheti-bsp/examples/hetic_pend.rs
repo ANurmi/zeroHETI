@@ -9,7 +9,7 @@ use zeroheti_bsp::{CPU_FREQ_HZ, apb_uart::ApbUart, asm_delay, hetic::Hetic, rt::
 fn main() -> ! {
     let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
 
-    sprintln!("[{}]", core::file!());
+    sprintln!("[{} ({})]", core::file!(), env!("RISCV_EXTS"));
 
     Hetic::line(22).set_level(6);
     Hetic::line(22).pend();

@@ -2,13 +2,14 @@
 #![no_main]
 #![no_std]
 
-use zeroheti_bsp::{CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, rt::entry};
+use zeroheti_bsp::{CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, rt::entry, sprintln};
 
 #[entry]
 fn main() -> ! {
     let mut serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
 
-    serial.write_str("\r\n");
+    sprintln!("[{} ({})]", core::file!(), env!("RISCV_EXTS"));
+
     serial.write_str("[UART] Hello from mock UART (Rust)!\r\n");
     serial.write_str("[UART] UART_TEST [PASSED]\r\n");
 
