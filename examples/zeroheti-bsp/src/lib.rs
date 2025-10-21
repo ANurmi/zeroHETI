@@ -3,6 +3,7 @@
 pub mod apb_uart;
 #[cfg(feature = "core-fmt")]
 mod core_sprint;
+pub mod hetic;
 pub mod mmap;
 pub mod mmio;
 #[cfg(feature = "panic")]
