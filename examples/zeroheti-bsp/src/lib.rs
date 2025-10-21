@@ -11,6 +11,7 @@ pub mod mtimer;
 pub mod panic;
 pub mod register;
 pub mod tb;
+pub mod timer_group;
 pub mod trap;
 #[cfg(feature = "ufmt")]
 mod ufmt_sprint;
