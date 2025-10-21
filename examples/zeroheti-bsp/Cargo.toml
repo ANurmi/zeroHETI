@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 embedded-io = "0.7.1"
+fugit = "0.3.7"
 riscv = "0.15.0"
 # riscv-rt 0.16.0 depends on 0.15.0
 riscv-rt = { version = "0.16.0", features = ["single-hart", "v-trap", "no-interrupts"], optional = true }

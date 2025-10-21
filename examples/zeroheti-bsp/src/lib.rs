@@ -6,6 +6,7 @@ mod core_sprint;
 pub mod hetic;
 pub mod mmap;
 pub mod mmio;
+pub mod mtimer;
 #[cfg(feature = "panic")]
 pub mod panic;
 pub mod register;
