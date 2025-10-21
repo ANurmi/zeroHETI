@@ -11,7 +11,7 @@ source $::env(FPGA_TCL_DIR)/pynq-z1.tcl
 # Create project
 print_file
 puts "\nStarting zeroHETI FPGA flow"
-puts "Target Frequency: ${FREQ_TARGET} MHz\n"
+puts "Target Frequency: ${FREQ_TARGET_MHZ} MHz\n"
 
 create_project ${PROJECT_NAME} ${FPGA_BUILD_DIR} -force -part ${XLNX_PRT_ID}
 set_property board_part ${XLNX_BRD_ID} [current_project]
@@ -37,7 +37,7 @@ foreach {IP} ${FPGA_IP_LIST} {
   read_ip ${FPGA_IP_BUILD_DIR}/${IP}/${IP}.srcs/sources_1/ip/${IP}/${IP}.xci;
 }
 
-# Elaboration 
+# Elaboration
 synth_design -rtl -sfcu -name rtl_1
 
 # Synthesis

@@ -5,7 +5,7 @@ set FPGA_BUILD_DIR           $::env(FPGA_BUILD_DIR)
 set PROJECT_NAME             $::env(PROJECT_NAME)
 set FPGA_SYN_DEFINES         $::env(FPGA_SYN_DEFINES)
 set FPGA_SIM_DEFINES         $::env(FPGA_SIM_DEFINES)
-set FREQ_TARGET              $::env(FREQ_TARGET)
+set FREQ_TARGET_MHZ              $::env(FREQ_TARGET_MHZ)
 set FPGA_IP_LIST             $::env(FPGA_IP_LIST)
 set FPGA_IP_BUILD_DIR        $::env(FPGA_IP_BUILD_DIR)
 set FPGA_CONSTRAINT          $::env(FPGA_CONSTR_DIR)/pynq-z1.xdc
