@@ -1,5 +1,9 @@
 //! Basic MMIO operations
 
+// We trust users of MMIO to use these functions responsibly ('allow' can and should be removed
+// eventually)
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
+
 /// # Safety
 ///
 /// Unaligned reads may fail to produce expected results on rt-ss.

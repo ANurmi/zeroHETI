@@ -34,37 +34,29 @@ impl HeticIrqLine {
         unsafe { mmio::write_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << IP_OFS) };
     }
     pub fn unpend(&mut self) {
-        mmio::unmask_u8(HETIC_BASE + LINE_SIZE * self.idx as usize, 0b1u8 << IP_OFS);
+        mmio::unmask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << IP_OFS);
     }
 
     pub fn enable(&mut self) {
-        mmio::mask_u8(HETIC_BASE + LINE_SIZE * self.idx as usize, 0b1u8 << IE_OFS);
+        mmio::mask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << IE_OFS);
     }
     pub fn disable(&mut self) {
-        mmio::unmask_u8(HETIC_BASE + LINE_SIZE * self.idx as usize, 0b1u8 << IE_OFS);
+        mmio::unmask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << IE_OFS);
     }
 
     /// Set trigger type (edge/level)
     pub fn set_trig(&mut self, trig: Trig) {
         match trig {
-            Trig::Edge => mmio::unmask_u8(
-                HETIC_BASE + LINE_SIZE * self.idx as usize,
-                0b1u8 << TRIG_OFS,
-            ),
-            Trig::Level => mmio::mask_u8(
-                HETIC_BASE + LINE_SIZE * self.idx as usize,
-                0b1u8 << TRIG_OFS,
-            ),
+            Trig::Edge => mmio::unmask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << TRIG_OFS),
+            Trig::Level => mmio::mask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << TRIG_OFS),
         }
     }
 
     /// Set polarity (positive/negative)
     pub fn set_pol(&mut self, pol: Pol) {
         match pol {
-            Pol::Pos => {
-                mmio::unmask_u8(HETIC_BASE + LINE_SIZE * self.idx as usize, 0b1u8 << POL_OFS)
-            }
-            Pol::Neg => mmio::mask_u8(HETIC_BASE + LINE_SIZE * self.idx as usize, 0b1u8 << POL_OFS),
+            Pol::Pos => mmio::unmask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << POL_OFS),
+            Pol::Neg => mmio::mask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << POL_OFS),
         }
     }
 }

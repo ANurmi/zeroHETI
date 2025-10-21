@@ -2,6 +2,9 @@
 //!
 //! Let the tester & the sim know if the test case is ok or fail.
 
+// Empty loops are allowed in RTL testbench even if they "burn CPU cycles"
+#![allow(clippy::empty_loop)]
+
 // The testbench utilities are typically called once per method. Therefore it
 // makes sense to inline most functions to prefer saving on limited stack size.
 

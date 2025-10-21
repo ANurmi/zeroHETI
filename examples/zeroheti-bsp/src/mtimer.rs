@@ -55,8 +55,8 @@ impl MTimer {
     pub fn counter(&self) -> u64 {
         let hi = read_u32(MTIMER_BASE + MTIME_HIGH_ADDR_OFS);
         let lo = read_u32(MTIMER_BASE + MTIME_LOW_ADDR_OFS);
-        let mtime = ((hi as u64) << 32) | lo as u64;
-        mtime
+
+        ((hi as u64) << 32) | lo as u64
     }
 
     #[inline]
@@ -79,7 +79,9 @@ impl MTimer {
 
     /// Gets the timer compare value
     ///
-    /// Safety: needs to be called in an interrupt critical-section, otherwise
+    /// # Safety
+    ///
+    /// Needs to be called in an interrupt critical-section, otherwise
     /// you risk getting interrupted in between reading the hi & low address and
     /// getting a disjoint value
     #[inline]
@@ -160,7 +162,9 @@ impl MTimerLo {
 
     /// Gets the timer compare value
     ///
-    /// Safety: needs to be called in an interrupt critical-section, otherwise
+    /// # Safety
+    ///
+    /// Needs to be called in an interrupt critical-section, otherwise
     /// you risk getting interrupted in between reading the hi & low address and
     /// getting a disjoint value
     #[inline]
@@ -178,7 +182,7 @@ impl MTimerLo {
         // value.
         write_u32(MTIMER_BASE + MTIMECMP_LOW_ADDR_OFS, u32::MAX);
         write_u32(MTIMER_BASE + MTIMECMP_HIGH_ADDR_OFS, 0x0);
-        write_u32(MTIMER_BASE + MTIMECMP_LOW_ADDR_OFS, cmp as u32);
+        write_u32(MTIMER_BASE + MTIMECMP_LOW_ADDR_OFS, cmp);
     }
 }
 
@@ -208,7 +212,9 @@ impl OneShot {
 
     /// Gets the timer compare value
     ///
-    /// Safety: needs to be called in an interrupt critical-section, otherwise
+    /// # Safety
+    ///
+    /// Needs to be called in an interrupt critical-section, otherwise
     /// you risk getting interrupted in between reading the hi & low address and
     /// getting a disjoint value
     #[inline]
