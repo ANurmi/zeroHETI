@@ -22,19 +22,29 @@ pub use riscv_rt as rt;
 
 use core::arch::asm;
 
+#[cfg(not(any(feature = "fpga", feature = "rtl-tb")))]
+compile_error!(
+    "Select exactly one of -Ffpga -Frtl-tb, BSP supports FPGA and RTL testbench implementations only"
+);
+
+#[cfg(all(feature = "fpga", feature = "rtl-tb"))]
+compile_error!("Select exactly one of -Ffpga -Frtl-tb");
+
 #[cfg_attr(feature = "rtl-tb", doc = "100 MHz")]
 pub const CPU_FREQ_HZ: u32 = match () {
     #[cfg(feature = "rtl-tb")]
     () => 100_000_000,
+    #[cfg(feature = "fpga")]
+    () => 25_000_000,
 };
 
 // Experimentally found value for how to adjust for real-time
 const fn nop_mult() -> u32 {
     match () {
         #[cfg(debug_assertions)]
-        () => 60 / 12,
+        () => 60 / 7,
         #[cfg(not(debug_assertions))]
-        () => 60 / 13,
+        () => 60 / 8,
     }
 }
 pub const NOPS_PER_SEC: u32 = CPU_FREQ_HZ / nop_mult();

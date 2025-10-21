@@ -2,7 +2,7 @@
 #![no_main]
 #![no_std]
 
-use zeroheti_bsp::{self as bsp, CPU_FREQ_HZ, apb_uart::ApbUart, asm_delay, rt::entry};
+use zeroheti_bsp::{CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, rt::entry};
 
 #[entry]
 fn main() -> ! {
@@ -13,10 +13,10 @@ fn main() -> ! {
     serial.write_str("[UART] UART_TEST [PASSED]\r\n");
 
     #[cfg(feature = "rtl-tb")]
-    bsp::tb::rtl_tb_signal_ok();
+    zeroheti_bsp::tb::rtl_tb_signal_ok();
 
     loop {
-        asm_delay(1_000_000);
+        asm_delay(NOPS_PER_SEC / 2);
         serial.write_str("[UART] tick\r\n");
     }
 }

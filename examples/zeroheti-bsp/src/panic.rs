@@ -23,6 +23,6 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
             loop {}
         }
         #[cfg(not(feature = "rtl-tb"))]
-        () => tb::blink_panic(),
+        () => crate::tb::blink_panic(),
     }
 }

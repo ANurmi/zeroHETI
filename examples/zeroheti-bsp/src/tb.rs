@@ -111,7 +111,7 @@ pub fn rtl_tb_signal_ok() {
 /// Uses all 4 leds to represent the 4 LSBs of the exception code
 ///
 /// Flashess all leds simultaneously and slowly
-#[export_name = "ExceptionHandler"]
+#[unsafe(export_name = "ExceptionHandler")]
 #[cfg(all(feature = "fpga", feature = "rt"))]
 fn blink_exception(_trap_frame: &riscv_rt::TrapFrame) -> ! {
     use crate::{
