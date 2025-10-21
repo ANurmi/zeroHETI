@@ -18,7 +18,7 @@ export REGIF_DIR        ?= $(shell bender path register_interface)
 
 export SRC_FILES       ?= $(shell bender script flist -t fpga -t rtl -t tech_cells_generic_exclude_deprecated)
 export PROJECT_NAME    ?= zeroHETI
-export FREQ_TARGET     ?= 25
+export FREQ_TARGET_MHZ ?= 25
 
 # List of FPGA IPs used in design !!MAKE SURE THESE ARE SEPARATED BY EXACTLY ONE SPACE!!
 export FPGA_IP_LIST ?= \

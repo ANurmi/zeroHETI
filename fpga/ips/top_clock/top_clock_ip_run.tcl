@@ -26,7 +26,7 @@ source ${FPGA_BOARD_CONFIG_SCRIPT}
 # ------------------------------------------------------------------------------
 
 set INPUT_CLOCK_FREQ_MHZ    ${INPUT_OSC_FREQ_MHZ} ; # input to clocking wizard (read from scripts/<BOARD>.tcl)
-set OUTPUT_CLOCK_1_FREQ_MHZ ${FREQ_TARGET}; # output from clocking wizard
+set OUTPUT_CLOCK_1_FREQ_MHZ ${FREQ_TARGET_MHZ}; # output from clocking wizard
 
 # ------------------------------------------------------------------------------
 # Synthesise IP
