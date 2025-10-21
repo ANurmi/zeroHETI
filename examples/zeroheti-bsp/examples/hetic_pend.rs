@@ -2,27 +2,8 @@
 #![no_main]
 #![no_std]
 
-use riscv::{asm::nop, interrupt::Interrupt};
-use zeroheti_bsp::{
-    self as bsp, CPU_FREQ_HZ, apb_uart::ApbUart, asm_delay, mmap::hetic::*, rt::entry, sprintln,
-};
-
-fn set_ip(idx: u8) {
-    unsafe { bsp::mmio::mask_u8(HETIC_BASE + LINE_SIZE * idx as usize, 0b1u8 << IP_OFS) };
-}
-fn clear_ip(idx: u8) {
-    bsp::mmio::unmask_u8(HETIC_BASE + LINE_SIZE * idx as usize, 0b1u8 << IP_OFS);
-}
-fn set_ie(idx: u8) {
-    bsp::mmio::mask_u8(HETIC_BASE + LINE_SIZE * idx as usize, 0b1u8 << IE_OFS);
-}
-fn clear_ie(idx: u8) {
-    unsafe { bsp::mmio::unmask_u8(HETIC_BASE + LINE_SIZE * idx as usize, 0b1u8 << IE_OFS) };
-}
-
-fn set_prio(idx: u8, prio: u8) {
-    unsafe { bsp::mmio::write_u8(HETIC_BASE + LINE_SIZE * idx as usize + 1, prio) };
-}
+use riscv::{InterruptNumber, asm::nop, interrupt::Interrupt};
+use zeroheti_bsp::{CPU_FREQ_HZ, apb_uart::ApbUart, asm_delay, hetic::Hetic, rt::entry, sprintln};
 
 #[entry]
 fn main() -> ! {
@@ -30,18 +11,18 @@ fn main() -> ! {
 
     sprintln!("[{}]", core::file!());
 
-    set_prio(22, 6);
-    set_ip(22);
+    Hetic::line(22).set_level(6);
+    Hetic::line(22).pend();
 
-    set_prio(17, 1);
-    set_ip(17);
+    Hetic::line(17).set_level(1);
+    Hetic::line(17).pend();
 
-    set_prio(3, 8);
-    set_ip(3);
+    Hetic::line(3).set_level(8);
+    Hetic::line(3).pend();
 
-    set_ie(3);
-    set_ie(22);
-    set_ie(17);
+    Hetic::line(3).enable();
+    Hetic::line(22).enable();
+    Hetic::line(17).enable();
 
     unsafe { riscv::interrupt::enable() };
     for _ in 0..100 {
@@ -49,7 +30,7 @@ fn main() -> ! {
     }
 
     #[cfg(feature = "rtl-tb")]
-    bsp::tb::rtl_tb_signal_ok();
+    zeroheti_bsp::tb::rtl_tb_signal_ok();
 
     loop {
         asm_delay(1_000_000);
@@ -60,7 +41,8 @@ fn main() -> ! {
 #[unsafe(export_name = "DefaultHandler")]
 unsafe fn custom_interrupt_handler() {
     sprintln!(
-        "IRQ: {:#x?}",
-        riscv::register::mcause::read().code() & 0xfff
+        "IRQ: {:#x?} = {:?}",
+        riscv::register::mcause::read().code() & 0xfff,
+        Interrupt::from_number(riscv::register::mcause::read().code() & 0xfff),
     );
 }
