@@ -94,7 +94,7 @@ pub mod mtvt {
     #[inline]
     pub unsafe fn write(addr: usize, mode: TrapMode) {
         let bits = addr + mode as usize;
-        _write(bits);
+        unsafe { _write(bits) };
     }
 
     read_csr_as!(Mtvt, 0x307);
