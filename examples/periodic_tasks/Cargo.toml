@@ -1,0 +1,29 @@
+[package]
+name = "periodic_tasks"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp", features = [
+    "rt",
+] }
+fugit = "0.3.7"
+ufmt = "0.2.0"
+more-asserts = "0.3.1"
+# It is strange that this is needed as a direct dependency; build breaks otherwise
+riscv-rt = { version = "0.16.0", features = ["single-hart", "v-trap", "no-interrupts"] }
+
+[features]
+default = []
+ufmt = ["bsp/ufmt"]
+
+# Use this feature when using cosimulators such as QuestaSim
+rtl-tb = ["bsp/rtl-tb"]
+# Use this feature when deploying on FPGA
+fpga = ["bsp/fpga"]
+
+[profile.dev]
+# There seems to be a problem in riscv-rt with regards to linking in default_start_trap in debug
+# mode. `codegen-units = 1` avoids that
+codegen-units = 1
+opt-level = "s"
