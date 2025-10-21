@@ -7,7 +7,7 @@ edition = "2024"
 embedded-io = "0.7.1"
 riscv = "0.15.0"
 # riscv-rt 0.16.0 depends on 0.15.0
-riscv-rt = { version = "0.16.0", features = ["single-hart", "v-trap", "no-interrupts"] }
+riscv-rt = { version = "0.16.0", features = ["single-hart", "v-trap", "no-interrupts"], optional = true }
 ufmt = { version = "0.2.0", optional = true }
 
 [features]
@@ -17,7 +17,7 @@ ufmt = ["dep:ufmt"]
 rtl-tb = []
 fpga = []
 panic = []
-rt = []
+rt = ["dep:riscv-rt"]
 
 [profile.dev]
 # There seems to be a problem in riscv-rt with regards to linking in default_start_trap in debug
