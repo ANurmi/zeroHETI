@@ -1,7 +1,6 @@
 [toolchain]
 channel = "nightly-2025-10-07"
 targets = [
-    "riscv32ec-unknown-none-elf.json",
-    "riscv32ic-unknown-none-elf.json",
+    # target definitions are supplied as JSON
 ]
 components = ["rust-src", "llvm-tools-preview"]
