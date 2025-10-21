@@ -3,12 +3,10 @@ use crate::apb_uart::ApbUartHal;
 #[macro_export]
 macro_rules! sprint {
     ($s:expr) => {{
-        use core::fmt::Write;
-        core::write!($crate::apb_uart::ApbUartHal::<{ $crate::mmap::uart::UART_BASE }> {}, $s).unwrap()
+        core::fmt::Write::write_fmt(&mut $crate::apb_uart::ApbUartHal::<{ $crate::mmap::uart::UART_BASE }>, format_args!($s)).unwrap()
     }};
     ($($tt:tt)*) => {{
-        use core::fmt::Write;
-        core::write!($crate::apb_uart::ApbUartHal::<{ $crate::mmap::uart::UART_BASE }>, $($tt)*).unwrap()
+        core::fmt::Write::write_fmt(&mut $crate::apb_uart::ApbUartHal::<{ $crate::mmap::uart::UART_BASE }>, format_args!($($tt)*)).unwrap()
     }};
 }
 
