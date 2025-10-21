@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Runs verilator using the ELF supplied as $1
+
 # `-e` exit on non-zero exit status
 # `-u` exit on variable expand failure
 # `-x` echo commands

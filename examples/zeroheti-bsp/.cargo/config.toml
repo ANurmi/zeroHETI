@@ -12,7 +12,7 @@ rustflags = [
     "-C",
     "link-arg=-nostartfiles",
 ]
-runner = "./run-sim.sh"
+runner = "../run-sim.sh"
 
 [target.riscv32ic-unknown-none-elf]
 rustflags = [
@@ -25,7 +25,7 @@ rustflags = [
     "-C",
     "link-arg=-nostartfiles",
 ]
-runner = "./run-sim.sh"
+runner = "../run-sim.sh"
 
 [unstable]
 build-std = ["core"]
