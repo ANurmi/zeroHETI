@@ -127,6 +127,7 @@ assign demux_apb[3].pready  = 1'b1;
 assign demux_apb[3].pslverr = 1'b0;
 
 `ifndef SYNTHESIS
+`ifndef TECH_MEMORY
 
 typedef enum bit {JTAG, READMEM} load_e;
 load_e LoadType;
@@ -144,6 +145,7 @@ initial begin : simulation_loader
   end
 end
 
+`endif
 `endif
 
 
