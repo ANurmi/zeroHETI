@@ -9,3 +9,4 @@ dv/riscv-arch-test
 dv/sail_cSim/__init__.py
 dv/riscof_work
 dv/sail_cSim/__pycache__
+dv/zeroheti/__pycache__
