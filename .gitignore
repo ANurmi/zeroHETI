@@ -5,3 +5,4 @@ Bender.local
 verilator/trace_core_00000000.log
 *.swp
 */.Xil
+dv/riscv-arch-test
