@@ -8,8 +8,8 @@ clone:
 
 .PHONY: rv32e
 rv32e: clone
-	@echo "Hello"
-	riscof run --help
+	riscof run --suite ./riscv-arch-test/riscv-test-suite/rv32e_m/E \
+	--env ./riscv-arch-test/riscv-test-suite/env --config=./config.ini
 
 .PHONY: riscof_all
 riscof_all: rv32e
