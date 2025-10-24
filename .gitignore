@@ -6,3 +6,6 @@ verilator/trace_core_00000000.log
 *.swp
 */.Xil
 dv/riscv-arch-test
+dv/sail_cSim/__init__.py
+dv/riscof_work
+dv/sail_cSim/__pycache__
