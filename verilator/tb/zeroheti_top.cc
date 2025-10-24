@@ -26,6 +26,8 @@ int main(int argc, char** argv) {
     printf("[TB] No TEST specified, exiting..\n\n");
   } else {
 
+    std::cout << "[TB] args: " << argc << std::endl;
+    /*
     const std::string Elf(argv[1]);
     std::cout << "[TB] Looking for ELF: " << Elf << std::endl;
     std::filesystem::path elfpath = std::string("../build/sw/") + Elf + ".elf";
@@ -55,7 +57,7 @@ int main(int argc, char** argv) {
       }
       tb->jtag_wait_eoc();
     }
-  
+  dd*/
   }
 
   delete tb;
