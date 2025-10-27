@@ -44,21 +44,6 @@ int main(int argc, char** argv) {
         break;
     }
   }
-      //if (as_string.substr(0,2) == "--") {
-        // resolve -- flags
-      //} else if (as)
-      /*std::cout << i << ": " << argv[i] << std::endl;
-      // resolve elf
-      if ((argv[i][0] != '+') & (argv[i][0] != '-')) {
-        std::cout << "Resolve elf" << std::endl;
-      }
-
-      if (as_string.substr(0,6) == "--load") {
-        std::cout << "Resolve load" << std::endl;
-      }*/
-
-    // Resolve elf
-
     /*
      * '--isa=rv32imc'
      * '+signature=/<>/riscof_work/src/add-01.S/dut/DUT-zeroheti.signature'
@@ -78,7 +63,8 @@ int main(int argc, char** argv) {
       std::cout << "[TB] ELF path is " << elfpath << std::endl;
       */
 
-    std::filesystem::path elfpath = "./test.elf";
+    //std::filesystem::path elfpath = "./test.elf";
+    std::filesystem::path elfpath = tb->resolve_elf(elf_name);
 
     tb->open_trace("../build/verilator_build/waveform.fst");
 
@@ -90,10 +76,10 @@ int main(int argc, char** argv) {
       tb->jtag_run_elf(elfpath.string());
     } else {
       tb->jtag_halt_hart();
-      std::cout << "[TB] Running elaboration-time preloaded program from entry point in " 
-                //<< elfpath.string()
+      std::cout << "[TB] Running preloaded program from entry point in " 
+                << elfpath.string()
                 << std::endl;
-      tb->jtag_resume_hart_from(0x5000/*tb->get_entry(elfpath.string())*/);
+      tb->jtag_resume_hart_from(tb->get_entry(elfpath.string()));
     }
     tb->jtag_wait_eoc();
   

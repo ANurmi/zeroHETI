@@ -12,7 +12,7 @@ class TbZeroHeti: public Testbench<Vzeroheti_top> {
           printf("\n### zeroHETI on Verilator ###\n\n");
         }
 
-        bool readback_test (uint32_t addr, uint32_t data){
+        /*bool readback_test (uint32_t addr, uint32_t data){
             bool is_ok = true;
             uint32_t ref_data  = data;
             jtag_mm_write(addr, ref_data, 20, false);
@@ -22,6 +22,23 @@ class TbZeroHeti: public Testbench<Vzeroheti_top> {
                 is_ok = false;
             }
             return is_ok;
+        }*/
+
+        std::filesystem::path resolve_elf(std::string elf_name) {
+          std::filesystem::path res = elf_name;
+          if (elf_name.substr(elf_name.size() - 4) != ".elf") {
+            res += ".elf";
+          }
+
+          if (!std::filesystem::exists(res)) {
+            // naive path does not exist, look in build dir
+            if (std::filesystem::exists("../build/sw/" + res.string())) {
+              res = "../build/sw/" + res.string();
+            } else {
+              std::cerr << "ELF not found" << std::endl;
+            }
+          }
+          return res;
         }
 /*
         void didactic_memtest () {
