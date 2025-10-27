@@ -22,27 +22,53 @@ int main(int argc, char** argv) {
   TbZeroHeti* tb = new TbZeroHeti();
   tb->print_logo();
 
-  if (argc <= 2) {
-    printf("[TB] No TEST specified, exiting..\n\n");
-  } else {
-    
-    for (int i=0; i<argc; i++) {
-      std::cout << i << ": " << argv[i] << std::endl;
+  std::string elf_name = "";
+  bool load_is_jtag = false;
 
-
+  // ignore argv[0] (name of executable)
+  for (int i=1; i<argc; i++) {
+    const std::string arg_string(argv[i]);
+    switch (arg_string[0]) {
+      case '-':
+        if (arg_string.substr(0,6) == "--load") {
+          load_is_jtag = (arg_string.substr(6,5) == "=JTAG");
+        } else {
+          std::cout << "[Warning] unresolved - args found" << std::endl;
+        }
+        break;
+      case '+':
+        std::cout << "TODO: + args" << std::endl;
+        break;
+      default:
+        elf_name = arg_string;
+        break;
     }
+  }
+      //if (as_string.substr(0,2) == "--") {
+        // resolve -- flags
+      //} else if (as)
+      /*std::cout << i << ": " << argv[i] << std::endl;
+      // resolve elf
+      if ((argv[i][0] != '+') & (argv[i][0] != '-')) {
+        std::cout << "Resolve elf" << std::endl;
+      }
+
+      if (as_string.substr(0,6) == "--load") {
+        std::cout << "Resolve load" << std::endl;
+      }*/
+
+    // Resolve elf
 
     /*
      * '--isa=rv32imc'
      * '+signature=/<>/riscof_work/src/add-01.S/dut/DUT-zeroheti.signature'
-     * 'signature-granularity=4'
+     * '+signature-granularity=4'
      * 'my.elf'
      *
     const std::string Elf(argv[1]);
     std::cout << "[TB] Looking for ELF: " << Elf << std::endl;
     std::filesystem::path elfpath = std::string("../build/sw/") + Elf + ".elf";
     bool elfPathExists = std::filesystem::exists(elfpath);
-
     const std::string Load(argv[2]);
     std::cout << "[TB] Load: " << Load << std::endl;
     
@@ -51,24 +77,26 @@ int main(int argc, char** argv) {
     } else {
       std::cout << "[TB] ELF path is " << elfpath << std::endl;
       */
-      tb->open_trace("../build/verilator_build/waveform.fst");
 
-      tb->reset();
-      tb->jtag_reset_master();
-      tb->jtag_init();
+    std::filesystem::path elfpath = "./test.elf";
 
-      //if (Load == "JTAG") {
-      //  tb->jtag_run_elf(elfpath.string());
-      //} else {
-        tb->jtag_halt_hart();
-        std::cout << "[TB] Running elaboration-time preloaded program from entry point in " 
-                  //<< elfpath.string()
-                  << std::endl;
-        tb->jtag_resume_hart_from(0x5000/*tb->get_entry(elfpath.string())*/);
-      //}
-      tb->jtag_wait_eoc();
-    //}
-  }
+    tb->open_trace("../build/verilator_build/waveform.fst");
+
+    tb->reset();
+    tb->jtag_reset_master();
+    tb->jtag_init();
+
+    if (load_is_jtag) {
+      tb->jtag_run_elf(elfpath.string());
+    } else {
+      tb->jtag_halt_hart();
+      std::cout << "[TB] Running elaboration-time preloaded program from entry point in " 
+                //<< elfpath.string()
+                << std::endl;
+      tb->jtag_resume_hart_from(0x5000/*tb->get_entry(elfpath.string())*/);
+    }
+    tb->jtag_wait_eoc();
+  
 
   delete tb;
   return 0;
