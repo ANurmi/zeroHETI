@@ -19,7 +19,7 @@ LOAD            ?= READMEM
 IMEM_WORDS       = 5120
 DMEM_START       = $(shell echo $$(($(IMEM_WORDS) + 1)))
 
-ISA              = ec
+ISA              = rv32ec
 
 VDEFS ?= \
   +define+VERILATOR=1 \
@@ -75,13 +75,13 @@ $(TEST):
 	tail -n +$(DMEM_START) $(VERIL_BUILD_DIR)/verilator_stim.hex > $(VERIL_BUILD_DIR)/dmem_stim.hex
 
 .PHONY: verilate
-verilate: init $(TEST)
+verilate: init
 	verilator $(VFLAGS) $(INCLUDES) \
   +define+RVFI \
 	--top-module $(TOP_MODULE) \
 	$(WAIVER) $(SOURCES)
 
 .PHONY: simv
-simv:
+simv: $(TEST)
 	$(VERIL_BUILD_DIR)/obj_dir/V$(TOP_MODULE) $(TEST) $(LOAD)
 

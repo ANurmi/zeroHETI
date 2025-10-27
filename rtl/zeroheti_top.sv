@@ -138,15 +138,17 @@ initial begin : simulation_loader
 
   if (LoadType == READMEM) begin
     @(posedge rst_ni);
-    $display("Initializing program with $readmemh");
-    $display("APPLICABLE TO SIMULATED DESIGNS ONLY");
+    $display("[DUT:SimLoader] Initializing program with $readmemh");
+    $display("[DUT:SimLoader] APPLICABLE TO SIMULATED DESIGNS ONLY");
     $readmemh("../build/verilator_build/imem_stim.hex", i_core.i_imem.i_sram.sram);
     $readmemh("../build/verilator_build/dmem_stim.hex", i_core.i_dmem.i_sram.sram);
   end
 end
 
-final begin : memory_dump
-    $display("Dumping final data memory contents to dmem_dump.hex");
+initial begin : memory_dump
+    @(posedge i_core.i_debug.i_dm_obi_top.i_dm_top.i_dm_csrs.data_q[0][31])
+    $display("[DUT:MemDump] Exit signal received on debug module");
+    $display("[DUT:MemDump] Dumping final data memory contents to dmem_dump.hex");
     $writememh("../build/verilator_build/dmem_dump.hex", i_core.i_dmem.i_sram.sram);
 end
 
