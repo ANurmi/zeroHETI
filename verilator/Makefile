@@ -19,11 +19,14 @@ LOAD            ?= READMEM
 IMEM_WORDS       = 5120
 DMEM_START       = $(shell echo $$(($(IMEM_WORDS) + 1)))
 
+ISA              = ec
+
 VDEFS ?= \
   +define+VERILATOR=1 \
   +define+MOCK_UART \
 	+define+LOAD=$(LOAD) \
-  +define+COMMON_CELLS_ASSERTS_OFF
+  +define+COMMON_CELLS_ASSERTS_OFF \
+	+define+CORE_CFG=$(ISA)Cfg \
 
 VFLAGS           = \
   $(VDEFS) \

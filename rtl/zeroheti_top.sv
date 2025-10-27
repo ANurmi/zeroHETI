@@ -1,5 +1,5 @@
 module zeroheti_top import zeroheti_pkg::AddrMap; #(
-  parameter zeroheti_pkg::core_cfg_t CoreCfg = zeroheti_pkg::DefaultCfg
+  parameter zeroheti_pkg::core_cfg_t CoreCfg = zeroheti_pkg::`CORE_CFG
 )(
   input  logic clk_i,
   input  logic rst_ni,
@@ -143,6 +143,11 @@ initial begin : simulation_loader
     $readmemh("../build/verilator_build/imem_stim.hex", i_core.i_imem.i_sram.sram);
     $readmemh("../build/verilator_build/dmem_stim.hex", i_core.i_dmem.i_sram.sram);
   end
+end
+
+final begin : memory_dump
+    $display("Dumping final data memory contents to dmem_dump.hex");
+    $writememh("../build/verilator_build/dmem_dump.hex", i_core.i_dmem.i_sram.sram);
 end
 
 `endif

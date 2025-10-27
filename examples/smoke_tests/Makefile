@@ -6,7 +6,15 @@ export RVGCC       =$(TOOLCHAIN)gcc
 export CRT0        =$(CURDIR)/common/crt0.S
 export INCLUDE_DIR =-I$(CURDIR)/common
 export LINKER      =$(CURDIR)/common/link.ld
-export ARCH_FLAGS  = -march=rv32ec_zicsr -mabi=ilp32e
+export ISA         = rv32ec
+
+ifeq ($(ISA), rv32ec)
+export EABI        = e
+else ifeq ($(ISA), rv32emc)
+export EABI        = e
+endif
+
+export ARCH_FLAGS  = -march=$(ISA)_zicsr -mabi=ilp32$(EABI)
 export CFLAGS      = -O2 -ffunction-sections -fdata-sections -g -c
 
 .PHONY: init

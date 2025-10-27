@@ -22,12 +22,22 @@ int main(int argc, char** argv) {
   TbZeroHeti* tb = new TbZeroHeti();
   tb->print_logo();
 
-  if (argc == 1) {
+  if (argc <= 2) {
     printf("[TB] No TEST specified, exiting..\n\n");
   } else {
+    
+    for (int i=0; i<argc; i++) {
+      std::cout << i << ": " << argv[i] << std::endl;
 
-    std::cout << "[TB] args: " << argc << std::endl;
+
+    }
+
     /*
+     * '--isa=rv32imc'
+     * '+signature=/<>/riscof_work/src/add-01.S/dut/DUT-zeroheti.signature'
+     * 'signature-granularity=4'
+     * 'my.elf'
+     *
     const std::string Elf(argv[1]);
     std::cout << "[TB] Looking for ELF: " << Elf << std::endl;
     std::filesystem::path elfpath = std::string("../build/sw/") + Elf + ".elf";

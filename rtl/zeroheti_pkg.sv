@@ -11,7 +11,8 @@ typedef struct packed {
   logic [31:0] boot_addr;
 } core_cfg_t;
 
-localparam core_cfg_t DefaultCfg = '{
+
+localparam core_cfg_t rv32ecCfg = '{
   rve       : 1,
   bt_alu    : 0,
   wb_stage  : 0,
@@ -22,7 +23,7 @@ localparam core_cfg_t DefaultCfg = '{
   boot_addr : 32'h0800
 };
 
-localparam core_cfg_t EmcCfg = '{
+localparam core_cfg_t rv32emcCfg = '{
   rve       : 1,
   bt_alu    : 1,
   wb_stage  : 1,
@@ -33,7 +34,7 @@ localparam core_cfg_t EmcCfg = '{
   boot_addr : 32'h0800
 };
 
-localparam core_cfg_t IcCfg = '{
+localparam core_cfg_t rv32icCfg = '{
   rve       : 0,
   bt_alu    : 0,
   wb_stage  : 0,
@@ -44,7 +45,7 @@ localparam core_cfg_t IcCfg = '{
   boot_addr : 32'h0800
 };
 
-localparam core_cfg_t ImcCfg = '{
+localparam core_cfg_t rv32imcCfg = '{
   rve       : 0,
   bt_alu    : 1,
   wb_stage  : 1,
@@ -54,6 +55,8 @@ localparam core_cfg_t ImcCfg = '{
   hart_id   : 0,
   boot_addr : 32'h0800
 };
+
+localparam core_cfg_t DefaultCfg = rv32ecCfg;
 
 typedef struct packed {
   logic [31:0] base;
