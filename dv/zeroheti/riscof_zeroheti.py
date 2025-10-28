@@ -93,11 +93,19 @@ class zeroheti(pluginTemplate):
           test_dir = testentry['work_dir']
           td_parts = test_dir.split("/")
           root_dir = '/'.join(td_parts[:-5])
-          vbuild_dir = root_dir + "/build/verilator_build"
+          build_dir = root_dir + "/build"
+          vbuild_dir = build_dir + "/verilator_build"
+          vstim = vbuild_dir + "/verilator_stim.hex"
+          istim = vbuild_dir + "/imem_stim.hex"
+          dstim = vbuild_dir + "/dmem_stim.hex"
 
-          elf = 'my.elf'
-          testbin = 'my.bin'
-          testhex = 'my.hex'
+          imem_size  = 5120
+          dmem_start = imem_size + 1
+
+          name = "riscv"
+          elf = f'{name}.elf'
+          testbin = f'{name}.bin'
+          testhex = f'{name}.hex'
 
           sig_file = os.path.join(test_dir, self.name[:-1] + ".signature")
 
@@ -109,11 +117,11 @@ class zeroheti(pluginTemplate):
           # substitute all variables in the compile command that we created in the initialize
           # function
           cc_cmd = self.compile_cmd.format(testentry['isa'].lower(), self.xlen, test, elf, compile_macros)
+         
           
-          #objcp_cmd = f'riscv32-unknown-elf-objcopy -O binary {elf} {testbin}'
-
-          #hex_cmd = f'ls {vbuild_dir}'
-          #hex_cmd = '{0}; {1}'.format(objcp_cmd, xxd_cmd)
+          # reuse formating from examples/smoke_tests
+          hex_cmd = f'cp {elf} {build_dir}/sw && cd {root_dir} && make -C examples/smoke_tests hex trim TEST={name}'
+          fmt_cmd = f'cp {build_dir}/sw/{testhex} {vstim} && head -{imem_size} {vstim} > {istim} && tail -n +{dmem_start} {vstim} > {dstim}'
 
 	  # if the user wants to disable running the tests and only compile the tests, then
 	  # the "else" clause is executed below assigning the sim command to simple no action
@@ -124,7 +132,7 @@ class zeroheti(pluginTemplate):
             simcmd = 'echo "NO RUN"'
 
           # concatenate all commands that need to be executed within a make-target.
-          execute = '@cd {0}; {1}; {2}; {3};'.format(testentry['work_dir'], cc_cmd, hex_cmd, simcmd)
+          execute = '@cd {0}; {1}; {2}; {3}; {4};'.format(testentry['work_dir'], cc_cmd, hex_cmd, fmt_cmd, simcmd)
 
           # create a target. The makeutil will create a target with the name "TARGET<num>" where num
           # starts from 0 and increments automatically for each new target that is added
