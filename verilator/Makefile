@@ -1,5 +1,6 @@
-BUILD_DIR       ?= $(realpath $(CURDIR))/../build
-VERIL_DIR       ?= $(realpath $(CURDIR))/../verilator
+ZH_ROOT         ?= $(realpath $(CURDIR))/..
+BUILD_DIR       ?= $(ZH_ROOT)/build
+VERIL_DIR       ?= $(ZH_ROOT)/verilator
 
 TOP_MODULE       = zeroheti_top
 VERIL_TOP        = $(VERIL_DIR)/tb/$(TOP_MODULE).cc
@@ -24,6 +25,7 @@ ISA              = rv32ec
 VDEFS ?= \
   +define+VERILATOR=1 \
   +define+MOCK_UART \
+	+define+ZH_ROOT=$(ZH_ROOT) \
 	+define+LOAD=$(LOAD) \
   +define+COMMON_CELLS_ASSERTS_OFF \
 	+define+CORE_CFG=$(ISA)Cfg \
