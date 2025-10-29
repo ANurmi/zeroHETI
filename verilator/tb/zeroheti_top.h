@@ -3,6 +3,8 @@
 #include "Vzeroheti_top.h"
 #include "Testbench.h"
 
+#define STRING(s) #s
+
 // Add platform-specific overrides in this file
 class TbZeroHeti: public Testbench<Vzeroheti_top> {
 
@@ -32,10 +34,11 @@ class TbZeroHeti: public Testbench<Vzeroheti_top> {
 
           if (!std::filesystem::exists(res)) {
             // naive path does not exist, look in build dir
-            if (std::filesystem::exists("../build/sw/" + res.string())) {
+            if (std::filesystem::exists( std::string(STRING(ZH_ROOT)) + "build/sw/" + res.string())) {
               res = "../build/sw/" + res.string();
             } else {
               std::cerr << "ELF not found" << std::endl;
+              std::exit(EXIT_FAILURE);
             }
           }
           return res;

@@ -45,7 +45,7 @@ VFLAGS           = \
   --hierarchical \
   --exe $(VERIL_TOP) \
   --build \
-   -CFLAGS "-I$(VBENCH)/src" \
+   -CFLAGS "-I$(VBENCH)/src -DZH_ROOT=$(ZH_ROOT)" \
   --Mdir $(VERIL_BUILD_DIR)/obj_dir \
    -j `nproc` \
 
