@@ -1,0 +1,3 @@
+[submodule "examples/mrtic"]
+	path = examples/mrtic
+	url = ssh://git@github.com/hegza/rtic-mc-experiments
