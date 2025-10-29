@@ -17,7 +17,10 @@ CFLAGS           = -I$(shell bender path vbench)/src
 
 LOAD            ?= READMEM
 
-IMEM_WORDS       = 5120
+IMEM_BYTES       = 8192
+DMEM_BYTES       = 4096
+
+IMEM_WORDS       = $(shell echo $$(($(IMEM_BYTES) / 4)))
 DMEM_START       = $(shell echo $$(($(IMEM_WORDS) + 1)))
 
 ISA              = rv32ec
@@ -26,6 +29,8 @@ VDEFS ?= \
   +define+VERILATOR=1 \
   +define+MOCK_UART \
 	+define+ZH_ROOT=$(ZH_ROOT) \
+	+define+IMEM_BYTES=$(IMEM_BYTES) \
+	+define+DMEM_BYTES=$(DMEM_BYTES) \
 	+define+LOAD=$(LOAD) \
   +define+COMMON_CELLS_ASSERTS_OFF \
 	+define+CORE_CFG=$(ISA)Cfg \

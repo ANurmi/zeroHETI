@@ -73,17 +73,18 @@ typedef struct packed {
   addr_rule_t ext;
 } addr_map_t;
 
+localparam int unsigned ImemSize = `IMEM_BYTES;
+localparam int unsigned DmemSize = `DMEM_BYTES;
+
 localparam addr_rule_t DbgAddr    = '{ base : 32'h0000_0000, last : 32'h0000_1000 };
 localparam addr_rule_t HetIcAddr  = '{ base : 32'h0000_1000, last : 32'h0000_2000 };
 localparam addr_rule_t UartAddr   = '{ base : 32'h0000_2000, last : 32'h0000_2100 };
 localparam addr_rule_t MtimerAddr = '{ base : 32'h0000_2100, last : 32'h0000_2114 };
 localparam addr_rule_t ApbTimerAddr = '{ base : 32'h0000_2200, last : 32'h0000_2240 };
-localparam addr_rule_t ImemAddr   = '{ base : 32'h0000_5000, last : 32'h0000_D000 };
-localparam addr_rule_t DmemAddr   = '{ base : 32'h0000_D000, last : 32'h0001_1000 };
-localparam addr_rule_t ExtAddr    = '{ base : 32'h0002_0000, last : 32'hFFFF_FFFF };
+localparam addr_rule_t ImemAddr   = '{ base : 32'h0001_0000, last : (32'h0001_0000 + ImemWSize) };
+localparam addr_rule_t DmemAddr   = '{ base : 32'h0002_D000, last : (32'h0002_0000 + DmemWSize) };
+localparam addr_rule_t ExtAddr    = '{ base : 32'h0003_0000, last : 32'hFFFF_FFFF };
 
-localparam int unsigned ImemSize = ImemAddr.last - ImemAddr.base;
-localparam int unsigned DmemSize = DmemAddr.last - DmemAddr.base;
 // imem size in words
 localparam int unsigned ImemWSize = ImemSize / 4;
 // dmem size in words
