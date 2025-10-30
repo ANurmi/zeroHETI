@@ -38,7 +38,8 @@ hex:
 	xxd -ps $(BUILD_DIR)/tmp.bin $(BUILD_DIR)/tmp.hex
 	tr -d '\n' < $(BUILD_DIR)/tmp.hex > $(BUILD_DIR)/tmp_nl.hex
 	sed -r 's/(.{8})/\1\n/g' < $(BUILD_DIR)/tmp_nl.hex > $(BUILD_DIR)/tmp_be.hex
-	sed -E 's/(..)(..)(..)(..)/\4\3\2\1/' < $(BUILD_DIR)/tmp_be.hex > $(BUILD_DIR)/tmp_le.hex
+	sed ':a; /^.\{8\}$$/!s/$$/0/; ta' < $(BUILD_DIR)/tmp_be.hex > $(BUILD_DIR)/tmp_be_pad.hex
+	sed -E 's/(..)(..)(..)(..)/\4\3\2\1/' < $(BUILD_DIR)/tmp_be_pad.hex > $(BUILD_DIR)/tmp_le.hex
 
 .PHONY: trim
 trim:

@@ -10,7 +10,7 @@ int main() {
 
   write_serial('\n');
   print_uart("[UART] Hello from zeroHETI!\n");
-  print_uart("[UART] Bottom Text\n");
+  //print_uart("[UART] Bottom Text\n");
   write_serial('\n');
 
   return 0;
