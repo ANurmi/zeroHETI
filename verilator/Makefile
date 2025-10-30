@@ -17,8 +17,8 @@ CFLAGS           = -I$(shell bender path vbench)/src
 
 LOAD            ?= READMEM
 
-IMEM_BYTES       = 8192
-DMEM_BYTES       = 4096
+IMEM_BYTES       = 16384
+DMEM_BYTES       = 8192
 
 # IMEM base 0x1_0000, DMEM base 0x2_0000
 DMEM_REL_OFFS_WORDS = 16385

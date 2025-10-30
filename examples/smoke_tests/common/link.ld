@@ -4,11 +4,11 @@ __DYNAMIC = 0;
 
 MEMORY
 {
-  IMEM (rx ) : ORIGIN = 0x10000, LENGTH = 0x8000
-  DMEM (rwx) : ORIGIN = 0x20000, LENGTH = 0x4000
+  IMEM (rx ) : ORIGIN = 0x10000, LENGTH = 0x4000
+  DMEM (rwx) : ORIGIN = 0x20000, LENGTH = 0x2000
 }
 
-STACK_SIZE = 0x1000;
+STACK_SIZE = 0x800;
 
 REGION_ALIAS("REGION_TEXT", IMEM);
 REGION_ALIAS("REGION_RODATA", DMEM);
@@ -49,9 +49,10 @@ SECTIONS
 
   .stack (NOLOAD) :
   {
-    . = ALIGN(0x1000);
+    . = ALIGN(4);
     stack = . + STACK_SIZE;
   } > REGION_STACK
+  . = ALIGN(4);
 
   _end = . ;
 }
