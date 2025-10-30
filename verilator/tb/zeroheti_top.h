@@ -3,7 +3,8 @@
 #include "Vzeroheti_top.h"
 #include "Testbench.h"
 
-#define STRING(s) #s
+#define xstr(s) str(s)
+#define str(s) #s
 
 // Add platform-specific overrides in this file
 class TbZeroHeti: public Testbench<Vzeroheti_top> {
@@ -14,18 +15,6 @@ class TbZeroHeti: public Testbench<Vzeroheti_top> {
           printf("\n### zeroHETI on Verilator ###\n\n");
         }
 
-        /*bool readback_test (uint32_t addr, uint32_t data){
-            bool is_ok = true;
-            uint32_t ref_data  = data;
-            jtag_mm_write(addr, ref_data, 20, false);
-            uint32_t read_data = jtag_mm_read(addr);
-            if (ref_data != read_data){
-                printf("Readback ERROR! Wrote: %x, read: %x \n", ref_data, read_data);
-                is_ok = false;
-            }
-            return is_ok;
-        }*/
-
         std::filesystem::path resolve_elf(std::string elf_name) {
           std::filesystem::path res = elf_name;
           if (elf_name.substr(elf_name.size() - 4) != ".elf") {
@@ -34,10 +23,15 @@ class TbZeroHeti: public Testbench<Vzeroheti_top> {
 
           if (!std::filesystem::exists(res)) {
             // naive path does not exist, look in build dir
-            if (std::filesystem::exists( std::string(STRING(ZH_ROOT)) + "build/sw/" + res.string())) {
-              res = "../build/sw/" + res.string();
+            std::string repo_root = xstr(ZH_ROOT);
+            std::filesystem::path bd = repo_root + "/build/sw/";
+            std::filesystem::path full_path = bd.string() + res.string();
+            if (std::filesystem::exists( full_path.string())) {
+              res = full_path;
             } else {
-              std::cerr << "ELF not found" << std::endl;
+              std::cerr << "ELF not found! Looked in:" << std::endl
+                        << "1: " << res.string() << std::endl
+                        << "2: " << bd.string() + res.string() << std::endl;
               std::exit(EXIT_FAILURE);
             }
           }

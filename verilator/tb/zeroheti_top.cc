@@ -24,6 +24,7 @@ int main(int argc, char** argv) {
 
   std::string elf_name = "";
   bool load_is_jtag = false;
+  bool elf_given    = false;
 
   // ignore argv[0] (name of executable)
   for (int i=1; i<argc; i++) {
@@ -41,8 +42,15 @@ int main(int argc, char** argv) {
         break;
       default:
         elf_name = arg_string;
+        elf_given = true;
         break;
     }
+  }
+
+  if (!elf_given) {
+    std::cout << "[TB] No elf given, terminating simulation."
+              << std::endl;
+    std::exit(0);
   }
     /*
      * '--isa=rv32imc'

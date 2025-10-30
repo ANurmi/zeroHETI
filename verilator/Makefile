@@ -20,8 +20,11 @@ LOAD            ?= READMEM
 IMEM_BYTES       = 8192
 DMEM_BYTES       = 4096
 
+# IMEM base 0x1_0000, DMEM base 0x2_0000
+DMEM_REL_OFFS_WORDS = 16385
+
 IMEM_WORDS       = $(shell echo $$(($(IMEM_BYTES) / 4)))
-DMEM_START       = $(shell echo $$(($(IMEM_WORDS) + 1)))
+DMEM_START       = $(DMEM_REL_OFFS_WORDS)
 
 ISA              = rv32ec
 
@@ -77,9 +80,9 @@ lint:
 
 .PHONY: $(TEST)
 $(TEST):
-	cp $(BUILD_DIR)/sw/$(TEST).hex $(VERIL_BUILD_DIR)/verilator_stim.hex
-	head -$(IMEM_WORDS)    $(VERIL_BUILD_DIR)/verilator_stim.hex > $(VERIL_BUILD_DIR)/imem_stim.hex
-	tail -n +$(DMEM_START) $(VERIL_BUILD_DIR)/verilator_stim.hex > $(VERIL_BUILD_DIR)/dmem_stim.hex
+	@cp $(BUILD_DIR)/sw/$(TEST).hex $(VERIL_BUILD_DIR)/verilator_stim.hex
+	@head -$(IMEM_WORDS)    $(VERIL_BUILD_DIR)/verilator_stim.hex > $(VERIL_BUILD_DIR)/imem_stim.hex
+	@tail -n +$(DMEM_START) $(VERIL_BUILD_DIR)/verilator_stim.hex > $(VERIL_BUILD_DIR)/dmem_stim.hex
 
 .PHONY: verilate
 verilate: init

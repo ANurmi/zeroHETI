@@ -10,6 +10,12 @@ MEMORY
 
 STACK_SIZE = 0x1000;
 
+REGION_ALIAS("REGION_TEXT", IMEM);
+REGION_ALIAS("REGION_RODATA", DMEM);
+REGION_ALIAS("REGION_DATA", DMEM);
+REGION_ALIAS("REGION_BSS", DMEM);
+REGION_ALIAS("REGION_STACK", DMEM);
+
 SECTIONS
 {
   .text : ALIGN(4)
@@ -18,34 +24,34 @@ SECTIONS
     _stext = .;
     *(.text*)
     _etext = .;
-    *(.rodata*)
     . = ALIGN(4);
-  } > IMEM
+  } > REGION_TEXT
+
+  .rodata : ALIGN(4)
+  {
+    *(.rodata)
+    rodata_end = .;
+    . = ALIGN(4);
+  } > REGION_RODATA
 
   .data : ALIGN(4)
   {
     *(.data*);
     . = ALIGN(4);
-  } > DMEM
-
-  .sdata : ALIGN(4)
-  {
-    *(.sdata*);
-    . = ALIGN(4);
-  } > DMEM
+  } > REGION_DATA
 
   .bss (NOLOAD) :
   {
     *(.bss*)
     *(COMMON)
     . = ALIGN(4);
-  } > DMEM
+  } > REGION_BSS
 
   .stack (NOLOAD) :
   {
-    . = ALIGN(4);
+    . = ALIGN(0x1000);
     stack = . + STACK_SIZE;
-  } > DMEM
+  } > REGION_STACK
 
   _end = . ;
 }
