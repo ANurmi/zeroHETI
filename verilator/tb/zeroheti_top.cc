@@ -57,21 +57,8 @@ int main(int argc, char** argv) {
      * '+signature=/<>/riscof_work/src/add-01.S/dut/DUT-zeroheti.signature'
      * '+signature-granularity=4'
      * 'my.elf'
-     *
-    const std::string Elf(argv[1]);
-    std::cout << "[TB] Looking for ELF: " << Elf << std::endl;
-    std::filesystem::path elfpath = std::string("../build/sw/") + Elf + ".elf";
-    bool elfPathExists = std::filesystem::exists(elfpath);
-    const std::string Load(argv[2]);
-    std::cout << "[TB] Load: " << Load << std::endl;
-    
-    if(!elfPathExists) {
-      std::cout << "[TB] ERROR! ELF not found in path " << elfpath << std::endl << std::endl;
-    } else {
-      std::cout << "[TB] ELF path is " << elfpath << std::endl;
-      */
+     */
 
-    //std::filesystem::path elfpath = "./test.elf";
     std::filesystem::path elfpath = tb->resolve_elf(elf_name);
 
     tb->open_trace("../build/verilator_build/waveform.fst");
@@ -89,8 +76,11 @@ int main(int argc, char** argv) {
                 << std::endl;
       tb->jtag_resume_hart_from(tb->get_entry(elfpath.string()));
     }
-    tb->jtag_wait_eoc();
-  
+    if (elf_name == "riscv.elf") {
+      tb->jtag_poll_addr(0x00020000);
+    } else {
+      tb->jtag_wait_eoc();
+    }
 
   delete tb;
   return 0;

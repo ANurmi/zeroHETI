@@ -37,6 +37,17 @@ class TbZeroHeti: public Testbench<Vzeroheti_top> {
           }
           return res;
         }
+
+        void jtag_poll_addr(uint32_t addr) {
+          uint32_t old = jtag_mm_read(addr);
+          printf("[JTAG] Polling for activity on memory - address: 0x%08x, value 0x%08x\n", addr, old);
+          uint32_t updated = 0;
+          while (1){
+            updated = jtag_mm_read(addr);
+            if (updated != old) break;
+          }
+          printf("[JTAG] Detected update on memory      - address: 0x%08X, value 0x%08X\n", addr, updated);
+        }
 /*
         void didactic_memtest () {
 
