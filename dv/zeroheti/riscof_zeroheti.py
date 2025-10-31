@@ -100,7 +100,7 @@ class zeroheti(pluginTemplate):
           dstim = vbuild_dir + "/dmem_stim.hex"
 
           imem_size  = 5120
-          dmem_start = imem_size + 1
+          dmem_start = 16385
 
           name = "riscv"
           elf = f'{name}.elf'
@@ -120,7 +120,7 @@ class zeroheti(pluginTemplate):
          
           
           # reuse formating from examples/smoke_tests
-          hex_cmd = f'cp {elf} {build_dir}/sw && cd {root_dir} && make -C examples/smoke_tests hex trim TEST={name}'
+          hex_cmd = f'mkdir -p {build_dir}/sw && cp {elf} {build_dir}/sw && cd {root_dir} && make -C examples/smoke_tests hex trim TEST={name}'
           fmt_cmd = f'cp {build_dir}/sw/{testhex} {vstim} && head -{imem_size} {vstim} > {istim} && tail -n +{dmem_start} {vstim} > {dstim}'
 
 	  # if the user wants to disable running the tests and only compile the tests, then
