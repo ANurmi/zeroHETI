@@ -76,11 +76,7 @@ int main(int argc, char** argv) {
                 << std::endl;
       tb->jtag_resume_hart_from(tb->get_entry(elfpath.string()));
     }
-    if (elf_name == "riscv.elf") {
-      tb->jtag_poll_addr(0x00020000);
-    } else {
-      tb->jtag_wait_eoc();
-    }
+    tb->jtag_wait_eoc();
 
   delete tb;
   return 0;

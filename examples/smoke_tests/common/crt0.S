@@ -40,6 +40,5 @@ loop:
 default_handler:
   li t0, 0x00000380
   li t1, 0x8BADC0DE
-  or a0, a0, t1
-  sw a0, 0(t0)
+  sw t1, 0(t0)
   wfi

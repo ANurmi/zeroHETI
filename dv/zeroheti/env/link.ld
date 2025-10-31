@@ -11,11 +11,9 @@ SECTIONS
 {
   . = 0x00010000;
   .text.init : { *(.text.init) }
-  . = ALIGN(0x1000);
-  .tohost : { *(.tohost) }
-  . = ALIGN(0x1000);
   .text : { *(.text) }
   . = 0x00020000;
+  .tohost : { *(.tohost) }
   .data : { *(.data) }
   .data.string : { *(.data.string)}
   .bss : { *(.bss) }
