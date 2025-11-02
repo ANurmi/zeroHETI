@@ -148,13 +148,14 @@ initial begin : simulation_loader
   end
 end
 
+/*
 initial begin : memory_dump
     @(posedge i_core.i_debug.i_dm_obi_top.i_dm_top.i_dm_csrs.data_q[0][31])
     $display("[DUT:MemDump] Exit signal received on debug module");
     $display("[DUT:MemDump] Dumping final data memory contents to dmem_dump.hex");
     $writememh({zeroHetiRoot,"/build/verilator_build/dmem_dump.hex"}, i_core.i_dmem.i_sram.sram);
 end
-
+*/
 `endif
 `endif
 
