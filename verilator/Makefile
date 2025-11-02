@@ -3,6 +3,7 @@ BUILD_DIR       ?= $(ZH_ROOT)/build
 VERIL_DIR       ?= $(ZH_ROOT)/verilator
 
 TOP_MODULE       = zeroheti_top
+RV_TOP           = zeroheti_compliance
 VERIL_TOP        = $(VERIL_DIR)/tb/$(TOP_MODULE).cc
 
 VERIL_BUILD_DIR ?= $(BUILD_DIR)/verilator_build
@@ -46,7 +47,6 @@ VFLAGS           = \
   --trace-structs \
   --trace-params \
   --hierarchical \
-  --exe $(VERIL_TOP) \
   --build \
    -CFLAGS "-I$(VBENCH)/src -DZH_ROOT=$(ZH_ROOT)" \
   --Mdir $(VERIL_BUILD_DIR)/obj_dir \
@@ -88,8 +88,17 @@ $(TEST):
 verilate: init
 	verilator $(VFLAGS) $(INCLUDES) \
   +define+RVFI \
+  --exe $(VERIL_TOP) \
 	--top-module $(TOP_MODULE) \
 	$(WAIVER) $(SOURCES)
+
+.PHONY: verilate_compliance
+verilate_compliance: init
+	verilator $(VFLAGS) $(INCLUDES) \
+  +define+RVFI \
+	--top-module $(RV_TOP) \
+	--exe $(VERIL_DIR)/tb/$(RV_TOP).cc \
+	$(WAIVER) $(SOURCES) $(VERIL_DIR)/tb/$(RV_TOP).sv
 
 .PHONY: simv
 simv: $(TEST)
