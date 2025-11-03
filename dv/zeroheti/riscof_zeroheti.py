@@ -28,7 +28,7 @@ class zeroheti(pluginTemplate):
             print("Please enter input file paths in configuration.")
             raise SystemExit(1)
 
-        self.dut_exe = os.getcwd() + "/../build/verilator_build/obj_dir/Vzeroheti_top"
+        self.dut_exe = os.getcwd() + "/../build/verilator_build/obj_dir/Vzeroheti_compliance"
         self.num_jobs = str(config['jobs'] if 'jobs' in config else 1)
         self.pluginpath=os.path.abspath(config['pluginpath'])
         self.isa_spec = os.path.abspath(config['ispec'])

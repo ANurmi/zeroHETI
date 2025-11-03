@@ -97,6 +97,7 @@ verilate_compliance: init
 	verilator $(VFLAGS) $(INCLUDES) \
   +define+RVFI \
 	--top-module $(RV_TOP) \
+	-Wno-UNOPTFLAT \
 	--exe $(VERIL_DIR)/tb/$(RV_TOP).cc \
 	$(WAIVER) $(SOURCES) $(VERIL_DIR)/tb/$(RV_TOP).sv
 
