@@ -40,4 +40,4 @@ jobs:
                       .sv
                   github_token: ${{ secrets.GITHUB_TOKEN }}
                   reviewdog_reporter: github-pr-check
-                  suggest_fixes: "false"
+                  fail_on_error: "true"
