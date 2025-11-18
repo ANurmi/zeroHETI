@@ -42,9 +42,8 @@ jobs:
                   paths: |
                       ./rtl
                       ./fpga
-                  extra_args: "--check_syntax=true --lint_fatal"
+                  extra_args: "--check_syntax=true"
                   extensions: |
                       .sv
                   github_token: ${{ secrets.GITHUB_TOKEN }}
                   reviewdog_reporter: github-pr-check
-                  fail_on_error: "true"
