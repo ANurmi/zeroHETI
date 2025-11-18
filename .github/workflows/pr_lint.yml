@@ -35,6 +35,7 @@ jobs:
                   config_file: ${{ env.verible_config }}
                   paths: |
                       ./rtl
+                      ./fpga
                   extra_args: "--check_syntax=true --lint_fatal"
                   extensions: |
                       .sv
