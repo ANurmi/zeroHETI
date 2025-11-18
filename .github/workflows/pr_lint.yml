@@ -19,6 +19,10 @@ on:
 
 jobs:
     verible-lint:
+        permissions:
+            checks: write
+            contents: read
+            pull-requests: write
         runs-on: ubuntu-latest
         env:
             verible_config: "rules.verible_lint"
