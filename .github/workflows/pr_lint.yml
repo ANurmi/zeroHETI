@@ -28,6 +28,8 @@ jobs:
             verible_config: "rules.verible_lint"
         steps:
             - uses: actions/checkout@v4
+            - run: |
+                  git fetch origin main
             - name: Display Verible config
               run: |
                   echo "::group::Verible config"
