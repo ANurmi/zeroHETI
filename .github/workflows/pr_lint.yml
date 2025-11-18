@@ -35,7 +35,7 @@ jobs:
                   config_file: ${{ env.verible_config }}
                   paths: |
                       ./rtl
-                  extra_args: "--check_syntax=true"
+                  extra_args: "--check_syntax=true --lint_fatal"
                   extensions: |
                       .sv
                   github_token: ${{ secrets.GITHUB_TOKEN }}
