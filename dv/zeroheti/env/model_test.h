@@ -3,9 +3,9 @@
 
 //RV_COMPLIANCE_HALT
 #define RVMODEL_HALT                                              \
-  li x1, 0x00000380;                                                          \
-  li x2, 0x80000000;                                                          \
   write_tohost:                                                               \
+    li x1, 0x00000380;                                                        \
+    li x2, 0x80000000;                                                        \
     sw x2, 0(x1);                                                             \
     j write_tohost;
 

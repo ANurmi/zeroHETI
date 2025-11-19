@@ -121,7 +121,7 @@ class zeroheti(pluginTemplate):
           
           # reuse formating from examples/smoke_tests
           hex_cmd = f'mkdir -p {build_dir}/sw && cp {elf} {build_dir}/sw && cd {root_dir} && make -C examples/smoke_tests hex trim TEST={name}'
-          fmt_cmd = f'cp {build_dir}/sw/{testhex} {vstim} && head -{imem_size} {vstim} > {istim} && tail -n +{dmem_start} {vstim} > {dstim}'
+          #fmt_cmd = f'cp {build_dir}/sw/{testhex} {vstim} && head -{imem_size} {vstim} > {istim} && tail -n +{dmem_start} {vstim} > {dstim}'
 
 	  # if the user wants to disable running the tests and only compile the tests, then
 	  # the "else" clause is executed below assigning the sim command to simple no action
@@ -132,7 +132,7 @@ class zeroheti(pluginTemplate):
             simcmd = 'echo "NO RUN"'
 
           # concatenate all commands that need to be executed within a make-target.
-          execute = '@cd {0}; {1}; {2}; {3}; {4};'.format(testentry['work_dir'], cc_cmd, hex_cmd, fmt_cmd, simcmd)
+          execute = '@cd {0}; {1}; {2}; {3};'.format(testentry['work_dir'], cc_cmd, hex_cmd, simcmd)
 
           # create a target. The makeutil will create a target with the name "TARGET<num>" where num
           # starts from 0 and increments automatically for each new target that is added
