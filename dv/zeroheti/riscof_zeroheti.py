@@ -116,7 +116,7 @@ class zeroheti(pluginTemplate):
 
           # substitute all variables in the compile command that we created in the initialize
           # function
-          cc_cmd = self.compile_cmd.format(testentry['isa'].lower(), self.xlen, test, elf, compile_macros)
+          cc_cmd = self.compile_cmd.format(testentry['isa'].lower()+"_zicsr", self.xlen, test, elf, compile_macros)
          
           
           # reuse formating from examples/smoke_tests
