@@ -12,42 +12,18 @@
 #define JTAGTRSTN jtag_trst_ni
 
 #define IDCODE    0xfeedc0d3
-
-#include "verilated_fst_c.h"
-#include "verilated.h"
-#include "Vzeroheti_compliance.h"
-#include "Testbench.h"
-
 #define xstr(s) str(s)
 #define str(s) #s
 
 const std::string ZhRoot = xstr(ZH_ROOT);
 const std::string Canary = "6f5ca309";
 
-void parse_signature(const std::string sig_path) {
+#include "verilated_fst_c.h"
+#include "verilated.h"
+#include "Vzeroheti_compliance.h"
+#include "zeroheti_compliance.h"
+#include "Testbench.h"
 
-  std::ifstream iFile(ZhRoot+"/build/verilator_build/memdump_tmp.hex");
-  std::ofstream oFile(sig_path);
-
-  std::string line;
-  bool start = false;
-  bool end   = false;
-
-  if (iFile.is_open()){
-    
-    while (getline(iFile,line)){
-      if (line == Canary) {
-        if (!start) start = true;
-        else end = true;
-      }
-      else if (start & !end) {
-        oFile << line + "\n";
-      }
-    }
-    iFile.close();
-    oFile.close();
-  }
-}
 
 int main(int argc, char** argv) {
 
@@ -62,7 +38,12 @@ int main(int argc, char** argv) {
 
   tb->reset();
 
-  while(!tb->m_dut->test_done_o) tb->tick();
+  //while(!tb->m_dut->test_done_o) 
+  tb->tick();
+  tb->tick();
+  tb->tick();
+  tb->tick();
+  
   std::cout << "TODO: parse dump into sig file" << std::endl;
   parse_signature(SigPath);
 
