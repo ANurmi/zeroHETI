@@ -13,6 +13,7 @@ const std::string Canary = "6f5ca309";
 #include "verilated.h"
 #include "Vzeroheti_compliance.h"
 #include "ArchTestDriver.h"
+#include "TbUtils.h"
 
 // Model the memory as a dynamic associative array
 std::unordered_map<uint32_t, uint32_t> mem;
@@ -21,9 +22,15 @@ int main(int argc, char** argv) {
 
   Verilated::commandArgs(argc, argv);
   const std::string TracePath = ZhRoot + "/build/verilator_build/waveform.fst";
-  std::cout << "[TB] Waveform path: " << TracePath << std::endl;
+  std::cout << "[TB:init] Waveform path: " << TracePath << std::endl;
   ArchTestDriver<Vzeroheti_compliance>* drv = new ArchTestDriver<Vzeroheti_compliance>(TracePath);
   
+  // TODO: taket this from argv
+  const std::string ElfPath = "riscv.elf";
+
+  load_memory(ElfPath, mem);
+
+  std::cout << "Test preloading [addr 0x100]:" << mem[0x100] << std::endl;
   // SIMULATION START
   // TODO: taket this from argv
   const std::string SigPath   = ZhRoot + "/build/verilator_build/test.signature";
