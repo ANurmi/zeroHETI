@@ -37,6 +37,13 @@ class ArchTestDriver {
         }
     }
 
+    void drive_instr_memory(void) {
+
+    }
+
+    void drive_data_memory(void) {
+    }
+
   public:
 
     ArchTestDriver(const std::string TracePath) : m_tickcount(0) {
@@ -59,12 +66,16 @@ class ArchTestDriver {
       m_dut->rst_ni = 1;
     }
 
-    void delay(uint32_t cycles) {
+    void delay_cc(uint32_t cycles) {
       for (uint32_t i=0; i<cycles;i++) tick();
     }
 
-
-
+    bool drive() {
+      drive_instr_memory();
+      drive_data_memory();
+      tick();
+      return true;
+    }
 
 };
 
