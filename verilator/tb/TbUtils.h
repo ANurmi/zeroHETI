@@ -29,7 +29,8 @@ uint32_t get_from_offset(std::string input_string, const uint32_t offs ) {
     uint32_t size   = sizeof(T);
     uint32_t result = 0;
     for (int i=size-1; i>=0; i--){
-        result |= ((uint8_t)input_string[offs+i]) << 8*i;
+        printf("byte: %x, addr %x\n", input_string[offs+i], offs+i);
+        result |= input_string[offs+i] << 8*i;
     }
     return result;
 }
@@ -50,6 +51,9 @@ const std::string get_elf(const std::string path){
 }
 
 elf_hdr_t parse_elf_hdr(std::string input_string) {
+    //uint32_t test = get_from_offset<uint32_t>(input_string, 0x1C);
+    //printf("%x\n", test);
+    //std::exit(EXIT_SUCCESS);
 
     elf_hdr_t ehdr;
 
@@ -70,7 +74,6 @@ elf_hdr_t parse_elf_hdr(std::string input_string) {
     ehdr.shnum = get_from_offset<uint16_t>(input_string, 0x30);
     ehdr.shentsize = get_from_offset<uint16_t>(input_string, 0x2E);
     ehdr.shstrndx = get_from_offset<uint16_t>(input_string, 0x32);
-
     return ehdr;
 }
 
@@ -112,9 +115,11 @@ void load_memory(const std::string ElfPath, std::unordered_map<uint32_t, uint32_
     if (p.memsz != 0 & type_load) {
       printf("[TB:init] Writing LOAD section to 0x%08x\n", p.paddr);
       for (int j=0; j<p.filesz; j = j+4) {
+        printf("%x\n", p.offset);
         const uint32_t addr = p.paddr + j;
         const uint32_t data = get_from_offset<uint32_t>(elf_string, p.offset+j);
         mem[addr] = data;
+        printf("Address %08X Data %08X, offs %x \n", addr, data, p.offset+j);
       }
     }
   }

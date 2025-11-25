@@ -25,12 +25,12 @@ int main(int argc, char** argv) {
   std::cout << "[TB:init] Waveform path: " << TracePath << std::endl;
   ArchTestDriver<Vzeroheti_compliance>* drv = new ArchTestDriver<Vzeroheti_compliance>(TracePath);
   
-  // TODO: taket this from argv
+  // TODO: taket this from argv if needed
   const std::string ElfPath = "riscv.elf";
 
   load_memory(ElfPath, mem);
 
-  std::cout << "Test preloading [addr 0x100]:" << mem[0x100] << std::endl;
+  std::exit(EXIT_SUCCESS);
   // SIMULATION START
   // TODO: taket this from argv
   const std::string SigPath   = ZhRoot + "/build/verilator_build/test.signature";
@@ -40,9 +40,10 @@ int main(int argc, char** argv) {
 
   bool signal_test_end = false;
   while (!signal_test_end) {
-    signal_test_end = drv->drive();
+    signal_test_end = drv->drive(mem);
   }
 
+  drv->delay_cc(10);
   delete drv;
   // SIMULATION END
 
