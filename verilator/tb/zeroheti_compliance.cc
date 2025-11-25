@@ -19,20 +19,34 @@ std::unordered_map<uint32_t, uint32_t> mem;
 
 int main(int argc, char** argv) {
 
+  std::string SigPath ="";
+  // ignore argv[0] (name of executable)
+  for (int i=1; i<argc; i++) {
+    const std::string arg_string(argv[i]);
+    switch (arg_string[0]) {
+      case '-':
+        break;
+      case '+':
+        if(arg_string.substr(0,11) == "+signature=") {
+          SigPath = arg_string.substr(11, arg_string.size());
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
   Verilated::commandArgs(argc, argv);
   const std::string TracePath = ZhRoot + "/build/verilator_build/waveform.fst";
   std::cout << "[TB:init] Waveform path: " << TracePath << std::endl;
   ArchTestDriver<Vzeroheti_compliance>* drv = new ArchTestDriver<Vzeroheti_compliance>(TracePath);
   
-  // TODO: taket this from argv if needed
+  // TODO: take this from argv *if* needed
   const std::string ElfPath = "riscv.elf";
 
   load_memory(ElfPath, mem);
   
   // SIMULATION START
-  // TODO: taket this from argv
-  const std::string SigPath   = ZhRoot + "/build/verilator_build/test.signature";
-
   drv->reset();
   drv->delay_cc(10);
   drv->drive(mem);
@@ -40,8 +54,7 @@ int main(int argc, char** argv) {
   delete drv;
   // SIMULATION END
   
-  std::cout << "TODO: parse dump into sig file" << std::endl;
-  std::cout << "[TB:post] Exttracting signature file" << std::endl;
+  std::cout << "[TB:post] Exttracting signature file into " << SigPath << std::endl;
   parse_signature(mem, SigPath);
 
   return 0;

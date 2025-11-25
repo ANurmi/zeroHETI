@@ -118,22 +118,33 @@ void parse_signature(std::unordered_map<uint32_t, uint32_t>& mem, const std::str
   std::ofstream oFile(sig_path);
 
   //std::string line;
-  bool start    = false;
-  bool end      = false;
-  uint32_t addr = 0;
+  bool start         = false;
+  bool end           = false;
+  uint32_t addr      = 0;
+  uint32_t linecount = 0;
 
   while (!end) {
     std::stringstream stream;
     stream << std::setfill ('0') << std::setw(8) << std::hex << mem[addr];
     std::string line( stream.str() );
     if (mem[addr] == CanaryInt) {
+      oFile << line + "\n";
+      linecount++;
       if (!start) start = true;
       else end = true;
     }
     else if (start & !end) {
       oFile << line + "\n";
+      linecount++;
     }
     addr += 4;
   }
+
+  // Match alignment with Sail trace
+  while (linecount % 4 != 0){
+    oFile << "00000000\n";
+    linecount++;
+  }
+
   oFile.close();
 }

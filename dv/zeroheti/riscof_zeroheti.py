@@ -97,7 +97,7 @@ class zeroheti(pluginTemplate):
 
       # if you would like to exit the framework once the makefile generation is complete uncomment the
       # following line. Note this will prevent any signature checking or report generation.
-      raise SystemExit
+      #raise SystemExit
 
       make.execute_all(self.work_dir)
 
