@@ -3,11 +3,10 @@
 #include <filesystem>
 #include <unordered_map>
 
-#define xstr(s) str(s)
-#define str(s) #s
+#define xstr(s) STR(s)
+#define STR(s) #s
 
 const std::string ZhRoot = xstr(ZH_ROOT);
-const std::string Canary = "6f5ca309";
 
 #include "verilated_fst_c.h"
 #include "verilated.h"
@@ -40,9 +39,10 @@ int main(int argc, char** argv) {
 
   delete drv;
   // SIMULATION END
-
+  
   std::cout << "TODO: parse dump into sig file" << std::endl;
-  parse_signature(SigPath);
+  std::cout << "[TB:post] Exttracting signature file" << std::endl;
+  parse_signature(mem, SigPath);
 
   return 0;
 }

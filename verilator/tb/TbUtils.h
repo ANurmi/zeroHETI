@@ -112,27 +112,28 @@ void load_memory(const std::string ElfPath, std::unordered_map<uint32_t, uint32_
   }
 }
 
-void parse_signature(const std::string sig_path) {
+void parse_signature(std::unordered_map<uint32_t, uint32_t>& mem, const std::string sig_path) {
 
-  std::ifstream iFile(ZhRoot+"/build/verilator_build/memdump_tmp.hex");
+  const uint32_t CanaryInt = 0x6f5ca309;
   std::ofstream oFile(sig_path);
 
-  std::string line;
-  bool start = false;
-  bool end   = false;
+  //std::string line;
+  bool start    = false;
+  bool end      = false;
+  uint32_t addr = 0;
 
-  if (iFile.is_open()){
-    
-    while (getline(iFile,line)){
-      if (line == Canary) {
-        if (!start) start = true;
-        else end = true;
-      }
-      else if (start & !end) {
-        oFile << line + "\n";
-      }
+  while (!end) {
+    std::stringstream stream;
+    stream << std::setfill ('0') << std::setw(8) << std::hex << mem[addr];
+    std::string line( stream.str() );
+    if (mem[addr] == CanaryInt) {
+      if (!start) start = true;
+      else end = true;
     }
-    iFile.close();
-    oFile.close();
+    else if (start & !end) {
+      oFile << line + "\n";
+    }
+    addr += 4;
   }
+  oFile.close();
 }
