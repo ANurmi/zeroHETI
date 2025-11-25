@@ -4,6 +4,7 @@ typedef struct {
   bool req;
   uint32_t addr;
   uint32_t wdata;
+  uint8_t be;
 } mem_intf_t;
 
 template <class VA>
@@ -119,13 +120,24 @@ class ArchTestDriver {
         dmem.req             = 1;
         dmem.addr            = m_dut->data_addr_o;
         dmem.wdata           = m_dut->data_wdata_o;
+        dmem.be              = m_dut->data_be_o;
       } else {
         if (dmem.req) {
           m_dut->data_rvalid_i = 1;
           if (!m_dut->data_we_o) {
             m_dut->data_rdata_i  = mem[dmem.addr];
           } else {
-            mem[dmem.addr] = dmem.wdata;
+            uint32_t value = mem[dmem.addr];
+            for (int i=0; i<4; i++) {
+              if (dmem.be & 1 << i) {
+                // clear old bits
+                value &= ~(0xff << i*8);
+                // set new bits
+                uint8_t mask = (uint8_t)(dmem.wdata >> i*8);
+                value |= ((uint32_t) mask) << i*8;
+              }
+            }
+            mem[dmem.addr] = value;
           }
         }
         dmem.req             = 0;

@@ -6,10 +6,10 @@ clone:
 		riscof arch-test --clone; \
 	fi
 
-.PHONY: rv32e
-rv32e: clone
+.PHONY: rv32i_m_I
+rv32i_m_I: clone
 	riscof --verbose info run --suite ./riscv-arch-test/riscv-test-suite/rv32i_m/I \
 	--env ./riscv-arch-test/riscv-test-suite/env --config=./config.ini
 
 .PHONY: riscof_all
-riscof_all: rv32e
+riscof_all: rv32i_m_I
