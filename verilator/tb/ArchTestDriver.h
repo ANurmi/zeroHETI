@@ -36,17 +36,13 @@ class ArchTestDriver {
       for (uint32_t i=0; i<cycles;i++) tick();
     }
 
-    bool drive(std::unordered_map<uint32_t, uint32_t>& mem) {
+    void drive(std::unordered_map<uint32_t, uint32_t>& mem) {
       bool got_exit;
-      for (int i=0; i<10000; i++){
+      while(!check_exit()) {
         drive_instr_obi(mem);
         drive_data_obi(mem);
-        if (check_exit()) got_exit = 1;
-        //got_exit = check_exit();
         tick();
       }
-      std::cout << got_exit << std::endl;
-      return true;
     }
 
   private:
@@ -88,7 +84,10 @@ class ArchTestDriver {
     }
 
     bool check_exit(void) {
-      return m_dut->data_req_o & (m_dut->data_addr_o == 0x380) & m_dut->data_we_o;
+      return m_dut->data_req_o &
+            (m_dut->data_wdata_o == 0x80000000) &
+            (m_dut->data_addr_o  == 0x00000380) &
+             m_dut->data_we_o;
     }
 
     void drive_instr_obi(std::unordered_map<uint32_t, uint32_t>& mem) {
