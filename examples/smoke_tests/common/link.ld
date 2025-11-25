@@ -4,11 +4,17 @@ __DYNAMIC = 0;
 
 MEMORY
 {
-  IMEM (rx ) : ORIGIN = 0x5000, LENGTH = 0x8000
-  DMEM (rwx) : ORIGIN = 0xD000, LENGTH = 0x4000
+  IMEM (rx ) : ORIGIN = 0x10000, LENGTH = 0x4000
+  DMEM (rwx) : ORIGIN = 0x20000, LENGTH = 0x2000
 }
 
-STACK_SIZE = 0x1000;
+STACK_SIZE = 0x800;
+
+REGION_ALIAS("REGION_TEXT", IMEM);
+REGION_ALIAS("REGION_RODATA", DMEM);
+REGION_ALIAS("REGION_DATA", DMEM);
+REGION_ALIAS("REGION_BSS", DMEM);
+REGION_ALIAS("REGION_STACK", DMEM);
 
 SECTIONS
 {
@@ -18,34 +24,29 @@ SECTIONS
     _stext = .;
     *(.text*)
     _etext = .;
-    *(.rodata*)
-    . = ALIGN(4);
-  } > IMEM
+  } > REGION_TEXT
+
+  .rodata : ALIGN(4)
+  {
+    *(.rodata)
+    rodata_end = .;
+  } > REGION_RODATA
 
   .data : ALIGN(4)
   {
     *(.data*);
-    . = ALIGN(4);
-  } > DMEM
-
-  .sdata : ALIGN(4)
-  {
-    *(.sdata*);
-    . = ALIGN(4);
-  } > DMEM
+  } > REGION_DATA
 
   .bss (NOLOAD) :
   {
     *(.bss*)
     *(COMMON)
-    . = ALIGN(4);
-  } > DMEM
+  } > REGION_BSS
 
   .stack (NOLOAD) :
   {
-    . = ALIGN(4);
     stack = . + STACK_SIZE;
-  } > DMEM
+  } > REGION_STACK
 
   _end = . ;
 }

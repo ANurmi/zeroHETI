@@ -16,6 +16,10 @@ vlint:
 verilate:
 	$(MAKE) -C verilator verilate
 
+.PHONY: verilate_compliance
+verilate_compliance:
+	$(MAKE) -C verilator verilate_compliance
+
 .PHONY: simv
 simv:
 	$(MAKE) -C verilator simv

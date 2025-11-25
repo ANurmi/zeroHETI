@@ -3,13 +3,10 @@ ENTRY(rvtest_entry_point)
 
 SECTIONS
 {
-  . = 0x80000000;
+  . = 0x00000100;
   .text.init : { *(.text.init) }
-  . = ALIGN(0x1000);
-  .tohost : { *(.tohost) }
-  . = ALIGN(0x1000);
   .text : { *(.text) }
-  . = ALIGN(0x1000);
+  .tohost : { *(.tohost) }
   .data : { *(.data) }
   .data.string : { *(.data.string)}
   .bss : { *(.bss) }

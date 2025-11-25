@@ -22,41 +22,61 @@ int main(int argc, char** argv) {
   TbZeroHeti* tb = new TbZeroHeti();
   tb->print_logo();
 
-  if (argc == 1) {
-    printf("[TB] No TEST specified, exiting..\n\n");
-  } else {
+  std::string elf_name = "";
+  bool load_is_jtag = false;
+  bool elf_given    = false;
 
-    const std::string Elf(argv[1]);
-    std::cout << "[TB] Looking for ELF: " << Elf << std::endl;
-    std::filesystem::path elfpath = std::string("../build/sw/") + Elf + ".elf";
-    bool elfPathExists = std::filesystem::exists(elfpath);
-
-    const std::string Load(argv[2]);
-    std::cout << "[TB] Load: " << Load << std::endl;
-    
-    if(!elfPathExists) {
-      std::cout << "[TB] ERROR! ELF not found in path " << elfpath << std::endl << std::endl;
-    } else {
-      std::cout << "[TB] ELF path is " << elfpath << std::endl;
-      tb->open_trace("../build/verilator_build/waveform.fst");
-
-      tb->reset();
-      tb->jtag_reset_master();
-      tb->jtag_init();
-
-      if (Load == "JTAG") {
-        tb->jtag_run_elf(elfpath.string());
-      } else {
-        tb->jtag_halt_hart();
-        std::cout << "[TB] Running elaboration-time preloaded program from entry point in " 
-                  << elfpath.string()
-                  << std::endl;
-        tb->jtag_resume_hart_from(tb->get_entry(elfpath.string()));
-      }
-      tb->jtag_wait_eoc();
+  // ignore argv[0] (name of executable)
+  for (int i=1; i<argc; i++) {
+    const std::string arg_string(argv[i]);
+    switch (arg_string[0]) {
+      case '-':
+        if (arg_string.substr(0,6) == "--load") {
+          load_is_jtag = (arg_string.substr(6,5) == "=JTAG");
+        } else {
+          std::cout << "[Warning] unresolved - args found" << std::endl;
+        }
+        break;
+      case '+':
+        std::cout << "TODO: + args" << std::endl;
+        break;
+      default:
+        elf_name = arg_string;
+        elf_given = true;
+        break;
     }
-  
   }
+
+  if (!elf_given) {
+    std::cout << "[TB] No elf given, terminating simulation."
+              << std::endl;
+    std::exit(0);
+  }
+    /*
+     * '--isa=rv32imc'
+     * '+signature=/<>/riscof_work/src/add-01.S/dut/DUT-zeroheti.signature'
+     * '+signature-granularity=4'
+     * 'my.elf'
+     */
+
+    std::filesystem::path elfpath = tb->resolve_elf(elf_name);
+
+    tb->open_trace("../build/verilator_build/waveform.fst");
+
+    tb->reset();
+    tb->jtag_reset_master();
+    tb->jtag_init();
+
+    if (load_is_jtag) {
+      tb->jtag_run_elf(elfpath.string());
+    } else {
+      tb->jtag_halt_hart();
+      std::cout << "[TB] Running preloaded program from entry point in " 
+                << elfpath.string()
+                << std::endl;
+      tb->jtag_resume_hart_from(tb->get_entry(elfpath.string()));
+    }
+    tb->jtag_wait_eoc();
 
   delete tb;
   return 0;

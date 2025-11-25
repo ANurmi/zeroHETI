@@ -1,8 +1,10 @@
 .section .text
 
 reset_handler:
-  la x2, stack
-  la ra, postMain 
+  la sp, stack
+  la ra, postMain
+  la t0, default_handler
+  csrw mtvec, t0
   j main
 
 .global postMain
@@ -34,5 +36,9 @@ changeStack:
 loop:
   j loop
 
+.p2align 8
 default_handler:
-  mret
+  li t0, 0x00000380
+  li t1, 0x8BADC0DE
+  sw t1, 0(t0)
+  wfi

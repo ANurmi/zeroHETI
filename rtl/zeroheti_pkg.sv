@@ -11,7 +11,8 @@ typedef struct packed {
   logic [31:0] boot_addr;
 } core_cfg_t;
 
-localparam core_cfg_t DefaultCfg = '{
+
+localparam core_cfg_t rv32ecCfg = '{
   rve       : 1,
   bt_alu    : 0,
   wb_stage  : 0,
@@ -22,7 +23,7 @@ localparam core_cfg_t DefaultCfg = '{
   boot_addr : 32'h0800
 };
 
-localparam core_cfg_t EmcCfg = '{
+localparam core_cfg_t rv32emcCfg = '{
   rve       : 1,
   bt_alu    : 1,
   wb_stage  : 1,
@@ -33,7 +34,7 @@ localparam core_cfg_t EmcCfg = '{
   boot_addr : 32'h0800
 };
 
-localparam core_cfg_t IcCfg = '{
+localparam core_cfg_t rv32icCfg = '{
   rve       : 0,
   bt_alu    : 0,
   wb_stage  : 0,
@@ -44,7 +45,7 @@ localparam core_cfg_t IcCfg = '{
   boot_addr : 32'h0800
 };
 
-localparam core_cfg_t ImcCfg = '{
+localparam core_cfg_t rv32imcCfg = '{
   rve       : 0,
   bt_alu    : 1,
   wb_stage  : 1,
@@ -54,6 +55,8 @@ localparam core_cfg_t ImcCfg = '{
   hart_id   : 0,
   boot_addr : 32'h0800
 };
+
+localparam core_cfg_t DefaultCfg = rv32ecCfg;
 
 typedef struct packed {
   logic [31:0] base;
@@ -70,17 +73,18 @@ typedef struct packed {
   addr_rule_t ext;
 } addr_map_t;
 
+localparam int unsigned ImemSize = `IMEM_BYTES;
+localparam int unsigned DmemSize = `DMEM_BYTES;
+
 localparam addr_rule_t DbgAddr    = '{ base : 32'h0000_0000, last : 32'h0000_1000 };
 localparam addr_rule_t HetIcAddr  = '{ base : 32'h0000_1000, last : 32'h0000_2000 };
 localparam addr_rule_t UartAddr   = '{ base : 32'h0000_2000, last : 32'h0000_2100 };
 localparam addr_rule_t MtimerAddr = '{ base : 32'h0000_2100, last : 32'h0000_2114 };
 localparam addr_rule_t ApbTimerAddr = '{ base : 32'h0000_2200, last : 32'h0000_2240 };
-localparam addr_rule_t ImemAddr   = '{ base : 32'h0000_5000, last : 32'h0000_D000 };
-localparam addr_rule_t DmemAddr   = '{ base : 32'h0000_D000, last : 32'h0001_1000 };
-localparam addr_rule_t ExtAddr    = '{ base : 32'h0002_0000, last : 32'hFFFF_FFFF };
+localparam addr_rule_t ImemAddr   = '{ base : 32'h0001_0000, last : (32'h0001_0000 + ImemSize) };
+localparam addr_rule_t DmemAddr   = '{ base : 32'h0002_0000, last : (32'h0002_0000 + DmemSize) };
+localparam addr_rule_t ExtAddr    = '{ base : 32'h0003_0000, last : 32'hFFFF_FFFF };
 
-localparam int unsigned ImemSize = ImemAddr.last - ImemAddr.base;
-localparam int unsigned DmemSize = DmemAddr.last - DmemAddr.base;
 // imem size in words
 localparam int unsigned ImemWSize = ImemSize / 4;
 // dmem size in words
