@@ -29,8 +29,13 @@ int main(int argc, char** argv) {
   const std::string ElfPath = "riscv.elf";
 
   load_memory(ElfPath, mem);
-
-  std::exit(EXIT_SUCCESS);
+  
+  printf("addr 0x%08x data 0x%08x\n", 0x100, mem[0x100]);
+  printf("addr 0x%08x data 0x%08x\n", 0x104, mem[0x104]);
+  printf("addr 0x%08x data 0x%08x\n", 0x108, mem[0x108]);
+  printf("addr 0x%08x data 0x%08x\n", 0x10C, mem[0x10C]);
+  
+  //std::exit(0);
   // SIMULATION START
   // TODO: taket this from argv
   const std::string SigPath   = ZhRoot + "/build/verilator_build/test.signature";
