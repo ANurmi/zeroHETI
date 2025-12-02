@@ -1,13 +1,11 @@
 name: Run compliance test suite
 
-# Triggers when there is any activity on a pull request, e.g. opened, updated.
 on:
-    merge_group:
-        types:
-            - checks_requested
-    pull_request:
-        branches:
-            - "*"
+  pull_request:
+    paths:
+      - rtl/**
+      - verilator/tb
+      - Bender.yml
 
 jobs:
   compliance:
