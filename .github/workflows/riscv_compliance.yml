@@ -1,0 +1,42 @@
+name: Run compliance test suite
+
+on: [push, pull_request]
+
+jobs:
+  compliance:
+    name: RISC-V Compliance Test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bender
+        run: |
+          curl --proto '=https' --tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh
+          echo $GITHUB_WORKSPACE >> $GITHUB_PATH
+
+      - name: Fetch dependencies
+        run: bender update
+
+      - name: Install Verilator
+        run: sudo apt install verilator=5.020-1
+
+      - name: Build Verilator model of DUT
+        run: make verilate_compliance
+
+      - name: Install gcc and riscof
+        run: |
+          sudo apt-get install -y python3-setuptools verilator
+          pip3 install riscof
+          wget -qO- https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2023.07.05/riscv32-elf-ubuntu-22.04-gcc-nightly-2023.07.05-nightly.tar.gz | tar xz
+          echo $GITHUB_WORKSPACE/riscv/bin >> $GITHUB_PATH
+
+      - name: Setup SAIL-RISCV Model
+        run: |
+          cd dv/bin/ && tar -xzf sail-riscv.tar.gz
+          echo $GITHUB_WORKSPACE/dv/bin/sail-riscv >> $GITHUB_PATH
+
+      - name: Init arch tests
+        run: cd dv/ && riscof arch-test --clone
+
+      - name: Run compliance tests
+        run: cd dv/ && riscof --verbose info run --suite riscv-arch-test/riscv-test-suite/rv32i_m/I --env riscv-arch-test/riscv-test-suite/env --config=./config.ini --no-browser
