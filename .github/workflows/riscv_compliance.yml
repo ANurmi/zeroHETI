@@ -1,6 +1,11 @@
 name: Run compliance test suite
 
-on: [push, pull_request]
+on:
+  pull_request:
+    paths:
+      - rtl/**
+      - verilator/tb
+      - Bender.yml
 
 jobs:
   compliance:
