@@ -55,7 +55,9 @@ VFLAGS           = \
   --Mdir $(VERIL_BUILD_DIR)/obj_dir \
    -j `nproc` \
 
+
 INCLUDES         = \
+  -I$(ZH_ROOT)/rtl/include \
   -I$(shell bender path apb)/include \
   -I$(shell bender path axi)/include \
   -I$(shell bender path common_cells)/include \

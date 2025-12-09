@@ -17,6 +17,9 @@ dependencies:
 sources:
   - target: rtl
     files:
+      - rtl/vendor/pulp_i2c/i2c_master_bit_ctrl.sv
+      - rtl/vendor/pulp_i2c/i2c_master_byte_ctrl.sv
+      - rtl/vendor/pulp_i2c/apb_i2c.sv
       - rtl/zeroheti_pkg.sv
       - rtl/mock_uart.sv
       - rtl/apb_mtimer.sv
@@ -33,3 +36,14 @@ sources:
     files:
       - fpga/rtl/prim_clock_gating.sv
       - fpga/rtl/zeroheti_pynq.sv
+
+vendor_package:
+  - name: pulp_i2c
+    target_dir: rtl/vendor/pulp_i2c
+    upstream: { git: "https://github.com/pulp-platform/apb_i2c.git", rev: "84855413cc2c8e70209ee7f168a0225d3c5914a1"}
+    include_from_upstream:
+      - i2c_master_bit_ctrl.sv
+      - i2c_master_byte_ctrl.sv
+      - apb_i2c.sv
+
+

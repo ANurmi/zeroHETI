@@ -2,6 +2,7 @@
 Bender.lock
 build
 Bender.local
+rtl/vendor
 verilator/trace_core_00000000.log
 *.swp
 */.Xil
