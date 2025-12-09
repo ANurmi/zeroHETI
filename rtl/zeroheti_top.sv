@@ -14,7 +14,13 @@ module zeroheti_top
     output logic                  jtag_td_o,
     input  logic [NumExtIrqs-1:0] ext_irq_i,
     input  logic                  uart_rx_i,
-    output logic                  uart_tx_o
+    output logic                  uart_tx_o,
+    input  logic                  i2c_scl_pad_i,
+    output logic                  i2c_scl_pad_o,
+    output logic                  i2c_scl_padoen_o,
+    input  logic                  i2c_sda_pad_i,
+    output logic                  i2c_sda_pad_o,
+    output logic                  i2c_sda_padoen_o
 );
 
   localparam int unsigned NrIrqs = CoreCfg.num_irqs;
@@ -29,9 +35,13 @@ module zeroheti_top
   logic [SelWidth-1:0] demux_sel;
   logic [  NrIrqs-1:0] all_irqs;
   logic                mtime_irq;
+  logic                i2c_irq;
+  logic                uart_irq;
 
   always_comb begin : irq_mapping
     all_irqs                      = '0;
+    all_irqs[5]                   = uart_irq;
+    all_irqs[6]                   = i2c_irq;
     all_irqs[7]                   = mtime_irq;
     all_irqs[NrIrqs-1:NumIntIrqs] = ext_irq_i;
   end : irq_mapping
@@ -53,9 +63,13 @@ module zeroheti_top
 
   always_comb begin : apb_decode
     unique case (core_apb.paddr) inside
-      [AddrMap.uart.base : AddrMap.uart.last - 1]: demux_sel = SelWidth'('d2);
+      [AddrMap.uart.base : AddrMap.uart.last - 1]:     demux_sel = SelWidth'('d2);
       [AddrMap.mtimer.base : AddrMap.mtimer.last - 1]: demux_sel = SelWidth'('d1);
-      default: demux_sel = SelWidth'('d0);
+      [AddrMap.i2c.base : AddrMap.i2c.last - 1]:       demux_sel = SelWidth'('d3);
+      default: begin
+        demux_sel = SelWidth'('d0);
+        if (core_apb.psel & core_apb.penable) $display("Warning: APB access to unmapped region!");
+      end
     endcase
   end
 
@@ -83,6 +97,7 @@ module zeroheti_top
       .pready_o (demux_apb[1].pready),
       .pslverr_o(demux_apb[1].pslverr)
   );
+  assign uart_irq = 1'b0;
 `else
   apb_uart i_apb_uart (
       .CLK    (clk_i),
@@ -95,7 +110,7 @@ module zeroheti_top
       .PRDATA (demux_apb[1].prdata),
       .PREADY (demux_apb[1].pready),
       .PSLVERR(demux_apb[1].pslverr),
-      .INT    (),
+      .INT    (uart_irq),
       .CTSN   (1'b0),
       .DSRN   (1'b0),
       .DCDN   (1'b0),
@@ -124,12 +139,30 @@ module zeroheti_top
       .timer_irq_o(mtime_irq)
   );
 
+  apb_i2c #(
+      .APB_ADDR_WIDTH(32'd32)
+  ) i_i2c (
+      .HCLK        (clk_i),
+      .HRESETn     (rst_ni),
+      .PADDR       (demux_apb[3].paddr),
+      .PWDATA      (demux_apb[3].pwdata),
+      .PWRITE      (demux_apb[3].pwrite),
+      .PSEL        (demux_apb[3].psel),
+      .PENABLE     (demux_apb[3].penable),
+      .PRDATA      (demux_apb[3].prdata),
+      .PREADY      (demux_apb[3].pready),
+      .PSLVERR     (demux_apb[3].pslverr),
+      .interrupt_o (i2c_irq),
+      .scl_pad_i   (i2c_scl_pad_i),
+      .scl_pad_o   (i2c_scl_pad_o),
+      .scl_padoen_o(i2c_scl_padoen_o),
+      .sda_pad_i   (i2c_sda_pad_i),
+      .sda_pad_o   (i2c_sda_pad_o),
+      .sda_padoen_o(i2c_sda_padoen_o)
+  );
+
   assign demux_apb[0].pready  = 1'b1;
   assign demux_apb[0].pslverr = 1'b0;
-  //assign demux_apb[1].pready = 1'b1;
-  //assign demux_apb[2].pready = 1'b1;
-  assign demux_apb[3].pready  = 1'b1;
-  assign demux_apb[3].pslverr = 1'b0;
 
 `ifndef SYNTHESIS
 `ifndef TECH_MEMORY
