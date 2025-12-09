@@ -3,6 +3,7 @@ SW_DIR ?= examples/smoke_tests
 .PHONY: ips
 ips:
 	bender update
+	bender vendor init
 
 .PHONY: elf
 elf:
