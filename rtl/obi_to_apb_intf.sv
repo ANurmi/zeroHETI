@@ -7,15 +7,19 @@
 // Adapted from reg_to_apb.sv
 
 module obi_to_apb_intf #(
-)(
-  input  logic        clk_i,
-  input  logic        rst_ni,
-  OBI_BUS.Subordinate obi_i,
-  APB.Master          apb_o
+) (
+    input logic               clk_i,
+    input logic               rst_ni,
+          OBI_BUS.Subordinate obi_i,
+          APB.Master          apb_o
 );
 
   // APB phase FSM
-  typedef enum logic [1:0] {SETUP, ACCESS, HANDSHAKE} state_e;
+  typedef enum logic [1:0] {
+    SETUP,
+    ACCESS,
+    HANDSHAKE
+  } state_e;
   state_e state_d, state_q;
 
   logic [31:0] rdata_q, rdata_d;
@@ -34,21 +38,21 @@ module obi_to_apb_intf #(
   assign rdata_d      = apb_o.prdata;
 
   // Tie PPROT to {0: unprivileged, 1: non-secure, 0: data}
-  assign apb_o.pprot   = 3'b010;
+  assign apb_o.pprot  = 3'b010;
 
   // APB phase FSM
   always_comb begin : apb_fsm
-    apb_o.penable  = 1'b0;
-    obi_i.gnt      = 1'b0;
-    obi_i.rvalid   = 1'b0;
-    state_d           = state_q;
+    apb_o.penable = 1'b0;
+    obi_i.gnt     = 1'b0;
+    obi_i.rvalid  = 1'b0;
+    state_d       = state_q;
     unique case (state_q)
       // Setup phase (or idle). Deassert PENABLE, gate PREADY.
-      SETUP: if (obi_i.req) state_d = ACCESS;
+      SETUP:   if (obi_i.req) state_d = ACCESS;
       // Access phase. Assert PENABLE, feed PREADY through.
       ACCESS: begin
         apb_o.penable = 1'b1;
-        obi_i.gnt   = apb_o.pready;
+        obi_i.gnt = apb_o.pready;
         if (apb_o.pready) state_d = HANDSHAKE;
       end
       HANDSHAKE: begin
@@ -69,8 +73,16 @@ module obi_to_apb_intf #(
   end
 
   always_ff @(posedge clk_i) begin
-      rdata_q <= rdata_d;
+    rdata_q <= rdata_d;
   end
+
+  // Tie off unused
+  assign obi_i.gntpar     = 1'b0;
+  assign obi_i.rvalidpar  = 1'b0;
+  assign obi_i.rready     = 1'b0;
+  assign obi_i.rreadypar  = 1'b0;
+  assign obi_i.rid        = 1'b0;
+  assign obi_i.r_optional = 1'b0;
 
 endmodule : obi_to_apb_intf
 
