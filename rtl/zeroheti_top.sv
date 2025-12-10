@@ -65,7 +65,7 @@ module zeroheti_top
     unique case (core_apb.paddr) inside
       [AddrMap.uart.base : AddrMap.uart.last - 1]:     demux_sel = SelWidth'('d2);
       [AddrMap.mtimer.base : AddrMap.mtimer.last - 1]: demux_sel = SelWidth'('d1);
-      [AddrMap.i2c.base : AddrMap.i2c.last - 1]:       demux_sel = SelWidth'('d3);
+      [AddrMap.i2c.base : AddrMap.i2c.last - 1]:       demux_sel = SelWidth'('d0);
       default: begin
         demux_sel = SelWidth'('d0);
         if (core_apb.psel & core_apb.penable) $display("Warning: APB access to unmapped region!");
