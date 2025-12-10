@@ -20,4 +20,12 @@
 #define MTIMER_CMP_HI   MTIMER_BASE + 12
 #define MTIMER_CTRL     MTIMER_BASE + 16
 
+#define I2C_BASE 0x00002200
+#define I2C_CLK_PRESCALER I2C_BASE + 0
+#define I2C_CTRL          I2C_BASE + 4
+#define I2C_RX            I2C_BASE + 8
+#define I2C_STATUS        I2C_BASE + 12
+#define I2C_TX            I2C_BASE + 16
+#define I2C_CMD           I2C_BASE + 20
+
 #define VECTORS_ADDR 0x00010000

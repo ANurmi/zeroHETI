@@ -75,7 +75,7 @@ module zeroheti_core
       '{
           idx: 4,
           start_addr: AddrMap.uart.base,
-          end_addr: AddrMap.mtimer.last
+          end_addr: AddrMap.i2c.last
       },
       '{idx: 5, start_addr: AddrMap.ext.base, end_addr: AddrMap.ext.last}
   };
