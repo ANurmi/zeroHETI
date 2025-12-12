@@ -29,3 +29,5 @@
 #define I2C_CMD           I2C_BASE + 20
 
 #define VECTORS_ADDR 0x00010000
+
+#define IRQ_IDX_I2C 6

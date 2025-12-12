@@ -1,24 +1,35 @@
 #include "addr_map.h"
 #include "mmio.h"
 #include "uart.h"
-#include "mtimer.h"
 #include "hetic.h"
+#include "i2c.h"
+
+#define START 1
+#define NO_START 0
+#define STOP 1
+#define NO_STOP 0
+//#define IRQ 1
+//#define NO_IRQ 0
 
 int main() {
 
   init_uart(0x0, 0x0);
   print_uart("[UART] zeroHETI i2c test\n");
-
-  write_u32(I2C_CLK_PRESCALER, 4u); // set prescaler to non-zero
-  write_u32(I2C_CTRL, (3u << 6)); // set s_core_en, s_ien
-  write_u32(I2C_TX,   67u); // set TX buffer to 67
-
-                //  STA   STO       RD      WR      ACK     IA
-  uint32_t cmd = (1u<<7 | 0u<<6  | 0u<<5 | 1u<<4 | 0u<<3 | 0u<<0);
-  write_u32(I2C_CMD, cmd);
-
-  for (int i=0; i<5000; i++) asm("nop");  
   
+  // extra cycles to stabilize prints
+  for (int i=0; i<100; i++) asm("nop");  
+
+  i2c_set_prescaler(2);
+  i2c_core_enable();
+  //i2c_irq_enable();  
+
+  i2c_write_msg(67, START, NO_STOP);
+  i2c_write_msg(43, NO_START, NO_STOP);
+  i2c_read_msg(NO_START, NO_STOP);
+  i2c_read_msg(NO_START, NO_STOP);
+  i2c_write_msg(11, NO_START, NO_STOP);
+  i2c_write_msg(99, NO_START, STOP);
+
   // extra cycles to stabilize prints
   for (int i=0; i<50; i++) asm("nop");  
   return 0;
