@@ -4,12 +4,10 @@
 #include "hetic.h"
 #include "i2c.h"
 
-#define START 1
-#define NO_START 0
-#define STOP 1
-#define NO_STOP 0
-//#define IRQ 1
-//#define NO_IRQ 0
+#define WRITE    1
+#define LAST     1
+#define NOT_LAST 0
+#define READ     0
 
 int main() {
 
@@ -19,18 +17,21 @@ int main() {
   // extra cycles to stabilize prints
   for (int i=0; i<100; i++) asm("nop");  
 
-  i2c_set_prescaler(2);
+  i2c_set_prescaler(4);
   i2c_core_enable();
-  //i2c_irq_enable();  
 
-  i2c_write_msg(67, START, NO_STOP);
-  i2c_write_msg(43, NO_START, NO_STOP);
-  i2c_read_msg(NO_START, NO_STOP);
-  i2c_read_msg(NO_START, NO_STOP);
-  i2c_write_msg(11, NO_START, NO_STOP);
-  i2c_write_msg(99, NO_START, STOP);
+  i2c_send_addr_frame(8, READ);
+  uint8_t test = i2c_recv_data_frame(LAST);
 
+  i2c_send_addr_frame(12, WRITE);
+  i2c_send_data_frame(0x13, LAST);
+
+  i2c_send_addr_frame(16, WRITE);
+  i2c_send_data_frame(0x22, LAST);
+
+  if (test == 0xA5) print_uart("[UART] Test byte OK \n");
   // extra cycles to stabilize prints
   for (int i=0; i<50; i++) asm("nop");  
+  
   return 0;
 }
