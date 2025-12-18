@@ -84,7 +84,7 @@ module zeroheti_top
   );
 
 
-`ifdef MOCK_UART
+`ifndef FULL_UART 
   mock_uart i_mock_uart (
       .clk_i,
       .rst_ni,
