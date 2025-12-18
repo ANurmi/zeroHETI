@@ -2,7 +2,7 @@ module zeroheti_top
   import zeroheti_pkg::AddrMap;
 #(
     parameter zeroheti_pkg::core_cfg_t CoreCfg = zeroheti_pkg::`CORE_CFG,
-    localparam int unsigned NumIntIrqs = 8,
+    localparam int unsigned NumIntIrqs = 16,
     localparam int unsigned NumExtIrqs = CoreCfg.num_irqs - NumIntIrqs
 ) (
     input  logic                  clk_i,
