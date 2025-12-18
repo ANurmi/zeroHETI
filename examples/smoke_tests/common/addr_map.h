@@ -31,3 +31,4 @@
 #define VECTORS_ADDR 0x00010000
 
 #define IRQ_IDX_I2C 6
+#define IRQ_IDX_MTIME 7
