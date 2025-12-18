@@ -12,3 +12,4 @@ dv/riscof_work
 dv/sail_cSim/__pycache__
 dv/zeroheti/__pycache__
 *.log
+rtl/vendor

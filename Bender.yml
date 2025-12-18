@@ -11,6 +11,7 @@ dependencies:
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", rev: "9afda9abb565971649c2aa0985639c096f351171" }
   riscv-dbg: { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.8.1 }
   apb_uart: { git: "https://github.com/pulp-platform/apb_uart.git", version: 0.2.1 }
+  apb_timer: { git: "https://github.com/pulp-platform/apb_timer.git", rev: "03eba2e6965f5363df12621882bc70498c551a73" }
   obi: { git: "https://github.com/pulp-platform/obi.git", version: 0.1.7 }
   vbench: { git: "https://github.com/ANurmi/vbench", rev: "main" }
 
