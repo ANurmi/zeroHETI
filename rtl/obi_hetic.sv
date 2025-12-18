@@ -67,8 +67,8 @@ module obi_hetic #(
   // Tie off unused parts
   assign obi_sbr.gntpar     = 1'b0;
   assign obi_sbr.rvalidpar  = 1'b0;
-  assign obi_sbr.rready     = 1'b0;
-  assign obi_sbr.rreadypar  = 1'b0;
+  //assign obi_sbr.rready     = 1'b0;
+  //assign obi_sbr.rreadypar  = 1'b0;
   assign obi_sbr.rid        = 1'b0;
   assign obi_sbr.r_optional = 1'b0;
   assign obi_sbr.err        = 1'b0;

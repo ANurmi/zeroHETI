@@ -59,8 +59,8 @@ module obi_sram_intf #(
   // Tie off unused parts
   assign sbr.gntpar = 1'b0;
   assign sbr.rvalidpar = 1'b0;
-  assign sbr.rready = 1'b0;
-  assign sbr.rreadypar = 1'b0;
+  //assign sbr.rready = 1'b0;
+  //assign sbr.rreadypar = 1'b0;
   assign sbr.rid = 1'b0;
   assign sbr.r_optional = 1'b0;
   assign sbr.err    = 1'b0;
