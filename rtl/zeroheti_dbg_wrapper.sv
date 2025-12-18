@@ -92,8 +92,8 @@ module zeroheti_dbg_wrapper
   assign sba_mgr.a_optional = 1'b0;
   assign mem_sbr.gntpar = 1'b0;
   assign mem_sbr.rvalidpar = 1'b0;
-  assign mem_sbr.rready = 1'b0;
-  assign mem_sbr.rreadypar = 1'b0;
+  //assign mem_sbr.rready = 1'b0;
+  //assign mem_sbr.rreadypar = 1'b0;
   assign mem_sbr.r_optional = 1'b0;
   assign mem_sbr.err = 1'b0;
 

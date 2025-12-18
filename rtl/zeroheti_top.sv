@@ -1,5 +1,6 @@
 module zeroheti_top
   import zeroheti_pkg::AddrMap;
+  import zeroheti_pkg::TGSize;
 #(
     parameter zeroheti_pkg::core_cfg_t CoreCfg = zeroheti_pkg::`CORE_CFG,
     localparam int unsigned NumIntIrqs = 16,
@@ -32,17 +33,19 @@ module zeroheti_top
   APB core_apb ();
   APB demux_apb[NrApbPerip] ();
 
-  logic [SelWidth-1:0] demux_sel;
-  logic [  NrIrqs-1:0] all_irqs;
-  logic                mtime_irq;
-  logic                i2c_irq;
-  logic                uart_irq;
+  logic [  SelWidth-1:0] demux_sel;
+  logic [    NrIrqs-1:0] all_irqs;
+  logic                  mtime_irq;
+  logic                  i2c_irq;
+  logic                  uart_irq;
+  logic [(TGSize*2)-1:0] apb_timer_irqs;
 
   always_comb begin : irq_mapping
     all_irqs                      = '0;
     all_irqs[5]                   = uart_irq;
     all_irqs[6]                   = i2c_irq;
     all_irqs[7]                   = mtime_irq;
+    all_irqs[((2*TGSize)+8)-1:8]  = apb_timer_irqs;
     all_irqs[NrIrqs-1:NumIntIrqs] = ext_irq_i;
   end : irq_mapping
 
@@ -63,6 +66,7 @@ module zeroheti_top
 
   always_comb begin : apb_decode
     unique case (core_apb.paddr) inside
+      [AddrMap.tg.base : AddrMap.tg.last - 1]:         demux_sel = SelWidth'('d3);
       [AddrMap.uart.base : AddrMap.uart.last - 1]:     demux_sel = SelWidth'('d2);
       [AddrMap.mtimer.base : AddrMap.mtimer.last - 1]: demux_sel = SelWidth'('d1);
       [AddrMap.i2c.base : AddrMap.i2c.last - 1]:       demux_sel = SelWidth'('d0);
@@ -84,7 +88,7 @@ module zeroheti_top
   );
 
 
-`ifndef FULL_UART 
+`ifndef FULL_UART
   mock_uart i_mock_uart (
       .clk_i,
       .rst_ni,
@@ -137,6 +141,23 @@ module zeroheti_top
       .pready_o   (demux_apb[2].pready),
       .pslverr_o  (demux_apb[2].pslverr),
       .timer_irq_o(mtime_irq)
+  );
+
+  apb_timer #(
+      .APB_ADDR_WIDTH(ApbWidth),
+      .TIMER_CNT(TGSize)
+  ) i_apb_timer (
+      .HCLK   (clk_i),
+      .HRESETn(rst_ni),
+      .PENABLE(demux_apb[3].penable),
+      .PWRITE (demux_apb[3].pwrite),
+      .PADDR  (demux_apb[3].paddr),
+      .PSEL   (demux_apb[3].psel),
+      .PWDATA (demux_apb[3].pwdata),
+      .PRDATA (demux_apb[3].prdata),
+      .PREADY (demux_apb[3].pready),
+      .PSLVERR(demux_apb[3].pslverr),
+      .irq_o  (apb_timer_irqs)
   );
 
   apb_i2c #(

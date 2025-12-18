@@ -79,8 +79,8 @@ module obi_to_apb_intf #(
   // Tie off unused
   assign obi_i.gntpar     = 1'b0;
   assign obi_i.rvalidpar  = 1'b0;
-  assign obi_i.rready     = 1'b0;
-  assign obi_i.rreadypar  = 1'b0;
+  //assign obi_i.rready     = 1'b0;
+  //assign obi_i.rreadypar  = 1'b0;
   assign obi_i.rid        = 1'b0;
   assign obi_i.r_optional = 1'b0;
 
