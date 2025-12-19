@@ -30,7 +30,7 @@ elf: init
 
 .PHONY: objdump
 objdump:
-	$(TOOLCHAIN)objdump $(BUILD_DIR)/$(TEST).elf -d > $(BUILD_DIR)/$(TEST).asm
+	$(TOOLCHAIN)objdump $(BUILD_DIR)/$(TEST).elf -D > $(BUILD_DIR)/$(TEST).asm
 
 .PHONY: hex
 hex:

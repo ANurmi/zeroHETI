@@ -4,14 +4,11 @@
 
 int main() {
 
-  //init_uart(100000000, 3000000);
-  //TODO: Fix compiler ABI issue
-  init_uart(0, 0);
+  init_uart(100000000, 3000000);
 
-  write_serial('\n');
+  write_u8(0x20051, 0x0);
   print_uart("[UART] Hello from zeroHETI!\n");
-  print_uart("[UART] Bottom Text\n");
-  write_serial('\n');
+  print_uart("[UART] more elaborate prints to exercise the UART\n");
 
   return 0;
 }
