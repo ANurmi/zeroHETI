@@ -85,8 +85,8 @@ package zeroheti_pkg;
   localparam addr_rule_t UartAddr = '{base : 32'h0000_2000, last : 32'h0000_2100};
   localparam addr_rule_t MtimerAddr = '{base : 32'h0000_2100, last : 32'h0000_2114};
   localparam addr_rule_t TimerGroupAddr = '{
-      base : 32'h0000_2114,
-      last : 32'h0000_2114 + (12 * TGSize)
+      base : 32'h0000_2300,
+      last : 32'h0000_2300 + (16 * TGSize)
   };
   localparam addr_rule_t I2cAddr = '{base : 32'h0000_2200, last : 32'h0000_2218};
   localparam addr_rule_t ImemAddr = '{base : 32'h0001_0000, last : (32'h0001_0000 + ImemSize)};

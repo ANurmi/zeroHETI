@@ -20,6 +20,8 @@
 #define MTIMER_CMP_HI   MTIMER_BASE + 12
 #define MTIMER_CTRL     MTIMER_BASE + 16
 
+#define TIMER_GROUP_BASE 0x00002300
+
 #define I2C_BASE 0x00002200
 #define I2C_CLK_PRESCALER I2C_BASE + 0
 #define I2C_CTRL          I2C_BASE + 4
@@ -30,5 +32,14 @@
 
 #define VECTORS_ADDR 0x00010000
 
-#define IRQ_IDX_I2C 6
-#define IRQ_IDX_MTIME 7
+#define IRQ_IDX_I2C     6
+#define IRQ_IDX_MTIME   7
+#define IRQ_IDX_TG0_OF  8
+#define IRQ_IDX_TG0_CMP 9
+#define IRQ_IDX_TG1_OF  10
+#define IRQ_IDX_TG1_CMP 11
+#define IRQ_IDX_TG2_OF  12
+#define IRQ_IDX_TG2_CMP 13
+#define IRQ_IDX_TG3_OF  14
+#define IRQ_IDX_TG3_CMP 15
+

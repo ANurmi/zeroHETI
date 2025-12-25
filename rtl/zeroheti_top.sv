@@ -149,14 +149,14 @@ module zeroheti_top
   ) i_apb_timer (
       .HCLK   (clk_i),
       .HRESETn(rst_ni),
-      .PENABLE(demux_apb[3].penable),
-      .PWRITE (demux_apb[3].pwrite),
-      .PADDR  (demux_apb[3].paddr),
-      .PSEL   (demux_apb[3].psel),
-      .PWDATA (demux_apb[3].pwdata),
-      .PRDATA (demux_apb[3].prdata),
-      .PREADY (demux_apb[3].pready),
-      .PSLVERR(demux_apb[3].pslverr),
+      .PENABLE(demux_apb[0].penable),
+      .PWRITE (demux_apb[0].pwrite),
+      .PADDR  (demux_apb[0].paddr),
+      .PSEL   (demux_apb[0].psel),
+      .PWDATA (demux_apb[0].pwdata),
+      .PRDATA (demux_apb[0].prdata),
+      .PREADY (demux_apb[0].pready),
+      .PSLVERR(demux_apb[0].pslverr),
       .irq_o  (apb_timer_irqs)
   );
 
