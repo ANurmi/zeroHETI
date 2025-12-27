@@ -30,14 +30,15 @@ module zeroheti_compliance #(
 
   localparam logic [31:0] ComplianceBootAddr = 32'h0000_0000;
 
-  ibex_top_tracing #() i_rt_ibex (
+  superheti #(
+      .NumInterrupts  (Cfg.num_irqs),
+      .DmHaltAddr     (dm::HaltAddress),
+      .DmExceptionAddr(dm::ExceptionAddress)
+      //.MClicBaseAddr    (zeroheti_pkg::AddrMap.hetic.base)
+  ) i_superheti (
       .clk_i,
       .rst_ni,
-
-      .scan_rst_ni(1'b0),
-      .ram_cfg_i  (10'b0),
       .hart_id_i  (Cfg.hart_id),
-      .test_en_i  (1'b0),
       .boot_addr_i(ComplianceBootAddr),
 
       .instr_req_o,
@@ -45,7 +46,6 @@ module zeroheti_compliance #(
       .instr_gnt_i,
       .instr_rvalid_i,
       .instr_rdata_i,
-      .instr_rdata_intg_i(7'b0),
       .instr_err_i,
 
       .data_req_o,
@@ -57,32 +57,18 @@ module zeroheti_compliance #(
       .data_wdata_o,
       .data_rdata_i,
       .data_err_i,
-      .data_rdata_intg_i(7'b0),
-      .data_wdata_intg_o(),
 
-      .irq_is_pcs_i(1'b0),
-      .irq_i       ('0),
-      .irq_id_o    (),
-      .irq_level_i ('0),
-      .irq_shv_i   (1'b1),
-      .irq_priv_i  (2'b11),
-      .irq_ack_o   (),
+      .irq_heti_i (1'b0),
+      .irq_nest_i (1'b0),
+      .irq_i      ('0),
+      .irq_id_o   (),
+      .irq_ack_o  (),
+      .irq_level_i('0),
 
-      .scramble_key_valid_i(1'b0),
-      .scramble_key_i      (128'b0),
-      .scramble_nonce_i    (64'b0),
-      .scramble_req_o      (),
-
-      .debug_req_i        (1'b0),
-      .debug_mode_o       (),
-      .crash_dump_o       (),
-      .double_fault_seen_o(),
-      .fetch_enable_i     (4'b0101),
-      .core_sleep_o       (),
-
-      .alert_minor_o         (),
-      .alert_major_internal_o(),
-      .alert_major_bus_o     ()
+      .debug_req_i   (1'b0),
+      .debug_mode_o  (),
+      .fetch_enable_i(1'b1),
+      .core_sleep_o  ()
   );
 
 endmodule : zeroheti_compliance
