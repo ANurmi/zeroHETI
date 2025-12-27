@@ -30,28 +30,28 @@ module zeroheti_core
   OBI_BUS mgr_bus[NumSbrPorts] ();
   OBI_BUS sbr_bus[NumMgrPorts] ();
 
-logic irq_heti, irq_nest, irq_ack, irq_valid;
-logic [Cfg.num_irqs-1:0] core_irq;
-logic     [IrqWidth-1:0] irq_id;
-logic    [PrioWidth-1:0] irq_level;
-logic     [IrqWidth-1:0] irq_id_claim;
+  logic irq_heti, irq_nest, irq_ack, irq_valid;
+  logic [Cfg.num_irqs-1:0] core_irq;
+  logic [    IrqWidth-1:0] irq_id;
+  logic [   PrioWidth-1:0] irq_level;
+  logic [    IrqWidth-1:0] irq_id_claim;
 
-obi_hetic #(
-  .NrIrqLines (Cfg.num_irqs),
-  .NrIrqPrios (Cfg.num_prio)
-) i_hetic (
-  .clk_i,
-  .rst_ni,
-  .ext_irqs_i,
-  .irq_heti_o (irq_heti),
-  .irq_nest_o (irq_nest),
-  .irq_id_o   (irq_id),
-  .irq_valid_o(irq_valid),
-  .irq_id_i   (irq_id_claim),
-  .irq_ack_i  (irq_ack),
-  .irq_level_o(irq_level),
-  .obi_sbr    (sbr_bus[3])
-);
+  obi_hetic #(
+      .NrIrqLines(Cfg.num_irqs),
+      .NrIrqPrios(Cfg.num_prio)
+  ) i_hetic (
+      .clk_i,
+      .rst_ni,
+      .ext_irqs_i,
+      .irq_heti_o (irq_heti),
+      .irq_nest_o (irq_nest),
+      .irq_id_o   (irq_id),
+      .irq_valid_o(irq_valid),
+      .irq_id_i   (irq_id_claim),
+      .irq_ack_i  (irq_ack),
+      .irq_level_o(irq_level),
+      .obi_sbr    (sbr_bus[3])
+  );
 
   obi_to_apb_intf i_obi_to_apb (
       .clk_i,
@@ -81,16 +81,16 @@ obi_hetic #(
   };
 
   // TODO: add ext port when needed
-  assign sbr_bus[5].gnt       = 1'b0;
-  assign sbr_bus[5].gntpar    = 1'b0;
-  assign sbr_bus[5].err       = 1'b0;
-  assign sbr_bus[5].rready    = 1'b0;
-  assign sbr_bus[5].rreadypar = 1'b0;
-  assign sbr_bus[5].rvalid    = 1'b0;
-  assign sbr_bus[5].rdata     = 32'b0;
-  assign sbr_bus[5].rvalidpar = 1'b0;
-  assign sbr_bus[5].rid       = 1'b0;
-  assign sbr_bus[5].r_optional= 1'b0;
+  assign sbr_bus[5].gnt        = 1'b0;
+  assign sbr_bus[5].gntpar     = 1'b0;
+  assign sbr_bus[5].err        = 1'b0;
+  assign sbr_bus[5].rready     = 1'b0;
+  assign sbr_bus[5].rreadypar  = 1'b0;
+  assign sbr_bus[5].rvalid     = 1'b0;
+  assign sbr_bus[5].rdata      = 32'b0;
+  assign sbr_bus[5].rvalidpar  = 1'b0;
+  assign sbr_bus[5].rid        = 1'b0;
+  assign sbr_bus[5].r_optional = 1'b0;
 
   logic debug_req;
 
@@ -119,47 +119,47 @@ obi_hetic #(
       .mgr_ports       (sbr_bus)
   );
 
-superheti #(
-  .NumInterrupts    (Cfg.num_irqs),
-  .DmHaltAddr       (dm::HaltAddress),
-  .DmExceptionAddr  (dm::ExceptionAddress)
-  //.MClicBaseAddr    (zeroheti_pkg::AddrMap.hetic.base)
-) i_superheti (
-  .clk_i,
-  .rst_ni,
-  .hart_id_i              (Cfg.hart_id),
-  .boot_addr_i            (Cfg.boot_addr),
+  superheti #(
+      .NumInterrupts  (Cfg.num_irqs),
+      .DmHaltAddr     (dm::HaltAddress),
+      .DmExceptionAddr(dm::ExceptionAddress)
+      //.MClicBaseAddr    (zeroheti_pkg::AddrMap.hetic.base)
+  ) i_superheti (
+      .clk_i,
+      .rst_ni,
+      .hart_id_i  (Cfg.hart_id),
+      .boot_addr_i(Cfg.boot_addr),
 
-  .instr_req_o            (mgr_bus[1].req),
-  .instr_addr_o           (mgr_bus[1].addr),
-  .instr_gnt_i            (mgr_bus[1].gnt),
-  .instr_rvalid_i         (mgr_bus[1].rvalid),
-  .instr_rdata_i          (mgr_bus[1].rdata),
-  .instr_err_i            (mgr_bus[1].err),
+      .instr_req_o   (mgr_bus[1].req),
+      .instr_addr_o  (mgr_bus[1].addr),
+      .instr_gnt_i   (mgr_bus[1].gnt),
+      .instr_rvalid_i(mgr_bus[1].rvalid),
+      .instr_rdata_i (mgr_bus[1].rdata),
+      .instr_err_i   (mgr_bus[1].err),
 
-  .data_req_o             (mgr_bus[2].req),
-  .data_gnt_i             (mgr_bus[2].gnt),
-  .data_rvalid_i          (mgr_bus[2].rvalid),
-  .data_we_o              (mgr_bus[2].we),
-  .data_be_o              (mgr_bus[2].be),
-  .data_addr_o            (mgr_bus[2].addr),
-  .data_wdata_o           (mgr_bus[2].wdata),
-  .data_rdata_i           (mgr_bus[2].rdata),
-  .data_err_i             (mgr_bus[2].err),
+      .data_req_o   (mgr_bus[2].req),
+      .data_gnt_i   (mgr_bus[2].gnt),
+      .data_rvalid_i(mgr_bus[2].rvalid),
+      .data_we_o    (mgr_bus[2].we),
+      .data_be_o    (mgr_bus[2].be),
+      .data_addr_o  (mgr_bus[2].addr),
+      .data_wdata_o (mgr_bus[2].wdata),
+      .data_rdata_i (mgr_bus[2].rdata),
+      .data_err_i   (mgr_bus[2].err),
 
-  .irq_heti               (irq_heti),
-  .irq_nest               (irq_nest),
-  .irq_i                  (core_irq),
-  .irq_id_o               (irq_id_claim),
-  .irq_ack_o              (irq_ack),
-  .irq_level_i            (irq_level),
-  .irq_shv_i              (1'b1),
+      .irq_heti   (irq_heti),
+      .irq_nest   (irq_nest),
+      .irq_i      (core_irq),
+      .irq_id_o   (irq_id_claim),
+      .irq_ack_o  (irq_ack),
+      .irq_level_i(irq_level),
+      .irq_shv_i  (1'b1),
 
-  .debug_req_i            (debug_req),
-  .debug_mode_o           (),
-  .fetch_enable_i         (1'b1),
-  .core_sleep_o           ()
-);
+      .debug_req_i   (debug_req),
+      .debug_mode_o  (),
+      .fetch_enable_i(1'b1),
+      .core_sleep_o  ()
+  );
 
   // CPU tie-offs
   assign mgr_bus[1].reqpar = 1'b0;
@@ -168,7 +168,7 @@ superheti #(
   assign mgr_bus[1].be    = 4'b0;
   assign mgr_bus[1].we    = 1'b0;
   assign mgr_bus[1].wdata = 32'b0;
-  
+
   assign mgr_bus[2].reqpar = 1'b0;
   assign mgr_bus[2].aid    = 1'b0;
   assign mgr_bus[2].a_optional = 1'b0;
