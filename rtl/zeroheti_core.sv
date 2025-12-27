@@ -147,8 +147,8 @@ module zeroheti_core
       .data_rdata_i (mgr_bus[2].rdata),
       .data_err_i   (mgr_bus[2].err),
 
-      .irq_heti   (irq_heti),
-      .irq_nest   (irq_nest),
+      .irq_heti_i (irq_heti),
+      .irq_nest_i (irq_nest),
       .irq_i      (core_irq),
       .irq_id_o   (irq_id_claim),
       .irq_ack_o  (irq_ack),
