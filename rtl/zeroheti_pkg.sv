@@ -4,7 +4,6 @@ package zeroheti_pkg;
     bit rve;
     bit bt_alu;
     bit wb_stage;
-    ibex_pkg::rv32m_e mul;
     int unsigned num_irqs;
     int unsigned num_prio;
     int unsigned hart_id;
@@ -16,7 +15,6 @@ package zeroheti_pkg;
       rve       : 1,
       bt_alu    : 0,
       wb_stage  : 0,
-      mul       : ibex_pkg::RV32MNone,
       num_irqs  : 32,
       num_prio  : 32,
       hart_id   : 0,
@@ -27,7 +25,6 @@ package zeroheti_pkg;
       rve       : 1,
       bt_alu    : 1,
       wb_stage  : 1,
-      mul       : ibex_pkg::RV32MFast,
       num_irqs  : 32,
       num_prio  : 32,
       hart_id   : 0,
@@ -38,7 +35,6 @@ package zeroheti_pkg;
       rve       : 0,
       bt_alu    : 0,
       wb_stage  : 0,
-      mul       : ibex_pkg::RV32MNone,
       num_irqs  : 32,
       num_prio  : 32,
       hart_id   : 0,
@@ -49,7 +45,6 @@ package zeroheti_pkg;
       rve       : 0,
       bt_alu    : 1,
       wb_stage  : 1,
-      mul       : ibex_pkg::RV32MSingleCycle,
       num_irqs  : 32,
       num_prio  : 32,
       hart_id   : 0,
@@ -109,6 +104,5 @@ package zeroheti_pkg;
       mtimer : MtimerAddr,
       ext    : ExtAddr
   };
-
 
 endpackage
