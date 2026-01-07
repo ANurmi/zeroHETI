@@ -1,6 +1,6 @@
 CRT0     = $(CURDIR)/crt0.S
 TEST_SRC = $(CURDIR)/test.c
-CFLAGS   = -O0 -ffunction-sections -fdata-sections -g -c
+CFLAGS   = -O1 -ffunction-sections -fdata-sections -g -c
 
 .PHONY: compile
 compile:

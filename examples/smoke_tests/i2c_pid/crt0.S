@@ -2,21 +2,9 @@
 
 reset_handler:
   la x2, stack
-  la ra, postMain 
+	la t0, default_handler
+	csrw mtvec, t0
   j main
-
-.global postMain
-postMain:
-  li t0, 0x00000380
-  li t1, 0x80000000
-  or a0, a0, t1
-  sw a0, 0(t0)
-  wfi
-
-.global changeStack
-changeStack:
-  mv sp, a2
-  jr a1
 
   .section .vectors, "ax"
   .option norvc;
@@ -28,7 +16,19 @@ changeStack:
   jal x0, default_handler
   jal x0, default_handler
   jal x0, default_handler
+  .4byte isr_mtimer
   jal x0, default_handler
+  jal x0, default_handler
+  jal x0, default_handler
+  jal x0, default_handler
+  jal x0, default_handler
+  jal x0, default_handler
+  jal x0, default_handler
+  jal x0, default_handler
+  jal x0, default_handler
+  .4byte trampoline_logging 
+  jal x0, default_handler
+  .4byte isr_timer_control
   jal x0, default_handler
   jal x0, default_handler
   jal x0, default_handler
@@ -41,8 +41,13 @@ changeStack:
 
   .org 0x104
 
-loop:
-  j loop
+trampoline_logging:
+	call isr_timer_logging
+	mret
 
+.balign 256
 default_handler:
-  mret
+  li t0, 0x00000380
+  li t1, 0x8BADC0DE
+  sw t1, 0(t0)
+  j default_handler

@@ -14,15 +14,15 @@
 // TG1_CTRL  0x2310
 // TG1_CMP   0x2314
 
-void timer_group_set_cmp(uint32_t idx, uint32_t cmp) {
+static inline void timer_group_set_cmp(uint32_t idx, uint32_t cmp) {
   write_u32(TIMER_GROUP_BASE + (8 + (16*idx)), cmp);
 }
 
-void timer_group_start(uint32_t idx){
+static inline void timer_group_start(uint32_t idx){
   set_bit_apb(TIMER_GROUP_BASE + (4 + (16*idx)), 0);
 }
 
-void timer_group_stop(uint32_t idx){
+static inline void timer_group_stop(uint32_t idx){
   clear_bit_apb(TIMER_GROUP_BASE + (4 + (16*idx)), 0);
 }
 
