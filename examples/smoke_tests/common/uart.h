@@ -31,4 +31,20 @@ void print_uart(const uint8_t *str){
     }
 }
 
+void bin_to_hex(uint8_t inp, uint8_t res[2]){   
+    uint8_t inp_low = (inp & 0xf);
+    uint8_t inp_high = ((inp >> 4) & 0xf);
 
+    res[1] = inp_low < 10 ? inp_low + 48 : inp_low + 55;
+    res[0] = inp_high < 10 ? inp_high + 48 : inp_high + 55;
+}
+
+void print_uart_u32(uint32_t val){
+	for (int i = 3; i > -1; i--){
+		uint8_t cur = (val >> (i*8)) & 0xff;
+		uint8_t hex[2];
+		bin_to_hex(cur, hex);
+		write_serial(hex[0]);
+		write_serial(hex[1]);
+	}
+}

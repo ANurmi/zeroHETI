@@ -2,16 +2,7 @@
 
 reset_handler:
   la x2, stack
-  la ra, postMain 
   j main
-
-.global postMain
-postMain:
-  li t0, 0x00000380
-  li t1, 0x80000000
-  or a0, a0, t1
-  sw a0, 0(t0)
-  wfi
 
 .global changeStack
 changeStack:
@@ -28,7 +19,7 @@ changeStack:
   jal x0, default_handler
   jal x0, default_handler
   jal x0, default_handler
-  jal x0, default_handler
+  .4byte isr_mtimer
   jal x0, default_handler
   jal x0, default_handler
   jal x0, default_handler

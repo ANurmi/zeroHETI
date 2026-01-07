@@ -51,11 +51,11 @@ void set_prio (uint8_t idx, uint8_t prio) {
   write_u8(HETIC_BASE + LINE_SIZE*idx + 1, prio);
 }
 
-void interrupts_enable() {
+static inline void interrupts_enable() {
   asm("csrsi mstatus, 8");
 }
 
-void interrupts_disable() {
+static inline void interrupts_disable() {
   asm("csrci mstatus, 8");
 }
 
