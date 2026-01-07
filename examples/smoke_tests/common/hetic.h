@@ -10,27 +10,27 @@
 // bits [6:7] reserved
 #define PRIO_OFFSET 0x8
 
-void set_ip(uint8_t idx) {
+static inline void set_ip(uint8_t idx) {
   set_bit(HETIC_BASE + LINE_SIZE*idx, IP_OFFSET);
 }
-uint8_t get_ip(uint8_t idx) {
+static inline uint8_t get_ip(uint8_t idx) {
   return read_u8(HETIC_BASE + LINE_SIZE*idx) & (1 << IP_OFFSET);
 }
-void clear_ip(uint8_t idx) {
+static inline void clear_ip(uint8_t idx) {
   clear_bit(HETIC_BASE + LINE_SIZE*idx, IP_OFFSET);
 }
-void set_ie(uint8_t idx) {
+static inline void set_ie(uint8_t idx) {
   set_bit(HETIC_BASE + LINE_SIZE*idx, IE_OFFSET);
 }
-uint8_t get_ie(uint8_t idx) {
+static inline uint8_t get_ie(uint8_t idx) {
   return read_u8(HETIC_BASE + LINE_SIZE*idx) & (1 << IE_OFFSET);
 }
-void clear_ie(uint8_t idx) {
+static inline void clear_ie(uint8_t idx) {
   clear_bit(HETIC_BASE + LINE_SIZE*idx, IE_OFFSET);
 }
 
 // 0 -> EDGE, 1 -> LEVEL
-void set_trig_type(uint8_t idx, uint8_t type) {
+static inline void set_trig_type(uint8_t idx, uint8_t type) {
   if (type) {
     set_bit(HETIC_BASE + LINE_SIZE*idx, TRIG_OFFSET);
   } else {
@@ -39,7 +39,7 @@ void set_trig_type(uint8_t idx, uint8_t type) {
 }
 
 // 0 -> POS, 1 -> NEG
-void set_trig_pol(uint8_t idx, uint8_t type) {
+static inline void set_trig_pol(uint8_t idx, uint8_t type) {
   if (type) {
     set_bit(HETIC_BASE + LINE_SIZE*idx, TRIG_OFFSET+1);
   } else {
@@ -47,15 +47,15 @@ void set_trig_pol(uint8_t idx, uint8_t type) {
   }
 }
 
-void set_prio (uint8_t idx, uint8_t prio) {
+static inline void set_prio (uint8_t idx, uint8_t prio) {
   write_u8(HETIC_BASE + LINE_SIZE*idx + 1, prio);
 }
 
-void interrupts_enable() {
+static inline void interrupts_enable() {
   asm("csrsi mstatus, 8");
 }
 
-void interrupts_disable() {
+static inline void interrupts_disable() {
   asm("csrci mstatus, 8");
 }
 
