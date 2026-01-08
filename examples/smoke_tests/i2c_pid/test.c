@@ -15,25 +15,49 @@
 
 __attribute__((aligned(4)))
 void isr_mtimer(void){
-	clear_ie(IRQ_IDX_MTIME);
-	print_uart("[MTIME_IRQ] Triggered\n");
-	// Terminate test
+
+	// Terminate power control simulation
+	// by sending last I2C frame
+  i2c_send_addr_frame(0, WRITE);
+  i2c_send_data_frame(0x0, LAST);
+
+	// capture minstret and mcycle (low) counters
+	uint32_t minstret  = csr_read(CSR_MINSTRET);
+	uint32_t mcycle    = csr_read(CSR_MCYCLE);
+	uint32_t minstreth = csr_read(CSR_MINSTRETH);
+	uint32_t mcycleh   = csr_read(CSR_MCYCLEH);
+
+	// Print out counters
+	print_uart("[MTIME_ISR] CSR mcycle:   ");
+	print_uart_u32(mcycleh);
+	print_uart_u32(mcycle);
+	print_uart("\n");  
+	print_uart("[MTIME_ISR] CSR minstret: ");
+	print_uart_u32(minstreth);
+	print_uart_u32(minstret);
+	print_uart("\n");  
+
+	// Write to polled debugger memory to end
 	write_u32(0x380, 0x80000000);
 	asm("wfi");
 }
+
+__attribute__((aligned(4)))
 void isr_timer_logging(void){}
+
+__attribute__((aligned(4)))
 void isr_timer_control(void){}
 
 int main() {
 
   init_uart(0x0, 0x0);
   print_uart("[UART] PID-control demonstrator on i2c\n");
-	//print_uart_u32(0xDEADBEEF);  
 
-  /* GLOBAL SETUP */
+  // i2c setup
   i2c_set_prescaler(4);
   i2c_core_enable();
 
+	// Set CLIC vector table address
 	csr_write(CSR_MTVT, VECTORS_ADDR);
 
   // MTimer to terminate test
@@ -44,20 +68,26 @@ int main() {
   set_mtimer_cmp(0x186A0);
 	interrupts_enable();
 	set_ie(IRQ_IDX_MTIME);
+	set_prio(IRQ_IDX_MTIME, 0xFF);
   start_mtimer();
 
   // Writing 1 to address 0 activates
   // power control simulation 
   i2c_send_addr_frame(0, WRITE);
   i2c_send_data_frame(0x1, LAST);
+	
+	// clear instruction & cycle counters
+	csr_write(CSR_MINSTRETH, 0x0);
+	csr_write(CSR_MCYCLEH,   0x0);
+	csr_write(CSR_MINSTRET,  0x0);
+	csr_write(CSR_MCYCLE,    0x0);
+
   /* START CRITICAL SECTION*/
-  for(int i=0;i<1000;i++) asm("nop");
+  //for(int i=0;i<1000;i++) asm("nop");
   //i2c_send_addr_frame(4, WRITE);
   //i2c_send_data_frame(0x22, LAST);
   //while(!get_ip(IRQ_IDX_MTIME));
   /* END CRITICAL SECTION*/
-  i2c_send_addr_frame(0, WRITE);
-  i2c_send_data_frame(0x0, LAST);
 
 	asm("wfi");
 	interrupts_disable();
