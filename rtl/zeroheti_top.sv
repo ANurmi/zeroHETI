@@ -182,9 +182,6 @@ module zeroheti_top
       .sda_padoen_o(i2c_sda_padoen_o)
   );
 
-  assign demux_apb[0].pready  = 1'b1;
-  assign demux_apb[0].pslverr = 1'b0;
-
 `ifndef SYNTHESIS
 `ifndef TECH_MEMORY
 

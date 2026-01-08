@@ -4,6 +4,7 @@
 #include "uart.h"
 #include "hetic.h"
 #include "mtimer.h"
+#include "timer_group.h"
 #include "i2c.h"
 
 #define WRITE    1
@@ -70,6 +71,10 @@ int main() {
 	set_ie(IRQ_IDX_MTIME);
 	set_prio(IRQ_IDX_MTIME, 0xFF);
   start_mtimer();
+
+	// Timer group setup
+	timer_group_set_cmp(0, 0x100);
+	timer_group_start(0);
 
   // Writing 1 to address 0 activates
   // power control simulation 
