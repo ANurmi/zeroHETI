@@ -44,7 +44,13 @@ void isr_mtimer(void){
 }
 
 __attribute__((aligned(4)))
-void isr_timer_logging(void){}
+void isr_timer_logging(void){
+  i2c_send_addr_frame(0, READ);
+	uint8_t rd = i2c_recv_data_frame(LAST);
+	print_uart("[Logger] I2C read: ");
+	print_uart_u32((uint32_t)rd);
+	print_uart("\n");
+}
 
 __attribute__((aligned(4)))
 void isr_timer_control(void){}
@@ -60,21 +66,27 @@ int main() {
 
 	// Set CLIC vector table address
 	csr_write(CSR_MTVT, VECTORS_ADDR);
+	// Global enable
+	interrupts_enable();
 
   // MTimer to terminate test
-
   // 1  s in hex @100MHz = 0x05F5_E100
   // 1 ms,               = 0x0001_86A0
   // 1 us,               = 0x0000_0064
   set_mtimer_cmp(0x186A0);
-	interrupts_enable();
 	set_ie(IRQ_IDX_MTIME);
 	set_prio(IRQ_IDX_MTIME, 0xFF);
   start_mtimer();
-
-	// Timer group setup
-	timer_group_set_cmp(0, 0x100);
+	
+	// TG0 logger task setup
+	set_ie(IRQ_IDX_TG0_CMP);
+	set_prio(IRQ_IDX_TG0_CMP, 0x1);
+	timer_group_set_cmp(0, 0x3800);
 	timer_group_start(0);
+
+	// TG1 control task setup
+	timer_group_set_cmp(1, 0x3000);
+	timer_group_start(1);
 
   // Writing 1 to address 0 activates
   // power control simulation 

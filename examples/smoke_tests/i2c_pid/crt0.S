@@ -22,6 +22,18 @@ reset_handler:
   jal x0, default_handler
   jal x0, default_handler
   jal x0, default_handler
+  jal x0, default_handler
+  jal x0, default_handler
+  jal x0, default_handler
+  jal x0, default_handler
+  .4byte isr_timer_logging
+  jal x0, default_handler
+  .4byte isr_timer_control
+  jal x0, default_handler
+  jal x0, default_handler
+  jal x0, default_handler
+  jal x0, default_handler
+  jal x0, default_handler
 
   //// reset vector
   .org 0x100

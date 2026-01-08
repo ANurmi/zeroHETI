@@ -42,11 +42,11 @@ module zeroheti_top
 
   always_comb begin : irq_mapping
     all_irqs                      = '0;
-    all_irqs[5]                   = uart_irq;
-    all_irqs[6]                   = i2c_irq;
-    all_irqs[7]                   = mtime_irq;
-    all_irqs[((2*TGSize)+8)-1:8]  = apb_timer_irqs;
-    all_irqs[NrIrqs-1:NumIntIrqs] = ext_irq_i;
+    all_irqs[3]                   = uart_irq; // legacy sw irq
+    all_irqs[11]                  = i2c_irq; // legacy ext irq
+    all_irqs[7]                   = mtime_irq; // legacy tmr irq
+    all_irqs[((2*TGSize)+16)-1:16] = apb_timer_irqs;
+    all_irqs[NrIrqs-1:24] = ext_irq_i;
   end : irq_mapping
 
   zeroheti_core #(
