@@ -47,7 +47,7 @@ __attribute__((aligned(4)))
 void isr_timer_logging(void){
   i2c_send_addr_frame(0, READ);
 	uint8_t rd = i2c_recv_data_frame(LAST);
-	print_uart("[Logger] I2C read: ");
+	print_uart("[LOGGER_ISR] I2C read: ");
 	print_uart_u32((uint32_t)rd);
 	print_uart("\n");
 }
@@ -106,8 +106,10 @@ int main() {
   //while(!get_ip(IRQ_IDX_MTIME));
   /* END CRITICAL SECTION*/
 
-	asm("wfi");
-	interrupts_disable();
+	while(1){
+		interrupts_enable();
+		asm("wfi");
+	}
   
   return 0;
 }
