@@ -40,12 +40,13 @@ void isr_mtimer(void){
 
 	// Write to polled debugger memory to end
 	write_u32(0x380, 0x80000000);
-	asm("wfi");
+	while(1);
 }
 
 __attribute__((aligned(4)))
 void isr_timer_logging(void){
   i2c_send_addr_frame(0, READ);
+	for (int i=0;i<10; i++) asm("nop");
 	uint8_t rd = i2c_recv_data_frame(LAST);
 	print_uart("[LOGGER_ISR] I2C read: ");
 	print_uart_u32((uint32_t)rd);
@@ -66,8 +67,6 @@ int main() {
 
 	// Set CLIC vector table address
 	csr_write(CSR_MTVT, VECTORS_ADDR);
-	// Global enable
-	interrupts_enable();
 
   // MTimer to terminate test
   // 1  s in hex @100MHz = 0x05F5_E100
@@ -98,6 +97,9 @@ int main() {
 	csr_write(CSR_MCYCLEH,   0x0);
 	csr_write(CSR_MINSTRET,  0x0);
 	csr_write(CSR_MCYCLE,    0x0);
+	
+	// Global enable
+	interrupts_enable();
 
   /* START CRITICAL SECTION*/
   //for(int i=0;i<1000;i++) asm("nop");

@@ -26,7 +26,7 @@ reset_handler:
   jal x0, default_handler
   jal x0, default_handler
   jal x0, default_handler
-  .4byte isr_timer_logging
+  .4byte trampoline_logging 
   jal x0, default_handler
   .4byte isr_timer_control
   jal x0, default_handler
@@ -40,6 +40,10 @@ reset_handler:
   jal x0, reset_handler
 
   .org 0x104
+
+trampoline_logging:
+	call isr_timer_logging
+	mret
 
 .balign 256
 default_handler:
