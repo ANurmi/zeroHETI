@@ -22,7 +22,7 @@ static inline void write_serial (uint8_t a) {
   write_u8(UART_THR, a);
 }
 
-void print_uart(const uint8_t *str){
+static inline void print_uart(const uint8_t *str){
     const uint8_t *cur = &str[0];
     while (*cur != '\0')
     {
@@ -39,7 +39,7 @@ static inline void bin_to_hex(uint8_t inp, uint8_t res[2]){
     res[0] = inp_high < 10 ? inp_high + 48 : inp_high + 55;
 }
 
-void print_uart_u32(uint32_t val){
+static inline void print_uart_u32(uint32_t val){
 	for (int i = 3; i > -1; i--){
 		uint8_t cur = (val >> (i*8)) & 0xff;
 		uint8_t hex[2];

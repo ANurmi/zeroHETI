@@ -12,7 +12,8 @@
 #define NOT_LAST 0
 #define READ     0
 
-//uint8_t mtime_flag = 0;
+// Global variables
+uint8_t i2c_read_val = 0;
 
 __attribute__((aligned(4)))
 void isr_mtimer(void){
@@ -47,14 +48,27 @@ __attribute__((aligned(4)))
 void isr_timer_logging(void){
   i2c_send_addr_frame(0, READ);
 	for (int i=0;i<10; i++) asm("nop");
-	uint8_t rd = i2c_recv_data_frame(LAST);
-	print_uart("[LOGGER_ISR] I2C read: ");
-	print_uart_u32((uint32_t)rd);
+	i2c_read_val = i2c_recv_data_frame(LAST);
+	interrupts_enable();
+	uint32_t mcycle    = csr_read(CSR_MCYCLE);
+	uint32_t mcycleh   = csr_read(CSR_MCYCLEH);
+
+	print_uart("[LOGGER_ISR] I2C read: 0x");
+	print_uart_u32((uint32_t)i2c_read_val);
+	print_uart(", nominal: 0x32, range [0x2D-0x37], timestamp (mcycle): ");
+	print_uart_u32(mcycleh);
+	print_uart_u32(mcycle);
 	print_uart("\n");
 }
 
 __attribute__((aligned(4)))
-void isr_timer_control(void){}
+void isr_timer_control(void){
+	const float p_measured = (float)i2c_read_val;
+	int8_t result = 0;	
+	// Write back computation result
+	i2c_send_addr_frame(4, WRITE);
+	i2c_send_data_frame(result, LAST);
+}
 
 int main() {
 
@@ -84,7 +98,9 @@ int main() {
 	timer_group_start(0);
 
 	// TG1 control task setup
-	timer_group_set_cmp(1, 0x3000);
+	set_ie(IRQ_IDX_TG1_CMP);
+	set_prio(IRQ_IDX_TG1_CMP, 0xFF);
+	timer_group_set_cmp(1, 0x5000);
 	timer_group_start(1);
 
   // Writing 1 to address 0 activates
