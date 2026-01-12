@@ -66,8 +66,8 @@ void isr_timer_control(void){
 	const float p_measured = (float)i2c_read_val;
 	int8_t result = 0;	
 	// Write back computation result
-	i2c_send_addr_frame(4, WRITE);
-	i2c_send_data_frame(result, LAST);
+	//i2c_send_addr_frame(4, WRITE);
+	//i2c_send_data_frame(result, LAST);
 }
 
 int main() {
