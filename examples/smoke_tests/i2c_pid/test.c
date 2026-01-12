@@ -12,8 +12,26 @@
 #define NOT_LAST 0
 #define READ     0
 
+// Control loop defines
+//#define DT 1 // ms?
+/*#define KP 0.066	// P factor
+#define KI 0.1566	// I factor
+#define KD 0.1668	// D factor
+
+#define R_NOMINAL 16
+*/
+
 // Global variables
 uint8_t i2c_read_val = 0;
+
+volatile int64_t P_reference = 50;
+
+/*
+uint32_t error      = 0;
+uint32_t error_prev = 0;
+uint32_t integral   = 0;
+uint32_t derivative = 0;
+*/
 
 __attribute__((aligned(4)))
 void isr_mtimer(void){
@@ -46,6 +64,7 @@ void isr_mtimer(void){
 
 __attribute__((aligned(4)))
 void isr_timer_logging(void){
+	csr_write(CSR_MINTTHRESH, 0x1);
   i2c_send_addr_frame(0, READ);
 	for (int i=0;i<10; i++) asm("nop");
 	i2c_read_val = i2c_recv_data_frame(LAST);
@@ -63,11 +82,39 @@ void isr_timer_logging(void){
 
 __attribute__((aligned(4)))
 void isr_timer_control(void){
-	const float p_measured = (float)i2c_read_val;
-	int8_t result = 0;	
+
+	// capture minthresh
+	volatile uint32_t mintthresh_last = csr_read(CSR_MINTTHRESH);
+	csr_write(CSR_MINTTHRESH, 0xFF);
+
+  // read latest value
+	i2c_send_addr_frame(0, READ);
+	for (int i=0;i<10; i++) asm("nop");
+	i2c_read_val = i2c_recv_data_frame(LAST);
+
+	int64_t error = P_reference - (int64_t)i2c_read_val;	
+
+/*
+	// Compute PID
+	const uint32_t p_measured = i2c_read_val;
+	const uint32_t p_target   = 50;
+	error                     = p_target - p_measured;
+	integral             		 += (error*DT);
+	derivative            	  = (error - error_prev)/DT;
+	const uint32_t p_ctrl		  = error + integral + derivative;
+	error_prev            		= error;
+
+	// compute P=UI
+	uint32_t V_squared = p_ctrl * R_NOMINAL;
+	uint32_t V_new     = usqrt4(V_squared);
+	print_uart_u32(V_squared);*/
+		
+	int8_t result = error;	
 	// Write back computation result
-	//i2c_send_addr_frame(4, WRITE);
-	//i2c_send_data_frame(result, LAST);
+	i2c_send_addr_frame(4, WRITE);
+	i2c_send_data_frame(result, LAST);
+	// capture minthresh
+	csr_write(CSR_MINTTHRESH, mintthresh_last);
 }
 
 int main() {
@@ -97,10 +144,12 @@ int main() {
 	timer_group_set_cmp(0, 0x3800);
 	timer_group_start(0);
 
+	for (int i=0; i<1500; i++) asm("nop");
+
 	// TG1 control task setup
 	set_ie(IRQ_IDX_TG1_CMP);
 	set_prio(IRQ_IDX_TG1_CMP, 0xFF);
-	timer_group_set_cmp(1, 0x5000);
+	timer_group_set_cmp(1, 0x7000);
 	timer_group_start(1);
 
   // Writing 1 to address 0 activates

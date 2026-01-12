@@ -42,12 +42,24 @@ reset_handler:
   .org 0x104
 
 trampoline_logging:
+	addi sp, sp, -(4*12)
+  csrr t0, mepc
+  csrr t1, mcause
+  csrr t2, 0x347 // mintthresh
+  sw t0, 0(sp)
+  sw t1, 4(sp)
 	jal x1, isr_timer_logging
+ 	lw t0, 0(sp)
+  lw t1, 4(sp)
+	csrw 0x347, t2 // mintthresh
+  csrw mcause, t1
+  csrw mepc, t0
+	addi sp, sp, (4*12)
 	mret
 
 trampoline_control:
 	#ifdef EABI
-	addi sp, sp, -(4*9)
+	addi sp, sp, -(4*10)
   sw ra, 0(sp)
   sw t0, 4(sp)
   sw a0, 8(sp)
@@ -57,10 +69,11 @@ trampoline_control:
   sw t1, 24(sp)
   csrr t0, mepc
   csrr t1, mcause
+	csrr t2, 0x347 // mintthresh
   sw t0, 28(sp)
   sw t1, 32(sp)
 	#else
-	addi sp, sp, -(4 * 18)
+	addi sp, sp, -(4 * 19)
 	sw ra, 0(sp)
 	sw t0, 4(sp)
 	sw t1, 8(sp)
