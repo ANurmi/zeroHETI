@@ -23,7 +23,7 @@ pub use ufmt;
 pub use embedded_io;
 pub use riscv;
 #[cfg(feature = "rt")]
-pub use riscv_rt as rt;
+pub use riscv_rt::{self as rt, core_interrupt, external_interrupt};
 
 use core::arch::asm;
 
@@ -34,6 +34,16 @@ compile_error!(
 
 #[cfg(all(feature = "fpga", feature = "rtl-tb"))]
 compile_error!("Select exactly one of -Ffpga -Frtl-tb");
+
+// Generate the `_continue_nested_trap` symbol
+#[cfg(feature = "nest-continue")]
+atalanta_bsp_macros::generate_continue_nested_trap!();
+
+// Re-export macros for nested interrupts
+pub use atalanta_bsp_macros::{
+    generate_continue_nested_trap, generate_nested_trap_entry, generate_pcs_trap_entry,
+    nested_interrupt,
+};
 
 #[cfg_attr(feature = "rtl-tb", doc = "100 MHz")]
 pub const CPU_FREQ_HZ: u32 = match () {

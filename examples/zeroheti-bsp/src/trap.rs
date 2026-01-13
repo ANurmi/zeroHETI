@@ -45,7 +45,7 @@ global_asm!(
         // [1..=16] are standard
         .word _start_SupervisorSoft_trap    // 1
         .word _start_DefaultHandler_trap
-        .word _start_MachineSoft_trap       // 3
+        .word _start_Uart_trap       // 3
         .word _start_DefaultHandler_trap
         .word _start_SupervisorTimer_trap   // 5
         .word _start_DefaultHandler_trap
@@ -53,14 +53,27 @@ global_asm!(
         .word _start_DefaultHandler_trap
         .word _start_SupervisorExternal_trap // 9
         .word _start_DefaultHandler_trap
-        .word _start_MachineExternal_trap   // 11
+        .word _start_I2c_trap   // 11
 
-        // Fill the rest with `DefaultHandler`
-        .rept 53
-        .word _start_DefaultHandler_trap // 12..64
+        // Fill up to 16 with `DefaultHandler`
+        .rept 4
+        .word _start_DefaultHandler_trap // 12..16
         .endr
 
-        // TODO: add remaining missing interrupts
+        .word _start_Timer0Ovf_trap // 16
+        .word _start_Timer0Cmp_trap // 17
+        .word _start_Timer1Ovf_trap // 18
+        .word _start_Timer1Cmp_trap // 19
+        .word _start_Timer2Ovf_trap // 20
+        .word _start_Timer2Cmp_trap // 21
+        .word _start_Timer3Ovf_trap // 22
+        .word _start_Timer3Cmp_trap // 23
+    
+
+        // Fill the rest with `DefaultHandler`
+        .rept 8
+        .word _start_DefaultHandler_trap // 24..32
+        .endr
 
     .option pop",
 );

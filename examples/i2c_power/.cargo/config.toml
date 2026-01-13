@@ -1,6 +1,3 @@
-[build]
-target = "riscv32ec-unknown-none-elf.json"
-
 [unstable]
 build-std = ["core"]
 
@@ -19,4 +16,21 @@ rustflags = [
     "-C",
     "link-arg=-mabi=ilp32e",
 ]
-runner = "../run-sim.sh"
+runner = "./tulitikli.sh"
+
+[target.riscv32ic-unknown-none-elf]
+rustflags = [
+    "-C",
+    "linker=riscv64-unknown-elf-gcc",
+    "-C",
+    "link-arg=-Wl,-Tmemory.x",
+    "-C",
+    "link-arg=-Wl,-Tlink.x",
+    "-C",
+    "link-arg=-nostartfiles",
+    "-C",
+    "link-arg=-march=rv32ic",
+    "-C",
+    "link-arg=-mabi=ilp32",
+]
+runner = "./tulitikli.sh"
