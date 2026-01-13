@@ -27,3 +27,12 @@ fpga = ["bsp/fpga"]
 # mode. `codegen-units = 1` avoids that
 codegen-units = 1
 opt-level = "s"
+
+[profile.release]
+# There seems to be a problem in riscv-rt with regards to linking in default_start_trap in debug
+# mode. `codegen-units = 1` avoids that
+codegen-units = 1
+opt-level = "s"
+
+[build-dependencies]
+riscv-target-parser = "0.1.3"

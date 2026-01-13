@@ -9,33 +9,35 @@ pub use crate::riscv::interrupt::machine::Interrupt as CoreInterrupt;
 #[repr(usize)]
 #[cfg_attr(not(feature = "ufmt"), derive(Debug))]
 pub enum ExternalInterrupt {
-    /// UART interrupt (Non-standard, overrides S-mode software interrupt
+    /// UART interrupt (Non-standard, overrides M-mode software interrupt
     /// mapping.)
-    Uart = 17,
-    Gpio = 18,
-    SpiRxTxIrq = 19,
+    Uart = 3,
+    // Non-standard - overrides something
+    I2c = 11,
+    //Gpio = 18,
+    //SpiRxTxIrq = 19,
     /// SPI end of transmission
-    SpiEotIrq = 20,
+    //SpiEotIrq = 20,
     /// Timer 0 overflow
-    Timer0Ovf = 21,
+    Timer0Ovf = 16,
     /// Timer 0 compare
-    Timer0Cmp = 22,
+    Timer0Cmp = 17,
     /// Timer1 overflow
-    Timer1Ovf = 23,
+    Timer1Ovf = 18,
     /// Timer1 compare
-    Timer1Cmp = 24,
+    Timer1Cmp = 19,
     /// Timer2 overflow
-    Timer2Ovf = 25,
+    Timer2Ovf = 20,
     /// Timer2 compare
-    Timer2Cmp = 26,
+    Timer2Cmp = 21,
     /// Timer3 overflow
-    Timer3Ovf = 27,
+    Timer3Ovf = 22,
     /// Timer3 compare
-    Timer3Cmp = 28,
+    Timer3Cmp = 23,
     /// Timer queue interrupt on `~full` -> `full` transition.
-    TqFull = 29,
+    //TqFull = 29,
     /// Timer queue interrupt on `full` -> `~full` transition.
-    TqNotFull = 30,
+    //TqNotFull = 30,
     /// Non-maskable interrupt, carried over from standard Ibex
     Nmi = 31,
 }
