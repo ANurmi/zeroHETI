@@ -1,4 +1,4 @@
-pub const APB_TIMER_BASE: usize = 0x0_2200;
+pub const APB_TIMER_BASE: usize = 0x0_2300;
 
 pub const TIMER0_ADDR: usize = APB_TIMER_BASE;
 pub const TIMER1_ADDR: usize = APB_TIMER_BASE + 0x10;

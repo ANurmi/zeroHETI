@@ -4,10 +4,8 @@ ENTRY(_start)
 
 MEMORY
 {
-  /* LENGTH = 0x5000 = 20K */
-  IMEM (rx ) : ORIGIN = 0x5000, LENGTH = 0x8000
-  /* LENGTH = 0x9000 = 36K */
-  DMEM (rwx) : ORIGIN = 0xD000, LENGTH = 0x4000
+  IMEM (rx ) : ORIGIN = 0x10000, LENGTH = 0x4000
+  DMEM (rwx) : ORIGIN = 0x20000, LENGTH = 0x4000
 }
 
 /* Regions are setup like in link.ld for rt-ss written by Antti Nurmi. I didn't put any more thought into it. */
@@ -29,8 +27,25 @@ PROVIDE(_start_DefaultHandler_trap = _start_trap);
 */
 
 PROVIDE(_start_SupervisorSoft_trap = _start_DefaultHandler_trap);
-PROVIDE(_start_MachineSoft_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Uart_trap = _start_DefaultHandler_trap);
 PROVIDE(_start_SupervisorTimer_trap = _start_DefaultHandler_trap);
 PROVIDE(_start_MachineTimer_trap = _start_DefaultHandler_trap);
 PROVIDE(_start_SupervisorExternal_trap = _start_DefaultHandler_trap);
 PROVIDE(_start_MachineExternal_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_I2c_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Timer0Ovf_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Timer0Cmp_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Timer1Ovf_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Timer1Cmp_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Timer2Ovf_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Timer2Cmp_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Timer3Ovf_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Timer3Cmp_trap = _start_DefaultHandler_trap);
+
+
+
+
+
+
+
+
