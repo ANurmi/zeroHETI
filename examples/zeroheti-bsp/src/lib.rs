@@ -36,13 +36,25 @@ compile_error!(
 compile_error!("Select exactly one of -Ffpga -Frtl-tb");
 
 // Generate the `_continue_nested_trap` symbol
-#[cfg(feature = "nest-continue")]
-atalanta_bsp_macros::generate_continue_nested_trap!();
+#[cfg(all(feature = "nest-continue", target_abi = "ilp32"))]
+atalanta_bsp_macros::generate_continue_nested_trap_ilp32!();
+
+#[cfg(all(feature = "nest-continue", target_abi = "ilp32e"))]
+atalanta_bsp_macros::generate_continue_nested_trap_ilp32e!();
 
 // Re-export macros for nested interrupts
+pub use atalanta_bsp_macros::generate_pcs_trap_entry;
+#[cfg(llvm_abiname = "ilp32")]
 pub use atalanta_bsp_macros::{
-    generate_continue_nested_trap, generate_nested_trap_entry, generate_pcs_trap_entry,
-    nested_interrupt,
+    generate_continue_nested_trap_ilp32 as generate_continue_nested_trap,
+    generate_nested_trap_entry_ilp32 as generate_nested_trap_entry,
+    nested_interrupt_ilp32 as nested_interrupt,
+};
+#[cfg(llvm_abiname = "ilp32e")]
+pub use atalanta_bsp_macros::{
+    generate_continue_nested_trap_ilp32e as generate_continue_nested_trap,
+    generate_nested_trap_entry_ilp32e as generate_nested_trap_entry,
+    nested_interrupt_ilp32e as nested_interrupt,
 };
 
 #[cfg_attr(feature = "rtl-tb", doc = "100 MHz")]

@@ -1,3 +1,9 @@
+pub(crate) enum Abi {
+    Ilp32,
+    Ilp32e,
+}
+
+/// EABI / ilp32e
 #[rustfmt::skip]
 pub(crate) const CALLER_SAVE_EABI: &[&str] = &[
     // `ra`: return address, stores the address to return to after a function call or interrupt.
@@ -16,6 +22,7 @@ pub(crate) const CALLER_SAVE_EABI: &[&str] = &[
     "x15",
 ];
 
+/// RISC-V standard ABI / ilp32
 #[rustfmt::skip]
 pub(crate) const CALLER_SAVE_ABI: &[&str] = &[
     // `ra`: return address, stores the address to return to after a function call or interrupt.
@@ -48,7 +55,6 @@ pub(crate) const CALLER_SAVE_ABI: &[&str] = &[
     "x30",
     "x31",
 ];
-
 
 // Kept for reference
 #[allow(dead_code)]
