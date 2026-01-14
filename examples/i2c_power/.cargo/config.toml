@@ -1,7 +1,7 @@
 [unstable]
 build-std = ["core"]
 
-[build]
+[target.riscv32ec-unknown-eabi]
 rustflags = [
     "-C",
     "linker=riscv64-unknown-elf-gcc",
@@ -11,22 +11,94 @@ rustflags = [
     "link-arg=-Wl,-Tlink.x",
     "-C",
     "link-arg=-nostartfiles",
+    "-C",
+    "link-arg=-march=rv32ec",
+    "-C",
+    "link-arg=-mabi=ilp32e"
 ]
-
-[target.riscv32ec-unknown-eabi]
 runner = "./tulitikli.sh"
 
 [target.riscv32emc-unknown-eabi]
+rustflags = [
+    "-C",
+    "linker=riscv64-unknown-elf-gcc",
+    "-C",
+    "link-arg=-Wl,-Tmemory.x",
+    "-C",
+    "link-arg=-Wl,-Tlink.x",
+    "-C",
+    "link-arg=-nostartfiles",
+    "-C",
+    "link-arg=-march=rv32emc",
+    "-C",
+    "link-arg=-mabi=ilp32e"
+]
 runner = "./tulitikli.sh"
 
 [target.riscv32ic-unknown-eabi]
+rustflags = [
+    "-C",
+    "linker=riscv64-unknown-elf-gcc",
+    "-C",
+    "link-arg=-Wl,-Tmemory.x",
+    "-C",
+    "link-arg=-Wl,-Tlink.x",
+    "-C",
+    "link-arg=-nostartfiles",
+    "-C",
+    "link-arg=-march=rv32ic",
+    "-C",
+    "link-arg=-mabi=ilp32e"
+]
 runner = "./tulitikli.sh"
 
 [target.riscv32ic-unknown-none-elf]
+rustflags = [
+    "-C",
+    "linker=riscv64-unknown-elf-gcc",
+    "-C",
+    "link-arg=-Wl,-Tmemory.x",
+    "-C",
+    "link-arg=-Wl,-Tlink.x",
+    "-C",
+    "link-arg=-nostartfiles",
+    "-C",
+    "link-arg=-march=rv32ic",
+    "-C",
+    "link-arg=-mabi=ilp32"
+]
 runner = "./tulitikli.sh"
 
 [target.riscv32imc-unknown-eabi]
+rustflags = [
+    "-C",
+    "linker=riscv64-unknown-elf-gcc",
+    "-C",
+    "link-arg=-Wl,-Tmemory.x",
+    "-C",
+    "link-arg=-Wl,-Tlink.x",
+    "-C",
+    "link-arg=-nostartfiles",
+    "-C",
+    "link-arg=-march=rv32imc",
+    "-C",
+    "link-arg=-mabi=ilp32e"
+]
 runner = "./tulitikli.sh"
 
 [target.riscv32imc-unknown-none-elf]
+rustflags = [
+    "-C",
+    "linker=riscv64-unknown-elf-gcc",
+    "-C",
+    "link-arg=-Wl,-Tmemory.x",
+    "-C",
+    "link-arg=-Wl,-Tlink.x",
+    "-C",
+    "link-arg=-nostartfiles",
+    "-C",
+    "link-arg=-march=rv32imc",
+    "-C",
+    "link-arg=-mabi=ilp32"
+]
 runner = "./tulitikli.sh"
