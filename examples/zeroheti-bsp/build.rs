@@ -1,4 +1,4 @@
-use std::{collections::HashSet, env, fs, path::PathBuf};
+use std::{collections::HashSet, env, fs, path::PathBuf, process::Command};
 
 const VALID_RISCV_EXTENSIONS: &[char] = &['i', 'e', 'm', 'c', 'a', 'f', 'd'];
 
@@ -70,6 +70,11 @@ fn main() {
     let target = env::var("TARGET").unwrap();
     let cargo_flags = env::var("CARGO_ENCODED_RUSTFLAGS").unwrap();
 
+    // Extract ABI name and export as cfg(llvm_abiname)
+    let layout = extract_abiname(&target);
+    println!("cargo:rustc-check-cfg=cfg(llvm_abiname, values(\"ilp32\", \"ilp32e\"))",);
+    println!("cargo:rustc-cfg=llvm_abiname=\"{}\"", layout);
+
     // Let cargo know we're using extension flags so it doesn't create a superfluous
     // warning about them
     for ext in VALID_RISCV_EXTENSIONS {
@@ -98,4 +103,22 @@ fn main() {
     }
 
     println!("cargo:rerun-if-changed=build.rs");
+}
+
+fn extract_abiname(target: &str) -> String {
+    let output = Command::new("rustc")
+        .args([
+            "-Zunstable-options",
+            "--print",
+            "target-spec-json",
+            "--target",
+            &format!("{}.json", target),
+        ])
+        .output()
+        .unwrap();
+    println!("{output:?}");
+    let json = String::from_utf8(output.stdout).unwrap();
+    let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+    let layout = v["llvm-abiname"].as_str().unwrap();
+    layout.to_string()
 }

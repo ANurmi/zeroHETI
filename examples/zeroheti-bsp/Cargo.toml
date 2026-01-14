@@ -33,3 +33,6 @@ opt-level = "s"
 [profile.release]
 debug = true
 
+[build-dependencies]
+serde_json = "1.0.149"
+
