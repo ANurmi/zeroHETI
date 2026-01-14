@@ -1,10 +1,8 @@
 [build]
-target = "riscv32ec-unknown-none-elf.json"
-
-[target.riscv32ec-unknown-none-elf]
+target = "riscv32ec-unknown-eabi.json"
 rustflags = [
     "-C",
-    "linker=riscv32-unknown-elf-gcc",
+    "linker=riscv64-unknown-elf-gcc",
     "-C",
     "link-arg=-Wl,-Tmemory.x",
     "-C",
@@ -12,20 +10,24 @@ rustflags = [
     "-C",
     "link-arg=-nostartfiles",
 ]
-runner = "../run-sim.sh"
+
+[target.riscv32ec-unknown-eabi]
+runner = "./run-sim.sh"
+
+[target.riscv32emc-unknown-eabi]
+runner = "./run-sim.sh"
+
+[target.riscv32ic-unknown-eabi]
+runner = "./run-sim.sh"
 
 [target.riscv32ic-unknown-none-elf]
-rustflags = [
-    "-C",
-    "linker=riscv32-unknown-elf-gcc",
-    "-C",
-    "link-arg=-Wl,-Tmemory.x",
-    "-C",
-    "link-arg=-Wl,-Tlink.x",
-    "-C",
-    "link-arg=-nostartfiles",
-]
-runner = "../run-sim.sh"
+runner = "./run-sim.sh"
+
+[target.riscv32imc-unknown-eabi]
+runner = "./run-sim.sh"
+
+[target.riscv32imc-unknown-none-elf]
+runner = "./run-sim.sh"
 
 [unstable]
 build-std = ["core"]
