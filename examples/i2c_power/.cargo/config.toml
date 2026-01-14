@@ -1,7 +1,7 @@
 [unstable]
 build-std = ["core"]
 
-[target.riscv32ec-unknown-none-elf]
+[build]
 rustflags = [
     "-C",
     "linker=riscv64-unknown-elf-gcc",
@@ -11,26 +11,22 @@ rustflags = [
     "link-arg=-Wl,-Tlink.x",
     "-C",
     "link-arg=-nostartfiles",
-    "-C",
-    "link-arg=-march=rv32ec",
-    "-C",
-    "link-arg=-mabi=ilp32e",
 ]
+
+[target.riscv32ec-unknown-eabi]
+runner = "./tulitikli.sh"
+
+[target.riscv32emc-unknown-eabi]
+runner = "./tulitikli.sh"
+
+[target.riscv32ic-unknown-eabi]
 runner = "./tulitikli.sh"
 
 [target.riscv32ic-unknown-none-elf]
-rustflags = [
-    "-C",
-    "linker=riscv64-unknown-elf-gcc",
-    "-C",
-    "link-arg=-Wl,-Tmemory.x",
-    "-C",
-    "link-arg=-Wl,-Tlink.x",
-    "-C",
-    "link-arg=-nostartfiles",
-    "-C",
-    "link-arg=-march=rv32ic",
-    "-C",
-    "link-arg=-mabi=ilp32",
-]
+runner = "./tulitikli.sh"
+
+[target.riscv32imc-unknown-eabi]
+runner = "./tulitikli.sh"
+
+[target.riscv32imc-unknown-none-elf]
 runner = "./tulitikli.sh"
