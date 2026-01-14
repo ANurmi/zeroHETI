@@ -12,7 +12,7 @@ fn main() {
             target.llvm_base_isa()
         );
 
-                // set environment variable RISCV_RT_LLVM_ARCH_PATCH to patch LLVM bug.
+        // set environment variable RISCV_RT_LLVM_ARCH_PATCH to patch LLVM bug.
         // (this env variable is temporary and will be removed after LLVM being fixed)
         println!(
             "cargo:rustc-env=RISCV_RT_LLVM_ARCH_PATCH={}",
