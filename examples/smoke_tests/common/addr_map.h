@@ -32,9 +32,9 @@
 
 #define VECTORS_ADDR 0x00010000
 
-#define IRQ_IDX_UART    3
+#define IRQ_IDX_MSOFT   3
 #define IRQ_IDX_MTIME   7
-#define IRQ_IDX_I2C     11
+#define IRQ_IDX_MEXT    11
 #define IRQ_IDX_TG0_OF  16
 #define IRQ_IDX_TG0_CMP 17
 #define IRQ_IDX_TG1_OF  18
@@ -43,4 +43,5 @@
 #define IRQ_IDX_TG2_CMP 21
 #define IRQ_IDX_TG3_OF  22
 #define IRQ_IDX_TG3_CMP 23
-
+#define IRQ_IDX_UART    24
+#define IRQ_IDX_I2C     25
