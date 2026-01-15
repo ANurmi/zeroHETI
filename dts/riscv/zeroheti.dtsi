@@ -1,0 +1,17 @@
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "zeroheti";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "zeroheti";
+			riscv,isa = "rv32ec_zicsr";
+			reg = <0>;
+			device_type = "cpu";
+		};
+	};
+};
