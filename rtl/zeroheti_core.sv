@@ -153,7 +153,6 @@ module zeroheti_core
       .irq_id_o   (irq_id_claim),
       .irq_ack_o  (irq_ack),
       .irq_level_i(irq_level),
-      .irq_shv_i  (1'b1),
 
       .debug_req_i   (debug_req),
       .debug_mode_o  (),

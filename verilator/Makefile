@@ -63,9 +63,6 @@ INCLUDES         = \
   -I$(shell bender path common_cells)/include \
   -I$(shell bender path obi)/include \
   -I$(shell bender path register_interface)/include \
-  -I$(shell bender path rt-ibex)/vendor/lowrisc_ip/dv/sv/dv_utils \
-  -I$(shell bender path rt-ibex)/vendor/lowrisc_ip/ip/prim/rtl \
-  -I$(shell bender path rt-ibex)/rtl
 
 .PHONY: init
 init:
