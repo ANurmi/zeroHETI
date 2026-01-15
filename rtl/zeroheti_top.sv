@@ -3,7 +3,7 @@ module zeroheti_top
   import zeroheti_pkg::TGSize;
 #(
     parameter zeroheti_pkg::core_cfg_t CoreCfg = zeroheti_pkg::`CORE_CFG,
-    localparam int unsigned NumIntIrqs = 16,
+    localparam int unsigned NumIntIrqs = 26,
     localparam int unsigned NumExtIrqs = CoreCfg.num_irqs - NumIntIrqs
 ) (
     input  logic                  clk_i,
@@ -42,11 +42,13 @@ module zeroheti_top
 
   always_comb begin : irq_mapping
     all_irqs                      = '0;
-    all_irqs[3]                   = uart_irq; // legacy sw irq
-    all_irqs[11]                  = i2c_irq; // legacy ext irq
+    all_irqs[3]                   = '0; // legacy sw irq
+    all_irqs[11]                  = ext_irq_i[0]; // legacy ext irq
     all_irqs[7]                   = mtime_irq; // legacy tmr irq
     all_irqs[((2*TGSize)+16)-1:16] = apb_timer_irqs;
-    all_irqs[NrIrqs-1:24] = ext_irq_i;
+    all_irqs[24]                 = uart_irq;
+    all_irqs[25]                 = i2c_irq;
+    all_irqs[NrIrqs-1:26] = ext_irq_i;
   end : irq_mapping
 
   zeroheti_core #(
