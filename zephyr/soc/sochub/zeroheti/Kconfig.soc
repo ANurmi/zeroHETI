@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Rivos Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ZEROHETI
+	bool
+
+config SOC
+	default "zeroheti" if SOC_ZEROHETI
