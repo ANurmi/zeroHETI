@@ -1,0 +1,22 @@
+# Copyright (c) 2020 Olof Kindgren <olof.kindgren@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ZEROHETI
+
+config SOC
+	string
+	default "zeroheti"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 100000000
+
+config NUM_IRQS
+	int
+	default 32
+
+config RISCV_SOC_EXCEPTION_FROM_IRQ
+	bool
+	default y
+
+endif # SOC_ZEROHETI
