@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_sources(
-  soc.h
+  soc_common.h
   soc_irq.S
 )
 

@@ -10,7 +10,7 @@
  */
 #include <offsets.h>
 #include <zephyr/linker/sections.h>
-#include <soc.h>
+#include <soc_common.h>
 
 /* exports */
 GTEXT(__soc_handle_irq)
