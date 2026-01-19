@@ -21,9 +21,11 @@
 };
 
 &uart0 {
+  compatible = "ns16550";
 	status = "okay";
 	clock-frequency = <125000>;
 	current-speed = <7200>;
+  reg-shift = <0>;
 };
 
 &mtimer {
