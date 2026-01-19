@@ -81,7 +81,7 @@
 */
 		uart0: serial@2000 {
 			reg = <0x00002000 0x100>;
-			compatible = "sochub,zeroheti";
+			compatible = "ns,16550";
 		};
 /*
 		spi0: spi@40300000 {
