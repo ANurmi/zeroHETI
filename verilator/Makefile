@@ -1,6 +1,10 @@
 ZH_ROOT         ?= $(realpath $(CURDIR))/..
 BUILD_DIR       ?= $(ZH_ROOT)/build
+SW_BUILD_DIR    ?= $(ZH_ROOT)/build/sw
 VERIL_DIR       ?= $(ZH_ROOT)/verilator
+
+XLEN             = 64
+TOOLCHAIN        = riscv$(XLEN)-unknown-elf-
 
 TOP_MODULE       = zeroheti_top
 RV_TOP           = zeroheti_compliance
@@ -86,8 +90,22 @@ lint:
 	$(VDEFS) $(INCLUDES) $(WAIVER) $(SOURCES)
 	@echo "Verilator lint [OK]"
 
+.PHONY: hex
+hex:
+	$(TOOLCHAIN)objcopy $(SW_BUILD_DIR)/$(TEST).elf -O binary $(SW_BUILD_DIR)/tmp.bin
+	@xxd -ps $(SW_BUILD_DIR)/tmp.bin $(SW_BUILD_DIR)/tmp.hex
+	@tr -d '\n' < $(SW_BUILD_DIR)/tmp.hex > $(SW_BUILD_DIR)/tmp_nl.hex
+	@sed -r 's/(.{8})/\1\n/g' < $(SW_BUILD_DIR)/tmp_nl.hex > $(SW_BUILD_DIR)/tmp_be.hex
+	@sed ':a; /^.\{8\}$$/!s/$$/0/; ta' < $(SW_BUILD_DIR)/tmp_be.hex > $(SW_BUILD_DIR)/tmp_be_pad.hex
+	@sed -E 's/(..)(..)(..)(..)/\4\3\2\1/' < $(SW_BUILD_DIR)/tmp_be_pad.hex > $(SW_BUILD_DIR)/tmp_le.hex
+
+.PHONY: trim
+trim:
+	@head -$(shell wc -w < $(SW_BUILD_DIR)/tmp_le.hex) $(SW_BUILD_DIR)/tmp_le.hex > $(SW_BUILD_DIR)/$(TEST).hex
+	@rm $(SW_BUILD_DIR)/tmp*
+
 .PHONY: $(TEST)
-$(TEST):
+$(TEST): hex trim
 	@cp $(BUILD_DIR)/sw/$(TEST).hex $(VERIL_BUILD_DIR)/verilator_stim.hex
 	@head -$(IMEM_WORDS)    $(VERIL_BUILD_DIR)/verilator_stim.hex > $(VERIL_BUILD_DIR)/imem_stim.hex
 	@tail -n +$(DMEM_START) $(VERIL_BUILD_DIR)/verilator_stim.hex > $(VERIL_BUILD_DIR)/dmem_stim.hex

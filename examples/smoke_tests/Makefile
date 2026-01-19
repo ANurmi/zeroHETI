@@ -25,12 +25,10 @@ init:
 elf: init
 	$(MAKE) -C $(CURDIR)/$(TEST) test
 	$(MAKE) -C $(CURDIR) objdump
-	$(MAKE) -C $(CURDIR) hex
-	$(MAKE) -C $(CURDIR) trim
 
 .PHONY: objdump
 objdump:
-	$(TOOLCHAIN)objdump $(BUILD_DIR)/$(TEST).elf -D > $(BUILD_DIR)/$(TEST).asm
+	@$(TOOLCHAIN)objdump $(BUILD_DIR)/$(TEST).elf -D > $(BUILD_DIR)/$(TEST).asm
 
 .PHONY: hex
 hex:
