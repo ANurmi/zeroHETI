@@ -18,7 +18,7 @@
 			reg = <0x00>;
 			status = "okay";
 			compatible = "lowrisc,ibex", "riscv";
-			riscv,isa = "rv32imcb_zicsr_zifencei";
+			riscv,isa = "rv32emc_zicsr";
 
 			hlic: interrupt-controller {
 				#interrupt-cells = <0x01>;
