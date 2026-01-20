@@ -50,57 +50,11 @@
 			reg-names = "mtime", "mtimecmp";
 			interrupts-extended = <&hlic 7>;
 		};
-/*
-		aontimer: aontimer@40470000 {
-			compatible = "lowrisc,opentitan-aontimer";
-			reg = <0x40470000 0x1000>;
-			interrupts = <156 1>;
-			interrupt-names = "wdog_bark";
-			interrupt-parent = <&plic>;
-			clock-frequency = <200000>;
-			status = "disabled";
-		};
 
-		pwrmgr: pwrmgr@40400000 {
-			compatible = "lowrisc,opentitan-pwrmgr";
-			reg = <0x40400000 0x80>;
-			status = "okay";
-		};
-
-		plic: interrupt-controller@48000000 {
-			compatible = "sifive,plic-1.0.0";
-			#address-cells = <0>;
-			#interrupt-cells = <2>;
-			interrupt-controller;
-			interrupts-extended = <&hlic 11>;
-			reg = <0x48000000 0x04000000>;
-			riscv,max-priority = <7>;
-			riscv,ndev = <182>;
-			status = "okay";
-		};
-*/
 		uart0: serial@2000 {
 			reg = <0x00002000 0x100>;
 			compatible = "ns,16550";
 		};
-/*
-		spi0: spi@40300000 {
-			compatible = "lowrisc,opentitan-spi";
-			status = "disabled";
-			reg = <0x40300000 0x100>;
-			clock-frequency = <96000000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-		};
-
-		spi1: spi@40310000 {
-			compatible = "lowrisc,opentitan-spi";
-			status = "disabled";
-			reg = <0x40310000 0x100>;
-			clock-frequency = <48000000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-		};*/
 	};
 };
 
