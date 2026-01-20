@@ -21,6 +21,7 @@ module mock_uart (
     input  logic          psel_i,
     input  logic [31:0]   pwdata_i,
     output logic [31:0]   prdata_o,
+    input  logic  [3:0]   pstrb_i,
     output logic          pready_o,
     output logic          pslverr_o
 );
@@ -50,6 +51,49 @@ module mock_uart (
     byte scr = 0;
     logic fifo_enabled = 1'b0;
 
+    bit write_event = penable_i & psel_i &  pwrite_i;
+    bit read_event  = penable_i & psel_i & ~pwrite_i;
+    byte wdata, rdata;
+    logic [2:0] local_ofs;
+/* verilator lint_off UNOPTFLAT*/
+    logic [2:0] local_addr;
+/* verilator lint_on UNOPTFLAT*/
+
+    assign local_addr = paddr_i[2:0] + local_ofs;
+
+    always_comb begin
+      prdata_o  = 0;
+      wdata     = 0;
+      local_ofs = 0;
+
+      unique case (pstrb_i)
+        4'b0001: begin
+          local_ofs = 0;
+          prdata_o = {24'h0, rdata};
+          wdata    = pwdata_i[7:0];
+        end
+        4'b0010: begin
+          local_ofs = 1;
+          prdata_o = {16'h0, rdata, 8'h0};
+          wdata    = pwdata_i[15:8];
+        end
+        4'b0100: begin
+          local_ofs = 2;
+          prdata_o = {8'h0, rdata, 16'h0};
+          wdata    = pwdata_i[23:16];
+        end
+        4'b1000: begin
+          local_ofs = 3;
+          prdata_o = {rdata, 24'h0};
+          wdata    = pwdata_i[31:24];
+        end
+        default: begin
+          if (psel_i & penable_i) $fatal(1, "Fatal: Illegal UART access");
+        end
+      endcase
+    end
+
+
     assign pready_o = 1'b1;
     assign pslverr_o = 1'b0;
 
@@ -63,25 +107,25 @@ module mock_uart (
 
     always_ff @(posedge clk_i or negedge rst_ni) begin
         if (rst_ni) begin
-            if (psel_i & penable_i & pwrite_i) begin
-                case ((paddr_i >> 'h2) & 'h7)
+            if (write_event) begin
+                case (local_addr)
                     THR: begin
-                        if (lcr & 'h80) dll <= byte'(pwdata_i[7:0]);
-                        else uart_tx(byte'(pwdata_i[7:0]));
+                        if (lcr & 'h80) dll <= wdata;
+                        else uart_tx(wdata);
                     end
                     IER: begin
-                        if (lcr & 'h80) dlm <= byte'(pwdata_i[7:0]);
-                        else ier <= byte'(pwdata_i[7:0] & 'hF);
+                        if (lcr & 'h80) dlm <= wdata;
+                        else ier <= wdata & 'hF;
                     end
                     FCR: begin
-                        if (pwdata_i[0]) fifo_enabled <= 1'b1;
+                        if (wdata[0]) fifo_enabled <= 1'b1;
                         else fifo_enabled <= 1'b0;
                     end
-                    LCR: lcr <= byte'(pwdata_i[7:0]);
-                    MCR: mcr <= byte'(pwdata_i[7:0] & 'h1F);
-                    LSR: lsr <= byte'(pwdata_i[7:0]);
-                    MSR: msr <= byte'(pwdata_i[7:0]);
-                    SCR: scr <= byte'(pwdata_i[7:0]);
+                    LCR: lcr <= wdata;
+                    MCR: mcr <= wdata & 'h1F;
+                    LSR: lsr <= wdata;
+                    MSR: msr <= wdata;
+                    SCR: scr <= wdata;
                     default:;
                 endcase
             end
@@ -89,25 +133,24 @@ module mock_uart (
     end
 
     always_comb begin
-        prdata_o = '0;
-        if (psel_i & penable_i & ~pwrite_i) begin
-            case ((paddr_i >> 'h2) & 'h7)
+        if (read_event) begin
+            case (local_addr)
                 THR: begin
-                    if (lcr & 'h80) prdata_o = {24'b0, dll};
+                    if (lcr & 'h80) rdata = {24'b0, dll};
                 end
                 IER: begin
-                    if (lcr & 'h80) prdata_o = {24'b0, dlm};
-                    else prdata_o = {24'b0, ier};
+                    if (lcr & 'h80) rdata = {24'b0, dlm};
+                    else rdata = {24'b0, ier};
                 end
                 IIR: begin
-                    if (fifo_enabled) prdata_o = {24'b0, 8'hc0};
-                    else prdata_o = {24'b0, 8'b0};
+                    if (fifo_enabled) rdata = {24'b0, 8'hc0};
+                    else rdata = {24'b0, 8'b0};
                 end
-                LCR: prdata_o = {24'b0, lcr};
-                MCR: prdata_o = {24'b0, mcr};
-                LSR: prdata_o = {24'b0, (lsr | (1 << THRE) | (1 << TEMT))};
-                MSR: prdata_o = {24'b0, msr};
-                SCR: prdata_o = {24'b0, scr};
+                LCR: rdata = {24'b0, lcr};
+                MCR: rdata = {24'b0, mcr};
+                LSR: rdata = {24'b0, (lsr | (1 << THRE) | (1 << TEMT))};
+                MSR: rdata = {24'b0, msr};
+                SCR: rdata = {24'b0, scr};
                 default:;
             endcase
         end
