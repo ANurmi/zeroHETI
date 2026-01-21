@@ -3,6 +3,7 @@
 zephyr_sources(
   soc_common.h
   soc_irq.S
+  soc_timer.c
 )
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld CACHE INTERNAL "")
