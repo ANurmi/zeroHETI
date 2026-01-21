@@ -11,8 +11,6 @@ int main(void)
 {
 	printf("Hello World! %s\n", CONFIG_BOARD_TARGET);
 
-  *(uint8_t*)(0x2000) = 0x40; // Print "@"
-
   // Terminate simulation by writing to debugger memory
   *(uint32_t*)(0x0380) = 0x80000000;
 
