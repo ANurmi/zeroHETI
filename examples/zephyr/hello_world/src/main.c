@@ -6,13 +6,13 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <debug/debug.c>
 
 int main(void)
 {
 	printf("Hello World! %s\n", CONFIG_BOARD_TARGET);
 
-  // Terminate simulation by writing to debugger memory
-  *(uint32_t*)(0x0380) = 0x80000000;
+  debug_signal_pass();
 
 	return 0;
 }
