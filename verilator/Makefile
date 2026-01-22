@@ -32,9 +32,9 @@ IMEM_WORDS       = $(shell echo $$(($(IMEM_BYTES) / 4)))
 DMEM_START       = $(DMEM_REL_OFFS_WORDS)
 
 BASE             = E
-MULT             = 
-COMP             = c
-ISA              = Rv32$(BASE)$(MULT)$(COMP)
+MULT             = M
+COMP             = C
+ISA              = RV32$(BASE)$(MULT)$(COMP)
 
 VDEFS ?= \
   +define+VERILATOR=1 \

@@ -30,11 +30,13 @@ module zeroheti_core
   OBI_BUS mgr_bus[NumSbrPorts] ();
   OBI_BUS sbr_bus[NumMgrPorts] ();
 
-  logic irq_heti, irq_ack, irq_valid;
+  logic irq_heti, irq_ack, irq_valid, irq_shv;
   logic [Cfg.num_irqs-1:0] core_irq;
   logic [    IrqWidth-1:0] irq_id;
   logic [   PrioWidth-1:0] irq_level;
   logic [    IrqWidth-1:0] irq_id_claim;
+  logic [             1:0] irq_priv;
+
 
   obi_hetic #(
       .NrIrqLines(Cfg.num_irqs),
@@ -81,16 +83,16 @@ module zeroheti_core
   };
 
   // TODO: add ext port when needed
-  assign sbr_bus[5].gnt       = 1'b0;
-  assign sbr_bus[5].gntpar    = 1'b0;
-  assign sbr_bus[5].err       = 1'b0;
-  assign sbr_bus[5].rready    = 1'b0;
-  assign sbr_bus[5].rreadypar = 1'b0;
-  assign sbr_bus[5].rvalid    = 1'b0;
-  assign sbr_bus[5].rdata     = 32'b0;
-  assign sbr_bus[5].rvalidpar = 1'b0;
-  assign sbr_bus[5].rid       = 1'b0;
-  assign sbr_bus[5].r_optional= 1'b0;
+  assign sbr_bus[5].gnt        = 1'b0;
+  assign sbr_bus[5].gntpar     = 1'b0;
+  assign sbr_bus[5].err        = 1'b0;
+  assign sbr_bus[5].rready     = 1'b0;
+  assign sbr_bus[5].rreadypar  = 1'b0;
+  assign sbr_bus[5].rvalid     = 1'b0;
+  assign sbr_bus[5].rdata      = 32'b0;
+  assign sbr_bus[5].rvalidpar  = 1'b0;
+  assign sbr_bus[5].rid        = 1'b0;
+  assign sbr_bus[5].r_optional = 1'b0;
 
   logic debug_req;
 
@@ -184,8 +186,8 @@ module zeroheti_core
       .irq_id_o    (irq_id_claim),
       .irq_ack_o   (irq_ack),
       .irq_level_i (8'(irq_level)),
-      .irq_shv_i   (1'b1),
-      .irq_priv_i  (2'b11),
+      .irq_shv_i   (irq_shv),
+      .irq_priv_i  (irq_priv),
 
       .scramble_key_valid_i(1'b0),
       .scramble_key_i      (128'b0),
@@ -211,7 +213,7 @@ module zeroheti_core
   assign mgr_bus[1].be    = 4'b0;
   assign mgr_bus[1].we    = 1'b0;
   assign mgr_bus[1].wdata = 32'b0;
-  
+
   assign mgr_bus[2].reqpar = 1'b0;
   assign mgr_bus[2].aid    = 1'b0;
   assign mgr_bus[2].a_optional = 1'b0;

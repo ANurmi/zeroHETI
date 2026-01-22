@@ -1,10 +1,21 @@
 package zeroheti_pkg;
 
+  localparam logic [31:0] BootAddr = 32'h0800;
+
+  typedef enum  integer {
+    IcHetic = 0,
+    IcClic  = 1,
+    IcEdfic = 2
+  } int_ctrl_e;
+
+  localparam int_ctrl_e IntController = IcHetic;
+
   typedef struct packed {
     bit rve;
     bit bt_alu;
     bit wb_stage;
     ibex_pkg::rv32m_e mul;
+    int_ctrl_e ic;
     int unsigned num_irqs;
     int unsigned num_prio;
     int unsigned hart_id;
@@ -12,51 +23,55 @@ package zeroheti_pkg;
   } core_cfg_t;
 
 
-  localparam core_cfg_t Rv32EcCfg = '{
+  localparam core_cfg_t RV32ECCfg = '{
       rve       : 1,
       bt_alu    : 0,
       wb_stage  : 0,
       mul       : ibex_pkg::RV32MNone,
+      ic        : IntController,
       num_irqs  : 32,
       num_prio  : 32,
       hart_id   : 0,
-      boot_addr : 32'h0800
+      boot_addr : BootAddr
   };
 
-  localparam core_cfg_t Rv32EmcCfg = '{
+  localparam core_cfg_t RV32EMCCfg = '{
       rve       : 1,
       bt_alu    : 1,
       wb_stage  : 1,
-      mul       : ibex_pkg::RV32MFast,
+      mul       : ibex_pkg::RV32MSingleCycle,
+      ic        : IntController,
       num_irqs  : 32,
       num_prio  : 32,
       hart_id   : 0,
-      boot_addr : 32'h0800
+      boot_addr : BootAddr
   };
 
-  localparam core_cfg_t Rv32IcCfg = '{
+  localparam core_cfg_t RV32ICCfg = '{
       rve       : 0,
       bt_alu    : 0,
       wb_stage  : 0,
       mul       : ibex_pkg::RV32MNone,
+      ic        : IntController,
       num_irqs  : 32,
       num_prio  : 32,
       hart_id   : 0,
-      boot_addr : 32'h0800
+      boot_addr : BootAddr
   };
 
-  localparam core_cfg_t Rv32ImcCfg = '{
+  localparam core_cfg_t RV32IMCCfg = '{
       rve       : 0,
       bt_alu    : 1,
       wb_stage  : 1,
       mul       : ibex_pkg::RV32MSingleCycle,
+      ic        : IntController,
       num_irqs  : 32,
       num_prio  : 32,
       hart_id   : 0,
-      boot_addr : 32'h0800
+      boot_addr : BootAddr
   };
 
-  localparam core_cfg_t DefaultCfg = Rv32EcCfg;
+  localparam core_cfg_t DefaultCfg = RV32EMCCfg;
 
   typedef struct packed {
     logic [31:0] base;
