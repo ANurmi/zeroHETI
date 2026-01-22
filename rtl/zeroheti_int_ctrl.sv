@@ -43,9 +43,57 @@ module zeroheti_int_ctrl #(
     assign irq_shv_o  = 1'b1;
 
   end else if (CoreCfg.ic == EDFIC) begin : g_edfic
-    $fatal(1, "edfic support not implemented yet");
+
+    APB ic_apb ();
+
+    obi_to_apb_intf i_obi_to_apb (
+        .clk_i,
+        .rst_ni,
+        .obi_i(obi_sbr),
+        .apb_o(ic_apb)
+    );
+
+    edf_ic #(
+    ) i_edfic ();
+
   end else if (CoreCfg.ic == CLIC) begin : g_clic
-    $fatal(1, "clic support not implemented yet");
+
+    logic [7:0] irq_level;
+    assign irq_level_o = irq_level[IrqWidth-1:0];
+
+    APB ic_apb ();
+
+    obi_to_apb_intf i_obi_to_apb (
+        .clk_i,
+        .rst_ni,
+        .obi_i(obi_sbr),
+        .apb_o(ic_apb)
+    );
+
+    clic_apb #(
+        .N_SOURCE(NrIrqs)
+    ) i_clic (
+        .clk_i,
+        .rst_ni,
+        .intr_src_i    (ext_irqs_i),
+        .penable_i     (ic_apb.penable),
+        .pwrite_i      (ic_apb.pwrite),
+        .paddr_i       (ic_apb.paddr),
+        .psel_i        (ic_apb.psel),
+        .prdata_o      (ic_apb.prdata),
+        .pready_o      (ic_apb.pready),
+        .pslverr_o     (ic_apb.pslverr),
+        .pwdata_i      (ic_apb.pwdata),
+        .irq_priv_o,
+        .irq_shv_o,
+        .irq_id_o,
+        .irq_valid_o,
+        .irq_ready_i   (irq_ack_i),
+        .irq_level_o   (irq_level),
+        .irq_kill_ack_i(1'b0),
+        .irq_kill_req_o()
+    );
+
   end
 
 endmodule : zeroheti_int_ctrl
