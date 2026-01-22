@@ -10,6 +10,7 @@ module apb_mtimer#(
   output logic [31:0] prdata_o,
   output logic        pready_o,
   output logic        pslverr_o,
+  output logic [63:0] mtime_o,
   output logic        timer_irq_o
 );
 
@@ -26,6 +27,8 @@ logic [31:0] mtimecmp_hi, mtimecmp_lo;
 logic [2:0] prescaler_q, prescaler_d;
 logic [2:0] counter_q, counter_d;
 logic       enable_q, enable_d;
+
+assign mtime_o = mtime_q;
 
 logic [2:0] int_addr;
 assign int_addr = paddr_i[4:2];

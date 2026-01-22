@@ -1,13 +1,17 @@
 module zeroheti_core
-  import zeroheti_pkg::AddrMap;
+  import zeroheti_pkg::*;
 #(
-    parameter  zeroheti_pkg::core_cfg_t Cfg       = zeroheti_pkg::DefaultCfg,
-    localparam int unsigned             IrqWidth  = $clog2(Cfg.num_irqs),
-    localparam int unsigned             PrioWidth = $clog2(Cfg.num_prio)
+    parameter zeroheti_pkg::core_cfg_t Cfg = zeroheti_pkg::DefaultCfg,
+    localparam int unsigned IrqWidth = $clog2(Cfg.num_irqs),
+    localparam int unsigned TsWidth = 12,
+    localparam int unsigned PrioWidth = (zeroheti_pkg::IntController == EDFIC) ? TsWidth : $clog2(
+        CoreCfg.num_prio
+    )
 ) (
     input  logic                         clk_i,
     input  logic                         rst_ni,
     input  logic                         testmode_i,
+    input  logic      [            63:0] mtime_i,
     input  logic                         jtag_tck_i,
     input  logic                         jtag_tms_i,
     input  logic                         jtag_trst_ni,
@@ -38,11 +42,13 @@ module zeroheti_core
   logic [             1:0] irq_priv;
 
   zeroheti_int_ctrl #(
-      .CoreCfg (Cfg)
+      .CoreCfg(Cfg),
+      .TsWidth(TsWidth)
   ) i_int_ctrl (
       .clk_i,
       .rst_ni,
       .ext_irqs_i,
+      .mtime_i,
       .irq_heti_o (irq_heti),
       .irq_nest_o (irq_nest),
       .irq_id_o   (irq_id),
