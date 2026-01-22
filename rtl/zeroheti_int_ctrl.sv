@@ -18,4 +18,34 @@ module zeroheti_int_ctrl #(
     output logic                               irq_shv_o,
            OBI_BUS.Subordinate                 obi_sbr
 );
+  import zeroheti_pkg::*;
+
+  if (CoreCfg.ic == HETIC) begin : g_hetic
+
+    obi_hetic #(
+        .NrIrqLines(CoreCfg.num_irqs),
+        .NrIrqPrios(CoreCfg.num_prio)
+    ) i_hetic (
+        .clk_i,
+        .rst_ni,
+        .ext_irqs_i,
+        .irq_heti_o,
+        .irq_nest_o,
+        .irq_id_o,
+        .irq_valid_o,
+        .irq_id_i,
+        .irq_ack_i,
+        .irq_level_o,
+        .obi_sbr
+    );
+
+    assign irq_priv_o = 2'b11;
+    assign irq_shv_o  = 1'b1;
+
+  end else if (CoreCfg.ic == EDFIC) begin : g_edfic
+    $fatal(1, "edfic support not implemented yet");
+  end else if (CoreCfg.ic == CLIC) begin : g_clic
+    $fatal(1, "clic support not implemented yet");
+  end
+
 endmodule : zeroheti_int_ctrl
