@@ -53,8 +53,26 @@ module zeroheti_int_ctrl #(
         .apb_o(ic_apb)
     );
 
-    edf_ic #(
-    ) i_edfic ();
+    edfic_top #(
+        .NrIrqs (),
+        .TsWidth(),
+        .TsClip ()
+    ) i_edfic (
+        .clk_i,
+        .rst_ni,
+        .cfg_req_i  (),
+        .cfg_we_i   (),
+        .cfg_addr_i (),
+        .cfg_wdata_i(),
+        .cfg_rdata_o(),
+        .irq_i      (),
+        .irq_id_o   (),
+        .irq_id_i   (),
+        .irq_dl_o   (),
+        .irq_valid_o(),
+        .irq_ack_i  (),
+        .mtime_i    ()
+    );
 
   end else if (CoreCfg.ic == CLIC) begin : g_clic
 
