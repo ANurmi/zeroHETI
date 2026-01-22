@@ -3,10 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <stdio.h>
 #include <stdint.h>
 #include <debug/debug.c>
+
+extern int debug_signal_pass();
 
 int main(void)
 {
