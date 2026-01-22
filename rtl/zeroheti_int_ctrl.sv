@@ -1,13 +1,15 @@
 module zeroheti_int_ctrl #(
     parameter  zeroheti_pkg::core_cfg_t CoreCfg   = zeroheti_pkg::DefaultCfg,
     localparam int unsigned             NrIrqs    = CoreCfg.num_irqs,
+    parameter  int unsigned             TsWidth   = 12,
     localparam int unsigned             IrqWidth  = $clog2(CoreCfg.num_irqs),
-    localparam int unsigned             PrioWidth = $clog2(CoreCfg.num_prio)
+    localparam int unsigned             PrioWidth = (zeroheti_pkg::IntController == EDFIC) ? TsWidth : $clog2(CoreCfg.num_prio)
 ) (
     input  logic                               clk_i,
     input  logic                               rst_ni,
     input  logic               [   NrIrqs-1:0] ext_irqs_i,
     output logic                               irq_valid_o,
+    input  logic               [         63:0] mtime_i,
     output logic               [ IrqWidth-1:0] irq_id_o,
     input  logic               [ IrqWidth-1:0] irq_id_i,
     input  logic                               irq_ack_i,
@@ -53,25 +55,27 @@ module zeroheti_int_ctrl #(
         .apb_o(ic_apb)
     );
 
+    assign ic_apb.pready = ic_apb.psel & ic_apb.penable;
+
     edfic_top #(
-        .NrIrqs (),
-        .TsWidth(),
-        .TsClip ()
+        .NrIrqs (NrIrqs),
+        .TsWidth(32'd12),
+        .TsClip (32'd0)
     ) i_edfic (
         .clk_i,
         .rst_ni,
-        .cfg_req_i  (),
-        .cfg_we_i   (),
-        .cfg_addr_i (),
-        .cfg_wdata_i(),
-        .cfg_rdata_o(),
-        .irq_i      (),
-        .irq_id_o   (),
-        .irq_id_i   (),
-        .irq_dl_o   (),
-        .irq_valid_o(),
-        .irq_ack_i  (),
-        .mtime_i    ()
+        .cfg_req_i  (ic_apb.psel & ic_apb.penable),
+        .cfg_we_i   (ic_apb.pwrite),
+        .cfg_addr_i (ic_apb.paddr),
+        .cfg_wdata_i(ic_apb.pwdata),
+        .cfg_rdata_o(ic_apb.prdata),
+        .irq_i      (ext_irqs_i),
+        .irq_id_o,
+        .irq_id_i,
+        .irq_dl_o   (irq_level_o),
+        .irq_valid_o,
+        .irq_ack_i,
+        .mtime_i
     );
 
   end else if (CoreCfg.ic == CLIC) begin : g_clic
