@@ -3,10 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <stdio.h>
 #include <stdint.h>
-#include <debug/debug.c>
+#include <debug/debug.h>
 
 int main(void)
 {
