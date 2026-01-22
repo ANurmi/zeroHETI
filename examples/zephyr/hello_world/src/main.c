@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <debug/debug.h>
 
+extern int debug_signal_pass();
+
 int main(void)
 {
 	printf("Hello World! %s\n", CONFIG_BOARD_TARGET);
