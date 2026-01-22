@@ -3,12 +3,12 @@ package zeroheti_pkg;
   localparam logic [31:0] BootAddr = 32'h0800;
 
   typedef enum  integer {
-    IcHetic = 0,
-    IcClic  = 1,
-    IcEdfic = 2
+    HETIC = 0,
+    CLIC  = 1,
+    EDFIC = 2
   } int_ctrl_e;
 
-  localparam int_ctrl_e IntController = IcHetic;
+  localparam int_ctrl_e IntController = `INTC;
 
   typedef struct packed {
     bit rve;
