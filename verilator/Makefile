@@ -31,6 +31,8 @@ DMEM_REL_OFFS_WORDS = 16385
 IMEM_WORDS       = $(shell echo $$(($(IMEM_BYTES) / 4)))
 DMEM_START       = $(DMEM_REL_OFFS_WORDS)
 
+INTC             = HETIC
+
 BASE             = E
 MULT             = M
 COMP             = C
@@ -42,6 +44,7 @@ VDEFS ?= \
 	+define+ZH_ROOT=$(ZH_ROOT) \
 	+define+IMEM_BYTES=$(IMEM_BYTES) \
 	+define+DMEM_BYTES=$(DMEM_BYTES) \
+	+define+INTC=$(INTC) \
 	+define+LOAD=$(LOAD) \
   +define+COMMON_CELLS_ASSERTS_OFF \
 	+define+CORE_CFG=$(ISA)Cfg \
