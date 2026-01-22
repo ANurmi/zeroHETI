@@ -1,9 +1,11 @@
 module zeroheti_int_ctrl #(
-    parameter  zeroheti_pkg::core_cfg_t CoreCfg   = zeroheti_pkg::DefaultCfg,
-    localparam int unsigned             NrIrqs    = CoreCfg.num_irqs,
-    parameter  int unsigned             TsWidth   = 12,
-    localparam int unsigned             IrqWidth  = $clog2(CoreCfg.num_irqs),
-    localparam int unsigned             PrioWidth = (zeroheti_pkg::IntController == EDFIC) ? TsWidth : $clog2(CoreCfg.num_prio)
+    parameter zeroheti_pkg::core_cfg_t CoreCfg = zeroheti_pkg::DefaultCfg,
+    localparam int unsigned NrIrqs = CoreCfg.num_irqs,
+    parameter int unsigned TsWidth = 12,
+    localparam int unsigned IrqWidth = $clog2(CoreCfg.num_irqs),
+    localparam int unsigned PrioWidth = (zeroheti_pkg::IntController == EDFIC) ? TsWidth : $clog2(
+        CoreCfg.num_prio
+    )
 ) (
     input  logic                               clk_i,
     input  logic                               rst_ni,
