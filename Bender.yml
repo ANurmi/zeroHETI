@@ -14,6 +14,7 @@ dependencies:
   apb_uart: { git: "https://github.com/pulp-platform/apb_uart.git", version: 0.2.1 }
   apb_timer: { git: "https://github.com/pulp-platform/apb_timer.git", rev: "03eba2e6965f5363df12621882bc70498c551a73" }
   obi: { git: "https://github.com/pulp-platform/obi.git", version: 0.1.7 }
+  edfic: { git: "https://github.com/ANurmi/edfic.git", rev: "main" }
   vbench: { git: "https://github.com/ANurmi/vbench", rev: "main" }
 
 sources:
