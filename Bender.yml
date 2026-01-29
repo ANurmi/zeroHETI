@@ -36,6 +36,9 @@ sources:
       - rtl/zeroheti_dbg_wrapper.sv
       - rtl/zeroheti_core.sv
       - rtl/zeroheti_top.sv
+  - target: verilator
+    files:
+      - verilator/tb/zeroheti_top_wrapper.sv
   - target: fpga
     files:
       - fpga/rtl/prim_clock_gating.sv
