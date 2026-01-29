@@ -11,6 +11,20 @@ module zeroheti_top_wrapper #(
     output logic uart_tx_o
 );
 
+  logic i2c_sda_vip_dut;
+  logic i2c_sda_dut_vip;
+  logic i2c_scl_vip_dut;
+  logic i2c_scl_dut_vip;
+
+  vip_i2c i_vip_i2c (
+    .clk_i,
+    .rst_ni,
+    .sda_i (i2c_sda_dut_vip),
+    .sda_o (i2c_sda_vip_dut),
+    .scl_i (i2c_scl_dut_vip),
+    .scl_o (i2c_scl_vip_dut)
+  );
+
   zeroheti_top i_zeroheti (
       .clk_i,
       .rst_ni,
@@ -21,13 +35,13 @@ module zeroheti_top_wrapper #(
       .jtag_td_o,
       .uart_rx_i,
       .uart_tx_o,
-      .ext_irq_i(),
-      .i2c_scl_pad_i(1'b1),
-      .i2c_scl_pad_o(),
-      .i2c_scl_padoen_o(),
-      .i2c_sda_padoen_o(),
-      .i2c_sda_pad_o (),
-      .i2c_sda_pad_i (1'b1)
+      .ext_irq_i       (),
+      .i2c_scl_pad_i   (i2c_scl_vip_dut),
+      .i2c_scl_pad_o   (/*NC*/),
+      .i2c_scl_padoen_o(i2c_scl_dut_vip),
+      .i2c_sda_padoen_o(i2c_sda_dut_vip),
+      .i2c_sda_pad_o   (/*NC*/),
+      .i2c_sda_pad_i   (i2c_sda_vip_dut)
   );
 
 endmodule : zeroheti_top_wrapper

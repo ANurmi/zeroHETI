@@ -132,9 +132,12 @@
 // Tsu:sta     4.7us            0.6us   setup time for a repeated start condition
 // Tsu:sto     4.0us            0.6us   setup time for a stop conditon
 // Tbuf        4.7us            1.3us   Bus free time between a stop and start condition
-//
 
-`include "i2c_master_defines.sv"
+`define I2C_CMD_NOP   4'b0000
+`define I2C_CMD_START 4'b0001
+`define I2C_CMD_STOP  4'b0010
+`define I2C_CMD_WRITE 4'b0100
+`define I2C_CMD_READ  4'b1000
 
 module i2c_master_bit_ctrl
 (
@@ -245,7 +248,7 @@ module i2c_master_bit_ctrl
     always @(posedge clk or negedge nReset)
       if      (!nReset     ) filter_cnt <= 14'h0;
       else if (!ena ) filter_cnt <= 14'h0;
-      else if (~|filter_cnt) filter_cnt <= clk_cnt >> 2; //16x I2C bus frequency
+      else if (~|filter_cnt) filter_cnt <= 14'(clk_cnt >> 2); //16x I2C bus frequency
       else                   filter_cnt <= filter_cnt -1;
 
 

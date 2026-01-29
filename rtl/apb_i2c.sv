@@ -1,4 +1,3 @@
-`include "i2c_master_defines.sv"
 
 `define REG_CLK_PRESCALER 3'b000 //BASEADDR+0x00
 `define REG_CTRL          3'b001 //BASEADDR+0x04
@@ -35,7 +34,7 @@ module apb_i2c
     // variable declarations
     //
 
-    logic  [3:0] s_apb_addr;
+    logic  [2:0] s_apb_addr;
 
     // registers
     reg  [15:0] r_pre; // clock prescale register
@@ -65,7 +64,7 @@ module apb_i2c
     // module body
     //
 
-    assign s_apb_addr = PADDR[5:2];
+    assign s_apb_addr = PADDR[4:2];
 
     always_ff @ (posedge HCLK, negedge HRESETn)
     begin
@@ -95,6 +94,7 @@ module apb_i2c
                         if(s_core_en)
                             r_cmd <= PWDATA[7:0];
                     end
+                    default:;
                 endcase
             end
             else

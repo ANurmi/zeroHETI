@@ -24,12 +24,14 @@ int main(void)
     tx_buf++;
   }
 
-  i2c_write_tx(0, tx_buf);
-  rx_buf = i2c_read_tx(0);
+  i2c_write_tx(6, tx_buf);
+  rx_buf = i2c_read_tx(4);
 
   if (rx_buf == NULL) {
     printf("rx_buf empty\n");
-  }
+  } else {
+    printf("rx_buf: %x\n", rx_buf[0]);
+  };
   
   debug_signal_pass();
 

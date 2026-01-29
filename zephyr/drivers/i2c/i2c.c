@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/sys_io.h>
@@ -43,7 +44,7 @@ static inline void i2c_send_addr_frame(uint8_t addr, uint8_t we){
   uint8_t tx_addr = (addr << 1 | we);
   sys_write32(tx_addr, I2C_TX);
   i2c_set_cmd(1, 0, 1, 0, 0);
-  //while(get_tip());
+  while(get_tip());
 }
 
 static inline void i2c_send_data_frame(uint8_t data, uint8_t last){
@@ -65,8 +66,13 @@ void i2c_init(uint32_t ps){
 
 void i2c_write_tx(uint8_t addr, uint8_t* tx_buf) {
   i2c_send_addr_frame(addr, 1);
+  i2c_send_data_frame(0xAB, 1);
 }
 
 uint8_t* i2c_read_tx(uint8_t addr) {
-  return NULL;
+  i2c_send_addr_frame(addr, 0);
+  uint8_t* bytes = NULL;
+  bytes = (uint8_t*)malloc(1 * sizeof(uint8_t));
+  bytes[0] = i2c_recv_data_frame(1);
+  return bytes;
 }
