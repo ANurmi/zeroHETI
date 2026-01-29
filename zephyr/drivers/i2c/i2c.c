@@ -41,13 +41,13 @@ static inline void i2c_set_cmd(uint8_t sta, uint8_t sto, uint8_t we, uint8_t ack
 
 static inline void i2c_send_addr_frame(uint8_t addr, uint8_t we){
   uint8_t tx_addr = (addr << 1 | we);
-  sys_write32(I2C_TX, tx_addr);
+  sys_write32(tx_addr, I2C_TX);
   i2c_set_cmd(1, 0, 1, 0, 0);
-  while(get_tip());
+  //while(get_tip());
 }
 
 static inline void i2c_send_data_frame(uint8_t data, uint8_t last){
-  sys_write32(I2C_TX, data);
+  sys_write32(data, I2C_TX);
   i2c_set_cmd(0, last, 1, 0, 0);
   while(get_tip());
 }

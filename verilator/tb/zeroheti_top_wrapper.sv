@@ -22,12 +22,12 @@ module zeroheti_top_wrapper #(
       .uart_rx_i,
       .uart_tx_o,
       .ext_irq_i(),
-      .i2c_scl_pad_i(),
+      .i2c_scl_pad_i(1'b1),
       .i2c_scl_pad_o(),
       .i2c_scl_padoen_o(),
       .i2c_sda_padoen_o(),
       .i2c_sda_pad_o (),
-      .i2c_sda_pad_i ()
+      .i2c_sda_pad_i (1'b1)
   );
 
 endmodule : zeroheti_top_wrapper
