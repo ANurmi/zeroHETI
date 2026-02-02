@@ -5,7 +5,7 @@ module zeroheti_core
     localparam int unsigned IrqWidth = $clog2(Cfg.num_irqs),
     localparam int unsigned TsWidth = 12,
     localparam int unsigned PrioWidth = (zeroheti_pkg::IntController == EDFIC) ? TsWidth : $clog2(
-        CoreCfg.num_prio
+        Cfg.num_prio
     )
 ) (
     input  logic                         clk_i,

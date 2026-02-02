@@ -12,7 +12,7 @@
 
 #define IDCODE    0xfeedc0d3
 
-#include "zeroheti_top.h"
+#include "zeroheti_top_wrapper.h"
 
 
 int main(int argc, char** argv) {
