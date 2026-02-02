@@ -307,24 +307,24 @@ module i2c_master_bit_ctrl (
   // generate statemachine
 
   // nxt_state decoder
-  parameter [17:0] idle = 18'b00_0000_0000_0000_0000;
-  parameter [17:0] start_a = 18'b00_0000_0000_0000_0001;
-  parameter [17:0] start_b = 18'b00_0000_0000_0000_0010;
-  parameter [17:0] start_c = 18'b00_0000_0000_0000_0100;
-  parameter [17:0] start_d = 18'b00_0000_0000_0000_1000;
-  parameter [17:0] start_e = 18'b00_0000_0000_0001_0000;
-  parameter [17:0] stop_a = 18'b00_0000_0000_0010_0000;
-  parameter [17:0] stop_b = 18'b00_0000_0000_0100_0000;
-  parameter [17:0] stop_c = 18'b00_0000_0000_1000_0000;
-  parameter [17:0] stop_d = 18'b00_0000_0001_0000_0000;
-  parameter [17:0] rd_a = 18'b00_0000_0010_0000_0000;
-  parameter [17:0] rd_b = 18'b00_0000_0100_0000_0000;
-  parameter [17:0] rd_c = 18'b00_0000_1000_0000_0000;
-  parameter [17:0] rd_d = 18'b00_0001_0000_0000_0000;
-  parameter [17:0] wr_a = 18'b00_0010_0000_0000_0000;
-  parameter [17:0] wr_b = 18'b00_0100_0000_0000_0000;
-  parameter [17:0] wr_c = 18'b00_1000_0000_0000_0000;
-  parameter [17:0] wr_d = 18'b01_0000_0000_0000_0000;
+  localparam logic [17:0] idle = 18'b00_0000_0000_0000_0000;
+  localparam logic [17:0] start_a = 18'b00_0000_0000_0000_0001;
+  localparam logic [17:0] start_b = 18'b00_0000_0000_0000_0010;
+  localparam logic [17:0] start_c = 18'b00_0000_0000_0000_0100;
+  localparam logic [17:0] start_d = 18'b00_0000_0000_0000_1000;
+  localparam logic [17:0] start_e = 18'b00_0000_0000_0001_0000;
+  localparam logic [17:0] stop_a = 18'b00_0000_0000_0010_0000;
+  localparam logic [17:0] stop_b = 18'b00_0000_0000_0100_0000;
+  localparam logic [17:0] stop_c = 18'b00_0000_0000_1000_0000;
+  localparam logic [17:0] stop_d = 18'b00_0000_0001_0000_0000;
+  localparam logic [17:0] rd_a = 18'b00_0000_0010_0000_0000;
+  localparam logic [17:0] rd_b = 18'b00_0000_0100_0000_0000;
+  localparam logic [17:0] rd_c = 18'b00_0000_1000_0000_0000;
+  localparam logic [17:0] rd_d = 18'b00_0001_0000_0000_0000;
+  localparam logic [17:0] wr_a = 18'b00_0010_0000_0000_0000;
+  localparam logic [17:0] wr_b = 18'b00_0100_0000_0000_0000;
+  localparam logic [17:0] wr_c = 18'b00_1000_0000_0000_0000;
+  localparam logic [17:0] wr_d = 18'b01_0000_0000_0000_0000;
 
   always @(posedge clk or negedge nReset)
     if (!nReset) begin
@@ -486,6 +486,8 @@ module i2c_master_bit_ctrl (
             sda_oen <= din;
             sda_chk <= 1'b0;  // don't check SDA output (SCL low)
           end
+
+          default:;
 
         endcase
     end
