@@ -9,6 +9,7 @@ module vip_i2c #(
 );
 
   localparam InternalPrescaler = 16;
+  localparam BufLen = 4;
 
   assign scl_o = scl_i;
 
@@ -36,32 +37,57 @@ module vip_i2c #(
     end
   end
 
-  vip_ctrl_sim i_ctrl_sim ();
+  vip_ctrl_sim i_ctrl_sim (
+    .clk_i
+  );
 
   task handle_tx();
     automatic bit we;
     automatic logic [6:0] addr;
     automatic logic [7:0] data;
 
+    automatic logic [31:0] write_buf;
+    automatic logic [31:0] read_buf;
+
+    automatic int unsigned idx = 0;
+    
     active_byte = 1;
     receive_address(addr, we);
     $display("[I2C_VIP] Received addr %0d, we: %0d", addr, we);
     active_byte = 0;
 
     delay_half(4);
+
+
     if (we) begin
       while (!scl_i) begin
         active_byte = 1;
         receive_data(data);
-        $display("[I2C_VIP] Received data %0h", data);
+        
+        write_buf[(idx*8) +: 8] = data;
+        
+        if (idx == BufLen-1) idx = 0;
+        else idx++;
+        
         active_byte = 0;
         delay_half(4);
       end
+
+      // Model writeback
+      i_ctrl_sim.write(addr, write_buf);
+
     end else begin
+
+      i_ctrl_sim.read(addr, read_buf);
+
       while (!scl_i) begin
         active_byte = 1;
-        data = 'h5A;
+        data = read_buf[(idx*8) +: 8];
         send_data(data);
+
+        if (idx == BufLen-1) idx = 0;
+        else idx++;
+
         $display("[I2C_VIP] Sent data %0h", data);
         active_byte = 0;
         delay_half(4);
