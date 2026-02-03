@@ -25,6 +25,13 @@
 				interrupt-controller;
 				compatible = "riscv,cpu-intc";
 			};
+			
+			clic0: interrupt-controller@1000 {
+			    compatible = "riscv,clic";
+			    interrupt-controller;
+			    #interrupt-cells = <2>;
+			    reg = <0x00000000 0x00001000 0x00001000>;
+			};
 		};
 	};
 
