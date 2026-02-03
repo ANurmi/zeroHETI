@@ -46,53 +46,39 @@ module vip_i2c #(
     automatic logic [6:0] addr;
     automatic logic [7:0] data;
 
-    automatic logic [31:0] write_buf;
-    automatic logic [31:0] read_buf;
+    automatic logic [31:0] write_buf = 0;
+    automatic logic [31:0] read_buf  = 0;
 
     automatic int unsigned idx = 0;
     
     active_byte = 1;
     receive_address(addr, we);
-    $display("[I2C_VIP] Received addr %0d, we: %0d", addr, we);
     active_byte = 0;
 
     delay_half(4);
 
+    if (!we) i_ctrl_sim.read(addr, read_buf);
 
-    if (we) begin
-      while (!scl_i) begin
-        active_byte = 1;
+    while (!scl_i) begin
+      active_byte = 1;
+
+      if (we) begin
         receive_data(data);
-        
         write_buf[(idx*8) +: 8] = data;
-        
-        if (idx == BufLen-1) idx = 0;
-        else idx++;
-        
-        active_byte = 0;
-        delay_half(4);
-      end
-
-      // Model writeback
-      i_ctrl_sim.write(addr, write_buf);
-
-    end else begin
-
-      i_ctrl_sim.read(addr, read_buf);
-
-      while (!scl_i) begin
-        active_byte = 1;
+      end else begin
         data = read_buf[(idx*8) +: 8];
         send_data(data);
-
-        if (idx == BufLen-1) idx = 0;
-        else idx++;
-
-        $display("[I2C_VIP] Sent data %0h", data);
-        active_byte = 0;
-        delay_half(4);
       end
+
+      idx = (idx == BufLen-1) ? 0 : idx + 1;
+
+      active_byte = 0;
+      delay_half(4);
+      
     end
+
+    // Model writeback
+    if (we) i_ctrl_sim.write(addr, write_buf);
 
     active_tx = 0;
 
