@@ -25,8 +25,8 @@ int main(void)
     tx_buf[i] = 0xA0 + i;
   }
 
-  i2c_write_tx(6, tx_buf, 3);
-  i2c_read_tx(4, rx_buf, 4);
+  i2c_write_tx(6, tx_buf, BUF_BYTES);
+  i2c_read_tx(4, rx_buf, BUF_BYTES);
 
   for (int i=0; i<BUF_BYTES;i++){
     printf("rx_buf[%0d]: 0x%x\n", i, rx_buf[i]);

@@ -36,6 +36,8 @@ module vip_i2c #(
     end
   end
 
+  vip_ctrl_sim i_ctrl_sim ();
+
   task handle_tx();
     automatic bit we;
     automatic logic [6:0] addr;
