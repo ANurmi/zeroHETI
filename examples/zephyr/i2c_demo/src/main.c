@@ -10,8 +10,10 @@
 
 #define PRESCALER 4
 
-uint8_t* tx_buf = NULL;
-uint8_t* rx_buf = NULL;
+#define BUF_BYTES 4
+
+uint8_t tx_buf[BUF_BYTES] = {0};
+uint8_t rx_buf[BUF_BYTES] = {0};
 
 int main(void)
 {
@@ -19,20 +21,17 @@ int main(void)
 
   i2c_init(PRESCALER);
 
-  for (int i=0;i<4;i++) {
-    *tx_buf = 0xA0 + i;
-    tx_buf++;
+  for (int i=0;i<BUF_BYTES;i++) {
+    tx_buf[i] = 0xA0 + i;
   }
 
-  i2c_write_tx(6, tx_buf);
-  rx_buf = i2c_read_tx(4);
+  i2c_write_tx(6, tx_buf, 3);
+  i2c_read_tx(4, rx_buf, 4);
 
-  if (rx_buf == NULL) {
-    printf("rx_buf empty\n");
-  } else {
-    printf("rx_buf: %x\n", rx_buf[0]);
-  };
-  
+  for (int i=0; i<BUF_BYTES;i++){
+    printf("rx_buf[%0d]: 0x%x\n", i, rx_buf[i]);
+  }
+
   debug_signal_pass();
 
 	return 0;
