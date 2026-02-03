@@ -1,13 +1,13 @@
 #include "verilated_fst_c.h"
 #include "verilated.h"
-#include "Vzeroheti_top.h"
+#include "Vzeroheti_top_wrapper.h"
 #include "Testbench.h"
 
 #define xstr(s) str(s)
 #define str(s) #s
 
 // Add platform-specific overrides in this file
-class TbZeroHeti: public Testbench<Vzeroheti_top> {
+class TbZeroHeti: public Testbench<Vzeroheti_top_wrapper> {
 
     public:
 

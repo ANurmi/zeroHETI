@@ -14,16 +14,17 @@ dependencies:
   apb_uart: { git: "https://github.com/pulp-platform/apb_uart.git", version: 0.2.1 }
   apb_timer: { git: "https://github.com/pulp-platform/apb_timer.git", rev: "03eba2e6965f5363df12621882bc70498c551a73" }
   obi: { git: "https://github.com/pulp-platform/obi.git", version: 0.1.7 }
+  edfic: { git: "https://github.com/ANurmi/edfic.git", rev: "main" }
   vbench: { git: "https://github.com/ANurmi/vbench", rev: "main" }
 
 sources:
   - target: rtl
     files:
-      - rtl/vendor/pulp_i2c/i2c_master_bit_ctrl.sv
-      - rtl/vendor/pulp_i2c/i2c_master_byte_ctrl.sv
-      - rtl/vendor/pulp_i2c/apb_i2c.sv
       - rtl/zeroheti_pkg.sv
       - rtl/mock_uart.sv
+      - rtl/i2c_master_bit_ctrl.sv
+      - rtl/i2c_master_byte_ctrl.sv
+      - rtl/apb_i2c.sv
       - rtl/apb_mtimer.sv
       - rtl/obi_hetic.sv
       - rtl/zeroheti_int_ctrl.sv
@@ -35,18 +36,12 @@ sources:
       - rtl/zeroheti_dbg_wrapper.sv
       - rtl/zeroheti_core.sv
       - rtl/zeroheti_top.sv
+  - target: verilator
+    files:
+      - verilator/tb/vip_i2c.sv
+      - verilator/tb/zeroheti_top_wrapper.sv
   - target: fpga
     files:
       - fpga/rtl/prim_clock_gating.sv
       - fpga/rtl/zeroheti_pynq.sv
-
-vendor_package:
-  - name: pulp_i2c
-    target_dir: rtl/vendor/pulp_i2c
-    upstream: { git: "https://github.com/pulp-platform/apb_i2c.git", rev: "84855413cc2c8e70209ee7f168a0225d3c5914a1"}
-    include_from_upstream:
-      - i2c_master_bit_ctrl.sv
-      - i2c_master_byte_ctrl.sv
-      - apb_i2c.sv
-
 

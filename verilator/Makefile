@@ -6,13 +6,13 @@ VERIL_DIR       ?= $(ZH_ROOT)/verilator
 XLEN             = 64
 TOOLCHAIN        = riscv$(XLEN)-unknown-elf-
 
-TOP_MODULE       = zeroheti_top
+TOP_MODULE       = zeroheti_top_wrapper
 RV_TOP           = zeroheti_compliance
 VERIL_TOP        = $(VERIL_DIR)/tb/$(TOP_MODULE).cc
 
 VERIL_BUILD_DIR ?= $(BUILD_DIR)/verilator_build
 
-BENDER_TARGETS   = -t rtl -t tech_cells_generic_exclude_deprecated
+BENDER_TARGETS   = -t rtl -t verilator -t tech_cells_generic_exclude_deprecated
 SOURCES          = $(shell bender script flist $(BENDER_TARGETS))
 VBENCH           = $(shell bender path vbench)
 
