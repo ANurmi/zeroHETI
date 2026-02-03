@@ -36,13 +36,6 @@ module vip_i2c #(
     end
   end
 
-  /*
-  always @(posedge sda_i) begin : end_cond
-    if (scl_i & active_tx) begin
-      active_tx = 0;
-    end
-  end*/
-
   task handle_tx();
     automatic bit we;
     automatic logic [6:0] addr;
@@ -53,22 +46,23 @@ module vip_i2c #(
     $display("[I2C_VIP] Received addr %0d, we: %0d", addr, we);
     active_byte = 0;
 
+    delay_half(4);
     if (we) begin
-      while (sda_i) begin
-        delay_half(2);
+      while (!scl_i) begin
         active_byte = 1;
         receive_data(data);
         $display("[I2C_VIP] Received data %0h", data);
         active_byte = 0;
+        delay_half(4);
       end
     end else begin
-      while (sda_i) begin
-        delay_half(2);
+      while (!scl_i) begin
         active_byte = 1;
         data = 'h5A;
         send_data(data);
         $display("[I2C_VIP] Sent data %0h", data);
         active_byte = 0;
+        delay_half(4);
       end
     end
 
@@ -92,24 +86,11 @@ module vip_i2c #(
 
   task send_data(input logic [7:0] data);
     sda_o = data[7];
-    for (int unsigned i=0; i<8; i++) begin
+    for (int unsigned i = 0; i < 8; i++) begin
       @(negedge scl_i);
       delay_half(1);
       sda_o = data[6-i];
     end
-  /*
-    delay_half(2);
-    sda_o = 1'b0;
-    delay_half(2);
-    sda_o = data[7];
-    @(g_counter == InternalPrescaler / 2);
-    for (int unsigned i = 0; i < 7; i++) begin
-      @(negedge scl_i);
-      g_counter = 0;
-      @(g_counter == InternalPrescaler / 2);
-      sda_o = data[6-i];
-    end
-    @(negedge scl_i);*/
     sda_o = 1'b1;
     receive_ack();
   endtask
@@ -125,11 +106,7 @@ module vip_i2c #(
 
   task receive_ack();
     @(negedge sda_i);
-    //sda_o = 0;
     @(negedge scl_i);
-    delay_half(2);
-    //sda_o = 1;
-    // not strictly necessary, TODO for later
   endtask
 
   task receive_byte(output logic [7:0] data);
@@ -142,11 +119,11 @@ module vip_i2c #(
   endtask
 
   task delay_half(input int count);
-    for (int i=0; i<count; i++) begin
+    for (int i = 0; i < count; i++) begin
       g_counter = 0;
       @(g_counter == InternalPrescaler / 2);
     end
-  endtask;
+  endtask
 
 endmodule : vip_i2c
 

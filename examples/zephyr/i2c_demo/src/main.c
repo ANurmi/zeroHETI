@@ -25,20 +25,13 @@ int main(void)
     tx_buf[i] = 0xA0 + i;
   }
 
-  i2c_write_tx(6, tx_buf, 2);
-  i2c_read_tx(4, rx_buf, 1);
-/*
+  i2c_write_tx(6, tx_buf, 3);
+  i2c_read_tx(4, rx_buf, 4);
+
   for (int i=0; i<BUF_BYTES;i++){
-    printf("rx_buf[%0d]: 0x%8x\n", i, rx_buf[i]);
+    printf("rx_buf[%0d]: 0x%x\n", i, rx_buf[i]);
   }
-*/
-  /*
-  if (rx_buf[0] == 0) {
-    printf("rx_buf empty\n");
-  } else {
-    printf("rx_buf: %x\n", rx_buf[0]);
-  };
-  */
+
   debug_signal_pass();
 
 	return 0;
