@@ -38,6 +38,7 @@ sources:
       - rtl/zeroheti_top.sv
   - target: verilator
     files:
+      - verilator/tb/vip_motor_sim.sv
       - verilator/tb/vip_ctrl_sim.sv
       - verilator/tb/vip_i2c.sv
       - verilator/tb/zeroheti_top_wrapper.sv

@@ -6,11 +6,14 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <debug/debug.h>
+#include <zephyr/kernel.h>
 #include <i2c/i2c.h>
 
 #define PRESCALER 4
 
 #define BUF_BYTES 4
+
+#define SIM_CTRL_ADDR 0
 
 uint8_t tx_buf[BUF_BYTES] = {0};
 uint8_t rx_buf[BUF_BYTES] = {0};
@@ -21,6 +24,11 @@ int main(void)
 
   i2c_init(PRESCALER);
 
+  // set all enables in tx_buf
+  tx_buf[0] = 0x0f;
+  i2c_write_tx(SIM_CTRL_ADDR, tx_buf, BUF_BYTES);
+
+  /*
   for (int i=0;i<BUF_BYTES;i++) {
     tx_buf[i] = 0xA0 + i;
   }
@@ -34,6 +42,9 @@ int main(void)
   }
 
   printf("rx_buf: 0x%8x\n", print_buf);
+*/
+
+  k_busy_wait(1);
 
   debug_signal_pass();
 

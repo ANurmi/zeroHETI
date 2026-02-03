@@ -1,11 +1,12 @@
 module vip_i2c #(
 ) (
-    input  logic clk_i,
-    input  logic rst_ni,
-    input  logic sda_i,
-    output logic sda_o,
-    input  logic scl_i,
-    output logic scl_o
+    input  logic       clk_i,
+    input  logic       rst_ni,
+    input  logic       sda_i,
+    output logic       sda_o,
+    input  logic       scl_i,
+    output logic       scl_o,
+    output logic [3:0] irq_o
 );
 
   localparam InternalPrescaler = 16;
@@ -38,7 +39,9 @@ module vip_i2c #(
   end
 
   vip_ctrl_sim i_ctrl_sim (
-    .clk_i
+      .clk_i,
+      .rst_ni,
+      .irq_o
   );
 
   task handle_tx();
@@ -47,10 +50,10 @@ module vip_i2c #(
     automatic logic [7:0] data;
 
     automatic logic [31:0] write_buf = 0;
-    automatic logic [31:0] read_buf  = 0;
+    automatic logic [31:0] read_buf = 0;
 
     automatic int unsigned idx = 0;
-    
+
     active_byte = 1;
     receive_address(addr, we);
     active_byte = 0;
@@ -64,17 +67,17 @@ module vip_i2c #(
 
       if (we) begin
         receive_data(data);
-        write_buf[(idx*8) +: 8] = data;
+        write_buf[(idx*8)+:8] = data;
       end else begin
-        data = read_buf[(idx*8) +: 8];
+        data = read_buf[(idx*8)+:8];
         send_data(data);
       end
 
-      idx = (idx == BufLen-1) ? 0 : idx + 1;
+      idx = (idx == BufLen - 1) ? 0 : idx + 1;
 
       active_byte = 0;
       delay_half(4);
-      
+
     end
 
     // Model writeback
