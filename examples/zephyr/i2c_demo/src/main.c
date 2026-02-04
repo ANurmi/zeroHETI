@@ -46,10 +46,21 @@ int main(void)
 
   k_busy_wait(1);
 
+  const uint32_t mbx_rd_addr  = 0x00030000;
+  const uint32_t mbx_ack_addr = 0x00030004;
+  /*
+  const uint32_t mbx_tsl_addr = 0x00030008;
+  const uint32_t mbx_tsh_addr = 0x0003000C;
+  const uint32_t mbx_ms0_addr = 0x00030010;
+  const uint32_t mbx_ms1_addr = 0x00030014;
+  const uint32_t mbx_ms2_addr = 0x00030018;
+  const uint32_t mbx_ms3_addr = 0x0003001C;
+*/
+  uint32_t data = sys_read32(mbx_rd_addr);
 
-  const uint32_t data = 0x1;
-  const uint32_t addr = 0x00030000;
-  sys_write32(data, addr);
+  // Test irq ack
+  sys_write32(0x1, mbx_ack_addr);
+  printf("Read %0x\n", data);
 
   debug_signal_pass();
 

@@ -23,8 +23,9 @@ module vip_ctrl_sim #(
   logic enable;
 
   always @(posedge enable) begin
-    $display("Start sim");
-    i_zeroheti.i_mbx.i_sim_mbx.test();
+    $display("[CTRL_SIM] Starting simulation");
+    $display("[CTRL_SIM] Timing parameters: XXX");
+    i_zeroheti.i_mbx.i_sim_mbx.raise_irq();
   end
 
   for (genvar i = 0; i < NrMotors; i++) begin : g_motors
