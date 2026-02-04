@@ -38,7 +38,7 @@ module zeroheti_top_wrapper #(
       .jtag_td_o,
       .uart_rx_i,
       .uart_tx_o,
-      .ext_irq_i       ({2'h0, i2c_vip_irqs}),
+      .ext_irq_i       ({1'h0, i2c_vip_irqs}),
       .i2c_scl_pad_i   (i2c_scl_vip_dut),
       .i2c_scl_pad_o   (/*NC*/),
       .i2c_scl_padoen_o(i2c_scl_dut_vip),

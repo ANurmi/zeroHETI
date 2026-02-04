@@ -41,6 +41,7 @@ ISA              = RV32$(BASE)$(MULT)$(COMP)
 VDEFS ?= \
   +define+VERILATOR=1 \
   +define+MOCK_UART \
+  +define+MBX_SIM \
 	+define+ZH_ROOT=$(ZH_ROOT) \
 	+define+IMEM_BYTES=$(IMEM_BYTES) \
 	+define+DMEM_BYTES=$(DMEM_BYTES) \

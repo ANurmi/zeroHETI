@@ -1,8 +1,14 @@
-module obi_mbx #()(
-  input logic clk_i,
-  input logic rst_ni,
-      OBI_BUS.Subordinate obi_sbr
-  );
+module obi_mbx #(
+) (
+    input logic clk_i,
+    input logic rst_ni,
+    output logic irq_o,
+    OBI_BUS.Subordinate obi_sbr
+);
+
+`ifdef MBX_SIM
+  vip_mbx i_sim_mbx ();
+`endif
 
   always_ff @(posedge clk_i) begin
     if (~rst_ni) begin

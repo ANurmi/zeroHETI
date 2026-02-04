@@ -8,7 +8,7 @@ module vip_ctrl_sim #(
 );
 
   /* Internal address mapping 
-* 0: 28'h0, m3_en, m2_en, m1_en, m0_en
+* 0: 31'h0, sim_en
 * 1: reserved
 * 2: M0 status
 * 3: M0 control
@@ -20,7 +20,12 @@ module vip_ctrl_sim #(
 * 9: M3 control
 * */
 
-  logic [3:0] enable;
+  logic enable;
+
+  always @(posedge enable) begin
+    $display("Start sim");
+    i_zeroheti.i_mbx.i_sim_mbx.test();
+  end
 
   for (genvar i = 0; i < NrMotors; i++) begin : g_motors
     vip_motor_sim #(
@@ -28,7 +33,7 @@ module vip_ctrl_sim #(
     ) i_motor (
         .clk_i,
         .rst_ni,
-        .enable_i(enable[i]),
+        .enable_i(enable),
         .irq_o   (irq_o[i])
     );
   end
@@ -36,7 +41,7 @@ module vip_ctrl_sim #(
   task write(input logic [6:0] addr, input logic [31:0] data);
     $display("[CTRL_SIM] write - addr: %h, data: %h", addr, data);
     unique case (addr)
-      7'd0: enable = data[3:0];
+      7'd0: enable = data[0];
       default: ;
     endcase
   endtask
