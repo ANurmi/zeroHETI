@@ -18,6 +18,7 @@ module zeroheti_core
     input  logic                         jtag_td_i,
     output logic                         jtag_td_o,
     input  logic      [Cfg.num_irqs-1:0] ext_irqs_i,
+       OBI_BUS.Manager                   obi_mgr,
            APB.Master                    apb_mgr
 );
 
@@ -88,6 +89,7 @@ module zeroheti_core
       '{idx: 5, start_addr: AddrMap.ext.base, end_addr: AddrMap.ext.last}
   };
 
+  /*
   // TODO: add ext port when needed
   assign sbr_bus[5].gnt        = 1'b0;
   assign sbr_bus[5].gntpar     = 1'b0;
@@ -99,6 +101,8 @@ module zeroheti_core
   assign sbr_bus[5].rvalidpar  = 1'b0;
   assign sbr_bus[5].rid        = 1'b0;
   assign sbr_bus[5].r_optional = 1'b0;
+*/
+  `OBI_ASSIGN(obi_mgr, sbr_bus[5], obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
 
   logic debug_req;
 

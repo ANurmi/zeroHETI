@@ -46,6 +46,11 @@ int main(void)
 
   k_busy_wait(1);
 
+
+  const uint32_t data = 0x1;
+  const uint32_t addr = 0x00030000;
+  sys_write32(data, addr);
+
   debug_signal_pass();
 
 	return 0;

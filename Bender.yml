@@ -27,6 +27,7 @@ sources:
       - rtl/apb_i2c.sv
       - rtl/apb_mtimer.sv
       - rtl/obi_hetic.sv
+      - rtl/obi_mbx.sv
       - rtl/zeroheti_int_ctrl.sv
       - rtl/obi_sram_intf.sv
       - rtl/obi_cut_intf.sv

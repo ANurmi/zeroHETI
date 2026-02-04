@@ -30,6 +30,7 @@ module zeroheti_top
   localparam int unsigned NrApbPerip = 4;
   localparam int unsigned SelWidth = $clog2(NrApbPerip);
 
+  OBI_BUS mbx_obi ();
   APB core_apb ();
   APB demux_apb[NrApbPerip] ();
 
@@ -66,7 +67,14 @@ module zeroheti_top
       .jtag_td_i,
       .jtag_td_o,
       .ext_irqs_i(all_irqs),
+      .obi_mgr   (mbx_obi),
       .apb_mgr   (core_apb)
+  );
+
+  obi_mbx i_mbx (
+    .clk_i,
+    .rst_ni,
+    .obi_sbr (mbx_obi)
   );
 
   always_comb begin : apb_decode
