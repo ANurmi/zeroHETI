@@ -62,8 +62,8 @@ module vip_ctrl_sim #(
 
   logic enable;
 
-  logic [63:0] time_us   = 0;
-  logic  [7:0] prescaler = 0;
+  logic [63:0] time_us = 0;
+  logic [7:0] prescaler = 0;
 
   // Assume 100 MHz sim clock frequency
   always @(posedge clk_i) begin : g_us_counter
@@ -77,17 +77,21 @@ module vip_ctrl_sim #(
   always @(posedge enable) begin
     $display("[CTRL_SIM] Starting simulation for task set:");
     $display("[CTRL_SIM] (Periodic): Receive MBX directive,          DL: %3d us", MbxDlUs);
-    $display("[CTRL_SIM] (Sporatic): Motor [0-3] speed warning,      DL: %3d us", WrnDlUs);
+    $display("[CTRL_SIM] (Sporadic): Motor [0-3] speed warning,      DL: %3d us", WrnDlUs);
     $display("[CTRL_SIM] (Periodic): Report M[0-3] speed, timestamp, DL: %3d us", RepDlUs);
-    pend_task(5);
-    pend_task(6);
-    pend_task(7);
-    pend_task(8);
     //i_zeroheti.i_mbx.i_sim_mbx.raise_irq();
   end
 
   always @(time_us) begin : g_dl_counter
-    for (int i=0; i<TaskSetSize; i++) begin
+
+    if (enable & (time_us % RepDlUs == 0)) begin
+      pend_task(5); reset_task_dl(5);
+      pend_task(6); reset_task_dl(6);
+      pend_task(7); reset_task_dl(7);
+      pend_task(8); reset_task_dl(8);
+    end
+
+    for (int i = 0; i < TaskSetSize; i++) begin
       if (task_set[i].active) begin
         if (task_set[i].dl_us == 0) $fatal(1, "Deadline miss for task idx %0d!", i);
         else task_set[i].dl_us--;
@@ -125,6 +129,14 @@ module vip_ctrl_sim #(
 
   task ack_task(input int unsigned i);
     task_set[i].active = 1'b0;
+  endtask
+
+  task reset_task_dl(input int unsigned i);
+    unique case (i) inside
+      0:       task_set[i].dl_us = MbxDlUs;
+      [1 : 4]: task_set[i].dl_us = WrnDlUs;
+      [5 : 8]: task_set[i].dl_us = RepDlUs;
+    endcase
   endtask
 
 endmodule : vip_ctrl_sim

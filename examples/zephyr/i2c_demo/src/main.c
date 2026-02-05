@@ -33,25 +33,9 @@ int main(void)
 
   i2c_init(PRESCALER);
 
-  // set all enables in tx_buf
+  // Start sim by writing to SIM_CTRL_ADDR
   tx_buf[0] = 0x1;
   i2c_write_tx(SIM_CTRL_ADDR, tx_buf, BUF_BYTES);
-
-  /*
-  for (int i=0;i<BUF_BYTES;i++) {
-    tx_buf[i] = 0xA0 + i;
-  }
-
-  i2c_write_tx(6, tx_buf, BUF_BYTES);
-  i2c_read_tx(4, rx_buf, BUF_BYTES);
-
-  uint32_t print_buf = 0;
-  for (int i=0; i<BUF_BYTES;i++){
-    print_buf |= ((uint32_t)rx_buf[i]) << i*8;
-  }
-
-  printf("rx_buf: 0x%8x\n", print_buf);
-*/
 
   k_busy_wait(40);
 
@@ -65,6 +49,15 @@ int main(void)
   sys_write32(0x1, MBX_M1_STAT_ADDR);
   sys_write32(0x1, MBX_M2_STAT_ADDR);
   sys_write32(0x1, MBX_M3_STAT_ADDR);
+
+  k_busy_wait(60);
+  
+  // Update M0-3 status
+  sys_write32(0x1, MBX_M0_STAT_ADDR);
+  sys_write32(0x1, MBX_M1_STAT_ADDR);
+  sys_write32(0x1, MBX_M2_STAT_ADDR);
+  sys_write32(0x1, MBX_M3_STAT_ADDR);
+
 
   debug_signal_pass();
 
