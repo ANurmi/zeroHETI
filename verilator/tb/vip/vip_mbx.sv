@@ -10,6 +10,15 @@ module vip_mbx #(
     output logic [31:0] rdata_o
 );
 
+  localparam int unsigned MbxInboxAddr  = 32'h3_0000;
+  localparam int unsigned MbxIrqAckAddr = 32'h3_0004;
+  localparam int unsigned MbxTimeLoAddr = 32'h3_0008;
+  localparam int unsigned MbxTimeHiAddr = 32'h3_000C;
+  localparam int unsigned MbxM0StatAddr = 32'h3_0010;
+  localparam int unsigned MbxM1StatAddr = 32'h3_0014;
+  localparam int unsigned MbxM2StatAddr = 32'h3_0018;
+  localparam int unsigned MbxM3StatAddr = 32'h3_001C;
+
   initial begin
     irq_o   = 1'b0;
     rdata_o = 32'h0;
@@ -33,9 +42,18 @@ module vip_mbx #(
 
   task handle_tx();
     if (we_i) begin
-      if (addr_i == 32'h30004) lower_irq();
+      unique case (addr_i)
+        MbxIrqAckAddr: lower_irq();
+        MbxM0StatAddr: zeroheti_top_wrapper.i_vip_i2c.i_ctrl_sim.ack_task(5);
+        MbxM1StatAddr: zeroheti_top_wrapper.i_vip_i2c.i_ctrl_sim.ack_task(6);
+        MbxM2StatAddr: zeroheti_top_wrapper.i_vip_i2c.i_ctrl_sim.ack_task(7);
+        MbxM3StatAddr: zeroheti_top_wrapper.i_vip_i2c.i_ctrl_sim.ack_task(8);
+        default:;
+      endcase
     end
-    else send_read();
+    else begin
+      if (addr_i == MbxInboxAddr) send_read();
+    end
   endtask
 
   task send_read();

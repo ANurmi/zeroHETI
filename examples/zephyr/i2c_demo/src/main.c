@@ -15,6 +15,15 @@
 
 #define SIM_CTRL_ADDR 0
 
+#define MBX_INBOX_ADDR   0x30000
+#define MBX_IRQ_ACK_ADDR 0x30004
+#define MBX_TIME_LO_ADDR 0x30008
+#define MBX_TIME_HI_ADDR 0x3000C
+#define MBX_M0_STAT_ADDR 0x30010
+#define MBX_M1_STAT_ADDR 0x30014
+#define MBX_M2_STAT_ADDR 0x30018
+#define MBX_M3_STAT_ADDR 0x3001C
+
 uint8_t tx_buf[BUF_BYTES] = {0};
 uint8_t rx_buf[BUF_BYTES] = {0};
 
@@ -25,7 +34,7 @@ int main(void)
   i2c_init(PRESCALER);
 
   // set all enables in tx_buf
-  tx_buf[0] = 0x0f;
+  tx_buf[0] = 0x1;
   i2c_write_tx(SIM_CTRL_ADDR, tx_buf, BUF_BYTES);
 
   /*
@@ -44,23 +53,18 @@ int main(void)
   printf("rx_buf: 0x%8x\n", print_buf);
 */
 
-  k_busy_wait(1);
+  k_busy_wait(40);
 
-  const uint32_t mbx_rd_addr  = 0x00030000;
-  const uint32_t mbx_ack_addr = 0x00030004;
-  /*
-  const uint32_t mbx_tsl_addr = 0x00030008;
-  const uint32_t mbx_tsh_addr = 0x0003000C;
-  const uint32_t mbx_ms0_addr = 0x00030010;
-  const uint32_t mbx_ms1_addr = 0x00030014;
-  const uint32_t mbx_ms2_addr = 0x00030018;
-  const uint32_t mbx_ms3_addr = 0x0003001C;
-*/
-  uint32_t data = sys_read32(mbx_rd_addr);
+  uint32_t data = sys_read32(MBX_INBOX_ADDR);
 
   // Test irq ack
-  sys_write32(0x1, mbx_ack_addr);
-  printf("Read %0x\n", data);
+  sys_write32(0x1, MBX_IRQ_ACK_ADDR);
+
+  // Update M0-3 status
+  sys_write32(0x1, MBX_M0_STAT_ADDR);
+  sys_write32(0x1, MBX_M1_STAT_ADDR);
+  sys_write32(0x1, MBX_M2_STAT_ADDR);
+  sys_write32(0x1, MBX_M3_STAT_ADDR);
 
   debug_signal_pass();
 
