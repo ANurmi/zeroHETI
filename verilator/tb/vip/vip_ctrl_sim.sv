@@ -22,6 +22,9 @@ module vip_ctrl_sim #(
 
   localparam int unsigned TaskSetSize = 9;
 
+  localparam longint unsigned MbxPerUs = 'd800;
+  localparam longint unsigned RepPerUs = 'd600;
+
   localparam longint unsigned MbxDlUs = 'd100;
   localparam longint unsigned WrnDlUs = 'd20;
   localparam longint unsigned RepDlUs = 'd50;
@@ -84,19 +87,28 @@ module vip_ctrl_sim #(
 
   always @(time_us) begin : g_dl_counter
 
-    if (enable & (time_us % RepDlUs == 0)) begin
-      pend_task(5); reset_task_dl(5);
-      pend_task(6); reset_task_dl(6);
-      pend_task(7); reset_task_dl(7);
-      pend_task(8); reset_task_dl(8);
-    end
-
+    // Decrement deadlines of active task
     for (int i = 0; i < TaskSetSize; i++) begin
       if (task_set[i].active) begin
         if (task_set[i].dl_us == 0) $fatal(1, "Deadline miss for task idx %0d!", i);
         else task_set[i].dl_us--;
       end
     end
+
+    // Activate periodic directive task
+    if (enable & (time_us % MbxPerUs == 0)) begin
+      pend_task(0); reset_task_dl(0);
+      i_zeroheti.i_mbx.i_sim_mbx.raise_irq();
+    end
+
+    // Activate periodic reporting tasks
+    if (enable & (time_us % RepPerUs == 0)) begin
+      pend_task(5); reset_task_dl(5);
+      pend_task(6); reset_task_dl(6);
+      pend_task(7); reset_task_dl(7);
+      pend_task(8); reset_task_dl(8);
+    end
+
   end
 
   for (genvar i = 0; i < NrMotors; i++) begin : g_motors

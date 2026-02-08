@@ -37,12 +37,9 @@ int main(void)
   tx_buf[0] = 0x1;
   i2c_write_tx(SIM_CTRL_ADDR, tx_buf, BUF_BYTES);
 
-  k_busy_wait(40);
+  //k_busy_wait(600);
 
   uint32_t data = sys_read32(MBX_INBOX_ADDR);
-
-  // Test irq ack
-  sys_write32(0x1, MBX_IRQ_ACK_ADDR);
 
   // Update M0-3 status
   sys_write32(0x1, MBX_M0_STAT_ADDR);
@@ -58,6 +55,8 @@ int main(void)
   sys_write32(0x1, MBX_M2_STAT_ADDR);
   sys_write32(0x1, MBX_M3_STAT_ADDR);
 
+  // Test irq ack
+  sys_write32(0x1, MBX_IRQ_ACK_ADDR);
 
   debug_signal_pass();
 
