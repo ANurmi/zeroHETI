@@ -43,7 +43,10 @@ module vip_mbx #(
   task handle_tx();
     if (we_i) begin
       unique case (addr_i)
-        MbxIrqAckAddr: lower_irq();
+        MbxIrqAckAddr: begin
+          zeroheti_top_wrapper.i_vip_i2c.i_ctrl_sim.ack_task(0);
+          lower_irq();
+        end
         MbxM0StatAddr: zeroheti_top_wrapper.i_vip_i2c.i_ctrl_sim.ack_task(5);
         MbxM1StatAddr: zeroheti_top_wrapper.i_vip_i2c.i_ctrl_sim.ack_task(6);
         MbxM2StatAddr: zeroheti_top_wrapper.i_vip_i2c.i_ctrl_sim.ack_task(7);
