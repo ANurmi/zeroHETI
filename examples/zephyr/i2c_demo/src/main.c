@@ -38,6 +38,7 @@ int main(void)
   i2c_write_tx(SIM_CTRL_ADDR, tx_buf, BUF_BYTES);
 
   //k_busy_wait(600);
+  k_busy_wait(400);
 
   uint32_t data = sys_read32(MBX_INBOX_ADDR);
 
@@ -46,6 +47,8 @@ int main(void)
   sys_write32(0x1, MBX_M1_STAT_ADDR);
   sys_write32(0x1, MBX_M2_STAT_ADDR);
   sys_write32(0x1, MBX_M3_STAT_ADDR);
+
+  printf("Read data: 0x%x\n", data);
 
   k_busy_wait(60);
   

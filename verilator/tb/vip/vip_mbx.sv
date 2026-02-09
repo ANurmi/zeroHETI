@@ -61,10 +61,15 @@ module vip_mbx #(
 
   task send_read();
     rdata_o = $random();
+  /*
+    @(negedge req_i);
     @(posedge clk_i);
+    rvalid_o = 1'b1;
     @(posedge clk_i);
-    @(negedge clk_i);
-    rdata_o = 32'h0;
+    //@(posedge clk_i);
+    rvalid_o = 1'b0;
+    //@(negedge clk_i);
+    rdata_o = 32'h0;*/
   endtask
 
 
