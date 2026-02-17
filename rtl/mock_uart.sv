@@ -143,9 +143,29 @@ module mock_uart (
           if (lcr & 'h80) rdata = {24'b0, dlm};
           else rdata = {24'b0, ier};
         end
+<<<<<<< HEAD
         IIR: begin
           if (fifo_enabled) rdata = {24'b0, 8'hc0};
           else rdata = {24'b0, 8'b0};
+=======
+        4'b0100: begin
+          local_ofs = 2;
+          prdata_o = {8'h0, rdata, 16'h0};
+          wdata    = pwdata_i[23:16];
+        end
+        4'b1000: begin
+          local_ofs = 3;
+          prdata_o = {rdata, 24'h0};
+          wdata    = pwdata_i[31:24];
+        end
+        4'b1111: begin
+          local_ofs = 0;
+          prdata_o  = {24'h0, rdata};
+          wdata     = pwdata_i[7:0];
+        end
+        default: begin
+          if (psel_i & penable_i) $fatal(1, "Fatal: Illegal UART access");
+>>>>>>> d0dea44 (accept pstrb=1111 for word writes in mock_uart)
         end
         LCR: rdata = {24'b0, lcr};
         MCR: rdata = {24'b0, mcr};
