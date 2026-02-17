@@ -87,6 +87,11 @@ module mock_uart (
           prdata_o = {rdata, 24'h0};
           wdata    = pwdata_i[31:24];
         end
+        4'b1111: begin
+          local_ofs = 0;
+          prdata_o  = {24'h0, rdata};
+          wdata     = pwdata_i[7:0];
+        end
         default: begin
           if (psel_i & penable_i) $fatal(1, "Fatal: Illegal UART access");
         end
