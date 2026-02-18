@@ -13,7 +13,15 @@
 
 #define BUF_BYTES 4
 
-#define SIM_CTRL_ADDR 0
+#define I2C_SIM_CTRL_ADDR 0
+#define I2C_M0_STAT_ADDR  2
+#define I2C_M0_CTRL_ADDR  3
+#define I2C_M1_STAT_ADDR  4
+#define I2C_M1_CTRL_ADDR  5
+#define I2C_M2_STAT_ADDR  6
+#define I2C_M2_CTRL_ADDR  7
+#define I2C_M3_STAT_ADDR  8
+#define I2C_M3_CTRL_ADDR  9
 
 #define MBX_INBOX_ADDR   0x30000
 #define MBX_IRQ_ACK_ADDR 0x30004
@@ -35,7 +43,7 @@ int main(void)
 
   // Start sim by writing to SIM_CTRL_ADDR
   tx_buf[0] = 0x1;
-  i2c_write_tx(SIM_CTRL_ADDR, tx_buf, BUF_BYTES);
+  i2c_write_tx(I2C_SIM_CTRL_ADDR, tx_buf, BUF_BYTES);
 
   //k_busy_wait(600);
   k_busy_wait(400);
@@ -48,7 +56,7 @@ int main(void)
   sys_write32(0x1, MBX_M2_STAT_ADDR);
   sys_write32(0x1, MBX_M3_STAT_ADDR);
 
-  printf("Read data: 0x%x\n", data);
+  printf("MBX Read data: 0x%x\n", data);
 
   k_busy_wait(60);
   
@@ -60,6 +68,21 @@ int main(void)
 
   // Test irq ack
   sys_write32(0x1, MBX_IRQ_ACK_ADDR);
+
+  tx_buf[0] = 0xEF;
+  tx_buf[1] = 0xBE;
+  tx_buf[2] = 0xAD;
+  tx_buf[3] = 0xDE;
+
+  i2c_write_tx(I2C_M0_CTRL_ADDR, tx_buf, BUF_BYTES);
+  i2c_read_tx(I2C_M0_STAT_ADDR, rx_buf, BUF_BYTES);
+
+  printf("M0 STAT: %0x%0x%0x%0x\n",
+      rx_buf[3],
+      rx_buf[2],
+      rx_buf[1],
+      rx_buf[0]
+      );
 
   debug_signal_pass();
 
