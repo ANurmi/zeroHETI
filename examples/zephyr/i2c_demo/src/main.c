@@ -69,10 +69,10 @@ int main(void)
   // Test irq ack
   sys_write32(0x1, MBX_IRQ_ACK_ADDR);
 
-  tx_buf[0] = 0xEF;
-  tx_buf[1] = 0xBE;
-  tx_buf[2] = 0xAD;
-  tx_buf[3] = 0xDE;
+  tx_buf[0] = 0x00;
+  tx_buf[1] = 0x10;
+  tx_buf[2] = 0x01;
+  tx_buf[3] = 0x00;
 
   i2c_write_tx(I2C_M0_CTRL_ADDR, tx_buf, BUF_BYTES);
   i2c_read_tx(I2C_M0_STAT_ADDR, rx_buf, BUF_BYTES);
@@ -84,6 +84,7 @@ int main(void)
       rx_buf[0]
       );
 
+  k_busy_wait(60);
   debug_signal_pass();
 
 	return 0;

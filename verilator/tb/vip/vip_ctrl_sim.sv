@@ -144,8 +144,6 @@ module vip_ctrl_sim #(
   endtask
 
   task read(input logic [6:0] addr, output logic [31:0] data);
-    //data = $random();
-    $display("[CTRL_SIM] read - addr: %h, data: %h", addr, data);
     unique case (addr)
       7'd2: data = speeds[0];
       7'd4: data = speeds[1];
@@ -153,6 +151,7 @@ module vip_ctrl_sim #(
       7'd8: data = speeds[3];
       default: ;
     endcase
+    $display("[CTRL_SIM] read - addr: %h, data: %h", addr, data);
   endtask
 
   task pend_task(input int unsigned i);
