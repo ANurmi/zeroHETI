@@ -46,7 +46,7 @@ fn main() -> ! {
     // Set level bits to 8
     #[cfg(feature = "intc-clic")]
     bsp::clic::Clic::smclicconfig().set_mnlbits(8);
-    setup_irq(CoreInterrupt::MachineTimer);
+    setup_irq(CoreInterrupt::MachineTimer, 0x88);
 
     // Start the simulation
     let mut mtimer = MTimer::instance().into_oneshot();
