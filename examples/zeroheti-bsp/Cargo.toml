@@ -23,6 +23,9 @@ fpga = []
 panic = []
 rt = ["dep:riscv-rt"]
 nest-continue = []
+intc-hetic = []
+intc-clic = []
+intc-edfic = []
 
 [profile.dev]
 # There seems to be a problem in riscv-rt with regards to linking in default_start_trap in debug
@@ -36,3 +39,7 @@ debug = true
 [build-dependencies]
 serde_json = "1.0.149"
 
+[[example]]
+name = "hetic_pend"
+path = "examples/hetic_pend.rs"
+required-features = ["intc-hetic"]

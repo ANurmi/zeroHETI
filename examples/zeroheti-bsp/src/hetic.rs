@@ -2,7 +2,7 @@ use crate::mmap::{INTC_BASE, hetic::*};
 use crate::mmio;
 
 // Re-export useful riscv-pac traits
-pub use riscv_pac::{HartIdNumber, InterruptNumber, PriorityNumber};
+pub use riscv_pac::{HartIdNumber, PriorityNumber};
 
 pub struct HeticIrqLine {
     idx: usize,
