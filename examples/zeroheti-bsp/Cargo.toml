@@ -8,6 +8,7 @@ atalanta-bsp-macros = { path = "macros"}
 embedded-io = "0.7.1"
 fugit = "0.3.7"
 riscv = "0.15.0"
+riscv-peripheral = "0.5.0"
 riscv-pac = "0.2.0"
 # riscv-rt 0.16.0 depends on 0.15.0
 riscv-rt = { version = "0.16.0", features = ["single-hart", "v-trap", "no-interrupts"], optional = true }
