@@ -1,7 +1,8 @@
 //`define SIM_ASSERTS
 
 module vip_motor_sim #(
-    parameter int unsigned Idx = 0
+    parameter int unsigned Idx = 0,
+    parameter int unsigned TimestepSize = 100
 ) (
     input  logic        clk_i,
     input  logic        rst_ni,
@@ -11,10 +12,9 @@ module vip_motor_sim #(
     output logic        irq_o
 );
 
-  localparam int Resistance = 100;  // Ohm
-  localparam int PsLimit = 100;
-  localparam int SpeedMax = 35_000;  // RPM
-  localparam int VoltageMax = 400_000;  // mV
+  localparam int Resistance   = 100;  // Ohm
+  localparam int SpeedMax     = 35_000;  // RPM
+  localparam int VoltageMax   = 400_000;  // mV
 
   // Raise interrupt when warning tolerance exceeded
   localparam int SpeedTolWrn = 500;
@@ -47,7 +47,7 @@ module vip_motor_sim #(
 
   always @(posedge clk_i) begin : timing_process
     if (enable_i) begin
-      if (ps == PsLimit) begin
+      if (ps == TimestepSize) begin
         ps = 0;
         timestep++;
       end else ps++;
@@ -57,6 +57,7 @@ module vip_motor_sim #(
   always @(timestep) begin : simulation_process
 
     seed = timestep[31:0] % 10;
+    irq_o = 1'b0;
 
     if (speed_real > 0) begin
       // Model transient enviromental distruptions with 5% probability
@@ -64,6 +65,11 @@ module vip_motor_sim #(
 
       // Model constant enviromental distruptions, update with 5% probability
       speed_bias = ($urandom(seed) % 20 == 0) ? ($random(seed) % 10) : speed_bias;
+
+      // Raise interrupt if warning threshhold exceeded
+      if (abs(speed_delta) > SpeedTolErr) begin
+        if (!accelerating()) irq_o = 1'b1;
+      end
     end
 
     speed_last = speed_real;
