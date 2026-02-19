@@ -11,7 +11,7 @@ jobs:
 
       - name: Install Bender
         run: |
-          curl --proto '=https' --tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh
+          curl -L https://github.com/pulp-platform/bender/releases/download/v0.29.1/bender-0.29.1-x86_64-linux-gnu-ubuntu24.04.tar.gz | tar xz -C .
           echo $GITHUB_WORKSPACE >> $GITHUB_PATH
 
       - name: Fetch dependencies
