@@ -75,16 +75,17 @@ int main(void)
   tx_buf[3] = 0x00;
 
   i2c_write_tx(I2C_M0_CTRL_ADDR, tx_buf, BUF_BYTES);
+  
+  k_busy_wait(100);
   i2c_read_tx(I2C_M0_STAT_ADDR, rx_buf, BUF_BYTES);
 
-  printf("M0 STAT: %0x%0x%0x%0x\n",
-      rx_buf[3],
-      rx_buf[2],
-      rx_buf[1],
-      rx_buf[0]
-      );
+  uint32_t m0_speed = 0;
+  m0_speed         |= ((uint32_t)rx_buf[3]) << 24;
+  m0_speed         |= ((uint32_t)rx_buf[2]) << 16;
+  m0_speed         |= ((uint32_t)rx_buf[1]) << 8;
+  m0_speed         |= ((uint32_t)rx_buf[0]) << 0;
+  printf("M0 Speed: %0d\n", m0_speed);
 
-  k_busy_wait(60);
   debug_signal_pass();
 
 	return 0;

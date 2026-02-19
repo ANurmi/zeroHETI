@@ -1,3 +1,5 @@
+//`define SIM_ASSERTS
+
 module vip_motor_sim #(
     parameter int unsigned Idx = 0
 ) (
@@ -9,41 +11,34 @@ module vip_motor_sim #(
     output logic        irq_o
 );
 
-/* @electric_motors 1.12
-* P = T × ω
-* ω = 2 pi × f
-* U = R × I
-* P = U × I
-* T = dL / dt (Newton II for rotation)
-* K = pi × M × r²
-* L = Kf
-* f = P / K(df / dt) × 2pi
-* f = f_new
-* df/dt = (f_new - f_old) / timestep
-* 1 Hz = 60 RPM
-* */
+  localparam int Resistance = 100;  // Ohm
+  localparam int PsLimit = 100;
+  localparam int SpeedMax = 35_000;  // RPM
+  localparam int VoltageMax = 400_000;  // mV
 
-  localparam int Resistance = 100; // Ohm
-  localparam int PsLimit    = 100;
-  localparam int SpeedMax   = 35_000; // RPM
-  localparam int VoltageMax = 400_000; // mV
-  localparam int unsigned K_inertia = 100;
+  // Raise interrupt when warning tolerance exceeded
+  localparam int SpeedTolWrn = 500;
+  localparam int SpeedTolErr = SpeedTolWrn * 2;
 
-  longint timestep = 0;
-  int unsigned ps  = 0;
+  longint timestep  = 0;
+  int unsigned ps   = 0;
+  int unsigned seed = 0;
 
-  int speed_real   = 0;
-  int speed_last   = 0;
-  int acceleration [4:0] = {0,0,0,0,0};
+  int speed_real = 0;
+  int speed_last = 0;
+  int speed_bias = 0;
+  int speed_ideal = 0;
+  int speed_delta = 0;
+  int acceleration[4:0] = {0, 0, 0, 0, 0};
   int unsigned voltage, power, power_last, transient;
 
-  assign voltage = voltage_i; // mV
-  assign power   = ((voltage**2) / (1000*Resistance)); // mW
-
+  assign voltage = voltage_i;  // mV
+  assign power = ((voltage ** 2) / (1000 * Resistance));  // mW
 
   // Correlate acceleration to change in power
   assign acceleration[0] = power - power_last - transient;
 
+  assign speed_delta = speed_ideal - speed_real;
   assign speed_o = speed_real;
 
   initial begin
@@ -60,11 +55,17 @@ module vip_motor_sim #(
   end
 
   always @(timestep) begin : simulation_process
-  
+
+    seed = timestep[31:0] % 10;
+
     if (speed_real > 0) begin
       // Model transient enviromental distruptions with 5% probability
-      transient = ($urandom() % 20 == 0) ? ($urandom() % 1000) : 0;
+      transient  = ($urandom(seed) % 20 == 0) ? ($random(seed) % 1000) : 0;
+
+      // Model constant enviromental distruptions, update with 5% probability
+      speed_bias = ($urandom(seed) % 20 == 0) ? ($random(seed) % 10) : speed_bias;
     end
+
     speed_last = speed_real;
     power_last = power;
 
@@ -73,14 +74,40 @@ module vip_motor_sim #(
     acceleration[2] = acceleration[1];
     acceleration[1] = acceleration[0];
 
-    speed_real = speed_last + 
-      + 10*(acceleration[4] / 100)
-      + 20*(acceleration[3] / 100)
-      + 50*(acceleration[2] / 100)
-      + 20*(acceleration[1] / 100)
-      + 10*(acceleration[0] / 100)
+    speed_real = speed_last + speed_bias
+      + 1*(acceleration[4] / 10)
+      + 2*(acceleration[3] / 10)
+      + 5*(acceleration[2] / 10)
+      + 2*(acceleration[1] / 10)
+      + 1*(acceleration[0] / 10)
     ;
+
+    speed_ideal = power;
   end
+
+  function int abs( int x );
+    if (x > 0) return x;
+    else return x * (-1);
+  endfunction
+
+  function bit accelerating ();
+    return ((acceleration[0] != 0) |
+            (acceleration[1] != 0) |
+            (acceleration[2] != 0) |
+            (acceleration[3] != 0)
+           );
+  endfunction
+
+`ifdef SIM_ASSERTS
+  always @(timestep) begin : assertions
+
+    if (speed_real > SpeedMax) $fatal(1, "Maximum speed exceeded!");
+
+    if (abs(speed_delta) > SpeedTolErr) begin
+        if (!accelerating()) $fatal(1, "Speed tolerance exceeded!");
+    end
+  end
+`endif
 
 endmodule : vip_motor_sim
 
