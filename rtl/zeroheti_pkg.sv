@@ -96,7 +96,6 @@ package zeroheti_pkg;
   localparam int unsigned TGSize = 4;
 
   localparam addr_rule_t DbgAddr = '{base : 32'h0000_0000, last : 32'h0000_1000};
-  localparam addr_rule_t HetIcAddr = '{base : 32'h0000_1000, last : 32'h0000_3000};
   localparam addr_rule_t UartAddr = '{base : 32'h0000_3000, last : 32'h0000_3100};
   localparam addr_rule_t MtimerAddr = '{base : 32'h0000_3100, last : 32'h0000_3114};
   localparam addr_rule_t TimerGroupAddr = '{
@@ -106,7 +105,8 @@ package zeroheti_pkg;
   localparam addr_rule_t I2cAddr = '{base : 32'h0000_3200, last : 32'h0000_3218};
   localparam addr_rule_t ImemAddr = '{base : 32'h0001_0000, last : (32'h0001_0000 + ImemSize)};
   localparam addr_rule_t DmemAddr = '{base : 32'h0002_0000, last : (32'h0002_0000 + DmemSize)};
-  localparam addr_rule_t ExtAddr = '{base : 32'h0003_0000, last : 32'hFFFF_FFFF};
+  localparam addr_rule_t ExtAddr = '{base : 32'h0003_0000, last : 32'h0010_0000};
+  localparam addr_rule_t HetIcAddr = '{base : 32'h0010_0000, last : 32'h0010_2000};
 
   // imem size in words
   localparam int unsigned ImemWSize = ImemSize / 4;
