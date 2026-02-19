@@ -1,4 +1,4 @@
-#define HETIC_BASE 0x00001000
+#define HETIC_BASE 0x00100000
 
 #define UART_BASE 0x00003000
 #define UART_RBR              UART_BASE + 0
