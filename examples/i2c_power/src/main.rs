@@ -36,7 +36,7 @@ static mut I2C: Option<I2c<I2C_BASE>> = None;
 
 #[entry]
 fn main() -> ! {
-    let mut serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
+    let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
     let riscv_isa = core::env!("RISCV_ISA");
 
     sprintln!("[I2C Power control demo] ISA = {riscv_isa}");
