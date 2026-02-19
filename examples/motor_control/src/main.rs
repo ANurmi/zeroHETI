@@ -28,7 +28,7 @@ struct SimParams {
 const SIM_PARAMS: SimParams = SimParams { hyperperiod_ms: 1 };
 
 // Global variables
-static mut I2C: Option<I2c<I2C_BASE>> = None;
+static mut I2C: Option<I2c> = None;
 
 #[entry]
 fn main() -> ! {
@@ -36,9 +36,7 @@ fn main() -> ! {
     let riscv_isa = core::env!("RISCV_ISA");
     sprintln!("[Motor control demo] ISA = {riscv_isa}");
 
-    let mut i2c = I2c::<I2C_BASE>::init(4);
-
-    unsafe { I2C.replace(i2c) };
+    let mut i2c = I2c::init(4);
 
     // HACK: clear mintstatus
     unsafe { bsp::register::mintstatus::write(0.into()) };
