@@ -3,7 +3,9 @@ use crate::{
     mmio::{mask_u8, read_u8, unmask_u8, write_u32},
 };
 
-pub struct I2c<const BASE_ADDR: usize>;
+pub struct I2cHal<const BASE_ADDR: usize>;
+
+pub type I2c = I2cHal<I2C_BASE>;
 
 /// Write enable for I2C transaction, 0 for read and 1 for write
 #[repr(u8)]
@@ -17,7 +19,7 @@ enum Last {
     Last = 1,
 }
 
-impl<const BASE_ADDR: usize> I2c<BASE_ADDR> {
+impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
     /// # Parameters
     ///
     /// * `ps` - prescaler value, used to set the I2C clock frequency.
@@ -99,13 +101,12 @@ impl<const BASE_ADDR: usize> I2c<BASE_ADDR> {
     /// `buf` must have enough space for read_len bytes, and the caller must ensure that the I2C
     /// transaction is valid (e.g. the slave device at `addr` should be able to provide `read_len`
     /// bytes of data).
-    pub unsafe fn read_tx(&mut self, addr: u8, buf: &mut [u8], read_len: usize) -> usize {
+    pub fn read_tx(&mut self, addr: u8, buf: &mut [u8]) {
         self.send_addr_frame(addr, We::Read as u8);
 
-        for idx in 0..(read_len - 1) {
+        for idx in 0..(buf.len() - 1) {
             unsafe { *buf.get_unchecked_mut(idx) = self.recv_data_frame(Last::NotLast as u8) };
         }
-        buf[read_len - 1] = self.recv_data_frame(Last::Last as u8);
-        read_len
+        buf[buf.len() - 1] = self.recv_data_frame(Last::Last as u8);
     }
 }
