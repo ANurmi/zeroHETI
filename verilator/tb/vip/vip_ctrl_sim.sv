@@ -22,9 +22,15 @@ module vip_ctrl_sim #(
 
   localparam int unsigned TaskSetSize = 9;
 
+  localparam longint unsigned MbxPerUs = 'd800;
+  localparam longint unsigned RepPerUs = 'd600;
+
   localparam longint unsigned MbxDlUs = 'd100;
   localparam longint unsigned WrnDlUs = 'd20;
   localparam longint unsigned RepDlUs = 'd50;
+
+  logic [3:0][31:0] voltages = 0;
+  logic [3:0][31:0] speeds   = 0;
 
   typedef enum logic [1:0] {
     MBX = 0,
@@ -79,24 +85,37 @@ module vip_ctrl_sim #(
     $display("[CTRL_SIM] (Periodic): Receive MBX directive,          DL: %3d us", MbxDlUs);
     $display("[CTRL_SIM] (Sporadic): Motor [0-3] speed warning,      DL: %3d us", WrnDlUs);
     $display("[CTRL_SIM] (Periodic): Report M[0-3] speed, timestamp, DL: %3d us", RepDlUs);
-    //i_zeroheti.i_mbx.i_sim_mbx.raise_irq();
   end
 
   always @(time_us) begin : g_dl_counter
 
-    if (enable & (time_us % RepDlUs == 0)) begin
-      pend_task(5); reset_task_dl(5);
-      pend_task(6); reset_task_dl(6);
-      pend_task(7); reset_task_dl(7);
-      pend_task(8); reset_task_dl(8);
-    end
-
+    // Decrement deadlines of active task
     for (int i = 0; i < TaskSetSize; i++) begin
       if (task_set[i].active) begin
         if (task_set[i].dl_us == 0) $fatal(1, "Deadline miss for task idx %0d!", i);
         else task_set[i].dl_us--;
       end
     end
+
+    // Activate periodic directive task
+    if (enable & (time_us % MbxPerUs == 0)) begin
+      pend_task(0);
+      reset_task_dl(0);
+      i_zeroheti.i_mbx.i_sim_mbx.raise_irq();
+    end
+
+    // Activate periodic reporting tasks
+    if (enable & (time_us % RepPerUs == 0)) begin
+      pend_task(5);
+      reset_task_dl(5);
+      pend_task(6);
+      reset_task_dl(6);
+      pend_task(7);
+      reset_task_dl(7);
+      pend_task(8);
+      reset_task_dl(8);
+    end
+
   end
 
   for (genvar i = 0; i < NrMotors; i++) begin : g_motors
@@ -105,21 +124,33 @@ module vip_ctrl_sim #(
     ) i_motor (
         .clk_i,
         .rst_ni,
-        .enable_i(enable),
-        .irq_o   (irq_o[i])
+        .enable_i (enable),
+        .voltage_i(voltages[i]),
+        .speed_o  (speeds[i]),
+        .irq_o    (irq_o[i])
     );
   end
 
   task write(input logic [6:0] addr, input logic [31:0] data);
     $display("[CTRL_SIM] write - addr: %h, data: %h", addr, data);
     unique case (addr)
-      7'd0: enable = data[0];
+      7'd0: enable    = data[0];
+      7'd3: voltages[0] = data;
+      7'd5: voltages[1] = data;
+      7'd7: voltages[2] = data;
+      7'd9: voltages[3] = data;
       default: ;
     endcase
   endtask
 
   task read(input logic [6:0] addr, output logic [31:0] data);
-    data = $random();
+    unique case (addr)
+      7'd2: data = speeds[0];
+      7'd4: data = speeds[1];
+      7'd6: data = speeds[2];
+      7'd8: data = speeds[3];
+      default: ;
+    endcase
     $display("[CTRL_SIM] read - addr: %h, data: %h", addr, data);
   endtask
 
