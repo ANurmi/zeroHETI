@@ -1,4 +1,4 @@
-pub const I2C_BASE: usize = 0x2200;
+pub const I2C_BASE: usize = 0x3200;
 
 pub const I2C_CLK_PRESCALER_OFS: usize = 0;
 pub const I2C_CTRL_OFS: usize = 4;

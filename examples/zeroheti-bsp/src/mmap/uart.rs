@@ -2,7 +2,7 @@
 //!
 //! Some implementations of APB UART space registers with one byte offset but
 //! Atalanta uses 4 bytes as tends to be conventional.
-pub const UART_BASE: usize = 0x2000;
+pub const UART_BASE: usize = 0x3000;
 
 /// Receiver Buffer Register (RBR) / Transmitter Holding Register (THR) /
 /// Divisor Latch LSB (DLL)
