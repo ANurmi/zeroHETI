@@ -1,6 +1,8 @@
 #![no_std]
 #![no_main]
 
+pub mod mailbox;
+
 #[cfg(feature = "intc-clic")]
 use bsp::clic::{Clic, Polarity, Trig};
 use bsp::sprintln;
