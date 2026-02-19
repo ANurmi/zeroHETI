@@ -151,7 +151,7 @@ pub mod mnxti {
 }
 
 pub mod mintstatus {
-    use riscv::read_csr_as;
+    use riscv::{clear, read_csr_as, set, write_csr_as};
 
     use super::bf_extract;
 
@@ -197,6 +197,9 @@ pub mod mintstatus {
     }
 
     read_csr_as!(Mintstatus, 0x346);
+    write_csr_as!(Mintstatus, 0x346);
+    set!(0x346);
+    clear!(0x346);
 }
 
 pub mod mintthresh {
