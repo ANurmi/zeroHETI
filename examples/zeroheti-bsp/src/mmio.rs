@@ -1,32 +1,35 @@
 //! Basic MMIO operations
+//!
+//! # Safety
+//!
+//! Use of these methods is inherently unsafe, as hardware can do whatever. The
+//! only way to assert safety is to not depend on this module.
 
-// We trust users of MMIO to use these functions responsibly ('allow' can and should be removed
-// eventually)
+// We trust users of MMIO to use these functions responsibly
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
-/// # Safety
-///
-/// Unaligned reads may fail to produce expected results on rt-ss.
 #[inline(always)]
-pub unsafe fn read_u8(addr: usize) -> u8 {
+pub fn read_u8(addr: usize) -> u8 {
+    // Safety: unaligned reads may fail to produce expected results.
     unsafe { core::ptr::read_volatile(addr as *const _) }
 }
 
 /// Reads the masked bits from the register
-///
-/// # Safety
-///
-/// Unaligned reads may fail to produce expected results on rt-ss.
 #[inline(always)]
-pub unsafe fn read_u8_masked(addr: usize, mask: u8) -> u8 {
+pub fn read_u8_masked(addr: usize, mask: u8) -> u8 {
+    // Safety: unaligned reads may fail to produce expected results.
     unsafe { core::ptr::read_volatile(addr as *const u8) & mask }
 }
 
-/// # Safety
-///
-/// Unaligned writes may fail to produce expected results on rt-ss.
 #[inline(always)]
-pub unsafe fn write_u8(addr: usize, val: u8) {
+pub fn write_u8(addr: usize, val: u8) {
+    // Safety: unaligned reads may fail to produce expected results.
+    unsafe { core::ptr::write_volatile(addr as *mut _, val) }
+}
+
+#[inline(always)]
+pub fn write_u16(addr: usize, val: u16) {
+    // Safety: unaligned reads may fail to produce expected results.
     unsafe { core::ptr::write_volatile(addr as *mut _, val) }
 }
 
@@ -88,22 +91,17 @@ pub fn toggle_u32(addr: usize, toggle_bits: u32) {
     write_u32(addr, r);
 }
 
-/// # Safety
-///
-/// Unaligned writes may fail to produce expected results on RISC-V.
 #[inline(always)]
 pub fn mask_u8(addr: usize, mask: u8) {
+    // Safety: unaligned reads/writes may fail to produce expected results.
     let r = unsafe { core::ptr::read_volatile(addr as *const u8) };
     unsafe { core::ptr::write_volatile(addr as *mut u8, r | mask) }
 }
 
 /// Unmasks specified bits from given register
-///
-/// # Safety
-///
-/// Unaligned writes may fail to produce expected results on RISC-V.
 #[inline(always)]
 pub fn unmask_u8(addr: usize, unmask: u8) {
+    // Safety: unaligned reads/writes may fail to produce expected results.
     let r = unsafe { core::ptr::read_volatile(addr as *const u8) };
     unsafe { core::ptr::write_volatile(addr as *mut u8, r & !unmask) }
 }
