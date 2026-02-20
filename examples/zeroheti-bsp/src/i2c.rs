@@ -30,14 +30,6 @@ bitflags::bitflags! {
     }
 }
 
-bitflags::bitflags! {
-    #[derive(PartialEq)]
-    struct Last: u8 {
-        const NOT_LAST = 0b0;
-        const LAST     = 0b1;
-    }
-}
-
 impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
     /// # Parameters
     ///
