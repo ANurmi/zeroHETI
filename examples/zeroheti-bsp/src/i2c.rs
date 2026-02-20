@@ -2,7 +2,6 @@ use crate::{
     mmap::i2c::*,
     mmio::{mask_u8, read_u8, unmask_u8, write_u8, write_u16},
 };
-use embedded_hal::i2c::{Operation, SevenBitAddress};
 
 pub struct I2cHal<const BASE_ADDR: usize>;
 
@@ -129,51 +128,72 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum Error {
-    // ...
-}
-
-impl embedded_hal::i2c::Error for Error {
-    fn kind(&self) -> embedded_hal::i2c::ErrorKind {
-        match *self {
-            // ...
-        }
-    }
-}
-
-impl<const BASE_ADDR: usize> embedded_hal::i2c::ErrorType for I2cHal<BASE_ADDR> {
-    type Error = Error;
-}
-
-impl<const BASE_ADDR: usize> embedded_hal::i2c::I2c<SevenBitAddress> for I2cHal<BASE_ADDR> {
-    fn transaction(
-        &mut self,
-        address: u8,
-        operations: &mut [embedded_hal::i2c::Operation<'_>],
-    ) -> Result<(), Self::Error> {
-        for op in operations {
-            match op {
-                Operation::Read(buf) => {
-                    self.read(address, buf)?;
-                }
-                Operation::Write(buf) => {
-                    self.write(address, buf)?;
-                }
-            }
-        }
-        Ok(())
-    }
-
-    fn read(&mut self, address: u8, read: &mut [u8]) -> Result<(), Self::Error> {
+// embedded-hal compatible API
+impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
+    pub fn read(&mut self, address: u8, read: &mut [u8]) {
         self.send_addr_frame(address, We::READ);
         self.recv_data_frames(read);
-        Ok(())
     }
 
-    fn write(&mut self, address: u8, write: &[u8]) -> Result<(), Self::Error> {
+    pub fn write(&mut self, address: u8, write: &[u8]) {
         self.send_addr_frame(address, We::WRITE);
         self.send_data_frames(write);
-        Ok(())
     }
 }
+
+#[cfg(feature = "embedded-hal")]
+mod eh {
+    use super::{I2cHal, We};
+    use embedded_hal::i2c::{Operation, SevenBitAddress};
+
+    #[derive(Debug, Clone, Eq, PartialEq)]
+    pub enum Error {
+        // ...
+    }
+
+    impl embedded_hal::i2c::Error for Error {
+        fn kind(&self) -> embedded_hal::i2c::ErrorKind {
+            match *self {
+            // ...
+        }
+        }
+    }
+
+    impl<const BASE_ADDR: usize> embedded_hal::i2c::ErrorType for I2cHal<BASE_ADDR> {
+        type Error = Error;
+    }
+
+    impl<const BASE_ADDR: usize> embedded_hal::i2c::I2c<SevenBitAddress> for I2cHal<BASE_ADDR> {
+        fn transaction(
+            &mut self,
+            address: u8,
+            operations: &mut [embedded_hal::i2c::Operation<'_>],
+        ) -> Result<(), Self::Error> {
+            for op in operations {
+                match op {
+                    Operation::Read(buf) => {
+                        self.read(address, buf);
+                    }
+                    Operation::Write(buf) => {
+                        self.write(address, buf);
+                    }
+                }
+            }
+            Ok(())
+        }
+
+        fn read(&mut self, address: u8, read: &mut [u8]) -> Result<(), Self::Error> {
+            self.send_addr_frame(address, We::READ);
+            self.recv_data_frames(read);
+            Ok(())
+        }
+
+        fn write(&mut self, address: u8, write: &[u8]) -> Result<(), Self::Error> {
+            self.send_addr_frame(address, We::WRITE);
+            self.send_data_frames(write);
+            Ok(())
+        }
+    }
+}
+#[cfg(feature = "embedded-hal")]
+pub use eh::*;
