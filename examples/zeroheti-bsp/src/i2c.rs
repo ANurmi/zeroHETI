@@ -59,7 +59,7 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
     #[inline]
     pub fn set_prescaler(&mut self, val: u16) {
         // Safety: aligned on zeroHETI
-        unsafe { write_u16(BASE_ADDR + I2C_CLK_PRESCALER_OFS, val) };
+        write_u16(BASE_ADDR + I2C_CLK_PRESCALER_OFS, val);
     }
 
     #[inline]
@@ -74,36 +74,31 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
 
     #[inline]
     fn get_tip(&self) -> u8 {
-        // Safety: aligned on zeroHETI
-        unsafe { read_u8(BASE_ADDR + I2C_STATUS_OFS) & (1 << 1) }
+        read_u8(BASE_ADDR + I2C_STATUS_OFS) & (1 << 1)
     }
 
     #[inline]
     fn set_cmd(&mut self, cmd: Cmd) {
-        // Safety: aligned on zeroHETI
-        unsafe { write_u8(BASE_ADDR + I2C_CMD_OFS, cmd.bits()) };
+        write_u8(BASE_ADDR + I2C_CMD_OFS, cmd.bits());
     }
 
     #[inline]
     fn send_addr_frame(&mut self, addr: u8, we: We) {
         let addr: u8 = addr << 1 | we.bits();
-        // Safety: aligned on zeroHETI
-        unsafe { write_u8(BASE_ADDR + I2C_TX_OFS, addr) };
+        write_u8(BASE_ADDR + I2C_TX_OFS, addr);
         self.set_cmd(Cmd::STA | Cmd::WR);
         while self.get_tip() != 0 {}
     }
 
     fn send_data_frames(&mut self, buf: &[u8]) {
         for byte in &buf[0..buf.len() - 1] {
-            // Safety: aligned on zeroHETI
-            unsafe { write_u8(BASE_ADDR + I2C_TX_OFS, *byte) };
+            write_u8(BASE_ADDR + I2C_TX_OFS, *byte);
             self.set_cmd(Cmd::WR);
             while self.get_tip() != 0 {}
         }
 
         // Send last byte with stop condition
-        // Safety: aligned on zeroHETI
-        unsafe { write_u8(BASE_ADDR + I2C_TX_OFS, buf[buf.len() - 1]) };
+        write_u8(BASE_ADDR + I2C_TX_OFS, buf[buf.len() - 1]);
         self.set_cmd(Cmd::WR | Cmd::STO);
         while self.get_tip() != 0 {}
     }
@@ -113,14 +108,14 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
         for byte in &mut buf[0..last_idx] {
             self.set_cmd(Cmd::RD);
             while self.get_tip() != 0 {}
-            *byte = unsafe { read_u8(BASE_ADDR + I2C_RX_OFS) };
+            *byte = read_u8(BASE_ADDR + I2C_RX_OFS);
         }
 
         // Read last byte with stop condition
         self.set_cmd(Cmd::RD | Cmd::STO);
         while self.get_tip() != 0 {}
         // Safety: aligned on zeroHETI
-        buf[last_idx] = unsafe { read_u8(BASE_ADDR + I2C_RX_OFS) };
+        buf[last_idx] = read_u8(BASE_ADDR + I2C_RX_OFS);
     }
 
     #[inline]
