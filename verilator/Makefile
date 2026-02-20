@@ -3,7 +3,7 @@ BUILD_DIR       ?= $(ZH_ROOT)/build
 SW_BUILD_DIR    ?= $(ZH_ROOT)/build/sw
 VERIL_DIR       ?= $(ZH_ROOT)/verilator
 
-XLEN             = 64
+XLEN             = 32
 TOOLCHAIN        = riscv$(XLEN)-unknown-elf-
 
 TOP_MODULE       = zeroheti_top_wrapper
