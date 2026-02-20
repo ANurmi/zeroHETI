@@ -1,5 +1,4 @@
-use crate::hetic::InterruptNumber;
-use riscv_pac::ExternalInterruptNumber;
+use riscv_pac::{ExternalInterruptNumber, InterruptNumber};
 use strum::FromRepr;
 
 // Re-export core interrupts

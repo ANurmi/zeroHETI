@@ -22,8 +22,8 @@ CFLAGS           = -I$(shell bender path vbench)/src
 
 LOAD            ?= READMEM
 
-IMEM_BYTES       = 16384
-DMEM_BYTES       = 8192
+IMEM_BYTES       = 32768
+DMEM_BYTES       = 32768
 
 # IMEM base 0x1_0000, DMEM base 0x2_0000
 DMEM_REL_OFFS_WORDS = 16385
@@ -41,6 +41,7 @@ ISA              = RV32$(BASE)$(MULT)$(COMP)
 VDEFS ?= \
   +define+VERILATOR=1 \
   +define+MOCK_UART \
+  +define+MBX_SIM \
 	+define+ZH_ROOT=$(ZH_ROOT) \
 	+define+IMEM_BYTES=$(IMEM_BYTES) \
 	+define+DMEM_BYTES=$(DMEM_BYTES) \

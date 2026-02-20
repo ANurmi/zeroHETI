@@ -5,8 +5,8 @@ uint32_t i2c_get_prescaler();
 
 void i2c_init(uint32_t ps);
 
-void i2c_write_tx(uint8_t addr, uint8_t* tx_buf);
+void i2c_write_tx(uint8_t addr, uint8_t* tx_buf, uint8_t len);
 
-uint8_t* i2c_read_tx(uint8_t addr);
+void i2c_read_tx(uint8_t addr, uint8_t* rx_buf, uint8_t len);
 
 #endif

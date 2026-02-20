@@ -1,9 +1,15 @@
 #![no_std]
 
 pub mod apb_uart;
+#[cfg(feature = "intc-clic")]
+pub mod clic;
 #[cfg(feature = "core-fmt")]
 mod core_sprint;
+#[cfg(feature = "intc-edfic")]
+pub mod edfic;
+#[cfg(feature = "intc-hetic")]
 pub mod hetic;
+pub mod i2c;
 pub mod interrupt;
 pub mod mmap;
 pub mod mmio;

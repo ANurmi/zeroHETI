@@ -3,7 +3,7 @@ module zeroheti_int_ctrl #(
     localparam int unsigned NrIrqs = CoreCfg.num_irqs,
     parameter int unsigned TsWidth = 12,
     localparam int unsigned IrqWidth = $clog2(CoreCfg.num_irqs),
-    localparam int unsigned PrioWidth = (zeroheti_pkg::IntController == EDFIC) ? TsWidth : $clog2(
+    localparam int unsigned PrioWidth = (zeroheti_pkg::IntController == zeroheti_pkg::EDFIC) ? TsWidth : $clog2(
         CoreCfg.num_prio
     )
 ) (

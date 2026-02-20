@@ -1,18 +1,21 @@
 module vip_i2c #(
 ) (
-    input  logic clk_i,
-    input  logic rst_ni,
-    input  logic sda_i,
-    output logic sda_o,
-    input  logic scl_i,
-    output logic scl_o
+    input  logic       clk_i,
+    input  logic       rst_ni,
+    input  logic       sda_i,
+    output logic       sda_o,
+    input  logic       scl_i,
+    output logic       scl_o,
+    output logic [3:0] irq_o
 );
 
   localparam InternalPrescaler = 16;
+  localparam BufLen = 4;
 
   assign scl_o = scl_i;
 
   bit          active_tx = 0;
+  bit          active_byte = 0;
   int unsigned g_counter = 0;
 
   initial begin
@@ -35,40 +38,62 @@ module vip_i2c #(
     end
   end
 
-  always @(posedge sda_i) begin : end_cond
-    if (scl_i & active_tx) begin
-      active_tx = 0;
-    end
-  end
+  vip_ctrl_sim i_ctrl_sim (
+      .clk_i,
+      .rst_ni,
+      .irq_o
+  );
 
   task handle_tx();
     automatic bit we;
     automatic logic [6:0] addr;
     automatic logic [7:0] data;
 
-    receive_address(addr, we);
-    $display("[I2C_VIP] Received addr %0d, we: %0d", addr, we);
+    automatic logic [31:0] write_buf = 0;
+    automatic logic [31:0] read_buf = 0;
 
-    if (we) begin
-      receive_data(data);
-      $display("[I2C_VIP] Received data %0h", data);
-    end else begin
-      data = 'h5A;
-      send_data(data);
-      $display("[I2C_VIP] Sent data %0h", data);
+    automatic int unsigned idx = 0;
+
+    active_byte = 1;
+    receive_address(addr, we);
+    active_byte = 0;
+
+    delay_half(4);
+
+    if (!we) i_ctrl_sim.read(addr, read_buf);
+
+    while (!scl_i) begin
+      active_byte = 1;
+
+      if (we) begin
+        receive_data(data);
+        write_buf[(idx*8)+:8] = data;
+      end else begin
+        data = read_buf[(idx*8)+:8];
+        send_data(data);
+      end
+
+      idx = (idx == BufLen - 1) ? 0 : idx + 1;
+
+      active_byte = 0;
+      delay_half(4);
+
     end
+
+    // Model writeback
+    if (we) i_ctrl_sim.write(addr, write_buf);
+
+    active_tx = 0;
 
   endtask
 
   task receive_address(output logic [6:0] addr, output bit we);
-
     automatic logic [7:0] rbyte;
 
     receive_byte(rbyte);
     addr = rbyte[7:1];
     we   = rbyte[0];
     send_ack();
-
   endtask
 
   task receive_data(output logic [7:0] data);
@@ -77,14 +102,12 @@ module vip_i2c #(
   endtask
 
   task send_data(input logic [7:0] data);
-    g_counter = 0;
     sda_o = data[7];
-    for (int unsigned i = 0; i < 7; i++) begin
+    for (int unsigned i = 0; i < 8; i++) begin
       @(negedge scl_i);
-      @(g_counter == InternalPrescaler / 2);
+      delay_half(1);
       sda_o = data[6-i];
     end
-    @(negedge scl_i);
     sda_o = 1'b1;
     receive_ack();
   endtask
@@ -99,14 +122,23 @@ module vip_i2c #(
   endtask
 
   task receive_ack();
-    // not strictly necessary, TODO for later
+    @(negedge sda_i);
+    @(negedge scl_i);
   endtask
 
   task receive_byte(output logic [7:0] data);
+    g_counter = 0;
     for (int unsigned i = 0; i < 8; i++) begin
       @(posedge scl_i);
       @(g_counter == InternalPrescaler / 2);
       data[7-i] = sda_i;
+    end
+  endtask
+
+  task delay_half(input int count);
+    for (int i = 0; i < count; i++) begin
+      g_counter = 0;
+      @(g_counter == InternalPrescaler / 2);
     end
   endtask
 

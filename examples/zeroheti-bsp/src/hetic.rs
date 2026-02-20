@@ -1,8 +1,8 @@
-use crate::mmap::hetic::*;
+use crate::mmap::{INTC_BASE, hetic::*};
 use crate::mmio;
 
 // Re-export useful riscv-pac traits
-pub use riscv_pac::{HartIdNumber, InterruptNumber, PriorityNumber};
+pub use riscv_pac::{HartIdNumber, PriorityNumber};
 
 pub struct HeticIrqLine {
     idx: usize,
@@ -24,39 +24,39 @@ pub enum Pol {
 
 impl HeticIrqLine {
     pub fn set_level(&mut self, level: u8) {
-        unsafe { mmio::write_u8(HETIC_BASE + LINE_SIZE * self.idx + 1, level) };
+        unsafe { mmio::write_u8(INTC_BASE + LINE_SIZE * self.idx + 1, level) };
     }
     pub fn level(&self) {
-        unsafe { mmio::read_u8(HETIC_BASE + LINE_SIZE * self.idx + 1) };
+        unsafe { mmio::read_u8(INTC_BASE + LINE_SIZE * self.idx + 1) };
     }
 
     pub fn pend(&mut self) {
-        unsafe { mmio::write_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << IP_OFS) };
+        unsafe { mmio::write_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << IP_OFS) };
     }
     pub fn unpend(&mut self) {
-        mmio::unmask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << IP_OFS);
+        mmio::unmask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << IP_OFS);
     }
 
     pub fn enable(&mut self) {
-        mmio::mask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << IE_OFS);
+        mmio::mask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << IE_OFS);
     }
     pub fn disable(&mut self) {
-        mmio::unmask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << IE_OFS);
+        mmio::unmask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << IE_OFS);
     }
 
     /// Set trigger type (edge/level)
     pub fn set_trig(&mut self, trig: Trig) {
         match trig {
-            Trig::Edge => mmio::unmask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << TRIG_OFS),
-            Trig::Level => mmio::mask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << TRIG_OFS),
+            Trig::Edge => mmio::unmask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << TRIG_OFS),
+            Trig::Level => mmio::mask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << TRIG_OFS),
         }
     }
 
     /// Set polarity (positive/negative)
     pub fn set_pol(&mut self, pol: Pol) {
         match pol {
-            Pol::Pos => mmio::unmask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << POL_OFS),
-            Pol::Neg => mmio::mask_u8(HETIC_BASE + LINE_SIZE * self.idx, 0b1u8 << POL_OFS),
+            Pol::Pos => mmio::unmask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << POL_OFS),
+            Pol::Neg => mmio::mask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << POL_OFS),
         }
     }
 }

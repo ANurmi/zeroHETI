@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <stdlib.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/sys_io.h>
@@ -64,15 +63,16 @@ void i2c_init(uint32_t ps){
   i2c_core_enable();
 }
 
-void i2c_write_tx(uint8_t addr, uint8_t* tx_buf) {
+void i2c_write_tx(uint8_t addr, uint8_t* tx_buf, uint8_t len) {
   i2c_send_addr_frame(addr, 1);
-  i2c_send_data_frame(0xAB, 1);
+  for (int i=0; i<len; i++){
+    i2c_send_data_frame(tx_buf[i], (i == len-1));
+  }
 }
 
-uint8_t* i2c_read_tx(uint8_t addr) {
+void i2c_read_tx(uint8_t addr, uint8_t* rx_buf, uint8_t len) {
   i2c_send_addr_frame(addr, 0);
-  uint8_t* bytes = NULL;
-  bytes = (uint8_t*)malloc(1 * sizeof(uint8_t));
-  bytes[0] = i2c_recv_data_frame(1);
-  return bytes;
+  for (int i=0; i<len; i++) {
+    rx_buf[i] = i2c_recv_data_frame((i == len-1));
+  }
 }
