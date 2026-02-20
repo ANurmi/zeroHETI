@@ -7,14 +7,9 @@ use syn::{parse, spanned::Spanned, ItemFn, ReturnType, Type, Visibility};
 #[rustfmt::skip]
 const INTERRUPTS: &[&str] = &[
     "MachineSoft", "MachineTimer", "MachineExternal",
-    "Uart", "Gpio",
-    "SpiRxTxIrq", "SpiEotIrq",
     "Timer0Ovf", "Timer0Cmp", "Timer1Ovf", "Timer1Cmp", "Timer2Ovf", "Timer2Cmp", "Timer3Ovf", "Timer3Cmp",
-    "TqFull", "TqNotFull",
+    "Uart", "I2c",
     "Nmi",
-    "Dma0", "Dma1", "Dma2", "Dma3", "Dma4", "Dma5", "Dma6", "Dma7",
-    "Dma8", "Dma9", "Dma10", "Dma11", "Dma12", "Dma13", "Dma14", "Dma15",
-    "TqId0", "TqId1", "TqId2", "TqId3", "TqId4", "TqId5", "TqId6", "TqId7"
 ];
 
 /// Returns possible errors with the interrupt handler definition
