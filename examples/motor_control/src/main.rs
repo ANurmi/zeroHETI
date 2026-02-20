@@ -8,8 +8,6 @@ use bsp::{
     apb_uart::*,
     i2c::I2c,
     interrupt::{CoreInterrupt, ExternalInterrupt},
-    mmap::i2c::*,
-    mmio::write_u32,
     mtimer::*,
     nested_interrupt,
     register::mintstatus::Mintstatus,
@@ -63,20 +61,20 @@ fn main() -> ! {
     }
 
     // Start sim
-    i2c.write_tx(0x0, &[1]);
+    i2c.write(0x0, &[1]);
 
     // Read motor states
     let mut rbuf = [0; 4];
-    i2c.read_tx(0x2, &mut rbuf);
+    i2c.read(0x2, &mut rbuf);
     let m0_speed = u32::from_le_bytes(rbuf);
 
-    i2c.read_tx(0x4, &mut rbuf);
+    i2c.read(0x4, &mut rbuf);
     let m1_speed = u32::from_le_bytes(rbuf);
 
-    i2c.read_tx(0x6, &mut rbuf);
+    i2c.read(0x6, &mut rbuf);
     let m2_speed = u32::from_le_bytes(rbuf);
 
-    i2c.read_tx(0x8, &mut rbuf);
+    i2c.read(0x8, &mut rbuf);
     let m3_speed = u32::from_le_bytes(rbuf);
 
     sprintln!("Motor speeds: M0 = {m0_speed}, M1 = {m1_speed}, M2 = {m2_speed}, M3 = {m3_speed}");
