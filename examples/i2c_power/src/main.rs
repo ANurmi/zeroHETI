@@ -7,8 +7,8 @@ use bsp::{
     CPU_FREQ_HZ,
     apb_uart::*,
     hetic::Hetic,
+    i2c::I2c,
     mmap::{apb_timer::*, i2c::*},
-    mmio::*,
     mtimer::*,
     riscv::{self, asm::wfi},
     rt::entry,
@@ -19,56 +19,6 @@ use bsp::{
 use core::arch::asm;
 use fugit::{ExtU32, ExtU64};
 use riscv::{InterruptNumber, interrupt::Interrupt};
-
-fn get_tip() -> u8 {
-    unsafe { read_u8(I2C_BASE + I2C_STATUS_OFS) & (1 << 1) }
-}
-
-fn i2c_set_cmd(sta: u8, sto: u8, we: u8, ack: u8, ia: u8) {
-    let r: u8 = if we == 0 { 1 } else { 0 };
-    //                 STA    STO      RD      WR     ACK      IA
-    let cmd: u32 = (sta << 7 | sto << 6 | r << 5 | we << 4 | ack << 3 | ia << 0) as u32;
-    write_u32(I2C_BASE + I2C_CMD_OFS, cmd);
-}
-
-fn i2c_send_addr_frame(addr: u8, we: u8) {
-    let tx_addr: u8 = (addr << 1 | we);
-    write_u32(I2C_BASE + I2C_TX_OFS, tx_addr as u32);
-    i2c_set_cmd(1, 0, 1, 0, 0);
-    while get_tip() != 0 {}
-}
-
-fn i2c_send_data_frame(data: u8, last: u8) {
-    write_u32(I2C_BASE + I2C_TX_OFS, data as u32);
-    i2c_set_cmd(0, last, 1, 0, 0);
-    while get_tip() != 0 {}
-}
-
-fn i2c_recv_data_frame(last: u8) -> u8 {
-    i2c_set_cmd(0, last, 0, 0, 0);
-    while get_tip() != 0 {}
-    unsafe { read_u8(I2C_BASE + I2C_RX_OFS) }
-}
-
-fn i2c_set_prescaler(val: u32) {
-    write_u32(I2C_BASE + I2C_CLK_PRESCALER_OFS, val);
-}
-
-fn i2c_core_enable() {
-    mask_u8(I2C_BASE + I2C_CTRL_OFS, 1 << 7);
-}
-
-fn i2c_core_disable() {
-    unmask_u8(I2C_BASE + I2C_CTRL_OFS, 1 << 7);
-}
-
-fn i2c_irq_enable() {
-    mask_u8(I2C_BASE + I2C_CTRL_OFS, 1 << 6);
-}
-
-fn i2c_irq_disable() {
-    unmask_u8(I2C_BASE + I2C_CTRL_OFS, 1 << 6);
-}
 
 const WRITE: u8 = 1;
 const LAST: u8 = 1;
@@ -82,6 +32,7 @@ const R_NOMINAL: f32 = 16.2;
 
 // Global variables
 static mut I2C_READ_VAL: u8 = 0;
+static mut I2C: Option<I2c<I2C_BASE>> = None;
 
 #[entry]
 fn main() -> ! {
@@ -90,9 +41,7 @@ fn main() -> ! {
 
     sprintln!("[I2C Power control demo] ISA = {riscv_isa}");
 
-    // i2c setup
-    i2c_set_prescaler(4);
-    i2c_core_enable();
+    let mut i2c = I2c::<I2C_BASE>::init(4);
 
     let mut mtimer = MTimer::instance().into_oneshot();
 
@@ -119,8 +68,10 @@ fn main() -> ! {
 
     // Writing 1 to address 0 activates
     // power control simulation
-    i2c_send_addr_frame(0, WRITE);
-    i2c_send_data_frame(0x1, LAST);
+    i2c.send_addr_frame(0, WRITE);
+    i2c.send_data_frame(0x1, LAST);
+
+    unsafe { I2C.replace(i2c) };
 
     unsafe {
         // clear instruction & cycle counters
@@ -139,10 +90,12 @@ fn main() -> ! {
 
 #[bsp::core_interrupt(bsp::interrupt::CoreInterrupt::MachineTimer)]
 unsafe fn MachineTimer() {
+    let mut i2c = I2C.as_mut().unwrap();
+
     // Terminate power control simulation
     // by sending last I2C frame
-    i2c_send_addr_frame(0, WRITE);
-    i2c_send_data_frame(0x0, LAST);
+    i2c.send_addr_frame(0, WRITE);
+    i2c.send_data_frame(0x0, LAST);
 
     // capture minstret and mcycle (low) counters
     let minstret = riscv::register::minstret::read();
@@ -168,11 +121,13 @@ unsafe fn MachineTimer() {
 #[bsp::nested_interrupt]
 unsafe fn Timer0Cmp() {
     bsp::register::mintthresh::write(0x1.into());
-    i2c_send_addr_frame(0, READ);
+
+    let i2c = I2C.as_mut().unwrap();
+    i2c.send_addr_frame(0, READ);
     for _ in 0..10 {
         asm!("nop");
     }
-    I2C_READ_VAL = i2c_recv_data_frame(LAST);
+    I2C_READ_VAL = i2c.recv_data_frame(LAST);
     riscv::interrupt::enable();
     let mcycle = riscv::register::mcycle::read();
     let mcycleh = riscv::register::mcycleh::read();
@@ -201,17 +156,18 @@ static mut INTEGRAL: f32 = 0.;
 
 #[bsp::nested_interrupt]
 unsafe fn Timer1Cmp() {
+    let i2c = I2C.as_mut().unwrap();
     // capture minthresh
     let mintthresh_last = bsp::register::mintthresh::read();
     bsp::register::mintthresh::write(0xff.into());
 
     // read latest value
-    i2c_send_addr_frame(0, READ);
+    i2c.send_addr_frame(0, READ);
     for _ in 0..10 {
         asm!("nop");
     }
 
-    let i2c_read_val = i2c_recv_data_frame(LAST);
+    let i2c_read_val = i2c.recv_data_frame(LAST);
     I2C_READ_VAL = i2c_read_val;
 
     let p_measured = I2C_READ_VAL as f32;
@@ -230,8 +186,8 @@ unsafe fn Timer1Cmp() {
     //sprintln!("V_new: {v_new}");
 
     // Write back computation result
-    i2c_send_addr_frame(4, WRITE);
-    i2c_send_data_frame(v_new, LAST);
+    i2c.send_addr_frame(4, WRITE);
+    i2c.send_data_frame(v_new, LAST);
     // capture mintthresh
     bsp::register::mintthresh::write(mintthresh_last.into());
 }

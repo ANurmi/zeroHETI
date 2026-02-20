@@ -1,5 +1,3 @@
-pub const HETIC_BASE: usize = 0x0000_1000;
-
 pub const LINE_SIZE: usize = 0x2;
 
 pub const IE_OFS: usize = 0x0;

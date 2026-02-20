@@ -8,6 +8,7 @@ atalanta-bsp-macros = { path = "macros"}
 embedded-io = "0.7.1"
 fugit = "0.3.7"
 riscv = "0.15.0"
+riscv-peripheral = "0.5.0"
 riscv-pac = "0.2.0"
 # riscv-rt 0.16.0 depends on 0.15.0
 riscv-rt = { version = "0.16.0", features = ["single-hart", "v-trap", "no-interrupts"], optional = true }
@@ -23,6 +24,9 @@ fpga = []
 panic = []
 rt = ["dep:riscv-rt"]
 nest-continue = []
+intc-hetic = []
+intc-clic = []
+intc-edfic = []
 
 [profile.dev]
 # There seems to be a problem in riscv-rt with regards to linking in default_start_trap in debug
@@ -36,3 +40,7 @@ debug = true
 [build-dependencies]
 serde_json = "1.0.149"
 
+[[example]]
+name = "hetic_pend"
+path = "examples/hetic_pend.rs"
+required-features = ["intc-hetic"]

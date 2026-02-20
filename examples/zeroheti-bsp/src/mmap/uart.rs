@@ -44,7 +44,7 @@ pub const UART_DLAB_LSB_OFS: usize = UART_RBR_THR_DLL_OFS;
 ///
 /// Reads or writes the 8 MSBs of the divisor that --- together with clock
 /// frequency --- determines resultant BAUD rate.
-pub const UART_IER_DLM_OFS: usize = 4;
+pub const UART_IER_DLM_OFS: usize = 1;
 pub const UART_DLAB_MSB_OFS: usize = UART_IER_DLM_OFS;
 
 /// Interrupt Identification Register (IIR) / FIFO Control Register (FCR)
@@ -60,7 +60,7 @@ pub const UART_DLAB_MSB_OFS: usize = UART_IER_DLM_OFS;
 ///     - `0b01`: trigger level is high when there are 4 elements in the fifo
 ///     - `0b10`: trigger level is high when there are 8 elements in the fifo
 ///     - `0b11`: trigger level is high when there are 14 elements in the fifo
-pub const UART_IIR_FCR_OFS: usize = 8;
+pub const UART_IIR_FCR_OFS: usize = 2;
 
 pub const UART_FCR_FIFO_EN_BIT: u8 = 0b1;
 pub const UART_FCR_FIFO_RX_RESET_BIT: u8 = 0b1 << 1;
@@ -86,7 +86,7 @@ pub const UART_FCR_TRIG_RX_MSB: u8 = 0b1 << 7;
 /// - `[7]`: divisor latch access bit (DLAB)
 ///     - `0b0`: RBR, THR and IER accessible
 ///     - `0b1`: DLL and DLM accessible
-pub const UART_LCR_OFS: usize = 12;
+pub const UART_LCR_OFS: usize = 3;
 
 /// Data configuration bits
 #[repr(u8)]
@@ -101,7 +101,7 @@ pub enum UartLcrDataBits {
 pub const UART_LCR_DLAB_BIT: u8 = 0b1 << 7;
 
 /// Modem Control
-pub const UART_MCR_OFS: usize = 16;
+pub const UART_MCR_OFS: usize = 4;
 
 /// Line Status Register
 ///
@@ -112,7 +112,7 @@ pub const UART_MCR_OFS: usize = 16;
 /// - `[4]`: *not used*
 /// - `[5]`: the TX FIFO is empty
 /// - `[6]`: shift register and TX FIFO are empty
-pub const UART_LSR_OFS: usize = 20;
+pub const UART_LSR_OFS: usize = 5;
 
 // The following registers may or may not be implemented
 /*

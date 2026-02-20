@@ -30,4 +30,4 @@ rm ${SW_BUILD_DIR}/tmp*
 
 # Run verilator simulation with ELF
 cd ${PROJECT_ROOT}
-make verilate simv TEST=$(basename $1)
+make simv TEST=$(basename $1)
