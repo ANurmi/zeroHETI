@@ -1,7 +1,8 @@
 use crate::{
     mmap::i2c::*,
-    mmio::{mask_u8, read_u8, unmask_u8, write_u32},
+    mmio::{mask_u8, read_u8, unmask_u8, write_u8, write_u16},
 };
+use embedded_hal::i2c::{Operation, SevenBitAddress};
 
 pub struct I2cHal<const BASE_ADDR: usize>;
 
@@ -22,16 +23,20 @@ bitflags::bitflags! {
     }
 }
 
-/// Write enable for I2C transaction, 0 for read and 1 for write
-#[repr(u8)]
-enum We {
-    Read = 0,
-    Write = 1,
+bitflags::bitflags! {
+    /// Write enable for I2C transaction, 0 for read and 1 for write
+    struct We: u8 {
+        const READ  = 0b0;
+        const WRITE = 0b1;
+    }
 }
 
-enum Last {
-    NotLast = 0,
-    Last = 1,
+bitflags::bitflags! {
+    #[derive(PartialEq)]
+    struct Last: u8 {
+        const NOT_LAST = 0b0;
+        const LAST     = 0b1;
+    }
 }
 
 impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
@@ -39,98 +44,141 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
     ///
     /// * `ps` - prescaler value, used to set the I2C clock frequency.
     #[inline]
-    pub fn init(ps: u32) -> Self {
+    pub fn init(ps: u16) -> Self {
         let mut instance = Self;
         instance.set_prescaler(ps);
         instance.core_enable();
         instance
     }
 
+    #[inline]
     pub fn disable(mut self) {
         self.core_disable();
     }
 
-    fn get_tip(&self) -> u8 {
-        unsafe { read_u8(BASE_ADDR + I2C_STATUS_OFS) & (1 << 1) }
+    #[inline]
+    pub fn set_prescaler(&mut self, val: u16) {
+        // Safety: aligned on zeroHETI
+        unsafe { write_u16(BASE_ADDR + I2C_CLK_PRESCALER_OFS, val) };
     }
 
-    fn set_cmd(&mut self, cmd: Cmd) {
-        write_u32(BASE_ADDR + I2C_CMD_OFS, cmd.bits() as u32);
-    }
-
-    fn send_addr_frame(&mut self, addr: u8, we: u8) {
-        let tx_addr: u8 = addr << 1 | we;
-        write_u32(BASE_ADDR + I2C_TX_OFS, tx_addr as u32);
-        self.set_cmd(Cmd::STA | Cmd::WR);
-        while self.get_tip() != 0 {}
-    }
-
-    fn send_data_frame(&mut self, data: u8, last: u8) {
-        write_u32(BASE_ADDR + I2C_TX_OFS, data as u32);
-        let mut cmd = Cmd::WR;
-        if last == 1 {
-            cmd |= Cmd::STO;
-        }
-        self.set_cmd(cmd);
-        while self.get_tip() != 0 {}
-    }
-
-    fn recv_data_frame(&mut self, last: u8) -> u8 {
-        let mut cmd = Cmd::RD;
-        if last == 1 {
-            cmd |= Cmd::STO;
-        }
-        self.set_cmd(cmd);
-        while self.get_tip() != 0 {}
-        unsafe { read_u8(BASE_ADDR + I2C_RX_OFS) }
-    }
-
-    pub fn set_prescaler(&mut self, val: u32) {
-        write_u32(BASE_ADDR + I2C_CLK_PRESCALER_OFS, val);
-    }
-
-    fn core_enable(&mut self) {
-        mask_u8(BASE_ADDR + I2C_CTRL_OFS, 1 << 7);
-    }
-
-    fn core_disable(&mut self) {
-        unmask_u8(BASE_ADDR + I2C_CTRL_OFS, 1 << 7);
-    }
-
+    #[inline]
     pub fn irq_enable(&mut self) {
         mask_u8(BASE_ADDR + I2C_CTRL_OFS, 1 << 6);
     }
 
+    #[inline]
     pub fn irq_disable(&mut self) {
         unmask_u8(BASE_ADDR + I2C_CTRL_OFS, 1 << 6);
     }
 
-    pub fn write_tx(&mut self, addr: u8, buf: &[u8]) {
-        self.send_addr_frame(addr, We::Write as u8);
-
-        for byte in &buf[0..buf.len() - 1] {
-            self.send_data_frame(*byte, Last::NotLast as u8);
-        }
-        self.send_data_frame(buf[buf.len() - 1], Last::Last as u8);
+    #[inline]
+    fn get_tip(&self) -> u8 {
+        // Safety: aligned on zeroHETI
+        unsafe { read_u8(BASE_ADDR + I2C_STATUS_OFS) & (1 << 1) }
     }
 
-    /// # Parameters
-    ///
-    /// * `buf` - buffer to store the read data, should have enough space for `read_len` bytes.
-    ///           Existing bytes in the buffer will be overwritten up to
-    ///           read_len.
-    ///
-    /// # Safety
-    ///
-    /// `buf` must have enough space for read_len bytes, and the caller must ensure that the I2C
-    /// transaction is valid (e.g. the slave device at `addr` should be able to provide `read_len`
-    /// bytes of data).
-    pub fn read_tx(&mut self, addr: u8, buf: &mut [u8]) {
-        self.send_addr_frame(addr, We::Read as u8);
+    #[inline]
+    fn set_cmd(&mut self, cmd: Cmd) {
+        // Safety: aligned on zeroHETI
+        unsafe { write_u8(BASE_ADDR + I2C_CMD_OFS, cmd.bits()) };
+    }
 
-        for idx in 0..(buf.len() - 1) {
-            unsafe { *buf.get_unchecked_mut(idx) = self.recv_data_frame(Last::NotLast as u8) };
+    #[inline]
+    fn send_addr_frame(&mut self, addr: u8, we: We) {
+        let addr: u8 = addr << 1 | we.bits();
+        // Safety: aligned on zeroHETI
+        unsafe { write_u8(BASE_ADDR + I2C_TX_OFS, addr) };
+        self.set_cmd(Cmd::STA | Cmd::WR);
+        while self.get_tip() != 0 {}
+    }
+
+    fn send_data_frames(&mut self, buf: &[u8]) {
+        for byte in &buf[0..buf.len() - 1] {
+            // Safety: aligned on zeroHETI
+            unsafe { write_u8(BASE_ADDR + I2C_TX_OFS, *byte) };
+            self.set_cmd(Cmd::WR);
+            while self.get_tip() != 0 {}
         }
-        buf[buf.len() - 1] = self.recv_data_frame(Last::Last as u8);
+
+        // Send last byte with stop condition
+        // Safety: aligned on zeroHETI
+        unsafe { write_u8(BASE_ADDR + I2C_TX_OFS, buf[buf.len() - 1]) };
+        self.set_cmd(Cmd::WR | Cmd::STO);
+        while self.get_tip() != 0 {}
+    }
+
+    fn recv_data_frames(&mut self, buf: &mut [u8]) {
+        let last_idx = buf.len() - 1;
+        for byte in &mut buf[0..last_idx] {
+            self.set_cmd(Cmd::RD);
+            while self.get_tip() != 0 {}
+            *byte = unsafe { read_u8(BASE_ADDR + I2C_RX_OFS) };
+        }
+
+        // Read last byte with stop condition
+        self.set_cmd(Cmd::RD | Cmd::STO);
+        while self.get_tip() != 0 {}
+        // Safety: aligned on zeroHETI
+        buf[last_idx] = unsafe { read_u8(BASE_ADDR + I2C_RX_OFS) };
+    }
+
+    #[inline]
+    fn core_enable(&mut self) {
+        mask_u8(BASE_ADDR + I2C_CTRL_OFS, 1 << 7);
+    }
+
+    #[inline]
+    fn core_disable(&mut self) {
+        unmask_u8(BASE_ADDR + I2C_CTRL_OFS, 1 << 7);
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum Error {
+    // ...
+}
+
+impl embedded_hal::i2c::Error for Error {
+    fn kind(&self) -> embedded_hal::i2c::ErrorKind {
+        match *self {
+            // ...
+        }
+    }
+}
+
+impl<const BASE_ADDR: usize> embedded_hal::i2c::ErrorType for I2cHal<BASE_ADDR> {
+    type Error = Error;
+}
+
+impl<const BASE_ADDR: usize> embedded_hal::i2c::I2c<SevenBitAddress> for I2cHal<BASE_ADDR> {
+    fn transaction(
+        &mut self,
+        address: u8,
+        operations: &mut [embedded_hal::i2c::Operation<'_>],
+    ) -> Result<(), Self::Error> {
+        for op in operations {
+            match op {
+                Operation::Read(buf) => {
+                    self.read(address, buf)?;
+                }
+                Operation::Write(buf) => {
+                    self.write(address, buf)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn read(&mut self, address: u8, read: &mut [u8]) -> Result<(), Self::Error> {
+        self.send_addr_frame(address, We::READ);
+        self.recv_data_frames(read);
+        Ok(())
+    }
+
+    fn write(&mut self, address: u8, write: &[u8]) -> Result<(), Self::Error> {
+        self.send_addr_frame(address, We::WRITE);
+        self.send_data_frames(write);
+        Ok(())
     }
 }

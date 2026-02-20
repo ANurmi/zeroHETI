@@ -26,6 +26,7 @@ mod ufmt_sprint;
 #[cfg(feature = "ufmt")]
 pub use ufmt;
 
+pub use embedded_hal;
 pub use embedded_io;
 pub use riscv;
 #[cfg(feature = "rt")]

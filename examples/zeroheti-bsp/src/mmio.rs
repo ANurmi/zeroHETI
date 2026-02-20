@@ -30,6 +30,14 @@ pub unsafe fn write_u8(addr: usize, val: u8) {
     unsafe { core::ptr::write_volatile(addr as *mut _, val) }
 }
 
+/// # Safety
+///
+/// Unaligned writes may fail to produce expected results on rt-ss.
+#[inline(always)]
+pub unsafe fn write_u16(addr: usize, val: u16) {
+    unsafe { core::ptr::write_volatile(addr as *mut _, val) }
+}
+
 #[inline(always)]
 pub fn read_u32(addr: usize) -> u32 {
     unsafe { core::ptr::read_volatile(addr as *const _) }
