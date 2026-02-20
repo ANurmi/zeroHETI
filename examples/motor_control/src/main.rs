@@ -46,10 +46,12 @@ fn main() -> ! {
     bsp::clic::Clic::smclicconfig().set_mnlbits(8);
     setup_irq(CoreInterrupt::MachineTimer, 0x88);
 
-    // Start the simulation
     let mut mtimer = MTimer::instance().into_oneshot();
     //mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
-    mtimer.start(10.micros());
+
+    // Start the simulation
+    mtimer.start(5.millis());
+
     unsafe {
         // clear instruction & cycle counters
         riscv::register::minstret::write(0);
@@ -59,6 +61,54 @@ fn main() -> ! {
         // Global enable
         riscv::interrupt::enable();
     }
+
+    // Start sim
+    i2c.write_tx(0x0, &[1]);
+
+    // Read motor states
+    let mut rbuf = [0; 4];
+    i2c.read_tx(0x2, &mut rbuf);
+    let m0_speed = u32::from_le_bytes(rbuf);
+
+    i2c.read_tx(0x4, &mut rbuf);
+    let m1_speed = u32::from_le_bytes(rbuf);
+
+    i2c.read_tx(0x6, &mut rbuf);
+    let m2_speed = u32::from_le_bytes(rbuf);
+
+    i2c.read_tx(0x8, &mut rbuf);
+    let m3_speed = u32::from_le_bytes(rbuf);
+
+    sprintln!("Motor speeds: M0 = {m0_speed}, M1 = {m1_speed}, M2 = {m2_speed}, M3 = {m3_speed}");
+
+    /*
+     * 4 motors.
+     *
+     * status: read: current motor speed -> u32 (4 byte transaction), [0, 2^32]
+     * -> [0, "max speed" = ~35_000], "RPM".
+     *
+     * control: write: controls motor
+     * voltage. Write = 4 byte transaction (32-bit). In byte: [0, 2^32] ->
+     * [0, ~20_000] "mV".
+     *
+     * Ideal: power should be mW == RPM.
+     *
+     * If overvoltage sent -> sim will complain that about max. voltage
+     *
+     * Internal address mapping
+     * 0: 31'h0, sim_en
+     * 1: reserved
+     * 2: M0 status
+     * 3: M0 control
+     * 4: M1 status
+     * 5: M1 control
+     * 6: M2 status
+     * 7: M2 control
+     * 8: M3 status
+     * 9: M3 control
+     */
+
+    unsafe { I2C.replace(i2c) };
 
     loop {
         //wfi();
