@@ -7,6 +7,21 @@ pub struct I2cHal<const BASE_ADDR: usize>;
 
 pub type I2c = I2cHal<I2C_BASE>;
 
+bitflags::bitflags! {
+    struct Cmd: u8 {
+        const IA  = 0b0000_0001;
+        const ACK = 0b0000_1000;
+        /// Write
+        const WR  = 0b0001_0000;
+        /// Read
+        const RD  = 0b0010_0000;
+        /// Stop
+        const STO = 0b0100_0000;
+        /// Start
+        const STA = 0b1000_0000;
+    }
+}
+
 /// Write enable for I2C transaction, 0 for read and 1 for write
 #[repr(u8)]
 enum We {
@@ -31,32 +46,41 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
         instance
     }
 
-    pub fn get_tip(&self) -> u8 {
+    pub fn disable(mut self) {
+        self.core_disable();
+    }
+
+    fn get_tip(&self) -> u8 {
         unsafe { read_u8(BASE_ADDR + I2C_STATUS_OFS) & (1 << 1) }
     }
 
-    pub fn set_cmd(&mut self, sta: u8, sto: u8, we: u8, ack: u8, ia: u8) {
-        let r: u8 = if we == 0 { 1 } else { 0 };
-        //                 STA    STO      RD      WR     ACK      IA
-        let cmd: u32 = (sta << 7 | sto << 6 | r << 5 | we << 4 | ack << 3 | ia << 0) as u32;
-        write_u32(BASE_ADDR + I2C_CMD_OFS, cmd);
+    fn set_cmd(&mut self, cmd: Cmd) {
+        write_u32(BASE_ADDR + I2C_CMD_OFS, cmd.bits() as u32);
     }
 
-    pub fn send_addr_frame(&mut self, addr: u8, we: u8) {
+    fn send_addr_frame(&mut self, addr: u8, we: u8) {
         let tx_addr: u8 = addr << 1 | we;
         write_u32(BASE_ADDR + I2C_TX_OFS, tx_addr as u32);
-        self.set_cmd(1, 0, 1, 0, 0);
+        self.set_cmd(Cmd::STA | Cmd::WR);
         while self.get_tip() != 0 {}
     }
 
-    pub fn send_data_frame(&mut self, data: u8, last: u8) {
+    fn send_data_frame(&mut self, data: u8, last: u8) {
         write_u32(BASE_ADDR + I2C_TX_OFS, data as u32);
-        self.set_cmd(0, last, 1, 0, 0);
+        let mut cmd = Cmd::WR;
+        if last == 1 {
+            cmd |= Cmd::STO;
+        }
+        self.set_cmd(cmd);
         while self.get_tip() != 0 {}
     }
 
-    pub fn recv_data_frame(&mut self, last: u8) -> u8 {
-        self.set_cmd(0, last, 0, 0, 0);
+    fn recv_data_frame(&mut self, last: u8) -> u8 {
+        let mut cmd = Cmd::RD;
+        if last == 1 {
+            cmd |= Cmd::STO;
+        }
+        self.set_cmd(cmd);
         while self.get_tip() != 0 {}
         unsafe { read_u8(BASE_ADDR + I2C_RX_OFS) }
     }
@@ -65,11 +89,11 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
         write_u32(BASE_ADDR + I2C_CLK_PRESCALER_OFS, val);
     }
 
-    pub fn core_enable(&mut self) {
+    fn core_enable(&mut self) {
         mask_u8(BASE_ADDR + I2C_CTRL_OFS, 1 << 7);
     }
 
-    pub fn core_disable(&mut self) {
+    fn core_disable(&mut self) {
         unmask_u8(BASE_ADDR + I2C_CTRL_OFS, 1 << 7);
     }
 
