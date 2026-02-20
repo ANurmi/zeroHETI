@@ -3,7 +3,7 @@ use proc_macro2::Span;
 use syn::{parse, spanned::Spanned, ItemFn, ReturnType, Type, Visibility};
 
 /// List of platform interrupts. Should match with what's found in
-/// [atalanta-bsp/src/interrupts.rs].
+/// [zeroheti-bsp/src/interrupts.rs].
 #[rustfmt::skip]
 const INTERRUPTS: &[&str] = &[
     "MachineSoft", "MachineTimer", "MachineExternal",

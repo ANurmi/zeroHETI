@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-atalanta-bsp-macros = { path = "macros"}
+zeroheti-bsp-macros = { path = "macros"}
 embedded-io = "0.7.1"
 fugit = "0.3.7"
 riscv = "0.15.0"
