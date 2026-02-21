@@ -34,7 +34,7 @@ pub enum ExternalInterrupt {
 unsafe impl ExternalInterruptNumber for ExternalInterrupt {}
 
 unsafe impl InterruptNumber for ExternalInterrupt {
-    const MAX_INTERRUPT_NUMBER: usize = 255;
+    const MAX_INTERRUPT_NUMBER: usize = Self::Nmi as usize;
 
     fn number(self) -> usize {
         self as usize
