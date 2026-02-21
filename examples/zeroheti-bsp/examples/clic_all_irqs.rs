@@ -6,7 +6,7 @@ mod common;
 
 use core::ptr::{self, addr_of, addr_of_mut};
 
-use crate::common::{UART_BAUD, setup_irq, tear_irq};
+use crate::common::{UART_BAUD, setup_irq};
 use zeroheti_bsp::{
     CPU_FREQ_HZ,
     apb_uart::ApbUart,
@@ -116,11 +116,14 @@ fn main() -> ! {
         }
     }
 
+    // Save time, don't tear IRQs in RTL sim which gets exploded anyway
+    #[cfg(not(feature = "rtl-tb"))]
     for &irq in CORE_IRQS {
-        tear_irq(irq);
+        crate::common::tear_irq(irq);
     }
+    #[cfg(not(feature = "rtl-tb"))]
     for &irq in EXT_IRQS {
-        tear_irq(irq);
+        crate::common::tear_irq(irq);
     }
 
     if failures == 0 {

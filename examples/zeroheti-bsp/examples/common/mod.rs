@@ -33,6 +33,7 @@ pub fn setup_irq(irq: impl InterruptNumber, level: u8) {
 /// Tear down the IRQ configuration to avoid side-effects for further testing
 ///
 /// Copy and customize this function if you need more involved configurations.
+#[allow(dead_code)]
 pub fn tear_irq(irq: impl InterruptNumber) {
     sprintln!("Tear down (id = {})", irq.number());
     #[cfg(feature = "intc-clic")]
