@@ -20,7 +20,7 @@ rustflags = [
     "-C",
     "link-arg=-mabi=ilp32e"
 ]
-runner = "./run-sim.sh"
+runner = "../run-sim.sh"
 
 [target.riscv32emc-unknown-eabi]
 rustflags = [
@@ -37,7 +37,7 @@ rustflags = [
     "-C",
     "link-arg=-mabi=ilp32e"
 ]
-runner = "./run-sim.sh"
+runner = "../run-sim.sh"
 
 [target.riscv32ic-unknown-eabi]
 rustflags = [
@@ -54,7 +54,7 @@ rustflags = [
     "-C",
     "link-arg=-mabi=ilp32e"
 ]
-runner = "./run-sim.sh"
+runner = "../run-sim.sh"
 
 [target.riscv32ic-unknown-none-elf]
 rustflags = [
@@ -71,7 +71,7 @@ rustflags = [
     "-C",
     "link-arg=-mabi=ilp32"
 ]
-runner = "./run-sim.sh"
+runner = "../run-sim.sh"
 
 [target.riscv32imc-unknown-eabi]
 rustflags = [
@@ -88,7 +88,7 @@ rustflags = [
     "-C",
     "link-arg=-mabi=ilp32e"
 ]
-runner = "./run-sim.sh"
+runner = "../run-sim.sh"
 
 [target.riscv32imc-unknown-none-elf]
 rustflags = [
@@ -105,4 +105,4 @@ rustflags = [
     "-C",
     "link-arg=-mabi=ilp32"
 ]
-runner = "./run-sim.sh"
+runner = "../run-sim.sh"
