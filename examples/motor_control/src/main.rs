@@ -3,6 +3,11 @@
 #![allow(static_mut_refs)]
 #![allow(non_snake_case)]
 
+#[cfg(not(any(feature = "intc-hetic", feature = "intc-clic", feature = "intc-edfic")))]
+compile_error!(
+    "at least one interrupt controller feature is required, pass -Fclic-hetic, -Fclic-clic, -Fclic-edfic"
+);
+
 use core::time::Duration;
 
 use bsp::{
