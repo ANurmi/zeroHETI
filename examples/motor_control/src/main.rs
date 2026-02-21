@@ -62,11 +62,12 @@ fn main() -> ! {
     bsp::clic::Clic::smclicconfig().set_mnlbits(8);
 
     setup_irq(CoreInterrupt::MachineTimer, 0x88);
-    //setup_irq(ExternalInterrupt::Mailbox, 0x1A);
     setup_irq(ExternalInterrupt::Timer0Cmp, 0x10);
     setup_irq(ExternalInterrupt::Timer1Cmp, 0x10);
     setup_irq(ExternalInterrupt::Timer2Cmp, 0x10);
     setup_irq(ExternalInterrupt::Timer3Cmp, 0x10);
+    setup_irq(ExternalInterrupt::Mbx, 0x1A);
+
 
     let mut mtimer = MTimer::instance().into_oneshot();
     //mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
@@ -193,7 +194,6 @@ unsafe fn Timer3Cmp() {
 #[nested_interrupt]
 unsafe fn Mbx() {
     write_u32(0x3_0004, 1);
-    sprintln!("Here");
 }
 
 #[bsp::core_interrupt(CoreInterrupt::MachineTimer)]
