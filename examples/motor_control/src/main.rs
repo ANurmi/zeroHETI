@@ -3,21 +3,29 @@
 #![allow(static_mut_refs)]
 #![allow(non_snake_case)]
 
+use core::time::Duration;
+
 use bsp::{
     CPU_FREQ_HZ,
     apb_uart::*,
     i2c::I2c,
     interrupt::{CoreInterrupt, ExternalInterrupt},
+    mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
+    mmio::write_u32,
     mtimer::*,
     nested_interrupt,
-    register::mintstatus::Mintstatus,
-    riscv::{self},
+    register::{mintstatus::Mintstatus, time},
+    riscv::{self, asm::wfi},
     rt::entry,
     sprintln,
     tb::signal_pass,
+    timer_group::{Periodic, Timer},
 };
-use fugit::ExtU64;
-use motor_control::*;
+use fugit::{ExtU32, ExtU64};
+use motor_control::{
+    mailbox::{Mailbox, MailboxHal, Motor::*},
+    *,
+};
 
 struct SimParams {
     hyperperiod_ms: u64,
@@ -25,8 +33,13 @@ struct SimParams {
 
 const SIM_PARAMS: SimParams = SimParams { hyperperiod_ms: 1 };
 
+const REP_TASK_PER_US: u32 = 5000;
+const REP_TASK_OFS_US: u32 = 3500;
+
 // Global variables
 static mut I2C: Option<I2c> = None;
+
+static mut MBX: Mailbox = unsafe { Mailbox::instance() };
 
 #[entry]
 fn main() -> ! {
@@ -42,13 +55,32 @@ fn main() -> ! {
     // Set level bits to 8
     #[cfg(feature = "intc-clic")]
     bsp::clic::Clic::smclicconfig().set_mnlbits(8);
-    setup_irq(CoreInterrupt::MachineTimer, 0x88);
 
+    setup_irq(CoreInterrupt::MachineTimer, 0x88);
+    setup_irq(ExternalInterrupt::Mailbox, 0x1A);
+    setup_irq(ExternalInterrupt::Timer0Cmp, 0x10);
+    setup_irq(ExternalInterrupt::Timer1Cmp, 0x10);
+    setup_irq(ExternalInterrupt::Timer2Cmp, 0x10);
+    setup_irq(ExternalInterrupt::Timer3Cmp, 0x10);
+
+    sprintln!("Made it here");
     let mut mtimer = MTimer::instance().into_oneshot();
     //mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
     // Start the simulation
-    mtimer.start(5.millis());
+    mtimer.start(5u64.millis());
+
+    let timers = &mut [
+        Timer::init::<TIMER0_ADDR>().into_periodic(),
+        Timer::init::<TIMER1_ADDR>().into_periodic(),
+        Timer::init::<TIMER2_ADDR>().into_periodic(),
+        Timer::init::<TIMER3_ADDR>().into_periodic(),
+    ];
+
+    timers[0].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
+    timers[1].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
+    timers[2].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
+    timers[3].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
 
     unsafe {
         // clear instruction & cycle counters
@@ -60,25 +92,29 @@ fn main() -> ! {
         riscv::interrupt::enable();
     }
 
+    // Start periodic timers
+    timers.iter_mut().for_each(Periodic::start);
+
     // Start sim
     i2c.write(0x0, &[1]);
 
-    // Read motor states
-    let mut rbuf = [0; 4];
-    i2c.read(0x2, &mut rbuf);
-    let m0_speed = u32::from_le_bytes(rbuf);
+    /*
+        // Read motor states
+        let mut rbuf = [0; 4];
+        i2c.read(0x2, &mut rbuf);
+        let m0_speed = u32::from_le_bytes(rbuf);
 
-    i2c.read(0x4, &mut rbuf);
-    let m1_speed = u32::from_le_bytes(rbuf);
+        i2c.read(0x4, &mut rbuf);
+        let m1_speed = u32::from_le_bytes(rbuf);
 
-    i2c.read(0x6, &mut rbuf);
-    let m2_speed = u32::from_le_bytes(rbuf);
+        i2c.read(0x6, &mut rbuf);
+        let m2_speed = u32::from_le_bytes(rbuf);
 
-    i2c.read(0x8, &mut rbuf);
-    let m3_speed = u32::from_le_bytes(rbuf);
+        i2c.read(0x8, &mut rbuf);
+        let m3_speed = u32::from_le_bytes(rbuf);
 
-    sprintln!("Motor speeds: M0 = {m0_speed}, M1 = {m1_speed}, M2 = {m2_speed}, M3 = {m3_speed}");
-
+        sprintln!("Motor speeds: M0 = {m0_speed}, M1 = {m1_speed}, M2 = {m2_speed}, M3 = {m3_speed}");
+    */
     /*
      * 4 motors.
      *
@@ -106,11 +142,62 @@ fn main() -> ! {
      * 9: M3 control
      */
 
-    unsafe { I2C.replace(i2c) };
+    //unsafe { I2C.replace(i2c) };
 
     loop {
-        //wfi();
+        wfi();
     }
+}
+
+#[nested_interrupt]
+unsafe fn Timer0Cmp() {
+    //sprintln!("In timecmp0");
+    write_u32(0x3_0010, 1);
+    /*write_u32(0x3_0014, 1);
+
+    write_u32(0x3_0018, 1);
+    write_u32(0x3_001C, 1);*/
+    unsafe {
+        _ = bsp::register::misa::read();
+    }
+    /*
+    unsafe {
+        MBX.write_time_and_stat(0u64, 1u32, M0);
+    }*/
+}
+
+#[nested_interrupt]
+unsafe fn Timer1Cmp() {
+    //sprintln!("In timecmp1");
+
+    write_u32(0x3_0014, 1);
+    unsafe {
+        _ = bsp::register::misa::read();
+    }
+}
+
+#[nested_interrupt]
+unsafe fn Timer2Cmp() {
+    //sprintln!("In timecmp2");
+    write_u32(0x3_0018, 1);
+    unsafe {
+        _ = bsp::register::misa::read();
+    }
+}
+
+#[nested_interrupt]
+unsafe fn Timer3Cmp() {
+    //sprintln!("In timecmp3");
+    write_u32(0x3_001C, 1);
+    unsafe {
+        _ = bsp::register::misa::read();
+    }
+}
+
+#[nested_interrupt]
+unsafe fn Mailbox() {
+    write_u32(0x3_0004, 1);
+    sprintln!("Here");
 }
 
 #[bsp::core_interrupt(CoreInterrupt::MachineTimer)]
