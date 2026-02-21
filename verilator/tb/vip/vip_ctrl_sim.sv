@@ -22,12 +22,12 @@ module vip_ctrl_sim #(
 
   localparam int unsigned TaskSetSize = 9;
 
-  localparam longint unsigned MbxPerUs = 'd800;
-  localparam longint unsigned RepPerUs = 'd600;
+  localparam longint unsigned MbxPerUs = 'd10_000;
+  localparam longint unsigned RepPerUs = 'd5_000;
 
-  localparam longint unsigned MbxDlUs = 'd100;
+  localparam longint unsigned MbxDlUs = 'd2_000;
   localparam longint unsigned WrnDlUs = 'd20;
-  localparam longint unsigned RepDlUs = 'd50;
+  localparam longint unsigned RepDlUs = 'd1_000;
 
   logic [3:0][31:0] voltages = 0;
   logic [3:0][31:0] speeds   = 0;
