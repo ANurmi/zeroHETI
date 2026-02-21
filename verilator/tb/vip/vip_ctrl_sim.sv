@@ -83,6 +83,7 @@ module vip_ctrl_sim #(
 
 
   always @(posedge enable) begin
+    time_us = 0; // clear vip time when first enabled
     $display("[CTRL_SIM] Starting simulation for task set:");
     $display("[CTRL_SIM] (Periodic): Receive MBX directive,          DL: %3d us", MbxDlUs);
     $display("[CTRL_SIM] (Sporadic): Motor [0-3] speed warning,      DL: %3d us", WrnDlUs);

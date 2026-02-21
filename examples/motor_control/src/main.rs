@@ -6,7 +6,6 @@
 use core::time::Duration;
 
 use bsp::{
-    CPU_FREQ_HZ,
     apb_uart::*,
     i2c::I2c,
     interrupt::{CoreInterrupt, ExternalInterrupt},
@@ -20,6 +19,7 @@ use bsp::{
     sprintln,
     tb::signal_pass,
     timer_group::{Periodic, Timer},
+    CPU_FREQ_HZ,
 };
 use fugit::{ExtU32, ExtU64};
 use motor_control::{
@@ -34,7 +34,7 @@ struct SimParams {
 const SIM_PARAMS: SimParams = SimParams { hyperperiod_ms: 1 };
 
 const REP_TASK_PER_US: u32 = 5000;
-const REP_TASK_OFS_US: u32 = 3500;
+const REP_TASK_OFS_US: u32 = 4200;
 
 // Global variables
 static mut I2C: Option<I2c> = None;
@@ -57,13 +57,12 @@ fn main() -> ! {
     bsp::clic::Clic::smclicconfig().set_mnlbits(8);
 
     setup_irq(CoreInterrupt::MachineTimer, 0x88);
-    setup_irq(ExternalInterrupt::Mailbox, 0x1A);
+    //setup_irq(ExternalInterrupt::Mailbox, 0x1A);
     setup_irq(ExternalInterrupt::Timer0Cmp, 0x10);
     setup_irq(ExternalInterrupt::Timer1Cmp, 0x10);
     setup_irq(ExternalInterrupt::Timer2Cmp, 0x10);
     setup_irq(ExternalInterrupt::Timer3Cmp, 0x10);
 
-    sprintln!("Made it here");
     let mut mtimer = MTimer::instance().into_oneshot();
     //mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
@@ -157,9 +156,7 @@ unsafe fn Timer0Cmp() {
 
     write_u32(0x3_0018, 1);
     write_u32(0x3_001C, 1);*/
-    unsafe {
-        _ = bsp::register::misa::read();
-    }
+    _ = bsp::register::misa::read();
     /*
     unsafe {
         MBX.write_time_and_stat(0u64, 1u32, M0);
@@ -171,27 +168,21 @@ unsafe fn Timer1Cmp() {
     //sprintln!("In timecmp1");
 
     write_u32(0x3_0014, 1);
-    unsafe {
-        _ = bsp::register::misa::read();
-    }
+    _ = bsp::register::misa::read();
 }
 
 #[nested_interrupt]
 unsafe fn Timer2Cmp() {
     //sprintln!("In timecmp2");
     write_u32(0x3_0018, 1);
-    unsafe {
-        _ = bsp::register::misa::read();
-    }
+    _ = bsp::register::misa::read();
 }
 
 #[nested_interrupt]
 unsafe fn Timer3Cmp() {
     //sprintln!("In timecmp3");
     write_u32(0x3_001C, 1);
-    unsafe {
-        _ = bsp::register::misa::read();
-    }
+    _ = bsp::register::misa::read();
 }
 
 #[nested_interrupt]
