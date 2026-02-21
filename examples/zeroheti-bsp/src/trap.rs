@@ -43,15 +43,15 @@ global_asm!(
         // Use [0] as exception entry point
         j _start_trap
         // [1..=16] are standard
-        .word _start_SupervisorSoft_trap    // 1
+        .word _start_DefaultHandler_trap // NC (1): _start_SupervisorSoft_trap
         .word _start_DefaultHandler_trap
         .word _start_MachineSoft_trap       // 3
         .word _start_DefaultHandler_trap
-        .word _start_SupervisorTimer_trap   // 5
+        .word _start_DefaultHandler_trap // NC (5): _start_SupervisorTimer_trap
         .word _start_DefaultHandler_trap
         .word _start_MachineTimer_trap      // 7
         .word _start_DefaultHandler_trap
-        .word _start_SupervisorExternal_trap // 9
+        .word _start_DefaultHandler_trap // NC (9): _start_SupervisorExternal_trap
         .word _start_DefaultHandler_trap
         .word _start_MachineExternal_trap // 11
 

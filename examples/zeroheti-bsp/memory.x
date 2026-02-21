@@ -27,11 +27,11 @@ PROVIDE(_start_DefaultHandler_trap = _start_trap);
 */
 
 /* Core interrupts */
-PROVIDE(_start_SupervisorSoft_trap = _start_DefaultHandler_trap);
+/* NC: PROVIDE(_start_SupervisorSoft_trap = _start_DefaultHandler_trap); */
 PROVIDE(_start_MachineSoft_trap = _start_DefaultHandler_trap);
-PROVIDE(_start_SupervisorTimer_trap = _start_DefaultHandler_trap);
+/* NC: PROVIDE(_start_SupervisorTimer_trap = _start_DefaultHandler_trap); */
 PROVIDE(_start_MachineTimer_trap = _start_DefaultHandler_trap);
-PROVIDE(_start_SupervisorExternal_trap = _start_DefaultHandler_trap);
+/* NC: PROVIDE(_start_SupervisorExternal_trap = _start_DefaultHandler_trap); */
 PROVIDE(_start_MachineExternal_trap = _start_DefaultHandler_trap);
 
 /* The following are specific to zeroHETI */

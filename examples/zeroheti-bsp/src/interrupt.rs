@@ -1,16 +1,11 @@
+use riscv::CoreInterruptNumber;
 use riscv_pac::{ExternalInterruptNumber, InterruptNumber};
 use strum::FromRepr;
-
-// Re-export core interrupts
-pub use crate::riscv::interrupt::machine::Interrupt as CoreInterrupt;
 
 #[derive(Clone, Copy, PartialEq, FromRepr)]
 #[repr(usize)]
 #[cfg_attr(not(feature = "ufmt"), derive(Debug))]
 pub enum ExternalInterrupt {
-    MachineSoft = 3,
-    MachineTimer = 7,
-    MachineExternal = 11,
     /// Timer 0 overflow
     Timer0Ovf = 16,
     /// Timer 0 compare
@@ -49,3 +44,43 @@ unsafe impl InterruptNumber for ExternalInterrupt {
         Self::from_repr(value).ok_or(riscv_pac::result::Error::InvalidVariant(value))
     }
 }
+
+/// Standard M-mode RISC-V interrupts
+///
+/// Should be used in place of riscv::Interrupt
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[repr(usize)]
+pub enum CoreInterrupt {
+    // NC: SupervisorSoft = 1,
+    MachineSoft = 3,
+    // NC: SupervisorTimer = 5,
+    MachineTimer = 7,
+    // NC: SupervisorExternal = 9,
+    MachineExternal = 11,
+}
+
+/// SAFETY: `Interrupt` represents the standard RISC-V interrupts
+unsafe impl InterruptNumber for CoreInterrupt {
+    const MAX_INTERRUPT_NUMBER: usize = Self::MachineExternal as usize;
+
+    #[inline]
+    fn number(self) -> usize {
+        self as usize
+    }
+
+    #[inline]
+    fn from_number(value: usize) -> Result<Self, riscv::result::Error> {
+        match value {
+            // NC: 1 => Ok(Self::SupervisorSoft),
+            3 => Ok(Self::MachineSoft),
+            // NC: 5 => Ok(Self::SupervisorTimer),
+            7 => Ok(Self::MachineTimer),
+            // NC: 9 => Ok(Self::SupervisorExternal),
+            11 => Ok(Self::MachineExternal),
+            _ => Err(riscv::result::Error::InvalidVariant(value)),
+        }
+    }
+}
+
+/// SAFETY: `Interrupt` represents the standard RISC-V core interrupts
+unsafe impl CoreInterruptNumber for CoreInterrupt {}
