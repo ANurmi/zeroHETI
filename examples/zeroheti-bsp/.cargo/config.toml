@@ -8,7 +8,7 @@ target = "riscv32ec-unknown-eabi.json"
 [target.riscv32ec-unknown-eabi]
 rustflags = [
     "-C",
-    "linker=riscv64-unknown-elf-gcc",
+    "linker=riscv32-unknown-elf-gcc",
     "-C",
     "link-arg=-Wl,-Tmemory.x",
     "-C",
@@ -25,7 +25,7 @@ runner = "../run-sim.sh"
 [target.riscv32emc-unknown-eabi]
 rustflags = [
     "-C",
-    "linker=riscv64-unknown-elf-gcc",
+    "linker=riscv32-unknown-elf-gcc",
     "-C",
     "link-arg=-Wl,-Tmemory.x",
     "-C",
@@ -42,7 +42,7 @@ runner = "../run-sim.sh"
 [target.riscv32ic-unknown-eabi]
 rustflags = [
     "-C",
-    "linker=riscv64-unknown-elf-gcc",
+    "linker=riscv32-unknown-elf-gcc",
     "-C",
     "link-arg=-Wl,-Tmemory.x",
     "-C",
@@ -59,7 +59,7 @@ runner = "../run-sim.sh"
 [target.riscv32ic-unknown-none-elf]
 rustflags = [
     "-C",
-    "linker=riscv64-unknown-elf-gcc",
+    "linker=riscv32-unknown-elf-gcc",
     "-C",
     "link-arg=-Wl,-Tmemory.x",
     "-C",
@@ -76,7 +76,7 @@ runner = "../run-sim.sh"
 [target.riscv32imc-unknown-eabi]
 rustflags = [
     "-C",
-    "linker=riscv64-unknown-elf-gcc",
+    "linker=riscv32-unknown-elf-gcc",
     "-C",
     "link-arg=-Wl,-Tmemory.x",
     "-C",
@@ -93,7 +93,7 @@ runner = "../run-sim.sh"
 [target.riscv32imc-unknown-none-elf]
 rustflags = [
     "-C",
-    "linker=riscv64-unknown-elf-gcc",
+    "linker=riscv32-unknown-elf-gcc",
     "-C",
     "link-arg=-Wl,-Tmemory.x",
     "-C",

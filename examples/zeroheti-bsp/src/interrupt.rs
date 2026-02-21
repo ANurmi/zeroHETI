@@ -29,11 +29,10 @@ pub enum ExternalInterrupt {
     Timer3Cmp = 23,
     Uart = 24,
     I2c = 25,
-    /// Timer queue interrupt on `~full` -> `full` transition.
-    //TqFull = 29,
-    /// Timer queue interrupt on `full` -> `~full` transition.
-    //TqNotFull = 30,
     /// Non-maskable interrupt, carried over from standard Ibex
+    ///
+    /// ???: Nmi doesn't seem to be working on zeroHETI (nor did it work on
+    /// Atalanta)
     Nmi = 31,
 }
 
