@@ -43,17 +43,17 @@ global_asm!(
         // Use [0] as exception entry point
         j _start_trap
         // [1..=16] are standard
-        .word _start_SupervisorSoft_trap    // 1
+        .word _start_DefaultHandler_trap // NC (1): _start_SupervisorSoft_trap
         .word _start_DefaultHandler_trap
-        .word _start_Uart_trap       // 3
+        .word _start_MachineSoft_trap       // 3
         .word _start_DefaultHandler_trap
-        .word _start_SupervisorTimer_trap   // 5
+        .word _start_DefaultHandler_trap // NC (5): _start_SupervisorTimer_trap
         .word _start_DefaultHandler_trap
         .word _start_MachineTimer_trap      // 7
         .word _start_DefaultHandler_trap
-        .word _start_SupervisorExternal_trap // 9
+        .word _start_DefaultHandler_trap // NC (9): _start_SupervisorExternal_trap
         .word _start_DefaultHandler_trap
-        .word _start_I2c_trap   // 11
+        .word _start_MachineExternal_trap // 11
 
         // Fill up to 16 with `DefaultHandler`
         .rept 4
@@ -68,12 +68,14 @@ global_asm!(
         .word _start_Timer2Cmp_trap // 21
         .word _start_Timer3Ovf_trap // 22
         .word _start_Timer3Cmp_trap // 23
-    
-
-        // Fill the rest with `DefaultHandler`
-        .rept 8
-        .word _start_DefaultHandler_trap // 24..32
-        .endr
+        .word _start_Uart_trap      // 24
+        .word _start_I2c_trap       // 25
+        .word _start_Mbx_trap       // 26
+        .word _start_Ext0_trap      // 27
+        .word _start_Ext1_trap      // 28
+        .word _start_Ext2_trap      // 29
+        .word _start_Ext3_trap      // 30
+        .word _start_Nmi_trap       // 31
 
     .option pop",
 );

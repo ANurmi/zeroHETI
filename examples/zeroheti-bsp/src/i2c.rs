@@ -42,6 +42,14 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
         instance
     }
 
+    /// # Safety
+    ///
+    /// Returns a potentially uninitialized instance of I2C. Make sure to call [I2C::init] prior to
+    /// this call, otherwise the I2C won't behave properly.
+    pub const unsafe fn instance() -> Self {
+        Self {}
+    }
+
     #[inline]
     pub fn disable(mut self) {
         self.core_disable();
