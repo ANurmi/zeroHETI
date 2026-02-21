@@ -186,7 +186,7 @@ unsafe fn Timer3Cmp() {
 }
 
 #[nested_interrupt]
-unsafe fn Mailbox() {
+unsafe fn Mbx() {
     write_u32(0x3_0004, 1);
     sprintln!("Here");
 }
