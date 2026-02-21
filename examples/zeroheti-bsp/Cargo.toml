@@ -47,3 +47,8 @@ serde_json = "1.0.149"
 name = "hetic_pend"
 path = "examples/hetic_pend.rs"
 required-features = ["intc-hetic"]
+
+[[example]]
+name = "clic_all_irqs"
+path = "examples/clic_all_irqs.rs"
+required-features = ["intc-clic"]
