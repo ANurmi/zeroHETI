@@ -6,6 +6,7 @@
 use core::time::Duration;
 
 use bsp::{
+    CPU_FREQ_HZ,
     apb_uart::*,
     i2c::I2c,
     interrupt::{CoreInterrupt, ExternalInterrupt},
@@ -19,7 +20,6 @@ use bsp::{
     sprintln,
     tb::signal_pass,
     timer_group::{Periodic, Timer},
-    CPU_FREQ_HZ,
 };
 use fugit::{ExtU32, ExtU64};
 use motor_control::{
