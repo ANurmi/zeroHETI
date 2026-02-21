@@ -24,6 +24,16 @@ pub enum ExternalInterrupt {
     Timer3Cmp = 23,
     Uart = 24,
     I2c = 25,
+    /// Mailbox
+    Mbx = 26,
+    /// Generic external interrupt 0
+    Ext0 = 27,
+    /// Generic external interrupt 1
+    Ext1 = 28,
+    /// Generic external interrupt 2
+    Ext2 = 29,
+    /// Generic external interrupt 3
+    Ext3 = 30,
     /// Non-maskable interrupt, carried over from standard Ibex
     ///
     /// ???: Nmi doesn't seem to be working on zeroHETI (nor did it work on

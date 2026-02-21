@@ -34,6 +34,11 @@ const EXT_IRQS: &[ExternalInterrupt] = &[
     ExternalInterrupt::Timer3Cmp,
     ExternalInterrupt::Uart,
     ExternalInterrupt::I2c,
+    ExternalInterrupt::Mbx,
+    ExternalInterrupt::Ext0,
+    ExternalInterrupt::Ext1,
+    ExternalInterrupt::Ext2,
+    ExternalInterrupt::Ext3,
     //TODO: ???: enabling Nmi fails the test case
     //ExternalInterrupt::Nmi,
 ];

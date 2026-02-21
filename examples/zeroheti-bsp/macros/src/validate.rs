@@ -8,7 +8,7 @@ use syn::{parse, spanned::Spanned, ItemFn, ReturnType, Type, Visibility};
 const INTERRUPTS: &[&str] = &[
     "MachineSoft", "MachineTimer", "MachineExternal",
     "Timer0Ovf", "Timer0Cmp", "Timer1Ovf", "Timer1Cmp", "Timer2Ovf", "Timer2Cmp", "Timer3Ovf", "Timer3Cmp",
-    "Uart", "I2c",
+    "Uart", "I2c", "Mbx", "Ext0", "Ext1", "Ext2", "Ext3",
     "Nmi",
 ];
 

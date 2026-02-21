@@ -70,13 +70,12 @@ global_asm!(
         .word _start_Timer3Cmp_trap // 23
         .word _start_Uart_trap      // 24
         .word _start_I2c_trap       // 25
-
-        // Fill the rest with `DefaultHandler`
-        .rept 5
-        .word _start_DefaultHandler_trap // 26..=30
-        .endr
-
-        .word _start_Nmi_trap // 31
+        .word _start_Mbx_trap       // 26
+        .word _start_Ext0_trap      // 27
+        .word _start_Ext1_trap      // 28
+        .word _start_Ext2_trap      // 29
+        .word _start_Ext3_trap      // 30
+        .word _start_Nmi_trap       // 31
 
     .option pop",
 );
