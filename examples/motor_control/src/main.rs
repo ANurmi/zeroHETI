@@ -73,7 +73,7 @@ fn main() -> ! {
     //mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
     // Start the simulation
-    mtimer.start(5u64.millis());
+    mtimer.start(20u64.millis());
 
     let timers = &mut [
         Timer::init::<TIMER0_ADDR>().into_periodic(),
@@ -156,44 +156,27 @@ fn main() -> ! {
 
 #[nested_interrupt]
 unsafe fn Timer0Cmp() {
-    //sprintln!("In timecmp0");
-    write_u32(0x3_0010, 1);
-    /*write_u32(0x3_0014, 1);
-
-    write_u32(0x3_0018, 1);
-    write_u32(0x3_001C, 1);*/
-    _ = bsp::register::misa::read();
-    /*
-    unsafe {
-        MBX.write_time_and_stat(0u64, 1u32, M0);
-    }*/
+    MBX.write_time_and_stat(0u64, 1u32, M0);
 }
 
 #[nested_interrupt]
 unsafe fn Timer1Cmp() {
-    //sprintln!("In timecmp1");
-
-    write_u32(0x3_0014, 1);
-    _ = bsp::register::misa::read();
+    MBX.write_time_and_stat(0u64, 1u32, M1);
 }
 
 #[nested_interrupt]
 unsafe fn Timer2Cmp() {
-    //sprintln!("In timecmp2");
-    write_u32(0x3_0018, 1);
-    _ = bsp::register::misa::read();
+    MBX.write_time_and_stat(0u64, 1u32, M2);
 }
 
 #[nested_interrupt]
 unsafe fn Timer3Cmp() {
-    //sprintln!("In timecmp3");
-    write_u32(0x3_001C, 1);
-    _ = bsp::register::misa::read();
+    MBX.write_time_and_stat(0u64, 1u32, M3);
 }
 
 #[nested_interrupt]
 unsafe fn Mbx() {
-    write_u32(0x3_0004, 1);
+    MBX.ack_irq();
 }
 
 #[bsp::core_interrupt(CoreInterrupt::MachineTimer)]
