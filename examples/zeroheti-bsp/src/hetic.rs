@@ -31,7 +31,7 @@ impl HeticIrqLine {
     }
 
     pub fn pend(&mut self) {
-        unsafe { mmio::write_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << IP_OFS) };
+        unsafe { mmio::mask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << IP_OFS) };
     }
     pub fn unpend(&mut self) {
         mmio::unmask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << IP_OFS);
