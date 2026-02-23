@@ -2,8 +2,16 @@
 #![no_main]
 #![no_std]
 
-use riscv::{InterruptNumber, asm::nop, interrupt::Interrupt};
-use zeroheti_bsp::{CPU_FREQ_HZ, apb_uart::ApbUart, asm_delay, hetic::Hetic, rt::entry, sprintln};
+use riscv::{InterruptNumber, asm::nop};
+use zeroheti_bsp::{
+    CPU_FREQ_HZ,
+    apb_uart::ApbUart,
+    asm_delay,
+    hetic::Hetic,
+    interrupt::{CoreInterrupt, ExternalInterrupt},
+    rt::entry,
+    sprintln,
+};
 
 #[entry]
 fn main() -> ! {
@@ -40,9 +48,18 @@ fn main() -> ! {
 
 #[unsafe(export_name = "DefaultHandler")]
 unsafe fn custom_interrupt_handler() {
-    sprintln!(
-        "IRQ: {:#x?} = {:?}",
-        riscv::register::mcause::read().code() & 0xfff,
-        Interrupt::from_number(riscv::register::mcause::read().code() & 0xfff),
-    );
+    let code = riscv::register::mcause::read().code() & 0xfff;
+    if code <= CoreInterrupt::MAX_INTERRUPT_NUMBER {
+        sprintln!(
+            "Core IRQ: {:#x?} = {:?}",
+            code,
+            CoreInterrupt::from_number(riscv::register::mcause::read().code() & 0xfff)
+        );
+    } else {
+        sprintln!(
+            "Ext. IRQ: {:#x?} = {:?}",
+            code,
+            ExternalInterrupt::from_number(riscv::register::mcause::read().code() & 0xfff)
+        )
+    }
 }
