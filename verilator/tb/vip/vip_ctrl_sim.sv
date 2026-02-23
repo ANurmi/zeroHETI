@@ -25,14 +25,15 @@ module vip_ctrl_sim #(
   localparam longint unsigned MbxPerUs = 'd7_000;
   localparam longint unsigned RepPerUs = 'd5_000;
 
-  localparam longint unsigned RepOfsUs = 'd150;
+  localparam longint unsigned RepOfsUs = 'd0_150;
   localparam longint unsigned MbxOfsUs = 'd2_000;
 
-  localparam longint unsigned MbxDlUs = 'd2_000;
-  localparam longint unsigned WrnDlUs = 'd20;
-  localparam longint unsigned RepDlUs = 'd1_000;
+  localparam longint unsigned MbxDlUs = 'd4_000;
+  localparam longint unsigned WrnDlUs = 'd1_000;
+  localparam longint unsigned RepDlUs = 'd2_000;
 
   logic [3:0][31:0] voltages = 0;
+  logic [3:0][31:0] tune     = 0;
   logic [3:0][31:0] speeds   = 0;
 
   typedef enum logic [1:0] {
@@ -118,7 +119,19 @@ module vip_ctrl_sim #(
       end
     end
 
+    // Activate warning tasks
+    for (int i=0; i< NrMotors; i++) begin
+      automatic int SporIdx = i + 1;
+      if (enable &(irq_o[i] & !task_set[SporIdx].active)) begin
+        pend_task(SporIdx);
+        reset_task_dl(SporIdx);
+      end
+    end
+
   end : g_dl_counter
+
+  always @(posedge irq_o) begin : g_sporadic_irqs
+  end
 
   for (genvar i = 0; i < NrMotors; i++) begin : g_motors
     vip_motor_sim #(
@@ -128,6 +141,7 @@ module vip_ctrl_sim #(
         .rst_ni,
         .enable_i (enable),
         .voltage_i(voltages[i]),
+        .tune_i   (tune[i]),
         .speed_o  (speeds[i]),
         .irq_o    (irq_o[i])
     );
@@ -140,21 +154,37 @@ module vip_ctrl_sim #(
         enable    = data[0];
         addr_name = "SimCtrl";
       end
-      7'd3: begin 
+      7'd2: begin 
         voltages[0] = data;
         addr_name = "M0_Ctrl";
+      end
+      7'd3: begin
+        tune[0] = data;
+        addr_name = "M0_Tune";
       end
       7'd5: begin
         voltages[1] = data; 
         addr_name = "M1_Ctrl";
       end
-      7'd7: begin
+      7'd6: begin
+        tune[1] = data;
+        addr_name = "M1_Tune";
+      end
+      7'd8: begin
         voltages[2] = data;
         addr_name = "M2_Ctrl";
       end
       7'd9: begin
+        tune[2] = data;
+        addr_name = "M2_Tune";
+      end
+      7'd11: begin
         voltages[3] = data;
         addr_name = "M3_Ctrl";
+      end
+      7'd12: begin
+        tune[3] = data;
+        addr_name = "M3_Tune";
       end
       default: ;
     endcase
@@ -164,7 +194,7 @@ module vip_ctrl_sim #(
   task read(input logic [6:0] addr, output logic [31:0] data);
     automatic string addr_name = "";
     unique case (addr)
-      7'd2: begin
+      7'd1: begin
         data = speeds[0];
         addr_name = "M0_Stat";
       end
@@ -172,11 +202,11 @@ module vip_ctrl_sim #(
         data = speeds[1];
         addr_name = "M1_Stat";
       end
-      7'd6: begin
+      7'd7: begin
         data = speeds[2];
         addr_name = "M2_Stat";
       end
-      7'd8: begin
+      7'd10: begin
         data = speeds[3];
         addr_name = "M3_Stat";
       end
