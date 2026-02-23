@@ -91,6 +91,8 @@ module vip_ctrl_sim #(
     $display("[CTRL_SIM] (Periodic): Report M[0-3] speed, timestamp, DL: %3d us", RepDlUs);
   end
 
+
+
   always @(time_us) begin : g_dl_counter
 
     // Decrement deadlines of active task

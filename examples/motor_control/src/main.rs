@@ -70,6 +70,10 @@ fn main() -> ! {
     setup_irq(ExternalInterrupt::Timer2Cmp, 0x10);
     setup_irq(ExternalInterrupt::Timer3Cmp, 0x10);
     setup_irq(ExternalInterrupt::Mbx, 0x3);
+    setup_irq(ExternalInterrupt::Ext0, 0xFF);
+    setup_irq(ExternalInterrupt::Ext1, 0xFF);
+    setup_irq(ExternalInterrupt::Ext2, 0xFF);
+    setup_irq(ExternalInterrupt::Ext3, 0xFF);
 
     let mut mtimer = MTimer::instance().into_oneshot();
     //mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
@@ -250,6 +254,22 @@ unsafe fn Mbx() {
         MBX.ack_irq();
     }
 }
+
+#[nested_interrupt]
+unsafe fn Ext0() {
+}
+
+
+#[nested_interrupt]
+unsafe fn Ext1() {}
+
+
+#[nested_interrupt]
+unsafe fn Ext2() {}
+
+
+#[nested_interrupt]
+unsafe fn Ext3() {}
 
 #[bsp::core_interrupt(CoreInterrupt::MachineTimer)]
 unsafe fn MachineTimer() {
