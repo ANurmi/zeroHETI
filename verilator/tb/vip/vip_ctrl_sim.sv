@@ -125,13 +125,10 @@ module vip_ctrl_sim #(
       if (enable &(irq_o[i] & !task_set[SporIdx].active)) begin
         pend_task(SporIdx);
         reset_task_dl(SporIdx);
-      end
+      end else ack_task(SporIdx);
     end
 
   end : g_dl_counter
-
-  always @(posedge irq_o) begin : g_sporadic_irqs
-  end
 
   for (genvar i = 0; i < NrMotors; i++) begin : g_motors
     vip_motor_sim #(
@@ -156,7 +153,8 @@ module vip_ctrl_sim #(
       end
       7'd2: begin 
         voltages[0] = data;
-        addr_name = "M0_Ctrl";
+        tune[0]     = 0;
+        addr_name   = "M0_Ctrl";
       end
       7'd3: begin
         tune[0] = data;
@@ -164,7 +162,8 @@ module vip_ctrl_sim #(
       end
       7'd5: begin
         voltages[1] = data; 
-        addr_name = "M1_Ctrl";
+        tune[1]     = 0;
+        addr_name   = "M1_Ctrl";
       end
       7'd6: begin
         tune[1] = data;
@@ -172,7 +171,8 @@ module vip_ctrl_sim #(
       end
       7'd8: begin
         voltages[2] = data;
-        addr_name = "M2_Ctrl";
+        tune[2]     = 0;
+        addr_name   = "M2_Ctrl";
       end
       7'd9: begin
         tune[2] = data;
@@ -180,7 +180,8 @@ module vip_ctrl_sim #(
       end
       7'd11: begin
         voltages[3] = data;
-        addr_name = "M3_Ctrl";
+        tune[3]     = 0;
+        addr_name   = "M3_Ctrl";
       end
       7'd12: begin
         tune[3] = data;
