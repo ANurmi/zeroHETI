@@ -14,13 +14,9 @@ pub fn init_intc() {
         // Set level bits to 8
         Clic::smclicconfig().set_mnlbits(8);
     }
-    #[cfg(feature = "intc-hetic")]
+    #[cfg(any(feature = "intc-hetic", feature = "intc-edfic"))]
     {
-        // HETIC doesn't need global initialization
-    }
-    #[cfg(feature = "intc-edfic")]
-    {
-        // EDFIC doesn't need global initialization
+        // Hetic/EDFIC don't need global initialization
     }
 }
 
@@ -45,8 +41,15 @@ pub fn setup_irq(irq: impl InterruptNumber, level: u8) {
         Hetic::line(irq.number()).set_level(level);
         Hetic::line(irq.number()).enable();
     }
-    #[cfg(not(any(feature = "intc-clic", feature = "intc-hetic")))]
-    sprintln!("Interrupt controller not set up. Please set intc-* feature");
+    #[cfg(feature = "intc-edfic")]
+    {
+        use zeroheti_bsp::edfic::{Edfic, Pol, Trig};
+
+        Edfic::line(irq.number()).set_pol(Pol::Pos);
+        Edfic::line(irq.number()).set_trig(Trig::Edge);
+        Edfic::line(irq.number()).set_level(level);
+        Edfic::line(irq.number()).enable();
+    }
 }
 
 /// Tear down the IRQ configuration to avoid side-effects for further testing
@@ -72,8 +75,13 @@ pub fn tear_irq(irq: impl InterruptNumber) {
         Hetic::line(irq.number()).set_level(0x0);
         Hetic::line(irq.number()).disable();
     }
-    #[cfg(not(any(feature = "intc-clic", feature = "intc-hetic")))]
-    sprintln!("Interrupt controller not set up. Please set intc-* feature");
+    #[cfg(feature = "intc-edfic")]
+    {
+        use zeroheti_bsp::edfic::Edfic;
+
+        Edfic::line(irq.number()).set_level(0x0);
+        Edfic::line(irq.number()).disable();
+    }
 }
 
 pub fn pend_irq(irq: impl InterruptNumber) {
@@ -86,5 +94,10 @@ pub fn pend_irq(irq: impl InterruptNumber) {
     {
         use zeroheti_bsp::hetic::Hetic;
         Hetic::line(irq.number()).pend();
+    }
+    #[cfg(feature = "intc-edfic")]
+    {
+        use zeroheti_bsp::edfic::Edfic;
+        Edfic::line(irq.number()).pend();
     }
 }
