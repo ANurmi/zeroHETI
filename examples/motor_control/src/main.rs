@@ -13,7 +13,10 @@ use bsp::{
     apb_uart::*,
     i2c::I2c,
     interrupt::{CoreInterrupt, ExternalInterrupt},
-    mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
+    mmap::{
+        apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
+        mtimer,
+    },
     mtimer::*,
     nested_interrupt,
     riscv::{self, asm::wfi},
@@ -35,7 +38,7 @@ struct SimParams {
 const SIM_PARAMS: SimParams = SimParams { hyperperiod_ms: 1 };
 
 const REP_TASK_PER_US: u32 = 5000;
-const REP_TASK_OFS_US: u32 = 4700;
+const REP_TASK_OFS_US: u32 = 4900;
 
 // Global variables
 static mut I2C: Option<I2c> = None;
@@ -47,7 +50,7 @@ fn main() -> ! {
     let riscv_isa = core::env!("RISCV_ISA");
     sprintln!("[Motor control demo] ISA = {riscv_isa}");
 
-    let mut i2c = I2c::init(2);
+    let mut i2c = I2c::init(4);
 
     // HACK: clear mintstatus
     unsafe { bsp::register::mintstatus::write(0.into()) };
@@ -77,9 +80,9 @@ fn main() -> ! {
     ];
 
     timers[0].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
-    timers[1].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
-    timers[2].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
-    timers[3].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
+    timers[1].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros() - ExtU32::micros(1*150));
+    timers[2].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros() - ExtU32::micros(2*150));
+    timers[3].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros() - ExtU32::micros(3*150));
 
     unsafe {
         // clear instruction & cycle counters
@@ -150,39 +153,65 @@ fn main() -> ! {
 
 #[nested_interrupt]
 unsafe fn Timer0Cmp() {
+    let mut rbuf = [0; 4];
+
     unsafe {
-        MBX.write_time_and_stat(0u64, 1, M0);
+        I2C.as_mut().unwrap().read(0x2, &mut rbuf);
+    }
+    let m0_speed = u32::from_le_bytes(rbuf);
+
+    let time = MTimer::instance().counter();
+
+    unsafe {
+        MBX.write_time_and_stat(time, m0_speed, M0);
     }
 }
 
 #[nested_interrupt]
 unsafe fn Timer1Cmp() {
-    // Read motor state
     let mut rbuf = [0; 4];
 
-
     unsafe {
-        //I2C.read(0x2, &mut rbuf);
-        I2C.as_mut().unwrap().read(0x2, &mut rbuf);
+        I2C.as_mut().unwrap().read(0x4, &mut rbuf);
     }
-    let m0_speed = u32::from_le_bytes(rbuf);
+    let m1_speed = u32::from_le_bytes(rbuf);
+
+    let time = MTimer::instance().counter();
 
     unsafe {
-        MBX.write_time_and_stat(0u64, m0_speed, M1);
+        MBX.write_time_and_stat(time, m1_speed, M1);
     }
 }
 
 #[nested_interrupt]
 unsafe fn Timer2Cmp() {
+    let mut rbuf = [0; 4];
+
     unsafe {
-        MBX.write_time_and_stat(0u64, 1, M1);
+        I2C.as_mut().unwrap().read(0x6, &mut rbuf);
+    }
+    let m2_speed = u32::from_le_bytes(rbuf);
+
+    let time = MTimer::instance().counter();
+
+    unsafe {
+        MBX.write_time_and_stat(time, m2_speed, M2);
     }
 }
 
 #[nested_interrupt]
 unsafe fn Timer3Cmp() {
+    let mut rbuf = [0; 4];
+
     unsafe {
-        MBX.write_time_and_stat(0u64, 1, M3);
+        I2C.as_mut().unwrap().read(0x8, &mut rbuf);
+    }
+    let m3_speed = u32::from_le_bytes(rbuf);
+
+    let time = MTimer::instance().counter();
+
+    unsafe {
+        MBX.write_time_and_stat(time, m3_speed, M3);
     }
 }
 
