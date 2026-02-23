@@ -66,6 +66,10 @@ pub enum CoreInterrupt {
     // NC: SupervisorTimer = 5,
     MachineTimer = 7,
     // NC: SupervisorExternal = 9,
+    // ???(BUG): MachineExternal broken on HETIC
+    // Attempting to pend MachineExternal (line 11) on HETIC will freeze the
+    // simulation or the application
+    #[cfg(not(feature = "intc-hetic"))]
     MachineExternal = 11,
 }
 
