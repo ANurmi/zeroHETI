@@ -18,7 +18,8 @@ mkdir -p ${SW_BUILD_DIR}
 cp $1 ${SW_BUILD_DIR}/$(basename $1).elf
 
 # Make hex
-TOOLCHAIN=riscv32-unknown-elf-
+XLEN=32
+TOOLCHAIN=riscv${XLEN}-unknown-elf-
 ${TOOLCHAIN}objcopy ${SW_BUILD_DIR}/$(basename $1).elf -O binary ${SW_BUILD_DIR}/tmp.bin
 
 xxd -ps ${SW_BUILD_DIR}/tmp.bin ${SW_BUILD_DIR}/tmp.hex
@@ -33,4 +34,4 @@ rm ${SW_BUILD_DIR}/tmp*
 
 # Run verilator simulation with ELF
 cd ${PROJECT_ROOT}
-make simv TEST=$(basename $1)
+make simv TEST=$(basename $1) XLEN=${XLEN}

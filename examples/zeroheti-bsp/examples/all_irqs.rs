@@ -4,13 +4,18 @@
 #![no_std]
 mod common;
 
-use core::ptr::{self, addr_of, addr_of_mut};
+#[cfg(not(any(feature = "intc-hetic", feature = "intc-clic", feature = "intc-edfic")))]
+compile_error!(
+    "at least one interrupt controller feature is required, pass -Fclic-hetic, -Fclic-clic, -Fclic-edfic"
+);
 
-use crate::common::{UART_BAUD, setup_irq};
+use core::ptr::{self, addr_of, addr_of_mut};
+use riscv_pac::InterruptNumber;
+
+use crate::common::{UART_BAUD, init_intc, pend_irq, setup_irq};
 use zeroheti_bsp::{
     CPU_FREQ_HZ,
     apb_uart::ApbUart,
-    clic::{CLIC, Clic, InterruptNumber},
     interrupt::{CoreInterrupt, ExternalInterrupt},
     riscv,
     rt::entry,
@@ -21,6 +26,10 @@ use zeroheti_bsp::{
 const CORE_IRQS: &[CoreInterrupt] = &[
     CoreInterrupt::MachineSoft,
     CoreInterrupt::MachineTimer,
+    // ???(BUG): MachineExternal broken on HETIC
+    // Attempting to pend MachineExternal (line 11) on HETIC will freeze the
+    // simulation or the application
+    #[cfg(not(feature = "intc-hetic"))]
     CoreInterrupt::MachineExternal,
 ];
 const EXT_IRQS: &[ExternalInterrupt] = &[
@@ -55,8 +64,7 @@ fn main() -> ! {
     // HACK: clear mintstatus, required for zeroHETI
     unsafe { zeroheti_bsp::register::mintstatus::write(0.into()) };
 
-    // Set level bits to 8
-    Clic::smclicconfig().set_mnlbits(8);
+    init_intc();
 
     for &irq in CORE_IRQS {
         sprintln!("Set up core {irq:?} (id = {})", irq.number());
@@ -74,11 +82,11 @@ fn main() -> ! {
     // Raise each IRQ
     for &irq in CORE_IRQS.iter() {
         sprintln!("pend({})", irq.number());
-        unsafe { CLIC::ip(irq).pend() };
+        pend_irq(irq);
     }
     for &irq in EXT_IRQS {
         sprintln!("pend({})", irq.number());
-        unsafe { CLIC::ip(irq).pend() };
+        pend_irq(irq);
     }
 
     sprintln!("wait for acks...");

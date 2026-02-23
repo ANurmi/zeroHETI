@@ -49,6 +49,5 @@ path = "examples/hetic_pend.rs"
 required-features = ["intc-hetic"]
 
 [[example]]
-name = "clic_all_irqs"
-path = "examples/clic_all_irqs.rs"
-required-features = ["intc-clic"]
+name = "all_irqs"
+path = "examples/all_irqs.rs"
