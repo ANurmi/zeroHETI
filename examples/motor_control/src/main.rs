@@ -19,7 +19,11 @@ use bsp::{
     },
     mtimer::*,
     nested_interrupt,
-    riscv::{self, asm::wfi},
+    riscv::{
+        self,
+        asm::{delay, wfi},
+        delay,
+    },
     rt::entry,
     sprintln,
     tb::signal_pass,
@@ -50,8 +54,9 @@ fn main() -> ! {
     let riscv_isa = core::env!("RISCV_ISA");
     sprintln!("[Motor control demo] ISA = {riscv_isa}");
 
-    let mut i2c = I2c::init(4);
-
+    unsafe {
+        I2C.insert(I2c::init(4));
+    }
     // HACK: clear mintstatus
     unsafe { bsp::register::mintstatus::write(0.into()) };
 
@@ -64,7 +69,7 @@ fn main() -> ! {
     setup_irq(ExternalInterrupt::Timer1Cmp, 0x10);
     setup_irq(ExternalInterrupt::Timer2Cmp, 0x10);
     setup_irq(ExternalInterrupt::Timer3Cmp, 0x10);
-    setup_irq(ExternalInterrupt::Mbx, 0x1A);
+    setup_irq(ExternalInterrupt::Mbx, 0x3);
 
     let mut mtimer = MTimer::instance().into_oneshot();
     //mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
@@ -80,9 +85,18 @@ fn main() -> ! {
     ];
 
     timers[0].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
-    timers[1].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros() - ExtU32::micros(1*150));
-    timers[2].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros() - ExtU32::micros(2*150));
-    timers[3].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros() - ExtU32::micros(3*150));
+    timers[1].set_period_offset(
+        REP_TASK_PER_US.micros(),
+        REP_TASK_OFS_US.micros() - ExtU32::micros(1 * 150),
+    );
+    timers[2].set_period_offset(
+        REP_TASK_PER_US.micros(),
+        REP_TASK_OFS_US.micros() - ExtU32::micros(2 * 150),
+    );
+    timers[3].set_period_offset(
+        REP_TASK_PER_US.micros(),
+        REP_TASK_OFS_US.micros() - ExtU32::micros(3 * 150),
+    );
 
     unsafe {
         // clear instruction & cycle counters
@@ -91,15 +105,19 @@ fn main() -> ! {
         riscv::register::minstreth::write(0);
         riscv::register::mcycleh::write(0);
         // Global enable
-        riscv::interrupt::enable();
+        //riscv::interrupt::enable();
     }
 
     // Start periodic timers
     timers.iter_mut().for_each(Periodic::start);
 
     // Start sim
-    i2c.write(0x0, &[1]);
-
+    unsafe {
+        I2C.as_mut().unwrap().write(0x0, &[1]);
+    }
+    unsafe {
+        riscv::interrupt::enable();
+    }
     /*
         // Read motor states
         let mut rbuf = [0; 4];
@@ -144,7 +162,7 @@ fn main() -> ! {
      * 9: M3 control
      */
 
-    unsafe { I2C.replace(i2c) };
+    //unsafe { I2C.replace(i2c) };
 
     loop {
         wfi();
@@ -217,6 +235,17 @@ unsafe fn Timer3Cmp() {
 
 #[nested_interrupt]
 unsafe fn Mbx() {
+    let mail = MBX.read_inbox();
+    let bytes: [u8; 4] = mail.to_be_bytes();
+
+    for i in 0..4 {
+        unsafe {
+            riscv::interrupt::disable();
+            I2C.as_mut().unwrap().write((0x3 + i * 2), &[0u8 ,bytes[i as usize]]);
+            riscv::interrupt::enable();
+        }
+    }
+
     unsafe {
         MBX.ack_irq();
     }

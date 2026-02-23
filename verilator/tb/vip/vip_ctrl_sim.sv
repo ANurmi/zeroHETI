@@ -132,26 +132,55 @@ module vip_ctrl_sim #(
   end
 
   task write(input logic [6:0] addr, input logic [31:0] data);
-    $display("[CTRL_SIM] write - addr: %h, data: %h", addr, data);
+    automatic string addr_name = "";
     unique case (addr)
-      7'd0: enable    = data[0];
-      7'd3: voltages[0] = data;
-      7'd5: voltages[1] = data;
-      7'd7: voltages[2] = data;
-      7'd9: voltages[3] = data;
+      7'd0: begin
+        enable    = data[0];
+        addr_name = "SimCtrl";
+      end
+      7'd3: begin 
+        voltages[0] = data;
+        addr_name = "M0_Ctrl";
+      end
+      7'd5: begin
+        voltages[1] = data; 
+        addr_name = "M1_Ctrl";
+      end
+      7'd7: begin
+        voltages[2] = data;
+        addr_name = "M2_Ctrl";
+      end
+      7'd9: begin
+        voltages[3] = data;
+        addr_name = "M3_Ctrl";
+      end
       default: ;
     endcase
+    $display("[CTRL_SIM] write - addr: %s, data: 0x%h", addr_name, data);
   endtask
 
   task read(input logic [6:0] addr, output logic [31:0] data);
+    automatic string addr_name = "";
     unique case (addr)
-      7'd2: data = speeds[0];
-      7'd4: data = speeds[1];
-      7'd6: data = speeds[2];
-      7'd8: data = speeds[3];
+      7'd2: begin
+        data = speeds[0];
+        addr_name = "M0_Stat";
+      end
+      7'd4: begin
+        data = speeds[1];
+        addr_name = "M1_Stat";
+      end
+      7'd6: begin
+        data = speeds[2];
+        addr_name = "M2_Stat";
+      end
+      7'd8: begin
+        data = speeds[3];
+        addr_name = "M3_Stat";
+      end
       default: ;
     endcase
-    $display("[CTRL_SIM] read - addr: %h, data: %h", addr, data);
+    $display("[CTRL_SIM] read  - addr: %s, data: 0x%h", addr_name, data);
   endtask
 
   task pend_task(input int unsigned i);
