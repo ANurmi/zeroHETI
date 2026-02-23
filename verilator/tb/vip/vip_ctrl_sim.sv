@@ -25,6 +25,8 @@ module vip_ctrl_sim #(
   localparam longint unsigned MbxPerUs = 'd10_000;
   localparam longint unsigned RepPerUs = 'd5_000;
 
+  localparam longint unsigned RepOfsUs = 'd150;
+
   localparam longint unsigned MbxDlUs = 'd2_000;
   localparam longint unsigned WrnDlUs = 'd20;
   localparam longint unsigned RepDlUs = 'd1_000;
@@ -105,19 +107,15 @@ module vip_ctrl_sim #(
       i_zeroheti.i_mbx.i_sim_mbx.raise_irq();
     end
 
-    // Activate periodic reporting tasks
-    if (enable & (time_us % RepPerUs == 0)) begin
-      pend_task(5);
-      reset_task_dl(5);
-      pend_task(6);
-      reset_task_dl(6);
-      pend_task(7);
-      reset_task_dl(7);
-      pend_task(8);
-      reset_task_dl(8);
+    // Activate periodic reporting tasks with appropriate offset
+    for (int i=0; i<4; i++) begin
+      if (enable & ((time_us - RepOfsUs*i) % RepPerUs == 0)) begin
+        pend_task(5+i);
+        reset_task_dl(5+i);
+      end
     end
 
-  end
+  end : g_dl_counter
 
   for (genvar i = 0; i < NrMotors; i++) begin : g_motors
     vip_motor_sim #(
