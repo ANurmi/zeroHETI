@@ -24,14 +24,14 @@ pub enum Pol {
 
 impl HeticIrqLine {
     pub fn set_level(&mut self, level: u8) {
-        unsafe { mmio::write_u8(INTC_BASE + LINE_SIZE * self.idx + 1, level) };
+        mmio::write_u8(INTC_BASE + LINE_SIZE * self.idx + 1, level);
     }
     pub fn level(&self) {
-        unsafe { mmio::read_u8(INTC_BASE + LINE_SIZE * self.idx + 1) };
+        mmio::read_u8(INTC_BASE + LINE_SIZE * self.idx + 1);
     }
 
     pub fn pend(&mut self) {
-        unsafe { mmio::mask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << IP_OFS) };
+        mmio::mask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << IP_OFS);
     }
     pub fn unpend(&mut self) {
         mmio::unmask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << IP_OFS);
