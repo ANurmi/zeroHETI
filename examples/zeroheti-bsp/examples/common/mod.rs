@@ -1,4 +1,4 @@
-use riscv::InterruptNumber;
+use riscv_pac::InterruptNumber;
 use zeroheti_bsp::sprintln;
 
 pub const UART_BAUD: u32 = if cfg!(feature = "rtl-tb") {
@@ -6,6 +6,23 @@ pub const UART_BAUD: u32 = if cfg!(feature = "rtl-tb") {
 } else {
     115_200
 };
+
+pub fn init_intc() {
+    #[cfg(feature = "intc-clic")]
+    {
+        use zeroheti_bsp::clic::{Clic, Polarity, Trig};
+        // Set level bits to 8
+        Clic::smclicconfig().set_mnlbits(8);
+    }
+    #[cfg(feature = "intc-hetic")]
+    {
+        // HETIC doesn't need global initialization
+    }
+    #[cfg(feature = "intc-edfic")]
+    {
+        // EDFIC doesn't need global initialization
+    }
+}
 
 /// Setup `irq` for use with some basic defaults
 ///
@@ -23,6 +40,8 @@ pub fn setup_irq(irq: impl InterruptNumber, level: u8) {
     }
     #[cfg(feature = "intc-hetic")]
     {
+        use zeroheti_bsp::hetic::Hetic;
+
         Hetic::line(irq.number()).set_level(level);
         Hetic::line(irq.number()).enable();
     }
@@ -48,9 +67,24 @@ pub fn tear_irq(irq: impl InterruptNumber) {
     }
     #[cfg(feature = "intc-hetic")]
     {
+        use zeroheti_bsp::hetic::Hetic;
+
         Hetic::line(irq.number()).set_level(0x0);
         Hetic::line(irq.number()).disable();
     }
     #[cfg(not(any(feature = "intc-clic", feature = "intc-hetic")))]
     sprintln!("Interrupt controller not set up. Please set intc-* feature");
+}
+
+pub fn pend_irq(irq: impl InterruptNumber) {
+    #[cfg(feature = "intc-clic")]
+    {
+        use zeroheti_bsp::clic::CLIC;
+        unsafe { CLIC::ip(irq).pend() }
+    }
+    #[cfg(feature = "intc-hetic")]
+    {
+        use zeroheti_bsp::hetic::Hetic;
+        Hetic::line(irq.number()).pend();
+    }
 }
