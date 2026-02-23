@@ -297,7 +297,7 @@ unsafe fn Ext0() {
     let m0_speed_now: i32 = i32::from_le_bytes(rbuf);
 
     unsafe {
-        let bytes: [u8; 4] = compute_control(0, m0_speed_now).to_le_bytes();
+        let bytes: [u8; 2] = compute_control(0, m0_speed_now).to_le_bytes();
         riscv::interrupt::disable();
         I2C.as_mut().unwrap().write((M0_ADDR.tune), &bytes);
         riscv::interrupt::enable();
@@ -316,7 +316,7 @@ unsafe fn Ext1() {
     let m1_speed_now: i32 = i32::from_le_bytes(rbuf);
 
     unsafe {
-        let bytes: [u8; 4] = compute_control(1, m1_speed_now).to_le_bytes();
+        let bytes: [u8; 2] = compute_control(1, m1_speed_now).to_le_bytes();
         riscv::interrupt::disable();
         I2C.as_mut().unwrap().write((M1_ADDR.tune), &bytes);
         riscv::interrupt::enable();
@@ -335,7 +335,7 @@ unsafe fn Ext2() {
     let m2_speed_now: i32 = i32::from_le_bytes(rbuf);
 
     unsafe {
-        let bytes: [u8; 4] = compute_control(2, m2_speed_now).to_le_bytes();
+        let bytes: [u8; 2] = compute_control(2, m2_speed_now).to_le_bytes();
         riscv::interrupt::disable();
         I2C.as_mut().unwrap().write((M2_ADDR.tune), &bytes);
         riscv::interrupt::enable();
@@ -354,7 +354,7 @@ unsafe fn Ext3() {
     let m3_speed_now: i32 = i32::from_le_bytes(rbuf);
 
     unsafe {
-        let bytes: [u8; 4] = compute_control(3, m3_speed_now).to_le_bytes();
+        let bytes: [u8; 2] = compute_control(3, m3_speed_now).to_le_bytes();
         riscv::interrupt::disable();
         I2C.as_mut().unwrap().write((M3_ADDR.tune), &bytes);
         riscv::interrupt::enable();
@@ -362,15 +362,62 @@ unsafe fn Ext3() {
 }
 
 #[inline]
-unsafe fn compute_control(idx: usize, speed_now: i32) -> i32 {
+unsafe fn compute_control(idx: usize, speed_now: i32) -> i16 {
+    // Assume R = 100 ohm
+    let res = 100;
     let err = SPEED_TARGET[idx] - speed_now;
+    /*
     INTEGRAL[idx] += err;
     let KP_NOM: i32 = 1;
     let KI_NOM: i32 = 1;
     let KP_DEN: i32 = 1;
-    let KI_DEN: i32 = 1;
-    let res: i32 = ((KP_NOM * err) / KP_DEN) + ((KI_DEN * INTEGRAL[idx]) / KI_DEN);
-    res
+    let KI_DEN: i32 = 1;*/
+    //let res: i32 = ((KP_NOM * err) / KP_DEN) + ((KI_DEN * INTEGRAL[idx]) /
+    // KI_DEN);
+    let mut v_tune: i32 = usqrt4((err / res) as u32) as i32;
+    if err < 0 {
+        v_tune = v_tune * (-1i32);
+    };
+    v_tune *= 9;
+    v_tune as i16
+}
+
+/*
+/* static will allow inlining */
+static unsigned usqrt4(unsigned val) {
+    unsigned a, b;
+
+    if (val < 2) return val; /* avoid div/0 */
+
+    a = 1255;       /* starting point is relatively unimportant */
+
+    b = val / a; a = (a+b) /2;
+    b = val / a; a = (a+b) /2;
+    b = val / a; a = (a+b) /2;
+    b = val / a; a = (a+b) /2;
+
+    return a;
+}
+*/
+#[inline]
+fn usqrt4(val: u32) -> u32 {
+    let mut a: u32 = 1255;
+    let mut b: u32;
+
+    if val < 2 {
+        return val;
+    };
+
+    b = val / a;
+    a = (a + b) / 2;
+    b = val / a;
+    a = (a + b) / 2;
+    b = val / a;
+    a = (a + b) / 2;
+    b = val / a;
+    a = (a + b) / 2;
+
+    a
 }
 
 #[bsp::core_interrupt(CoreInterrupt::MachineTimer)]

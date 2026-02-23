@@ -35,10 +35,13 @@ module vip_motor_sim #(
   int speed_ideal = 0;
   int speed_delta = 0;
   int acceleration[4:0] = {0, 0, 0, 0, 0};
-  int unsigned voltage, power, power_last, transient;
+  int unsigned voltage, voltage_ideal, power, power_last, power_ideal, transient;
 
-  assign voltage = voltage_i;  // mV
+  assign voltage = voltage_i + tune_i;  // mV
   assign power = ((voltage ** 2) / (1000 * Resistance));  // mW
+
+  assign voltage_ideal = voltage_i;  // mV
+  assign power_ideal = ((voltage_ideal ** 2) / (1000 * Resistance));  // mW
 
   // Set irq high when irq_samples have settled
   // to filter out transient edges.
@@ -101,7 +104,7 @@ module vip_motor_sim #(
       + 1*(acceleration[0] / 10)
     ;
 
-    speed_ideal = power;
+    speed_ideal = power_ideal;
   end
 
   function int abs( int x );
