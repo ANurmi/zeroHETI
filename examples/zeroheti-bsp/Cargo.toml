@@ -51,4 +51,3 @@ required-features = ["intc-hetic"]
 [[example]]
 name = "all_irqs"
 path = "examples/all_irqs.rs"
-required-features = ["intc-clic"]
