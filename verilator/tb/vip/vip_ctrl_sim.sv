@@ -22,10 +22,11 @@ module vip_ctrl_sim #(
 
   localparam int unsigned TaskSetSize = 9;
 
-  localparam longint unsigned MbxPerUs = 'd10_000;
+  localparam longint unsigned MbxPerUs = 'd7_000;
   localparam longint unsigned RepPerUs = 'd5_000;
 
   localparam longint unsigned RepOfsUs = 'd150;
+  localparam longint unsigned MbxOfsUs = 'd2_000;
 
   localparam longint unsigned MbxDlUs = 'd2_000;
   localparam longint unsigned WrnDlUs = 'd20;
@@ -101,7 +102,7 @@ module vip_ctrl_sim #(
     end
 
     // Activate periodic directive task
-    if (enable & (time_us % MbxPerUs == 0)) begin
+    if (enable & ((time_us - MbxOfsUs) % MbxPerUs == 0)) begin
       pend_task(0);
       reset_task_dl(0);
       i_zeroheti.i_mbx.i_sim_mbx.raise_irq();
