@@ -19,6 +19,8 @@ module vip_mbx #(
   localparam int unsigned MbxM2StatAddr = 32'h3_0018;
   localparam int unsigned MbxM3StatAddr = 32'h3_001C;
 
+  logic [31:0] last_seed = 0;
+
   initial begin
     irq_o   = 1'b0;
     rdata_o = 32'h0;
@@ -27,10 +29,6 @@ module vip_mbx #(
   always @(posedge req_i) begin
     if (rst_ni) handle_tx();
   end
-
-  task test();
-    $display("Hello from MBX");
-  endtask
 
   task raise_irq();
     irq_o = 1;
@@ -60,16 +58,8 @@ module vip_mbx #(
   endtask
 
   task send_read();
-    rdata_o = $random();
-  /*
-    @(negedge req_i);
-    @(posedge clk_i);
-    rvalid_o = 1'b1;
-    @(posedge clk_i);
-    //@(posedge clk_i);
-    rvalid_o = 1'b0;
-    //@(negedge clk_i);
-    rdata_o = 32'h0;*/
+    last_seed = $urandom(last_seed);
+    rdata_o   = last_seed;
   endtask
 
 
