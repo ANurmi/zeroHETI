@@ -8,6 +8,8 @@ compile_error!(
     "at least one interrupt controller feature is required, pass -Fclic-hetic, -Fclic-clic, -Fclic-edfic"
 );
 
+use core::slice::Split;
+
 use bsp::{
     CPU_FREQ_HZ,
     apb_uart::*,
@@ -39,14 +41,45 @@ struct SimParams {
     hyperperiod_ms: u64,
 }
 
-const SIM_PARAMS: SimParams = SimParams { hyperperiod_ms: 1 };
+const SIM_PARAMS: SimParams = SimParams { hyperperiod_ms: 20 };
 
 const REP_TASK_PER_US: u32 = 5000;
 const REP_TASK_OFS_US: u32 = 4900;
 
+struct Motor {
+    stat: u8,
+    ctrl: u8,
+    tune: u8,
+}
+
+const M0_ADDR: Motor = Motor {
+    stat: 1,
+    ctrl: 2,
+    tune: 3,
+};
+const M1_ADDR: Motor = Motor {
+    stat: 4,
+    ctrl: 5,
+    tune: 6,
+};
+const M2_ADDR: Motor = Motor {
+    stat: 7,
+    ctrl: 8,
+    tune: 9,
+};
+const M3_ADDR: Motor = Motor {
+    stat: 10,
+    ctrl: 11,
+    tune: 12,
+};
+
 // Global variables
 static mut I2C: Option<I2c> = None;
 static mut MBX: Mailbox = unsafe { Mailbox::instance() };
+
+static mut SPEED_REAL: [i32; 4] = [0, 0, 0, 0];
+static mut SPEED_TARGET: [i32; 4] = [0, 0, 0, 0];
+static mut INTEGRAL: [i32; 4] = [0, 0, 0, 0];
 
 #[entry]
 fn main() -> ! {
@@ -76,10 +109,8 @@ fn main() -> ! {
     setup_irq(ExternalInterrupt::Ext3, 0xFF);
 
     let mut mtimer = MTimer::instance().into_oneshot();
-    //mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
-    // Start the simulation
-    mtimer.start(20u64.millis());
+    mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
     let timers = &mut [
         Timer::init::<TIMER0_ADDR>().into_periodic(),
@@ -108,8 +139,6 @@ fn main() -> ! {
         riscv::register::mcycle::write(0);
         riscv::register::minstreth::write(0);
         riscv::register::mcycleh::write(0);
-        // Global enable
-        //riscv::interrupt::enable();
     }
 
     // Start periodic timers
@@ -118,27 +147,9 @@ fn main() -> ! {
     // Start sim
     unsafe {
         I2C.as_mut().unwrap().write(0x0, &[1]);
-    }
-    unsafe {
         riscv::interrupt::enable();
     }
-    /*
-        // Read motor states
-        let mut rbuf = [0; 4];
-        i2c.read(0x2, &mut rbuf);
-        let m0_speed = u32::from_le_bytes(rbuf);
 
-        i2c.read(0x4, &mut rbuf);
-        let m1_speed = u32::from_le_bytes(rbuf);
-
-        i2c.read(0x6, &mut rbuf);
-        let m2_speed = u32::from_le_bytes(rbuf);
-
-        i2c.read(0x8, &mut rbuf);
-        let m3_speed = u32::from_le_bytes(rbuf);
-
-        sprintln!("Motor speeds: M0 = {m0_speed}, M1 = {m1_speed}, M2 = {m2_speed}, M3 = {m3_speed}");
-    */
     /*
      * 4 motors.
      *
@@ -155,15 +166,18 @@ fn main() -> ! {
      *
      * Internal address mapping
      * 0: 31'h0, sim_en
-     * 1: reserved
-     * 2: M0 status
-     * 3: M0 control
+     * 1: M0 status
+     * 2: M0 control
+     * 3: M0 tune
      * 4: M1 status
      * 5: M1 control
-     * 6: M2 status
-     * 7: M2 control
-     * 8: M3 status
-     * 9: M3 control
+     * 6: M1 tune
+     * 7: M2 status
+     * 8: M2 control
+     * 9: M2 tune
+     *10: M3 status
+     *11: M3 control
+     *12: M3 tune
      */
 
     //unsafe { I2C.replace(i2c) };
@@ -178,14 +192,17 @@ unsafe fn Timer0Cmp() {
     let mut rbuf = [0; 4];
 
     unsafe {
-        I2C.as_mut().unwrap().read(0x2, &mut rbuf);
+        riscv::interrupt::disable();
+        I2C.as_mut().unwrap().read(M0_ADDR.stat, &mut rbuf);
+        riscv::interrupt::enable();
     }
-    let m0_speed = u32::from_le_bytes(rbuf);
+    let m0_speed: i32 = i32::from_le_bytes(rbuf);
 
     let time = MTimer::instance().counter();
 
     unsafe {
-        MBX.write_time_and_stat(time, m0_speed, M0);
+        SPEED_REAL[0] = m0_speed;
+        MBX.write_time_and_stat(time, m0_speed as u32, M0);
     }
 }
 
@@ -194,14 +211,17 @@ unsafe fn Timer1Cmp() {
     let mut rbuf = [0; 4];
 
     unsafe {
-        I2C.as_mut().unwrap().read(0x4, &mut rbuf);
+        riscv::interrupt::disable();
+        I2C.as_mut().unwrap().read(M1_ADDR.stat, &mut rbuf);
+        riscv::interrupt::enable();
     }
-    let m1_speed = u32::from_le_bytes(rbuf);
+    let m1_speed: i32 = i32::from_le_bytes(rbuf);
 
     let time = MTimer::instance().counter();
 
     unsafe {
-        MBX.write_time_and_stat(time, m1_speed, M1);
+        SPEED_REAL[1] = m1_speed;
+        MBX.write_time_and_stat(time, m1_speed as u32, M1);
     }
 }
 
@@ -210,14 +230,17 @@ unsafe fn Timer2Cmp() {
     let mut rbuf = [0; 4];
 
     unsafe {
-        I2C.as_mut().unwrap().read(0x6, &mut rbuf);
+        riscv::interrupt::disable();
+        I2C.as_mut().unwrap().read(M2_ADDR.stat, &mut rbuf);
+        riscv::interrupt::enable();
     }
-    let m2_speed = u32::from_le_bytes(rbuf);
+    let m2_speed: i32 = i32::from_le_bytes(rbuf);
 
     let time = MTimer::instance().counter();
 
     unsafe {
-        MBX.write_time_and_stat(time, m2_speed, M2);
+        SPEED_REAL[2] = m2_speed;
+        MBX.write_time_and_stat(time, m2_speed as u32, M2);
     }
 }
 
@@ -226,27 +249,34 @@ unsafe fn Timer3Cmp() {
     let mut rbuf = [0; 4];
 
     unsafe {
-        I2C.as_mut().unwrap().read(0x8, &mut rbuf);
+        riscv::interrupt::disable();
+        I2C.as_mut().unwrap().read(M3_ADDR.stat, &mut rbuf);
+        riscv::interrupt::enable();
     }
-    let m3_speed = u32::from_le_bytes(rbuf);
+    let m3_speed: i32 = i32::from_le_bytes(rbuf);
 
     let time = MTimer::instance().counter();
 
     unsafe {
-        MBX.write_time_and_stat(time, m3_speed, M3);
+        SPEED_REAL[3] = m3_speed;
+        MBX.write_time_and_stat(time, m3_speed as u32, M3);
     }
 }
 
 #[nested_interrupt]
 unsafe fn Mbx() {
     let mail = MBX.read_inbox();
-    let bytes: [u8; 4] = mail.to_be_bytes();
+    //let bytes: [u8; 4] = mail.to_be_bytes();
+    let bytes: [u8; 4] = [0, 0, 0, mail.to_be_bytes()[0]];
 
     for i in 0..4 {
         unsafe {
             riscv::interrupt::disable();
-            I2C.as_mut().unwrap().write((0x3 + i * 2), &[0u8 ,bytes[i as usize]]);
+            I2C.as_mut()
+                .unwrap()
+                .write((2 + i * 3), &[0u8, bytes[i as usize]]);
             riscv::interrupt::enable();
+            SPEED_TARGET[i as usize] = (((bytes[i as usize]) as i32) << 8);
         }
     }
 
@@ -257,19 +287,91 @@ unsafe fn Mbx() {
 
 #[nested_interrupt]
 unsafe fn Ext0() {
+    let mut rbuf = [0; 4];
+
+    unsafe {
+        riscv::interrupt::disable();
+        I2C.as_mut().unwrap().read(M0_ADDR.stat, &mut rbuf);
+        riscv::interrupt::enable();
+    }
+    let m0_speed_now: i32 = i32::from_le_bytes(rbuf);
+
+    unsafe {
+        let bytes: [u8; 4] = compute_control(0, m0_speed_now).to_le_bytes();
+        riscv::interrupt::disable();
+        I2C.as_mut().unwrap().write((M0_ADDR.tune), &bytes);
+        riscv::interrupt::enable();
+    }
 }
 
+#[nested_interrupt]
+unsafe fn Ext1() {
+    let mut rbuf = [0; 4];
+
+    unsafe {
+        riscv::interrupt::disable();
+        I2C.as_mut().unwrap().read(M1_ADDR.stat, &mut rbuf);
+        riscv::interrupt::enable();
+    }
+    let m1_speed_now: i32 = i32::from_le_bytes(rbuf);
+
+    unsafe {
+        let bytes: [u8; 4] = compute_control(1, m1_speed_now).to_le_bytes();
+        riscv::interrupt::disable();
+        I2C.as_mut().unwrap().write((M1_ADDR.tune), &bytes);
+        riscv::interrupt::enable();
+    }
+}
 
 #[nested_interrupt]
-unsafe fn Ext1() {}
+unsafe fn Ext2() {
+    let mut rbuf = [0; 4];
 
+    unsafe {
+        riscv::interrupt::disable();
+        I2C.as_mut().unwrap().read(M2_ADDR.stat, &mut rbuf);
+        riscv::interrupt::enable();
+    }
+    let m2_speed_now: i32 = i32::from_le_bytes(rbuf);
+
+    unsafe {
+        let bytes: [u8; 4] = compute_control(2, m2_speed_now).to_le_bytes();
+        riscv::interrupt::disable();
+        I2C.as_mut().unwrap().write((M2_ADDR.tune), &bytes);
+        riscv::interrupt::enable();
+    }
+}
 
 #[nested_interrupt]
-unsafe fn Ext2() {}
+unsafe fn Ext3() {
+    let mut rbuf = [0; 4];
 
+    unsafe {
+        riscv::interrupt::disable();
+        I2C.as_mut().unwrap().read(M3_ADDR.stat, &mut rbuf);
+        riscv::interrupt::enable();
+    }
+    let m3_speed_now: i32 = i32::from_le_bytes(rbuf);
 
-#[nested_interrupt]
-unsafe fn Ext3() {}
+    unsafe {
+        let bytes: [u8; 4] = compute_control(3, m3_speed_now).to_le_bytes();
+        riscv::interrupt::disable();
+        I2C.as_mut().unwrap().write((M3_ADDR.tune), &bytes);
+        riscv::interrupt::enable();
+    }
+}
+
+#[inline]
+unsafe fn compute_control(idx: usize, speed_now: i32) -> i32 {
+    let err = SPEED_TARGET[idx] - speed_now;
+    INTEGRAL[idx] += err;
+    let KP_NOM: i32 = 1;
+    let KI_NOM: i32 = 1;
+    let KP_DEN: i32 = 1;
+    let KI_DEN: i32 = 1;
+    let res: i32 = ((KP_NOM * err) / KP_DEN) + ((KI_DEN * INTEGRAL[idx]) / KI_DEN);
+    res
+}
 
 #[bsp::core_interrupt(CoreInterrupt::MachineTimer)]
 unsafe fn MachineTimer() {
