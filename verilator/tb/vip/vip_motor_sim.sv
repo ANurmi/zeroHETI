@@ -1,4 +1,4 @@
-//`define SIM_ASSERTS
+`define SIM_ASSERTS
 
 module vip_motor_sim #(
     parameter int unsigned Idx = 0,
@@ -13,16 +13,20 @@ module vip_motor_sim #(
 );
 
   localparam int Resistance   = 100;  // Ohm
-  localparam int SpeedMax     = 35_000;  // RPM
+  localparam int SpeedMax     = 70_000;  // RPM
   localparam int VoltageMax   = 400_000;  // mV
 
   // Raise interrupt when warning tolerance exceeded
   localparam int SpeedTolWrn = 1000;
   localparam int SpeedTolErr = SpeedTolWrn * 2;
 
+  localparam int NrSamples = 16;
+
   longint timestep  = 0;
   int unsigned ps   = 0;
   int unsigned seed = 0;
+
+  logic [NrSamples-1:0] irq_samples;
 
   int speed_real = 0;
   int speed_last = 0;
@@ -34,6 +38,10 @@ module vip_motor_sim #(
 
   assign voltage = voltage_i;  // mV
   assign power = ((voltage ** 2) / (1000 * Resistance));  // mW
+
+  // Set irq high when irq_samples have settled
+  // to filter out transient edges.
+  assign irq_o = &irq_samples;
 
   // Correlate acceleration to change in power
   assign acceleration[0] = power - power_last - transient;
@@ -56,8 +64,12 @@ module vip_motor_sim #(
 
   always @(timestep) begin : simulation_process
 
-    seed = timestep[31:0];
-    irq_o = 1'b0;
+    for (int i=NrSamples-1; i > 0; i--) begin
+      irq_samples[i] = irq_samples[i-1];
+    end
+
+    seed        = timestep[31:0];
+    irq_samples[0] = 1'b0;
 
     if (speed_real > 0) begin
       // Model transient enviromental distruptions with 5% probability
@@ -67,8 +79,9 @@ module vip_motor_sim #(
       speed_bias = ($urandom(seed) % 20 == 0) ? ($random(seed) % 10) : speed_bias;
 
       // Raise interrupt if warning threshhold exceeded
-      if (abs(speed_delta) > SpeedTolErr) begin
-        if (!accelerating()) irq_o = 1'b1;
+      if (abs(speed_delta) > SpeedTolWrn) begin
+        //if (!accelerating()) 
+        irq_samples[0] = 1'b1;
       end
     end
 
@@ -83,7 +96,7 @@ module vip_motor_sim #(
     speed_real = speed_last + speed_bias
       + 1*(acceleration[4] / 10)
       + 2*(acceleration[3] / 10)
-      + 5*(acceleration[2] / 10)
+      + 3*(acceleration[2] / 10)
       + 2*(acceleration[1] / 10)
       + 1*(acceleration[0] / 10)
     ;
