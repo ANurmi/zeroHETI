@@ -16,4 +16,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build
-      run: cd examples/zeroheti-bsp && cargo check -Frtl-tb --lib --examples
+      run: |
+        cd examples/zeroheti-bsp && cargo check -Frtl-tb -Fintc-hetic --lib --examples
+        cd examples/zeroheti-bsp && cargo check -Frtl-tb -Fintc-clic --lib --examples
+        cd examples/zeroheti-bsp && cargo check -Frtl-tb -Fintc-edfic --lib --examples
