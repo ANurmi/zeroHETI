@@ -4,6 +4,11 @@
 #![no_std]
 mod common;
 
+#[cfg(not(any(feature = "intc-hetic", feature = "intc-clic", feature = "intc-edfic")))]
+compile_error!(
+    "at least one interrupt controller feature is required, pass -Fclic-hetic, -Fclic-clic, -Fclic-edfic"
+);
+
 use core::ptr::{self, addr_of, addr_of_mut};
 use riscv_pac::InterruptNumber;
 
