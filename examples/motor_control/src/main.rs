@@ -8,18 +8,14 @@ compile_error!(
     "at least one interrupt controller feature is required, pass -Fclic-hetic, -Fclic-clic, -Fclic-edfic"
 );
 
-use core::time::Duration;
-
 use bsp::{
     CPU_FREQ_HZ,
     apb_uart::*,
     i2c::I2c,
     interrupt::{CoreInterrupt, ExternalInterrupt},
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
-    mmio::write_u32,
     mtimer::*,
     nested_interrupt,
-    register::{mintstatus::Mintstatus, time},
     riscv::{self, asm::wfi},
     rt::entry,
     sprintln,
@@ -28,7 +24,7 @@ use bsp::{
 };
 use fugit::{ExtU32, ExtU64};
 use motor_control::{
-    mailbox::{Mailbox, MailboxHal, Motor::*},
+    mailbox::{Mailbox, Motor::*},
     *,
 };
 
@@ -39,11 +35,10 @@ struct SimParams {
 const SIM_PARAMS: SimParams = SimParams { hyperperiod_ms: 1 };
 
 const REP_TASK_PER_US: u32 = 5000;
-const REP_TASK_OFS_US: u32 = 4200;
+const REP_TASK_OFS_US: u32 = 4700;
 
 // Global variables
 static mut I2C: Option<I2c> = None;
-
 static mut MBX: Mailbox = unsafe { Mailbox::instance() };
 
 #[entry]
@@ -52,7 +47,7 @@ fn main() -> ! {
     let riscv_isa = core::env!("RISCV_ISA");
     sprintln!("[Motor control demo] ISA = {riscv_isa}");
 
-    let mut i2c = I2c::init(4);
+    let mut i2c = I2c::init(2);
 
     // HACK: clear mintstatus
     unsafe { bsp::register::mintstatus::write(0.into()) };
@@ -67,7 +62,6 @@ fn main() -> ! {
     setup_irq(ExternalInterrupt::Timer2Cmp, 0x10);
     setup_irq(ExternalInterrupt::Timer3Cmp, 0x10);
     setup_irq(ExternalInterrupt::Mbx, 0x1A);
-
 
     let mut mtimer = MTimer::instance().into_oneshot();
     //mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
@@ -147,7 +141,7 @@ fn main() -> ! {
      * 9: M3 control
      */
 
-    //unsafe { I2C.replace(i2c) };
+    unsafe { I2C.replace(i2c) };
 
     loop {
         wfi();
@@ -156,27 +150,47 @@ fn main() -> ! {
 
 #[nested_interrupt]
 unsafe fn Timer0Cmp() {
-    MBX.write_time_and_stat(0u64, 1u32, M0);
+    unsafe {
+        MBX.write_time_and_stat(0u64, 1, M0);
+    }
 }
 
 #[nested_interrupt]
 unsafe fn Timer1Cmp() {
-    MBX.write_time_and_stat(0u64, 1u32, M1);
+    // Read motor state
+    let mut rbuf = [0; 4];
+
+
+    unsafe {
+        //I2C.read(0x2, &mut rbuf);
+        I2C.as_mut().unwrap().read(0x2, &mut rbuf);
+    }
+    let m0_speed = u32::from_le_bytes(rbuf);
+
+    unsafe {
+        MBX.write_time_and_stat(0u64, m0_speed, M1);
+    }
 }
 
 #[nested_interrupt]
 unsafe fn Timer2Cmp() {
-    MBX.write_time_and_stat(0u64, 1u32, M2);
+    unsafe {
+        MBX.write_time_and_stat(0u64, 1, M1);
+    }
 }
 
 #[nested_interrupt]
 unsafe fn Timer3Cmp() {
-    MBX.write_time_and_stat(0u64, 1u32, M3);
+    unsafe {
+        MBX.write_time_and_stat(0u64, 1, M3);
+    }
 }
 
 #[nested_interrupt]
 unsafe fn Mbx() {
-    MBX.ack_irq();
+    unsafe {
+        MBX.ack_irq();
+    }
 }
 
 #[bsp::core_interrupt(CoreInterrupt::MachineTimer)]

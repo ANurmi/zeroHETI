@@ -9,7 +9,7 @@ module vip_i2c #(
     output logic [3:0] irq_o
 );
 
-  localparam InternalPrescaler = 16;
+  localparam InternalPrescaler = 8;
   localparam BufLen = 4;
 
   assign scl_o = scl_i;

@@ -71,14 +71,12 @@ module vip_ctrl_sim #(
   logic [63:0] time_us = 0;
   logic [7:0] prescaler = 0;
 
-  // Assume 1 MHz sim clock frequency
+  // Assume 10 MHz sim clock frequency
   always @(posedge clk_i) begin : g_us_counter
-    time_us++;
-    // Old: 100 Mhz
-    /*if (prescaler == 'd99) begin
+    if (prescaler == 'd9) begin
       prescaler = 0;
       time_us++;
-    end else prescaler++;*/
+    end else prescaler++;
   end
 
 
