@@ -10,7 +10,7 @@ pub const UART_BAUD: u32 = if cfg!(feature = "rtl-tb") {
 pub fn init_intc() {
     #[cfg(feature = "intc-clic")]
     {
-        use zeroheti_bsp::clic::{Clic, Polarity, Trig};
+        use zeroheti_bsp::clic::Clic;
         // Set level bits to 8
         Clic::smclicconfig().set_mnlbits(8);
     }
