@@ -17,7 +17,7 @@ module vip_motor_sim #(
   localparam int VoltageMax   = 400_000;  // mV
 
   // Raise interrupt when warning tolerance exceeded
-  localparam int SpeedTolWrn = 500;
+  localparam int SpeedTolWrn = 1000;
   localparam int SpeedTolErr = SpeedTolWrn * 2;
 
   longint timestep  = 0;
@@ -56,7 +56,7 @@ module vip_motor_sim #(
 
   always @(timestep) begin : simulation_process
 
-    seed = timestep[31:0] % 10;
+    seed = timestep[31:0];
     irq_o = 1'b0;
 
     if (speed_real > 0) begin
