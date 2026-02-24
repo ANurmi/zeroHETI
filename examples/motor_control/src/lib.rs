@@ -29,11 +29,20 @@ pub fn setup_irq(irq: impl InterruptNumber, level: u8) {
     }
     #[cfg(feature = "intc-hetic")]
     {
-        Hetic::line(irq.number()).set_level(level);
+        use bsp::hetic::Hetic;
+
+        Hetic::line(irq.number()).set_level_prio(level);
         Hetic::line(irq.number()).enable();
     }
-    #[cfg(not(any(feature = "intc-clic", feature = "intc-hetic")))]
-    sprintln!("Interrupt controller not set up. Please set intc-* feature");
+    #[cfg(feature = "intc-edfic")]
+    {
+        use bsp::edfic::{Edfic, Pol, Trig};
+
+        Edfic::line(irq.number()).set_pol(Pol::Pos);
+        Edfic::line(irq.number()).set_trig(Trig::Edge);
+        Edfic::line(irq.number()).enable();
+        Edfic::line(irq.number()).set_dl(0xffff_ffff);
+    }
 }
 
 /// Tear down the IRQ configuration to avoid side-effects for further testing
@@ -51,11 +60,35 @@ pub fn tear_irq(irq: impl InterruptNumber) {
     }
     #[cfg(feature = "intc-hetic")]
     {
-        Hetic::line(irq.number()).set_level(0x0);
+        use bsp::hetic::Hetic;
+
+        Hetic::line(irq.number()).set_level_prio(0x0);
         Hetic::line(irq.number()).disable();
     }
-    #[cfg(not(any(feature = "intc-clic", feature = "intc-hetic")))]
-    sprintln!("Interrupt controller not set up. Please set intc-* feature");
+    #[cfg(feature = "intc-edfic")]
+    {
+        use bsp::edfic::Edfic;
+
+        Edfic::line(irq.number()).disable();
+    }
+}
+
+pub fn pend_irq(irq: impl InterruptNumber) {
+    #[cfg(feature = "intc-clic")]
+    {
+        use bsp::clic::CLIC;
+        unsafe { CLIC::ip(irq).pend() }
+    }
+    #[cfg(feature = "intc-hetic")]
+    {
+        use bsp::hetic::Hetic;
+        Hetic::line(irq.number()).pend();
+    }
+    #[cfg(feature = "intc-edfic")]
+    {
+        use bsp::edfic::Edfic;
+        Edfic::line(irq.number()).pend();
+    }
 }
 
 /// Print the name of the current file, i.e., test name.
