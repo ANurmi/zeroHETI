@@ -23,7 +23,7 @@ pub fn init_intc() {
 /// Setup `irq` for use with some basic defaults
 ///
 /// Copy and customize this function if you need more involved configurations.
-pub fn setup_irq(irq: impl InterruptNumber, level: u8) {
+pub fn setup_irq(irq: impl InterruptNumber) {
     #[cfg(feature = "intc-clic")]
     {
         use zeroheti_bsp::clic::{Clic, Polarity, Trig};
@@ -31,14 +31,14 @@ pub fn setup_irq(irq: impl InterruptNumber, level: u8) {
         Clic::attr(irq).set_trig(Trig::Edge);
         Clic::attr(irq).set_polarity(Polarity::Pos);
         Clic::attr(irq).set_shv(true);
-        Clic::ctl(irq).set_level(level);
+        Clic::ctl(irq).set_level(0xff);
         unsafe { Clic::ie(irq).enable() };
     }
     #[cfg(feature = "intc-hetic")]
     {
         use zeroheti_bsp::hetic::Hetic;
 
-        Hetic::line(irq.number()).set_level(level);
+        Hetic::line(irq.number()).set_level(0xff);
         Hetic::line(irq.number()).enable();
     }
     #[cfg(feature = "intc-edfic")]
@@ -47,8 +47,8 @@ pub fn setup_irq(irq: impl InterruptNumber, level: u8) {
 
         Edfic::line(irq.number()).set_pol(Pol::Pos);
         Edfic::line(irq.number()).set_trig(Trig::Edge);
-        Edfic::line(irq.number()).set_level(level);
         Edfic::line(irq.number()).enable();
+        Edfic::line(irq.number()).set_dl(0xffff_ffff);
     }
 }
 
@@ -79,7 +79,6 @@ pub fn tear_irq(irq: impl InterruptNumber) {
     {
         use zeroheti_bsp::edfic::Edfic;
 
-        Edfic::line(irq.number()).set_level(0x0);
         Edfic::line(irq.number()).disable();
     }
 }

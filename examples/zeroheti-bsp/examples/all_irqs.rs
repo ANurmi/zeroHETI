@@ -68,11 +68,11 @@ fn main() -> ! {
 
     for &irq in CORE_IRQS {
         sprintln!("Set up core {irq:?} (id = {})", irq.number());
-        setup_irq(irq, 0x88);
+        setup_irq(irq);
     }
     for &irq in EXT_IRQS {
         sprintln!("Set up exti {irq:?} (id = {})", irq.number());
-        setup_irq(irq, 0x88);
+        setup_irq(irq);
     }
 
     // Enable global interrupts
