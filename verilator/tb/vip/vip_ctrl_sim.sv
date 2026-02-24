@@ -119,16 +119,25 @@ module vip_ctrl_sim #(
       end
     end
 
-    // Activate warning tasks
+    // Dectivate warning tasks
     for (int i=0; i< NrMotors; i++) begin
       automatic int SporIdx = i + 1;
-      if (enable &(irq_o[i] & !task_set[SporIdx].active)) begin
-        pend_task(SporIdx);
-        reset_task_dl(SporIdx);
-      end else ack_task(SporIdx);
+      if (~irq_o[i]) begin
+        ack_task(SporIdx);
+      end
     end
 
   end : g_dl_counter
+
+  for (genvar i = 0; i < NrMotors; i++) begin : g_sporadic_irqs
+    localparam int SporIdx = i + 1;
+    always @(posedge irq_o[i]) begin
+      if (enable) begin
+        pend_task(SporIdx);
+        reset_task_dl(SporIdx);
+      end
+    end
+  end
 
   for (genvar i = 0; i < NrMotors; i++) begin : g_motors
     vip_motor_sim #(
