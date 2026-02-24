@@ -8,29 +8,21 @@ compile_error!(
     "at least one interrupt controller feature is required, pass -Fclic-hetic, -Fclic-clic, -Fclic-edfic"
 );
 
-use core::{i16, slice::Split};
-
 use bsp::{
     CPU_FREQ_HZ,
     apb_uart::*,
     i2c::I2c,
     interrupt::{CoreInterrupt, ExternalInterrupt},
-    mmap::{
-        apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
-        mtimer,
-    },
+    mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mtimer::*,
     nested_interrupt,
-    riscv::{
-        self,
-        asm::{delay, wfi},
-        delay,
-    },
+    riscv::{self, asm::wfi},
     rt::entry,
     sprintln,
     tb::signal_pass,
     timer_group::{Periodic, Timer},
 };
+use core::i16;
 use fugit::{ExtU32, ExtU64};
 use motor_control::{
     mailbox::{Mailbox, Motor::*},
