@@ -58,8 +58,9 @@ unsafe impl InterruptNumber for ExternalInterrupt {
 /// Standard M-mode RISC-V interrupts
 ///
 /// Should be used in place of riscv::Interrupt
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, FromRepr)]
 #[repr(usize)]
+#[cfg_attr(not(feature = "ufmt"), derive(Debug))]
 pub enum CoreInterrupt {
     // NC: SupervisorSoft = 1,
     MachineSoft = 3,
@@ -75,7 +76,12 @@ pub enum CoreInterrupt {
 
 /// SAFETY: `Interrupt` represents the standard RISC-V interrupts
 unsafe impl InterruptNumber for CoreInterrupt {
+    // Attempting to pend MachineExternal (line 11) on HETIC will freeze the
+    // simulation or the application
+    #[cfg(not(feature = "intc-hetic"))]
     const MAX_INTERRUPT_NUMBER: usize = Self::MachineExternal as usize;
+    #[cfg(feature = "intc-hetic")]
+    const MAX_INTERRUPT_NUMBER: usize = Self::MachineTimer as usize;
 
     #[inline]
     fn number(self) -> usize {
@@ -83,16 +89,8 @@ unsafe impl InterruptNumber for CoreInterrupt {
     }
 
     #[inline]
-    fn from_number(value: usize) -> Result<Self, riscv::result::Error> {
-        match value {
-            // NC: 1 => Ok(Self::SupervisorSoft),
-            3 => Ok(Self::MachineSoft),
-            // NC: 5 => Ok(Self::SupervisorTimer),
-            7 => Ok(Self::MachineTimer),
-            // NC: 9 => Ok(Self::SupervisorExternal),
-            11 => Ok(Self::MachineExternal),
-            _ => Err(riscv::result::Error::InvalidVariant(value)),
-        }
+    fn from_number(value: usize) -> Result<Self, riscv_pac::result::Error> {
+        Self::from_repr(value).ok_or(riscv_pac::result::Error::InvalidVariant(value))
     }
 }
 
