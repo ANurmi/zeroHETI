@@ -34,6 +34,7 @@ module vip_ctrl_sim #(
 
   logic [3:0][31:0] voltages = 0;
   logic [3:0][15:0] tune     = 0;
+  logic [3:0]       tune_vld = 0;
   logic [3:0][31:0] speeds   = 0;
 
   typedef enum logic [1:0] {
@@ -96,6 +97,8 @@ module vip_ctrl_sim #(
 
   always @(time_us) begin : g_dl_counter
 
+    tune_vld = 0;
+
     // Decrement deadlines of active task
     for (int i = 0; i < TaskSetSize; i++) begin
       if (task_set[i].active) begin
@@ -148,6 +151,7 @@ module vip_ctrl_sim #(
         .enable_i (enable),
         .voltage_i(voltages[i]),
         .tune_i   (tune[i]),
+        .tune_vld_i (tune_vld[i]),
         .speed_o  (speeds[i]),
         .irq_o    (irq_o[i])
     );
@@ -167,6 +171,7 @@ module vip_ctrl_sim #(
       end
       7'd3: begin
         tune[0] = data[15:0];
+        tune_vld[0] = 1'b1;
         addr_name = "M0_Tune";
       end
       7'd5: begin
@@ -176,6 +181,7 @@ module vip_ctrl_sim #(
       end
       7'd6: begin
         tune[1] = data[15:0];
+        tune_vld[1] = 1'b1;
         addr_name = "M1_Tune";
       end
       7'd8: begin
@@ -185,6 +191,7 @@ module vip_ctrl_sim #(
       end
       7'd9: begin
         tune[2] = data[15:0];
+        tune_vld[2] = 1'b1;
         addr_name = "M2_Tune";
       end
       7'd11: begin
@@ -194,6 +201,7 @@ module vip_ctrl_sim #(
       end
       7'd12: begin
         tune[3] = data[15:0];
+        tune_vld[3] = 1'b1;
         addr_name = "M3_Tune";
       end
       default: ;
