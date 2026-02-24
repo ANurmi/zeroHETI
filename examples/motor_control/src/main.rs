@@ -8,7 +8,7 @@ compile_error!(
     "at least one interrupt controller feature is required, pass -Fclic-hetic, -Fclic-clic, -Fclic-edfic"
 );
 
-use core::slice::Split;
+use core::{i16, slice::Split};
 
 use bsp::{
     CPU_FREQ_HZ,
@@ -78,8 +78,10 @@ static mut I2C: Option<I2c> = None;
 static mut MBX: Mailbox = unsafe { Mailbox::instance() };
 
 static mut SPEED_REAL: [i32; 4] = [0, 0, 0, 0];
-static mut SPEED_TARGET: [i32; 4] = [0, 0, 0, 0];
+static mut VOLTAGE_TARGET: [i32; 4] = [0, 0, 0, 0];
+
 static mut INTEGRAL: [i32; 4] = [0, 0, 0, 0];
+static mut PREV_ERR: [i32; 4] = [0, 0, 0, 0];
 
 #[entry]
 fn main() -> ! {
@@ -276,7 +278,7 @@ unsafe fn Mbx() {
                 .unwrap()
                 .write((2 + i * 3), &[0u8, bytes[i as usize]]);
             riscv::interrupt::enable();
-            SPEED_TARGET[i as usize] = (((bytes[i as usize]) as i32) << 8);
+            VOLTAGE_TARGET[i as usize] = (((bytes[i as usize]) as i32) << 8);
         }
     }
 
@@ -363,23 +365,57 @@ unsafe fn Ext3() {
 
 #[inline]
 unsafe fn compute_control(idx: usize, speed_now: i32) -> i16 {
-    // Assume R = 100 ohm
-    let res = 100;
-    let err = SPEED_TARGET[idx] - speed_now;
+    /// Compute tuning voltage to control motor power.
+    let res: i32 = 100; // Ohm
+    let v_target = VOLTAGE_TARGET[idx];
+    let p_target: i32 = i32::pow(v_target, 2) / (res * 1000); // mW
+
+    // Assume Power (mW) and Speed (RPM) directly correlated
+    let error = p_target - speed_now;
+    sprintln!("{error}");
     /*
-    INTEGRAL[idx] += err;
-    let KP_NOM: i32 = 1;
-    let KI_NOM: i32 = 1;
-    let KP_DEN: i32 = 1;
     let KI_DEN: i32 = 1;*/
     //let res: i32 = ((KP_NOM * err) / KP_DEN) + ((KI_DEN * INTEGRAL[idx]) /
     // KI_DEN);
-    let mut v_tune: i32 = usqrt4((err / res) as u32) as i32;
-    if err < 0 {
-        v_tune = v_tune * (-1i32);
+    // KP = 2, KI = 1, KD = 0.2
+
+    let KP = 2;
+    let KI = 2;
+    //  KD == 0.2
+    let INV_KD = 5;
+
+
+    // Additional correction term
+    INTEGRAL[idx] += error;
+    let integral = INTEGRAL[idx];
+    let derivative = error - PREV_ERR[idx];
+
+    PREV_ERR[idx] = error;
+
+    let p_corr = KP * error + KI * integral + (derivative / INV_KD);
+
+    let mut v_tune: i16 = usqrt4((p_corr/(res)) as u32) as i16;
+
+    if error < 0 {
+        v_tune = v_tune * (-1);
     };
-    v_tune *= 9;
-    v_tune as i16
+
+    /*
+    let mut neg = false;
+
+
+    //v_tune *= KV;
+    if (neg & ((v_tune as i16) > 0)) {
+        v_tune = i16::MIN as i32;
+    }
+
+    if (!neg & ((v_tune as i16) < 0)) {
+        v_tune = i16::MAX as i32;
+    }
+ */
+
+    sprintln!("{v_tune}");
+    v_tune
 }
 
 /*
