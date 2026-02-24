@@ -29,7 +29,7 @@ const CORE_IRQS: &[CoreInterrupt] = &[
     // ???(BUG): MachineExternal broken on HETIC
     // Attempting to pend MachineExternal (line 11) on HETIC will freeze the
     // simulation or the application
-    #[cfg(not(feature = "intc-hetic"))]
+    #[cfg(not(any(feature = "intc-hetic", feature = "intc-edfic")))]
     CoreInterrupt::MachineExternal,
 ];
 const EXT_IRQS: &[ExternalInterrupt] = &[
@@ -68,11 +68,11 @@ fn main() -> ! {
 
     for &irq in CORE_IRQS {
         sprintln!("Set up core {irq:?} (id = {})", irq.number());
-        setup_irq(irq, 0x88);
+        setup_irq(irq);
     }
     for &irq in EXT_IRQS {
         sprintln!("Set up exti {irq:?} (id = {})", irq.number());
-        setup_irq(irq, 0x88);
+        setup_irq(irq);
     }
 
     // Enable global interrupts

@@ -80,6 +80,10 @@ module zeroheti_int_ctrl #(
         .mtime_i
     );
 
+    assign irq_priv_o = 2'b11;
+    // EDFIC always uses selective hardware vectoring
+    assign irq_shv_o  = 1'b1;
+
   end else if (CoreCfg.ic == CLIC) begin : g_clic
 
     logic [7:0] irq_level;
