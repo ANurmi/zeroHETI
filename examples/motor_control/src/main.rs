@@ -366,56 +366,62 @@ unsafe fn Ext3() {
 #[inline]
 unsafe fn compute_control(idx: usize, speed_now: i32) -> i16 {
     /// Compute tuning voltage to control motor power.
-    let res: i32 = 100; // Ohm
+    let Res: i32 = 10_000; // mOhm
     let v_target = VOLTAGE_TARGET[idx];
-    let p_target: i32 = i32::pow(v_target, 2) / (res * 1000); // mW
+    let p_target: i32 = i32::pow(v_target, 2) / Res; // mW
 
     // Assume Power (mW) and Speed (RPM) directly correlated
     let error = p_target - speed_now;
-    sprintln!("{error}");
-    /*
-    let KI_DEN: i32 = 1;*/
-    //let res: i32 = ((KP_NOM * err) / KP_DEN) + ((KI_DEN * INTEGRAL[idx]) /
-    // KI_DEN);
-    // KP = 2, KI = 1, KD = 0.2
 
-    let KP = 2;
-    let KI = 2;
-    //  KD == 0.2
-    let INV_KD = 5;
-
-
-    // Additional correction term
-    INTEGRAL[idx] += error;
-    let integral = INTEGRAL[idx];
-    let derivative = error - PREV_ERR[idx];
-
-    PREV_ERR[idx] = error;
-
-    let p_corr = KP * error + KI * integral + (derivative / INV_KD);
-
-    let mut v_tune: i16 = usqrt4((p_corr/(res)) as u32) as i16;
+    let mut v_out: i16 = usqrt4((error / Res).abs() as u32) as i16;
 
     if error < 0 {
-        v_tune = v_tune * (-1);
+        v_out = v_out * (-1);
     };
 
+    v_out
     /*
-    let mut neg = false;
+       let KI_DEN: i32 = 1;*
+       //let res: i32 = ((KP_NOM * err) / KP_DEN) + ((KI_DEN * INTEGRAL[idx]) /
+       // KI_DEN);
+       // KP = 2, KI = 1, KD = 0.2
+
+       let KP = 2;
+       let KI = 2;
+       //  KD == 0.2
+       let INV_KD = 5;
 
 
-    //v_tune *= KV;
-    if (neg & ((v_tune as i16) > 0)) {
-        v_tune = i16::MIN as i32;
-    }
+       // Additional correction term
+       INTEGRAL[idx] += error;
+       let integral = INTEGRAL[idx];
+       let derivative = error - PREV_ERR[idx];
 
-    if (!neg & ((v_tune as i16) < 0)) {
-        v_tune = i16::MAX as i32;
-    }
- */
+       PREV_ERR[idx] = error;
 
-    sprintln!("{v_tune}");
-    v_tune
+       let p_corr = KP * error + KI * integral + (derivative / INV_KD);
+
+       let mut v_tune: i16 = usqrt4((p_corr/(res)) as u32) as i16;
+
+       if error < 0 {
+           v_tune = v_tune * (-1);
+       };
+
+       /*
+       let mut neg = false;
+
+
+       //v_tune *= KV;
+       if (neg & ((v_tune as i16) > 0)) {
+           v_tune = i16::MIN as i32;
+       }
+
+       if (!neg & ((v_tune as i16) < 0)) {
+           v_tune = i16::MAX as i32;
+       }
+    */
+
+       v_tune */
 }
 
 /*
