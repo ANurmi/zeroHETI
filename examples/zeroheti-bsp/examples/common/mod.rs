@@ -38,7 +38,7 @@ pub fn setup_irq(irq: impl InterruptNumber) {
     {
         use zeroheti_bsp::hetic::Hetic;
 
-        Hetic::line(irq.number()).set_level(0xff);
+        Hetic::line(irq.number()).set_level_prio(0xff);
         Hetic::line(irq.number()).enable();
     }
     #[cfg(feature = "intc-edfic")]
@@ -72,7 +72,7 @@ pub fn tear_irq(irq: impl InterruptNumber) {
     {
         use zeroheti_bsp::hetic::Hetic;
 
-        Hetic::line(irq.number()).set_level(0x0);
+        Hetic::line(irq.number()).set_level_prio(0x0);
         Hetic::line(irq.number()).disable();
     }
     #[cfg(feature = "intc-edfic")]

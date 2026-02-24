@@ -19,13 +19,13 @@ fn main() -> ! {
 
     sprintln!("[{} ({})]", core::file!(), env!("RISCV_EXTS"));
 
-    Hetic::line(22).set_level(6);
+    Hetic::line(22).set_level_prio(6);
     Hetic::line(22).pend();
 
-    Hetic::line(17).set_level(1);
+    Hetic::line(17).set_level_prio(1);
     Hetic::line(17).pend();
 
-    Hetic::line(3).set_level(8);
+    Hetic::line(3).set_level_prio(8);
     Hetic::line(3).pend();
 
     Hetic::line(3).enable();

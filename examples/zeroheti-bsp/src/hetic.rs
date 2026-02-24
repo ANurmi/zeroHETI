@@ -23,13 +23,6 @@ pub enum Pol {
 }
 
 impl HeticIrqLine {
-    pub fn set_level(&mut self, level: u8) {
-        mmio::write_u8(INTC_BASE + LINE_SIZE * self.idx + 1, level);
-    }
-    pub fn level(&self) {
-        mmio::read_u8(INTC_BASE + LINE_SIZE * self.idx + 1);
-    }
-
     pub fn pend(&mut self) {
         mmio::mask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << IP_BIT);
     }
@@ -58,9 +51,12 @@ impl HeticIrqLine {
         mmio::unmask_u8(INTC_BASE + LINE_SIZE * self.idx, 0b1u8 << NEST_BIT);
     }
 
-    /// Set the priority. It's not the level.
-    pub fn set_prio(&mut self, prio: u8) {
-        mmio::write_u8(INTC_BASE + LINE_SIZE * self.idx + PRIO_OFS, prio);
+    /// Set level/priority
+    pub fn set_level_prio(&mut self, lp: u8) {
+        mmio::write_u8(INTC_BASE + LINE_SIZE * self.idx + 1, lp);
+    }
+    pub fn level_prio(&self) {
+        mmio::read_u8(INTC_BASE + LINE_SIZE * self.idx + 1);
     }
 
     /// Set trigger type (edge/level)
