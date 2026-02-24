@@ -62,12 +62,12 @@ impl EdficIrqLine {
 
     /// Retrieve the 24-bit deadline
     pub fn dl(&self) -> u32 {
-        mmio::read_u32(INTC_BASE + LINE_SIZE * self.idx + DL_OFS)
+        mmio::read_u32(INTC_BASE + LINE_SIZE * self.idx + DL_OFS) & 0xff_ffff
     }
 
     /// Set the 24-bit deadline
     pub fn set_dl(&self, dl: u32) {
-        mmio::write_u32(INTC_BASE + LINE_SIZE * self.idx + DL_OFS, dl)
+        mmio::write_u32(INTC_BASE + LINE_SIZE * self.idx + DL_OFS, dl & 0xff_ffff);
     }
 }
 
