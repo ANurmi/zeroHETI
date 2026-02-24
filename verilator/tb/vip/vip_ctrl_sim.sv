@@ -33,7 +33,7 @@ module vip_ctrl_sim #(
   localparam longint unsigned RepDlUs = 'd2_000;
 
   logic [3:0][31:0] voltages = 0;
-  logic [3:0][31:0] tune     = 0;
+  logic [3:0][15:0] tune     = 0;
   logic [3:0][31:0] speeds   = 0;
 
   typedef enum logic [1:0] {
@@ -166,7 +166,7 @@ module vip_ctrl_sim #(
         addr_name   = "M0_Ctrl";
       end
       7'd3: begin
-        tune[0] = data;
+        tune[0] = data[15:0];
         addr_name = "M0_Tune";
       end
       7'd5: begin
@@ -175,7 +175,7 @@ module vip_ctrl_sim #(
         addr_name   = "M1_Ctrl";
       end
       7'd6: begin
-        tune[1] = data;
+        tune[1] = data[15:0];
         addr_name = "M1_Tune";
       end
       7'd8: begin
@@ -184,7 +184,7 @@ module vip_ctrl_sim #(
         addr_name   = "M2_Ctrl";
       end
       7'd9: begin
-        tune[2] = data;
+        tune[2] = data[15:0];
         addr_name = "M2_Tune";
       end
       7'd11: begin
@@ -193,7 +193,7 @@ module vip_ctrl_sim #(
         addr_name   = "M3_Ctrl";
       end
       7'd12: begin
-        tune[3] = data;
+        tune[3] = data[15:0];
         addr_name = "M3_Tune";
       end
       default: ;

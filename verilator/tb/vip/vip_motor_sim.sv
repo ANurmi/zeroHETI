@@ -8,7 +8,7 @@ module vip_motor_sim #(
     input  logic        rst_ni,
     input  logic        enable_i,
     input  logic [31:0] voltage_i,
-    input  logic [31:0] tune_i,
+    input  logic [15:0] tune_i,
     output logic [31:0] speed_o,
     output logic        irq_o
 );
@@ -18,7 +18,7 @@ module vip_motor_sim #(
   localparam int VoltageMax   = 400_000;  // mV
 
   // Raise interrupt when warning tolerance exceeded
-  localparam int SpeedTolWrn = 1000;
+  localparam int SpeedTolWrn = 'd1_600;
   localparam int SpeedTolErr = SpeedTolWrn * 4;
 
   localparam int NrSamples = 10;
@@ -37,7 +37,7 @@ module vip_motor_sim #(
   int acceleration[4:0] = {0, 0, 0, 0, 0};
   int unsigned voltage, voltage_ideal, power, power_last, power_ideal, transient;
 
-  assign voltage = voltage_i + tune_i;  // mV
+  assign voltage = voltage_i + 32'($signed(tune_i));  // mV
   assign power = ((voltage ** 2) / (1000 * Resistance));  // mW
 
   assign voltage_ideal = voltage_i;  // mV
@@ -77,7 +77,7 @@ module vip_motor_sim #(
 
     if (speed_real > 0) begin
       // Model transient enviromental distruptions with 1% probability
-      transient  = ($urandom(seed) % 100 == 0) ? ($random(seed) % 1000) : 0;
+      transient  = ($urandom(seed) % 100 == 0) ? ($random(seed) % 100) : 0;
 
       // Model constant enviromental distruptions, update with 5% probability
       speed_bias = ($urandom(seed) % 20 == 0) ? ($random(seed) % 10) : speed_bias;
@@ -98,10 +98,10 @@ module vip_motor_sim #(
 
     speed_real = speed_last + speed_bias
       + 1*(acceleration[4] / 10)
-      + 2*(acceleration[3] / 10)
-      + 3*(acceleration[2] / 10)
-      + 2*(acceleration[1] / 10)
-      + 1*(acceleration[0] / 10)
+      + 1*(acceleration[3] / 10)
+      + 2*(acceleration[2] / 10)
+      + 3*(acceleration[1] / 10)
+      + 4*(acceleration[0] / 10)
     ;
 
     speed_ideal = power_ideal;
