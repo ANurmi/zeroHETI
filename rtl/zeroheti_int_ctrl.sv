@@ -70,7 +70,7 @@ module zeroheti_int_ctrl #(
 
     edfic_top #(
         .NrIrqs (NrIrqs),
-        .TsWidth(32'd12),
+        .TsWidth(TsWidth),
         .TsClip (32'd0)
     ) i_edfic (
         .clk_i,
