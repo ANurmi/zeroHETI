@@ -22,8 +22,8 @@ module vip_ctrl_sim #(
 
   localparam int unsigned TaskSetSize = 9;
 
-  localparam longint unsigned MbxPerUs = 'd7_000;
-  localparam longint unsigned RepPerUs = 'd5_000;
+  localparam longint unsigned MbxPerUs = 'd6_000;
+  localparam longint unsigned RepPerUs = 'd4_000;
 
   localparam longint unsigned RepOfsUs = 'd0_250;
   localparam longint unsigned MbxOfsUs = 'd2_000;
