@@ -395,14 +395,11 @@ fn usqrt4(val: u32) -> u32 {
         return val;
     };
 
-    b = val / a;
-    a = (a + b) / 2;
-    b = val / a;
-    a = (a + b) / 2;
-    b = val / a;
-    a = (a + b) / 2;
-    b = val / a;
-    a = (a + b) / 2;
+    // 4 iterations
+    for _ in 0..4 {
+        b = val / a;
+        a = (a + b) / 2;
+    }
 
     a
 }
