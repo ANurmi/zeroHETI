@@ -65,9 +65,9 @@ const M3_ADDR: Motor = Motor {
     tune: 12,
 };
 
-const MBX_DL_US: u32 = 3200;
-const WRN_DL_US: u32 = 1500;
-const REP_DL_US: u32 = 1200;
+const MBX_DL_US: u32 = 5000;
+const WRN_DL_US: u32 = 4000;
+const REP_DL_US: u32 = 3000;
 
 // Global variables
 static mut MBX: Mailbox = unsafe { Mailbox::instance() };
