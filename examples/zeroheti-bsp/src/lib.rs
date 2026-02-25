@@ -16,6 +16,7 @@ pub mod mmio;
 pub mod mtimer;
 #[cfg(feature = "panic")]
 pub mod panic;
+mod peripherals;
 pub mod register;
 pub mod tb;
 pub mod timer_group;
@@ -29,6 +30,7 @@ pub use ufmt;
 #[cfg(feature = "embedded-hal")]
 pub use embedded_hal;
 pub use embedded_io;
+pub use peripherals::Peripherals;
 pub use riscv;
 pub use riscv_pac;
 #[cfg(feature = "rt")]
