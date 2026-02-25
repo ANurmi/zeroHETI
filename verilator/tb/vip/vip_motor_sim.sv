@@ -19,7 +19,7 @@ module vip_motor_sim #(
 
   longint timestep  = 0;
   int unsigned ps   = 0;
-  int seed;
+  int seed = 721 * Idx;
 
   int voltage_real;
   int power_real, power_ideal;
@@ -38,6 +38,9 @@ module vip_motor_sim #(
   initial begin
     env_lin   = 0;
     env_trans = 0;
+    // Seed random generators
+    $random(seed);
+    $urandom(seed);
   end
 
   always @(timestep) begin : simulation_process
@@ -47,14 +50,14 @@ module vip_motor_sim #(
     power_real  = (voltage_real**2)/R_motor;
     power_ideal = (   voltage_i**2)/R_motor;
 
-    seed = (Idx+700)*seed;
+ //   seed = (Idx+700)*seed;
 
     if (speed_real > 0) begin
       // Model transient enviromental distruptions with 1% probability
-      env_trans  = ($urandom(seed) % 100 == 0) ? ($random(seed) % 1200) : 0;
+      env_trans  = ($urandom() % 100 == 0) ? ($random() % 1200) : 0;
 
       // Model liner enviromental effects with changing direction
-      env_lin = ($urandom(seed) % 50 == 0) ? ($random(seed) % 20) : env_lin;
+      env_lin = ($urandom() % 50 == 0) ? ($random() % 20) : env_lin;
     end
 
     // Directly correllate speed to power
