@@ -70,7 +70,6 @@ const WRN_DL_US: u32 = 1500;
 const REP_DL_US: u32 = 1200;
 
 // Global variables
-static mut I2C: Option<I2c> = None;
 static mut MBX: Mailbox = unsafe { Mailbox::instance() };
 
 static mut SPEED_REAL: [i32; 4] = [0, 0, 0, 0];
@@ -88,8 +87,7 @@ fn main() -> ! {
     let riscv_isa = core::env!("RISCV_ISA");
     sprintln!("[Motor control demo] ISA = {riscv_isa}");
 
-    // Init I2C into the global context
-    unsafe { I2C.replace(I2c::init(4)) };
+    let mut i2c = I2c::init(4);
 
     // HACK: clear mintstatus
     unsafe { bsp::register::mintstatus::write(0.into()) };
@@ -175,7 +173,7 @@ fn main() -> ! {
 
     // Start sim
     unsafe {
-        I2C.as_mut().unwrap().write(0x0, &[1]);
+        i2c.write(0x0, &[1]);
         riscv::interrupt::enable();
     }
 
@@ -188,11 +186,7 @@ fn main() -> ! {
 unsafe fn Timer0Cmp() {
     let mut rbuf = [0; 4];
 
-    unsafe {
-        riscv::interrupt::disable();
-        I2C.as_mut().unwrap().read(M0_ADDR.stat, &mut rbuf);
-        riscv::interrupt::enable();
-    }
+    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M0_ADDR.stat, &mut rbuf));
     let m0_speed: i32 = i32::from_le_bytes(rbuf);
 
     let time = MTimer::instance().counter();
@@ -207,11 +201,7 @@ unsafe fn Timer0Cmp() {
 unsafe fn Timer1Cmp() {
     let mut rbuf = [0; 4];
 
-    unsafe {
-        riscv::interrupt::free(|| {
-            I2C.as_mut().map(|i2c| i2c.read(M1_ADDR.stat, &mut rbuf));
-        });
-    }
+    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M1_ADDR.stat, &mut rbuf));
     let m1_speed: i32 = i32::from_le_bytes(rbuf);
 
     let time = MTimer::instance().counter();
@@ -226,9 +216,7 @@ unsafe fn Timer1Cmp() {
 unsafe fn Timer2Cmp() {
     let mut rbuf = [0; 4];
 
-    unsafe {
-        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.read(M2_ADDR.stat, &mut rbuf)));
-    }
+    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M2_ADDR.stat, &mut rbuf));
     let m2_speed: i32 = i32::from_le_bytes(rbuf);
 
     let time = MTimer::instance().counter();
@@ -243,9 +231,7 @@ unsafe fn Timer2Cmp() {
 unsafe fn Timer3Cmp() {
     let mut rbuf = [0; 4];
 
-    unsafe {
-        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.read(M3_ADDR.stat, &mut rbuf)));
-    }
+    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M3_ADDR.stat, &mut rbuf));
     let m3_speed: i32 = i32::from_le_bytes(rbuf);
 
     let time = MTimer::instance().counter();
@@ -263,13 +249,10 @@ unsafe fn Mbx() {
     //let bytes: [u8; 4] = [0, 0, 0, mail.to_be_bytes()[0]];
 
     for i in 0..4 {
-        unsafe {
-            riscv::interrupt::free(|| {
-                I2C.as_mut()
-                    .map(|i2c| i2c.write(2 + i * 3, &[0u8, bytes[i as usize]]));
-                VOLTAGE_TARGET[i as usize] = ((bytes[i as usize]) as i32) << 8;
-            });
-        }
+        riscv::interrupt::free(|| {
+            unsafe { I2c::instance() }.write(2 + i * 3, &[0u8, bytes[i as usize]]);
+            unsafe { VOLTAGE_TARGET[i as usize] = ((bytes[i as usize]) as i32) << 8 };
+        });
     }
 
     unsafe {
@@ -281,69 +264,52 @@ unsafe fn Mbx() {
 unsafe fn Ext0() {
     let mut rbuf = [0; 4];
 
-    unsafe {
-        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.read(M0_ADDR.stat, &mut rbuf)));
-    }
+    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M0_ADDR.stat, &mut rbuf));
     let m0_speed_now: i32 = i32::from_le_bytes(rbuf);
 
-    unsafe {
-        let bytes: [u8; 2] = compute_control(0, m0_speed_now).to_le_bytes();
-        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.write(M0_ADDR.tune, &bytes)));
-    }
+    let bytes: [u8; 2] = compute_control(0, m0_speed_now).to_le_bytes();
+    riscv::interrupt::free(|| unsafe { I2c::instance() }.write(M0_ADDR.tune, &bytes));
 }
 
 #[nested_interrupt]
 unsafe fn Ext1() {
     let mut rbuf = [0; 4];
 
-    unsafe {
-        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.read(M1_ADDR.stat, &mut rbuf)));
-    }
+    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M1_ADDR.stat, &mut rbuf));
+
     let m1_speed_now: i32 = i32::from_le_bytes(rbuf);
 
-    unsafe {
-        let bytes: [u8; 2] = compute_control(1, m1_speed_now).to_le_bytes();
-        riscv::interrupt::disable();
-        I2C.as_mut().unwrap().write(M1_ADDR.tune, &bytes);
-        riscv::interrupt::enable();
-    }
+    let bytes: [u8; 2] = compute_control(1, m1_speed_now).to_le_bytes();
+    riscv::interrupt::free(|| unsafe { I2c::instance() }.write(M1_ADDR.tune, &bytes));
 }
 
 #[nested_interrupt]
 unsafe fn Ext2() {
     let mut rbuf = [0; 4];
 
-    unsafe {
-        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.read(M2_ADDR.stat, &mut rbuf)));
-    }
+    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M2_ADDR.stat, &mut rbuf));
+
     let m2_speed_now: i32 = i32::from_le_bytes(rbuf);
 
-    unsafe {
-        let bytes: [u8; 2] = compute_control(2, m2_speed_now).to_le_bytes();
-        riscv::interrupt::disable();
-        I2C.as_mut().unwrap().write(M2_ADDR.tune, &bytes);
-        riscv::interrupt::enable();
-    }
+    let bytes: [u8; 2] = compute_control(2, m2_speed_now).to_le_bytes();
+    riscv::interrupt::free(|| unsafe { I2c::instance() }.write(M2_ADDR.tune, &bytes));
 }
 
 #[nested_interrupt]
 unsafe fn Ext3() {
     let mut rbuf = [0; 4];
 
-    unsafe {
-        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.read(M3_ADDR.stat, &mut rbuf)));
-    }
+    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M3_ADDR.stat, &mut rbuf));
+
     let m3_speed_now: i32 = i32::from_le_bytes(rbuf);
 
-    unsafe {
-        let bytes: [u8; 2] = compute_control(3, m3_speed_now).to_le_bytes();
-        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.write(M3_ADDR.tune, &bytes)));
-    }
+    let bytes: [u8; 2] = compute_control(3, m3_speed_now).to_le_bytes();
+    riscv::interrupt::free(|| unsafe { I2c::instance() }.write(M3_ADDR.tune, &bytes));
 }
 
 #[inline]
 /// Compute tuning voltage to control motor power.
-unsafe fn compute_control(idx: usize, speed_now: i32) -> i16 {
+fn compute_control(idx: usize, speed_now: i32) -> i16 {
     let res: i32 = 10_000; // mOhm
     let v_target = unsafe { VOLTAGE_TARGET }[idx];
     let p_target: i32 = i32::pow(v_target, 2) / res; // mW
@@ -424,10 +390,12 @@ fn usqrt4(val: u32) -> u32 {
 
 #[bsp::core_interrupt(CoreInterrupt::MachineTimer)]
 unsafe fn MachineTimer() {
+    riscv::interrupt::disable();
+
     unsafe { END_TIME.replace(MTimer::instance().counter().into()) };
 
     // Explicitly terminate simulation to print task log
-    unsafe { I2C.as_mut() }.map(|i2c| i2c.write(0x0, &[0]));
+    unsafe { I2c::instance() }.write(0x0, &[0]);
 
     let instret = riscv::register::minstret::read64();
     let active_time_cc = riscv::register::mcycle::read64();
