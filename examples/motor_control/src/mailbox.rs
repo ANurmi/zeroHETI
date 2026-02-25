@@ -27,11 +27,11 @@ pub struct MailboxHal<const BASE_ADDR: usize>;
 pub type Mailbox = MailboxHal<MBX_ADDR>;
 
 impl<const BASE_ADDR: usize> MailboxHal<BASE_ADDR> {
-
     #[inline]
-    pub const unsafe fn instance()-> Self {
-        Self{}
+    pub const unsafe fn instance() -> Self {
+        Self {}
     }
+
     /// Retrieve motor control instructions from the mailbox
     pub fn read_inbox(&self) -> u32 {
         read_u32(BASE_ADDR + INBOX_OFS)

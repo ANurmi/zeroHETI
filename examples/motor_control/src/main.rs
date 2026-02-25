@@ -82,7 +82,7 @@ fn main() -> ! {
     sprintln!("[Motor control demo] ISA = {riscv_isa}");
 
     unsafe {
-        I2C.insert(I2c::init(4));
+        I2C.replace(I2c::init(4));
     }
     // HACK: clear mintstatus
     unsafe { bsp::register::mintstatus::write(0.into()) };
@@ -174,8 +174,6 @@ fn main() -> ! {
      *12: M3 tune
      */
 
-    //unsafe { I2C.replace(i2c) };
-
     loop {
         wfi();
     }
@@ -259,7 +257,7 @@ unsafe fn Timer3Cmp() {
 
 #[nested_interrupt]
 unsafe fn Mbx() {
-    let mail = MBX.read_inbox();
+    let mail = unsafe { MBX.read_inbox() };
     //let bytes: [u8; 4] = mail.to_be_bytes();
     let bytes: [u8; 4] = [0, 0, 0, mail.to_be_bytes()[0]];
 
@@ -268,9 +266,9 @@ unsafe fn Mbx() {
             riscv::interrupt::disable();
             I2C.as_mut()
                 .unwrap()
-                .write((2 + i * 3), &[0u8, bytes[i as usize]]);
+                .write(2 + i * 3, &[0u8, bytes[i as usize]]);
             riscv::interrupt::enable();
-            VOLTAGE_TARGET[i as usize] = (((bytes[i as usize]) as i32) << 8);
+            VOLTAGE_TARGET[i as usize] = ((bytes[i as usize]) as i32) << 8;
         }
     }
 
@@ -293,7 +291,7 @@ unsafe fn Ext0() {
     unsafe {
         let bytes: [u8; 2] = compute_control(0, m0_speed_now).to_le_bytes();
         riscv::interrupt::disable();
-        I2C.as_mut().unwrap().write((M0_ADDR.tune), &bytes);
+        I2C.as_mut().unwrap().write(M0_ADDR.tune, &bytes);
         riscv::interrupt::enable();
     }
 }
@@ -312,7 +310,7 @@ unsafe fn Ext1() {
     unsafe {
         let bytes: [u8; 2] = compute_control(1, m1_speed_now).to_le_bytes();
         riscv::interrupt::disable();
-        I2C.as_mut().unwrap().write((M1_ADDR.tune), &bytes);
+        I2C.as_mut().unwrap().write(M1_ADDR.tune, &bytes);
         riscv::interrupt::enable();
     }
 }
@@ -331,7 +329,7 @@ unsafe fn Ext2() {
     unsafe {
         let bytes: [u8; 2] = compute_control(2, m2_speed_now).to_le_bytes();
         riscv::interrupt::disable();
-        I2C.as_mut().unwrap().write((M2_ADDR.tune), &bytes);
+        I2C.as_mut().unwrap().write(M2_ADDR.tune, &bytes);
         riscv::interrupt::enable();
     }
 }
@@ -350,22 +348,22 @@ unsafe fn Ext3() {
     unsafe {
         let bytes: [u8; 2] = compute_control(3, m3_speed_now).to_le_bytes();
         riscv::interrupt::disable();
-        I2C.as_mut().unwrap().write((M3_ADDR.tune), &bytes);
+        I2C.as_mut().unwrap().write(M3_ADDR.tune, &bytes);
         riscv::interrupt::enable();
     }
 }
 
 #[inline]
+/// Compute tuning voltage to control motor power.
 unsafe fn compute_control(idx: usize, speed_now: i32) -> i16 {
-    /// Compute tuning voltage to control motor power.
-    let Res: i32 = 10_000; // mOhm
-    let v_target = VOLTAGE_TARGET[idx];
-    let p_target: i32 = i32::pow(v_target, 2) / Res; // mW
+    let res: i32 = 10_000; // mOhm
+    let v_target = unsafe { VOLTAGE_TARGET }[idx];
+    let p_target: i32 = i32::pow(v_target, 2) / res; // mW
 
     // Assume Power (mW) and Speed (RPM) directly correlated
     let error = p_target - speed_now;
 
-    let mut v_out: i16 = usqrt4((error / Res).abs() as u32) as i16;
+    let mut v_out: i16 = usqrt4((error / res).abs() as u32) as i16;
 
     if error < 0 {
         v_out = v_out * (-1);
