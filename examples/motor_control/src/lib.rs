@@ -5,7 +5,6 @@ pub mod mailbox;
 
 #[cfg(feature = "intc-clic")]
 use bsp::clic::{Clic, Polarity, Trig};
-use bsp::sprintln;
 use riscv_rt::InterruptNumber;
 
 pub const UART_BAUD: u32 = if cfg!(feature = "rtl-tb") {
@@ -18,7 +17,7 @@ pub const UART_BAUD: u32 = if cfg!(feature = "rtl-tb") {
 ///
 /// Copy and customize this function if you need more involved configurations.
 pub fn setup_irq(irq: impl InterruptNumber, level: u8) {
-    sprintln!("Set up IRQ (id = {})", irq.number());
+    log::trace!("Set up IRQ (id = {})", irq.number());
     #[cfg(feature = "intc-clic")]
     {
         Clic::attr(irq).set_trig(Trig::Edge);
@@ -49,7 +48,7 @@ pub fn setup_irq(irq: impl InterruptNumber, level: u8) {
 ///
 /// Copy and customize this function if you need more involved configurations.
 pub fn tear_irq(irq: impl InterruptNumber) {
-    sprintln!("Tear down (id = {})", irq.number());
+    log::trace!("Tear down (id = {})", irq.number());
     #[cfg(feature = "intc-clic")]
     {
         Clic::ie(irq).disable();
@@ -91,18 +90,6 @@ pub fn pend_irq(irq: impl InterruptNumber) {
     }
 }
 
-/// Print the name of the current file, i.e., test name.
-///
-/// This must be a macro to make sure core::file matches the file this is
-/// invoked in.
-#[macro_export]
-macro_rules! print_example_name {
-    () => {
-        use bsp::sprintln;
-        sprintln!("[{}]", core::file!());
-    };
-}
-
 #[macro_export]
 macro_rules! print_reg_u32 {
     ($reg:expr) => {
@@ -111,6 +98,7 @@ macro_rules! print_reg_u32 {
     };
 }
 
+/// Get the name of the current function
 #[macro_export]
 macro_rules! function {
     () => {{

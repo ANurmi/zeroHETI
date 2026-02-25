@@ -12,6 +12,7 @@ ufmt = "0.2.0"
 more-asserts = "0.3.1"
 # It is strange that this is needed as a direct dependency; build breaks otherwise
 riscv-rt = { version = "0.16.0", features = ["single-hart", "v-trap", "no-interrupts"] }
+log = { version = "0.4.29", default-features = false }
 
 [lib]
 name = "motor_control"
