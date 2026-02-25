@@ -3,6 +3,9 @@
 ```sh
 # Run sim with CLIC
 cargo run --release -Frtl-tb -Fintc-clic
+
+# Run RTIC version with CLIC
+cargo run --release -Frtl-tb -Fintc-clic -Frtic --bin motor_control_rtic
 ```
 
 ## Motor control details
