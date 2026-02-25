@@ -65,8 +65,11 @@ const M3_ADDR: Motor = Motor {
     tune: 12,
 };
 
+#[cfg(feature = "intc-edfic")]
 const MBX_DL_US: u32 = 5000;
+#[cfg(feature = "intc-edfic")]
 const WRN_DL_US: u32 = 4000;
+#[cfg(feature = "intc-edfic")]
 const REP_DL_US: u32 = 3000;
 
 // Global variables
