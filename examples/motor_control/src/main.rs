@@ -384,28 +384,13 @@ unsafe fn compute_control(idx: usize, speed_now: i32) -> i16 {
        v_tune */
 }
 
-/*
-/* static will allow inlining */
-static unsigned usqrt4(unsigned val) {
-    unsigned a, b;
-
-    if (val < 2) return val; /* avoid div/0 */
-
-    a = 1255;       /* starting point is relatively unimportant */
-
-    b = val / a; a = (a+b) /2;
-    b = val / a; a = (a+b) /2;
-    b = val / a; a = (a+b) /2;
-    b = val / a; a = (a+b) /2;
-
-    return a;
-}
-*/
 #[inline]
 fn usqrt4(val: u32) -> u32 {
+    // Starting point is relatively unimportant
     let mut a: u32 = 1255;
     let mut b: u32;
 
+    // Avoid division by zero
     if val < 2 {
         return val;
     };
