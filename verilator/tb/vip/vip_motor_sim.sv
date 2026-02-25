@@ -47,7 +47,7 @@ module vip_motor_sim #(
     power_real  = (voltage_real**2)/R_motor;
     power_ideal = (   voltage_i**2)/R_motor;
 
-    seed        = timestep[31:0];
+    seed        = {timestep[15:0], timestep[31:16]} + (Idx + 67)*seed;
 
     if (speed_real > 0) begin
       // Model transient enviromental distruptions with 1% probability
