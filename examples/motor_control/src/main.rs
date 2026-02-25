@@ -101,16 +101,16 @@ fn main() -> ! {
     // Setup HetIc / CLIC with priority
     #[cfg(any(feature = "intc-hetic", feature = "intc-clic"))]
     {
-        setup_irq(CoreInterrupt::MachineTimer, 0x88);
-        setup_irq(ExternalInterrupt::Timer0Cmp, 0x10);
-        setup_irq(ExternalInterrupt::Timer1Cmp, 0x10);
-        setup_irq(ExternalInterrupt::Timer2Cmp, 0x10);
-        setup_irq(ExternalInterrupt::Timer3Cmp, 0x10);
+        setup_irq(CoreInterrupt::MachineTimer, 0xFF);
+        setup_irq(ExternalInterrupt::Timer0Cmp, 0x88);
+        setup_irq(ExternalInterrupt::Timer1Cmp, 0x88);
+        setup_irq(ExternalInterrupt::Timer2Cmp, 0x88);
+        setup_irq(ExternalInterrupt::Timer3Cmp, 0x88);
         setup_irq(ExternalInterrupt::Mbx, 0x3);
-        setup_irq(ExternalInterrupt::Ext0, 0xFF);
-        setup_irq(ExternalInterrupt::Ext1, 0xFF);
-        setup_irq(ExternalInterrupt::Ext2, 0xFF);
-        setup_irq(ExternalInterrupt::Ext3, 0xFF);
+        setup_irq(ExternalInterrupt::Ext0, 0x10);
+        setup_irq(ExternalInterrupt::Ext1, 0x10);
+        setup_irq(ExternalInterrupt::Ext2, 0x10);
+        setup_irq(ExternalInterrupt::Ext3, 0x10);
     }
     // Setup EDFIC with deadlines
     #[cfg(feature = "intc-edfic")]
