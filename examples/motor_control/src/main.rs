@@ -79,6 +79,9 @@ static mut VOLTAGE_TARGET: [i32; 4] = [0, 0, 0, 0];
 static mut INTEGRAL: [i32; 4] = [0, 0, 0, 0];
 static mut PREV_ERR: [i32; 4] = [0, 0, 0, 0];
 
+static mut START_TIME: Option<u64> = None;
+static mut END_TIME: Option<u64> = None;
+
 #[entry]
 fn main() -> ! {
     let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
@@ -133,6 +136,8 @@ fn main() -> ! {
     }
 
     let mut mtimer = MTimer::instance().into_oneshot();
+
+    unsafe { START_TIME.replace(mtimer.counter()) };
 
     mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
@@ -436,13 +441,37 @@ fn usqrt4(val: u32) -> u32 {
 
 #[bsp::core_interrupt(CoreInterrupt::MachineTimer)]
 unsafe fn MachineTimer() {
+    unsafe { END_TIME.replace(MTimer::instance().counter().into()) };
+
     // Explicitly terminate simulation to print task log
     I2C.as_mut().unwrap().write(0x0, &[0]);
 
     let instret = riscv::register::minstret::read64();
-    let cycles = riscv::register::mcycle::read64();
+    let active_time_cc = riscv::register::mcycle::read64();
 
-    sprintln!("Instructions retired: {instret}, cycles: {cycles}");
+    sprintln!("Instructions retired: {instret}, cycles: {active_time_cc}");
+
+    let total_time_cc = unsafe { END_TIME.unwrap() - START_TIME.unwrap() };
+
+    // For microseconds, use the following:
+    /*
+    let active_time_us = active_time_cc / (1_000 * 1_000 * CPU_FREQ_HZ as u64);
+    let total_time_us = total_time_cc / (1_000 * 1_000 * CPU_FREQ_HZ as u64);
+    sprintln!(
+        "Total time (us): {}, active time (us): {},",
+        total_time_us,
+        active_time_us
+    );
+    */
+    sprintln!(
+        "Total time (cc): {}, active time (cc): {},",
+        total_time_cc,
+        active_time_cc
+    );
+    sprintln!(
+        "CPU utilization: {}%",
+        (active_time_cc * 100) / total_time_cc
+    );
 
     signal_pass(None);
 }
