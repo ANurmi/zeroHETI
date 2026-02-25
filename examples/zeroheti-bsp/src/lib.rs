@@ -30,6 +30,7 @@ pub use ufmt;
 pub use embedded_hal;
 pub use embedded_io;
 pub use riscv;
+pub use riscv_pac;
 #[cfg(feature = "rt")]
 pub use riscv_rt::{self as rt, core_interrupt, external_interrupt};
 
