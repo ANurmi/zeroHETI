@@ -33,11 +33,13 @@ impl<const BASE_ADDR: usize> MailboxHal<BASE_ADDR> {
     }
 
     /// Retrieve motor control instructions from the mailbox
+    #[inline]
     pub fn read_inbox(&self) -> u32 {
         read_u32(BASE_ADDR + INBOX_OFS)
     }
 
     /// Acknowledge that mailbox IRQ has been handled
+    #[inline]
     pub fn ack_irq(&mut self) {
         write_u32(BASE_ADDR + IRQ_ACK_OFS, 1)
     }
