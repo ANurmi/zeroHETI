@@ -72,7 +72,6 @@ mod app {
     static mut MBX: Mailbox = unsafe { Mailbox::instance() };
 
     static mut SPEED_REAL: [u32; 4] = [0, 0, 0, 0];
-    static mut VOLTAGE_TARGET: [u32; 4] = [0, 0, 0, 0];
 
     static mut INTEGRAL: [i32; 4] = [0, 0, 0, 0];
     static mut PREV_ERR: [i32; 4] = [0, 0, 0, 0];
@@ -84,6 +83,9 @@ mod app {
     struct Shared {
         end_timer: mtimer::OneShot,
         i2c: i2c::I2c,
+        mbx: Mailbox,
+        /// Voltage target
+        v_target: [u32; 4],
     }
 
     #[init]
@@ -124,6 +126,9 @@ mod app {
             REP_TASK_OFS_US.micros() - (3 * 1000u32).micros(),
         );
 
+        let mbx = unsafe { Mailbox::instance() };
+        let v_target = [0; 4];
+
         unsafe {
             // Clear instruction & cycle counters
             riscv::register::minstret::write(0);
@@ -141,10 +146,15 @@ mod app {
             riscv::interrupt::enable();
         }
 
-        Shared { end_timer, i2c }
+        Shared {
+            end_timer,
+            i2c,
+            mbx,
+            v_target,
+        }
     }
 
-    #[task(binds = Timer0Cmp, priority = 0x88, shared = [i2c])]
+    #[task(binds = Timer0Cmp, priority = 0x88, shared = [i2c, mbx])]
     struct ReadM0 {}
 
     impl RticTask for ReadM0 {
@@ -163,13 +173,14 @@ mod app {
 
             // SAFETY: there are no other users of SPEED_REAL[0]
             unsafe { SPEED_REAL[0] = m0_speed };
-            riscv::interrupt::free(||
-            // SAFETY: other users of MBX are excluded
-            unsafe { MBX.write_time_and_stat(time, m0_speed as u32, M0) });
+
+            self.shared()
+                .mbx
+                .lock(|mbx| mbx.write_time_and_stat(time, m0_speed as u32, M0));
         }
     }
 
-    #[task(binds = Timer1Cmp, priority = 0x88)]
+    #[task(binds = Timer1Cmp, priority = 0x88, shared = [i2c, mbx])]
     struct ReadM1 {}
     impl RticTask for ReadM1 {
         fn init() -> Self {
@@ -177,22 +188,24 @@ mod app {
         }
         fn exec(&mut self) {
             let mut rbuf = [0; 4];
-            riscv::interrupt::free(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.read(M1_ADDR.stat, &mut rbuf));
+
+            self.shared()
+                .i2c
+                .lock(|i2c| i2c.read(M1_ADDR.stat, &mut rbuf));
 
             let m1_speed = u32::from_le_bytes(rbuf);
             let time = MTimer::instance().counter();
 
             // SAFETY: there are no other users of SPEED_REAL[1]
             unsafe { SPEED_REAL[1] = m1_speed };
-            riscv::interrupt::free(||
-        // SAFETY: other users of MBX are excluded
-        unsafe { MBX.write_time_and_stat(time, m1_speed as u32, M1) });
+
+            self.shared()
+                .mbx
+                .lock(|mbx| mbx.write_time_and_stat(time, m1_speed as u32, M1));
         }
     }
 
-    #[task(binds = Timer2Cmp, priority = 0x88)]
+    #[task(binds = Timer2Cmp, priority = 0x88, shared = [i2c, mbx])]
     struct ReadM2 {}
     impl RticTask for ReadM2 {
         fn init() -> Self {
@@ -200,22 +213,23 @@ mod app {
         }
         fn exec(&mut self) {
             let mut rbuf = [0; 4];
-            riscv::interrupt::free(||
-        // SAFETY: other users of I2C are excluded
-         unsafe { I2c::instance() }.read(M2_ADDR.stat, &mut rbuf));
+            self.shared()
+                .i2c
+                .lock(|i2c| i2c.read(M2_ADDR.stat, &mut rbuf));
 
             let m2_speed = u32::from_le_bytes(rbuf);
             let time = MTimer::instance().counter();
 
             // SAFETY: there are no other users of SPEED_REAL[2]
             unsafe { SPEED_REAL[2] = m2_speed };
-            riscv::interrupt::free(||
-        // SAFETY: other users of MBX are excluded
-        unsafe { MBX.write_time_and_stat(time, m2_speed as u32, M2)});
+
+            self.shared()
+                .mbx
+                .lock(|mbx| mbx.write_time_and_stat(time, m2_speed as u32, M2));
         }
     }
 
-    #[task(binds = Timer3Cmp, priority = 0x88)]
+    #[task(binds = Timer3Cmp, priority = 0x88, shared = [i2c, mbx])]
     struct ReadM3 {}
     impl RticTask for ReadM3 {
         fn init() -> Self {
@@ -223,22 +237,23 @@ mod app {
         }
         fn exec(&mut self) {
             let mut rbuf = [0; 4];
-            riscv::interrupt::free(||
-        // SAFETY: other users of I2C are excluded
-         unsafe { I2c::instance() }.read(M3_ADDR.stat, &mut rbuf));
+            self.shared()
+                .i2c
+                .lock(|i2c| i2c.read(M3_ADDR.stat, &mut rbuf));
 
             let m3_speed = u32::from_le_bytes(rbuf);
             let time = MTimer::instance().counter();
 
             // SAFETY: there are no other users of SPEED_REAL[3]
             unsafe { SPEED_REAL[3] = m3_speed };
-            riscv::interrupt::free(||
-        // SAFETY: other users of MBX are excluded
-        unsafe { MBX.write_time_and_stat(time, m3_speed as u32, M3)});
+
+            self.shared()
+                .mbx
+                .lock(|mbx| mbx.write_time_and_stat(time, m3_speed as u32, M3));
         }
     }
 
-    #[task(binds = Mbx, priority = 3)]
+    #[task(binds = Mbx, priority = 3, shared = [i2c, v_target])]
     struct GetMail;
     impl RticTask for GetMail {
         fn init() -> Self {
@@ -250,13 +265,12 @@ mod app {
             let bytes: [u8; 4] = mail.to_be_bytes();
 
             for i in 0usize..4 {
-                riscv::interrupt::free(|| {
-                    // SAFETY: other users of I2C are excluded
-                    unsafe { I2c::instance() }.write((2 + i * 3) as u8, &[0u8, bytes[i]]);
+                self.shared().i2c.lock(|i2c| {
+                    i2c.write((2 + i * 3) as u8, &[0u8, bytes[i]]);
                     let target_speed = (bytes[i] as u32) << 8;
-                    // SAFETY: it is not significant whether motors read the newest or the last
-                    // value from VOLTAGE_TARGET[i], or if they are mixed up.
-                    unsafe { VOLTAGE_TARGET[i] = target_speed };
+                    self.shared()
+                        .v_target
+                        .lock(|v_target| v_target[i] = target_speed);
                 });
             }
 
@@ -266,7 +280,7 @@ mod app {
         }
     }
 
-    #[task(binds = Ext0, priority = 0x10)]
+    #[task(binds = Ext0, priority = 0x10, shared = [i2c, v_target])]
     struct TuneM0;
     impl RticTask for TuneM0 {
         fn init() -> Self {
@@ -274,19 +288,23 @@ mod app {
         }
         fn exec(&mut self) {
             let mut rbuf = [0; 4];
-            riscv::interrupt::free(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.read(M0_ADDR.stat, &mut rbuf));
+            self.shared()
+                .i2c
+                .lock(|i2c| i2c.read(M0_ADDR.stat, &mut rbuf));
 
             let m0_speed_now = u32::from_le_bytes(rbuf);
-            let bytes: [u8; 2] = compute_control(0, m0_speed_now).to_le_bytes();
-            riscv::interrupt::free(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.write(M0_ADDR.tune, &bytes));
+            // HACK: there's something wrong with lock closure args in mrtic. Need an extra
+            // line of init here.
+            let mut v_target: u32 = 0;
+            self.shared().v_target.lock(|v| v_target = v[0]);
+            let bytes: [u8; 2] = compute_control(v_target, m0_speed_now).to_le_bytes();
+            self.shared()
+                .i2c
+                .lock(|i2c| i2c.write(M0_ADDR.tune, &bytes));
         }
     }
 
-    #[task(binds = Ext1, priority = 0x10)]
+    #[task(binds = Ext1, priority = 0x10, shared = [i2c, v_target])]
     struct TuneM1;
     impl RticTask for TuneM1 {
         fn init() -> Self {
@@ -294,19 +312,23 @@ mod app {
         }
         fn exec(&mut self) {
             let mut rbuf = [0; 4];
-            riscv::interrupt::free(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.read(M1_ADDR.stat, &mut rbuf));
+            self.shared()
+                .i2c
+                .lock(|i2c| i2c.read(M1_ADDR.stat, &mut rbuf));
 
             let m1_speed_now = u32::from_le_bytes(rbuf);
-            let bytes: [u8; 2] = compute_control(1, m1_speed_now).to_le_bytes();
-            riscv::interrupt::free(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.write(M1_ADDR.tune, &bytes));
+            // HACK: there's something wrong with lock closure args in mrtic. Need an extra
+            // line of init here.
+            let mut v_target: u32 = 0;
+            self.shared().v_target.lock(|v| v_target = v[1]);
+            let bytes: [u8; 2] = compute_control(v_target, m1_speed_now).to_le_bytes();
+            self.shared()
+                .i2c
+                .lock(|i2c| i2c.write(M1_ADDR.tune, &bytes));
         }
     }
 
-    #[task(binds = Ext2, priority = 0x10)]
+    #[task(binds = Ext2, priority = 0x10, shared = [i2c, v_target])]
     struct TuneM2;
     impl RticTask for TuneM2 {
         fn init() -> Self {
@@ -314,19 +336,23 @@ mod app {
         }
         fn exec(&mut self) {
             let mut rbuf = [0; 4];
-            riscv::interrupt::free(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.read(M2_ADDR.stat, &mut rbuf));
+            self.shared()
+                .i2c
+                .lock(|i2c| i2c.read(M2_ADDR.stat, &mut rbuf));
 
             let m2_speed_now = u32::from_le_bytes(rbuf);
-            let bytes: [u8; 2] = compute_control(2, m2_speed_now).to_le_bytes();
-            riscv::interrupt::free(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.write(M2_ADDR.tune, &bytes));
+            // HACK: there's something wrong with lock closure args in mrtic. Need an extra
+            // line of init here.
+            let mut v_target: u32 = 0;
+            self.shared().v_target.lock(|v| v_target = v[2]);
+            let bytes: [u8; 2] = compute_control(v_target, m2_speed_now).to_le_bytes();
+            self.shared()
+                .i2c
+                .lock(|i2c| i2c.write(M2_ADDR.tune, &bytes));
         }
     }
 
-    #[task(binds = Ext3, priority = 0x10)]
+    #[task(binds = Ext3, priority = 0x10, shared = [i2c, v_target])]
     struct TuneM3;
     impl RticTask for TuneM3 {
         fn init() -> Self {
@@ -334,26 +360,28 @@ mod app {
         }
         fn exec(&mut self) {
             let mut rbuf = [0; 4];
-            riscv::interrupt::free(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.read(M3_ADDR.stat, &mut rbuf));
+            self.shared()
+                .i2c
+                .lock(|i2c| i2c.read(M3_ADDR.stat, &mut rbuf));
 
             let m3_speed_now = u32::from_le_bytes(rbuf);
-            let bytes: [u8; 2] = compute_control(3, m3_speed_now).to_le_bytes();
-            riscv::interrupt::free(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.write(M3_ADDR.tune, &bytes));
+            // HACK: there's something wrong with lock closure args in mrtic. Need an extra
+            // line of init here.
+            let mut v_target: u32 = 0;
+            self.shared().v_target.lock(|v| v_target = v[3]);
+            let bytes: [u8; 2] = compute_control(v_target, m3_speed_now).to_le_bytes();
+
+            self.shared()
+                .i2c
+                .lock(|i2c| i2c.write(M3_ADDR.tune, &bytes));
         }
     }
 
     #[inline]
     /// Compute tuning voltage to control motor power.
-    fn compute_control(idx: usize, speed_now: u32) -> i16 {
+    fn compute_control(v_target: u32, speed_now: u32) -> i16 {
         // Resistance in mOhm
         let res = 10_000;
-        let v_target = riscv::interrupt::free(||
-        // SAFETY: other users of VOLTAGE_TARGET[idx] are excluded
-        unsafe { VOLTAGE_TARGET }[idx]);
         let p_target = u32::pow(v_target, 2) / res; // mW
 
         // Assume Power (mW) and Speed (RPM) directly correlated
