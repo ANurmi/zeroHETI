@@ -65,6 +65,10 @@ const M3_ADDR: Motor = Motor {
     tune: 12,
 };
 
+const MBX_DL_US: u32 = 3200;
+const WRN_DL_US: u32 = 1500;
+const REP_DL_US: u32 = 1200;
+
 // Global variables
 static mut I2C: Option<I2c> = None;
 static mut MBX: Mailbox = unsafe { Mailbox::instance() };
@@ -91,6 +95,7 @@ fn main() -> ! {
     #[cfg(feature = "intc-clic")]
     bsp::clic::Clic::smclicconfig().set_mnlbits(8);
 
+    // Setup HetIc / CLIC with priority
     #[cfg(any(feature = "intc-hetic", feature = "intc-clic"))]
     {
         setup_irq(CoreInterrupt::MachineTimer, 0x88);
@@ -104,18 +109,27 @@ fn main() -> ! {
         setup_irq(ExternalInterrupt::Ext2, 0xFF);
         setup_irq(ExternalInterrupt::Ext3, 0xFF);
     }
+    // Setup EDFIC with deadlines
     #[cfg(feature = "intc-edfic")]
     {
-        setup_irq_dl(CoreInterrupt::MachineTimer, 0x88);
-        setup_irq_dl(ExternalInterrupt::Timer0Cmp, 0x10);
-        setup_irq_dl(ExternalInterrupt::Timer1Cmp, 0x10);
-        setup_irq_dl(ExternalInterrupt::Timer2Cmp, 0x10);
-        setup_irq_dl(ExternalInterrupt::Timer3Cmp, 0x10);
-        setup_irq_dl(ExternalInterrupt::Mbx, 0x3);
-        setup_irq_dl(ExternalInterrupt::Ext0, 0xFF);
-        setup_irq_dl(ExternalInterrupt::Ext1, 0xFF);
-        setup_irq_dl(ExternalInterrupt::Ext2, 0xFF);
-        setup_irq_dl(ExternalInterrupt::Ext3, 0xFF);
+        sprintln!(
+            "Setup IRQ deadlines (us): MBX = {}, WRN = {}, REP = {}",
+            MBX_DL_US,
+            WRN_DL_US,
+            REP_DL_US
+        );
+        // MachineTimer should have the shortest deadline to ensure it can preempt other
+        // interrupts and print the log before simulation termination
+        setup_irq_dl(CoreInterrupt::MachineTimer, 0x0);
+        setup_irq_dl(ExternalInterrupt::Timer0Cmp, REP_DL_US);
+        setup_irq_dl(ExternalInterrupt::Timer1Cmp, REP_DL_US);
+        setup_irq_dl(ExternalInterrupt::Timer2Cmp, REP_DL_US);
+        setup_irq_dl(ExternalInterrupt::Timer3Cmp, REP_DL_US);
+        setup_irq_dl(ExternalInterrupt::Mbx, MBX_DL_US);
+        setup_irq_dl(ExternalInterrupt::Ext0, WRN_DL_US);
+        setup_irq_dl(ExternalInterrupt::Ext1, WRN_DL_US);
+        setup_irq_dl(ExternalInterrupt::Ext2, WRN_DL_US);
+        setup_irq_dl(ExternalInterrupt::Ext3, WRN_DL_US);
     }
 
     let mut mtimer = MTimer::instance().into_oneshot();
