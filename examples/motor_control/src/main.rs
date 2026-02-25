@@ -208,9 +208,9 @@ unsafe fn Timer1Cmp() {
     let mut rbuf = [0; 4];
 
     unsafe {
-        riscv::interrupt::disable();
-        I2C.as_mut().unwrap().read(M1_ADDR.stat, &mut rbuf);
-        riscv::interrupt::enable();
+        riscv::interrupt::free(|| {
+            I2C.as_mut().map(|i2c| i2c.read(M1_ADDR.stat, &mut rbuf));
+        });
     }
     let m1_speed: i32 = i32::from_le_bytes(rbuf);
 
@@ -227,9 +227,7 @@ unsafe fn Timer2Cmp() {
     let mut rbuf = [0; 4];
 
     unsafe {
-        riscv::interrupt::disable();
-        I2C.as_mut().unwrap().read(M2_ADDR.stat, &mut rbuf);
-        riscv::interrupt::enable();
+        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.read(M2_ADDR.stat, &mut rbuf)));
     }
     let m2_speed: i32 = i32::from_le_bytes(rbuf);
 
@@ -246,9 +244,7 @@ unsafe fn Timer3Cmp() {
     let mut rbuf = [0; 4];
 
     unsafe {
-        riscv::interrupt::disable();
-        I2C.as_mut().unwrap().read(M3_ADDR.stat, &mut rbuf);
-        riscv::interrupt::enable();
+        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.read(M3_ADDR.stat, &mut rbuf)));
     }
     let m3_speed: i32 = i32::from_le_bytes(rbuf);
 
@@ -268,11 +264,10 @@ unsafe fn Mbx() {
 
     for i in 0..4 {
         unsafe {
-            riscv::interrupt::disable();
-            I2C.as_mut()
-                .unwrap()
-                .write(2 + i * 3, &[0u8, bytes[i as usize]]);
-            riscv::interrupt::enable();
+            riscv::interrupt::free(|| {
+                I2C.as_mut()
+                    .map(|i2c| i2c.write(2 + i * 3, &[0u8, bytes[i as usize]]))
+            });
             VOLTAGE_TARGET[i as usize] = ((bytes[i as usize]) as i32) << 8;
         }
     }
@@ -287,17 +282,13 @@ unsafe fn Ext0() {
     let mut rbuf = [0; 4];
 
     unsafe {
-        riscv::interrupt::disable();
-        I2C.as_mut().unwrap().read(M0_ADDR.stat, &mut rbuf);
-        riscv::interrupt::enable();
+        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.read(M0_ADDR.stat, &mut rbuf)));
     }
     let m0_speed_now: i32 = i32::from_le_bytes(rbuf);
 
     unsafe {
         let bytes: [u8; 2] = compute_control(0, m0_speed_now).to_le_bytes();
-        riscv::interrupt::disable();
-        I2C.as_mut().unwrap().write(M0_ADDR.tune, &bytes);
-        riscv::interrupt::enable();
+        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.write(M0_ADDR.tune, &bytes)));
     }
 }
 
@@ -306,9 +297,7 @@ unsafe fn Ext1() {
     let mut rbuf = [0; 4];
 
     unsafe {
-        riscv::interrupt::disable();
-        I2C.as_mut().unwrap().read(M1_ADDR.stat, &mut rbuf);
-        riscv::interrupt::enable();
+        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.read(M1_ADDR.stat, &mut rbuf)));
     }
     let m1_speed_now: i32 = i32::from_le_bytes(rbuf);
 
@@ -325,9 +314,7 @@ unsafe fn Ext2() {
     let mut rbuf = [0; 4];
 
     unsafe {
-        riscv::interrupt::disable();
-        I2C.as_mut().unwrap().read(M2_ADDR.stat, &mut rbuf);
-        riscv::interrupt::enable();
+        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.read(M2_ADDR.stat, &mut rbuf)));
     }
     let m2_speed_now: i32 = i32::from_le_bytes(rbuf);
 
@@ -344,17 +331,13 @@ unsafe fn Ext3() {
     let mut rbuf = [0; 4];
 
     unsafe {
-        riscv::interrupt::disable();
-        I2C.as_mut().unwrap().read(M3_ADDR.stat, &mut rbuf);
-        riscv::interrupt::enable();
+        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.read(M3_ADDR.stat, &mut rbuf)));
     }
     let m3_speed_now: i32 = i32::from_le_bytes(rbuf);
 
     unsafe {
         let bytes: [u8; 2] = compute_control(3, m3_speed_now).to_le_bytes();
-        riscv::interrupt::disable();
-        I2C.as_mut().unwrap().write(M3_ADDR.tune, &bytes);
-        riscv::interrupt::enable();
+        riscv::interrupt::free(|| I2C.as_mut().map(|i2c| i2c.write(M3_ADDR.tune, &bytes)));
     }
 }
 
