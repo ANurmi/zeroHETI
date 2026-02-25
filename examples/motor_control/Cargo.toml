@@ -2,6 +2,7 @@
 name = "motor_control"
 version = "0.1.0"
 edition = "2024"
+default-run = "motor_control"
 
 [dependencies]
 bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp", features = [
