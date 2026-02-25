@@ -144,36 +144,6 @@ fn main() -> ! {
         riscv::interrupt::enable();
     }
 
-    /*
-     * 4 motors.
-     *
-     * status: read: current motor speed -> u32 (4 byte transaction), [0, 2^32]
-     * -> [0, "max speed" = ~35_000], "RPM".
-     *
-     * control: write: controls motor
-     * voltage. Write = 4 byte transaction (32-bit). In byte: [0, 2^32] ->
-     * [0, ~20_000] "mV".
-     *
-     * Ideal: power should be mW == RPM.
-     *
-     * If overvoltage sent -> sim will complain that about max. voltage
-     *
-     * Internal address mapping
-     * 0: 31'h0, sim_en
-     * 1: M0 status
-     * 2: M0 control
-     * 3: M0 tune
-     * 4: M1 status
-     * 5: M1 control
-     * 6: M1 tune
-     * 7: M2 status
-     * 8: M2 control
-     * 9: M2 tune
-     *10: M3 status
-     *11: M3 control
-     *12: M3 tune
-     */
-
     loop {
         wfi();
     }
