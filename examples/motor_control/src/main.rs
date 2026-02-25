@@ -72,8 +72,8 @@ const REP_DL_US: u32 = 3000;
 // Global variables
 static mut MBX: Mailbox = unsafe { Mailbox::instance() };
 
-static mut SPEED_REAL: [i32; 4] = [0, 0, 0, 0];
-static mut VOLTAGE_TARGET: [i32; 4] = [0, 0, 0, 0];
+static mut SPEED_REAL: [u32; 4] = [0, 0, 0, 0];
+static mut VOLTAGE_TARGET: [u32; 4] = [0, 0, 0, 0];
 
 static mut INTEGRAL: [i32; 4] = [0, 0, 0, 0];
 static mut PREV_ERR: [i32; 4] = [0, 0, 0, 0];
@@ -185,73 +185,85 @@ fn main() -> ! {
 #[nested_interrupt]
 unsafe fn Timer0Cmp() {
     let mut rbuf = [0; 4];
+    riscv::interrupt::free(||
+        // SAFETY: other users of I2C are excluded
+        unsafe { I2c::instance() }.read(M0_ADDR.stat, &mut rbuf));
 
-    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M0_ADDR.stat, &mut rbuf));
-    let m0_speed: i32 = i32::from_le_bytes(rbuf);
-
+    let m0_speed = u32::from_le_bytes(rbuf);
     let time = MTimer::instance().counter();
 
-    unsafe {
-        SPEED_REAL[0] = m0_speed;
-        MBX.write_time_and_stat(time, m0_speed as u32, M0);
-    }
+    // SAFETY: there are no other users of SPEED_REAL[0]
+    unsafe { SPEED_REAL[0] = m0_speed };
+    riscv::interrupt::free(||
+        // SAFETY: other users of MBX are excluded
+        unsafe { MBX.write_time_and_stat(time, m0_speed as u32, M0) });
 }
 
 #[nested_interrupt]
 unsafe fn Timer1Cmp() {
     let mut rbuf = [0; 4];
+    riscv::interrupt::free(||
+        // SAFETY: other users of I2C are excluded
+        unsafe { I2c::instance() }.read(M1_ADDR.stat, &mut rbuf));
 
-    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M1_ADDR.stat, &mut rbuf));
-    let m1_speed: i32 = i32::from_le_bytes(rbuf);
-
+    let m1_speed = u32::from_le_bytes(rbuf);
     let time = MTimer::instance().counter();
 
-    unsafe {
-        SPEED_REAL[1] = m1_speed;
-        MBX.write_time_and_stat(time, m1_speed as u32, M1);
-    }
+    // SAFETY: there are no other users of SPEED_REAL[1]
+    unsafe { SPEED_REAL[1] = m1_speed };
+    riscv::interrupt::free(||
+        // SAFETY: other users of MBX are excluded
+        unsafe { MBX.write_time_and_stat(time, m1_speed as u32, M1) });
 }
 
 #[nested_interrupt]
 unsafe fn Timer2Cmp() {
     let mut rbuf = [0; 4];
+    riscv::interrupt::free(||
+        // SAFETY: other users of I2C are excluded
+         unsafe { I2c::instance() }.read(M2_ADDR.stat, &mut rbuf));
 
-    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M2_ADDR.stat, &mut rbuf));
-    let m2_speed: i32 = i32::from_le_bytes(rbuf);
-
+    let m2_speed = u32::from_le_bytes(rbuf);
     let time = MTimer::instance().counter();
 
-    unsafe {
-        SPEED_REAL[2] = m2_speed;
-        MBX.write_time_and_stat(time, m2_speed as u32, M2);
-    }
+    // SAFETY: there are no other users of SPEED_REAL[2]
+    unsafe { SPEED_REAL[2] = m2_speed };
+    riscv::interrupt::free(||
+        // SAFETY: other users of MBX are excluded
+        unsafe { MBX.write_time_and_stat(time, m2_speed as u32, M2)});
 }
 
 #[nested_interrupt]
 unsafe fn Timer3Cmp() {
     let mut rbuf = [0; 4];
+    riscv::interrupt::free(||
+        // SAFETY: other users of I2C are excluded
+         unsafe { I2c::instance() }.read(M3_ADDR.stat, &mut rbuf));
 
-    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M3_ADDR.stat, &mut rbuf));
-    let m3_speed: i32 = i32::from_le_bytes(rbuf);
-
+    let m3_speed = u32::from_le_bytes(rbuf);
     let time = MTimer::instance().counter();
 
-    unsafe {
-        SPEED_REAL[3] = m3_speed;
-        MBX.write_time_and_stat(time, m3_speed as u32, M3);
-    }
+    // SAFETY: there are no other users of SPEED_REAL[3]
+    unsafe { SPEED_REAL[3] = m3_speed };
+    riscv::interrupt::free(||
+        // SAFETY: other users of MBX are excluded
+        unsafe { MBX.write_time_and_stat(time, m3_speed as u32, M3)});
 }
 
 #[nested_interrupt]
 unsafe fn Mbx() {
+    // SAFETY: the inbox is not read by any other context
     let mail = unsafe { MBX.read_inbox() };
     let bytes: [u8; 4] = mail.to_be_bytes();
-    //let bytes: [u8; 4] = [0, 0, 0, mail.to_be_bytes()[0]];
 
-    for i in 0..4 {
+    for i in 0usize..4 {
         riscv::interrupt::free(|| {
-            unsafe { I2c::instance() }.write(2 + i * 3, &[0u8, bytes[i as usize]]);
-            unsafe { VOLTAGE_TARGET[i as usize] = ((bytes[i as usize]) as i32) << 8 };
+            // SAFETY: other users of I2C are excluded
+            unsafe { I2c::instance() }.write((2 + i * 3) as u8, &[0u8, bytes[i]]);
+            let target_speed = (bytes[i] as u32) << 8;
+            // SAFETY: it is not significant whether motors read the newest or the last
+            // value from VOLTAGE_TARGET[i], or if they are mixed up.
+            unsafe { VOLTAGE_TARGET[i] = target_speed };
         });
     }
 
@@ -263,61 +275,73 @@ unsafe fn Mbx() {
 #[nested_interrupt]
 unsafe fn Ext0() {
     let mut rbuf = [0; 4];
+    riscv::interrupt::free(||
+        // SAFETY: other users of I2C are excluded
+        unsafe { I2c::instance() }.read(M0_ADDR.stat, &mut rbuf));
 
-    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M0_ADDR.stat, &mut rbuf));
-    let m0_speed_now: i32 = i32::from_le_bytes(rbuf);
-
+    let m0_speed_now = u32::from_le_bytes(rbuf);
     let bytes: [u8; 2] = compute_control(0, m0_speed_now).to_le_bytes();
-    riscv::interrupt::free(|| unsafe { I2c::instance() }.write(M0_ADDR.tune, &bytes));
+    riscv::interrupt::free(||
+        // SAFETY: other users of I2C are excluded
+        unsafe { I2c::instance() }.write(M0_ADDR.tune, &bytes));
 }
 
 #[nested_interrupt]
 unsafe fn Ext1() {
     let mut rbuf = [0; 4];
+    riscv::interrupt::free(||
+        // SAFETY: other users of I2C are excluded
+        unsafe { I2c::instance() }.read(M1_ADDR.stat, &mut rbuf));
 
-    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M1_ADDR.stat, &mut rbuf));
-
-    let m1_speed_now: i32 = i32::from_le_bytes(rbuf);
-
+    let m1_speed_now = u32::from_le_bytes(rbuf);
     let bytes: [u8; 2] = compute_control(1, m1_speed_now).to_le_bytes();
-    riscv::interrupt::free(|| unsafe { I2c::instance() }.write(M1_ADDR.tune, &bytes));
+    riscv::interrupt::free(||
+        // SAFETY: other users of I2C are excluded
+        unsafe { I2c::instance() }.write(M1_ADDR.tune, &bytes));
 }
 
 #[nested_interrupt]
 unsafe fn Ext2() {
     let mut rbuf = [0; 4];
+    riscv::interrupt::free(||
+        // SAFETY: other users of I2C are excluded
+        unsafe { I2c::instance() }.read(M2_ADDR.stat, &mut rbuf));
 
-    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M2_ADDR.stat, &mut rbuf));
-
-    let m2_speed_now: i32 = i32::from_le_bytes(rbuf);
-
+    let m2_speed_now = u32::from_le_bytes(rbuf);
     let bytes: [u8; 2] = compute_control(2, m2_speed_now).to_le_bytes();
-    riscv::interrupt::free(|| unsafe { I2c::instance() }.write(M2_ADDR.tune, &bytes));
+    riscv::interrupt::free(||
+        // SAFETY: other users of I2C are excluded
+        unsafe { I2c::instance() }.write(M2_ADDR.tune, &bytes));
 }
 
 #[nested_interrupt]
 unsafe fn Ext3() {
     let mut rbuf = [0; 4];
+    riscv::interrupt::free(||
+        // SAFETY: other users of I2C are excluded
+        unsafe { I2c::instance() }.read(M3_ADDR.stat, &mut rbuf));
 
-    riscv::interrupt::free(|| unsafe { I2c::instance() }.read(M3_ADDR.stat, &mut rbuf));
-
-    let m3_speed_now: i32 = i32::from_le_bytes(rbuf);
-
+    let m3_speed_now = u32::from_le_bytes(rbuf);
     let bytes: [u8; 2] = compute_control(3, m3_speed_now).to_le_bytes();
-    riscv::interrupt::free(|| unsafe { I2c::instance() }.write(M3_ADDR.tune, &bytes));
+    riscv::interrupt::free(||
+        // SAFETY: other users of I2C are excluded
+        unsafe { I2c::instance() }.write(M3_ADDR.tune, &bytes));
 }
 
 #[inline]
 /// Compute tuning voltage to control motor power.
-fn compute_control(idx: usize, speed_now: i32) -> i16 {
-    let res: i32 = 10_000; // mOhm
-    let v_target = unsafe { VOLTAGE_TARGET }[idx];
-    let p_target: i32 = i32::pow(v_target, 2) / res; // mW
+fn compute_control(idx: usize, speed_now: u32) -> i16 {
+    // Resistance in mOhm
+    let res = 10_000;
+    let v_target = riscv::interrupt::free(||
+        // SAFETY: other users of VOLTAGE_TARGET[idx] are excluded
+        unsafe { VOLTAGE_TARGET }[idx]);
+    let p_target = u32::pow(v_target, 2) / res; // mW
 
     // Assume Power (mW) and Speed (RPM) directly correlated
-    let error = p_target - speed_now;
+    let error = p_target as i32 - speed_now as i32;
 
-    let mut v_out: i16 = usqrt4((error / res).abs() as u32) as i16;
+    let mut v_out: i16 = usqrt4((error / res as i32).abs() as u32) as i16;
 
     if error < 0 {
         v_out = v_out * (-1);
@@ -391,6 +415,8 @@ fn usqrt4(val: u32) -> u32 {
 #[bsp::core_interrupt(CoreInterrupt::MachineTimer)]
 unsafe fn MachineTimer() {
     riscv::interrupt::disable();
+
+    // SAFETY: interrupts are now disabled
 
     unsafe { END_TIME.replace(MTimer::instance().counter().into()) };
 
