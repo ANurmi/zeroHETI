@@ -119,9 +119,11 @@ module vip_ctrl_sim #(
 
     // Decrement deadlines of active task
     for (int i = 0; i < TaskSetSize; i++) begin
-      if (task_set[i].active) begin
-        if (task_set[i].dl_us == 0) $fatal(1, "Deadline miss for task idx %0d!", i);
-        else task_set[i].dl_us--;
+      if (enable) begin
+        if (task_set[i].active) begin
+          if (task_set[i].dl_us == 0) $fatal(1, "Deadline miss for task idx %0d!", i);
+          else task_set[i].dl_us--;
+        end
       end
     end
 
