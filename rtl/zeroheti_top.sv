@@ -75,10 +75,10 @@ module zeroheti_top
   );
 
   obi_mbx i_mbx (
-    .clk_i,
-    .rst_ni,
-    .irq_o   (mbx_irq),
-    .obi_sbr (mbx_obi)
+      .clk_i,
+      .rst_ni,
+      .irq_o  (mbx_irq),
+      .obi_sbr(mbx_obi)
   );
 
   always_comb begin : apb_decode

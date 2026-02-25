@@ -19,7 +19,7 @@ module vip_motor_sim #(
 
   longint timestep  = 0;
   int unsigned ps   = 0;
-  int seed = 721 * Idx;
+  int seed = 721 * Idx + 1;
 
   int voltage_real;
   int power_real, power_ideal;
