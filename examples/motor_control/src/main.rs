@@ -422,11 +422,10 @@ fn usqrt4(val: u32) -> u32 {
 
 #[bsp::core_interrupt(CoreInterrupt::MachineTimer)]
 unsafe fn MachineTimer() {
-
     // Explicitly terminate simulation to print task log
     I2C.as_mut().unwrap().write(0x0, &[0]);
 
-    let instret= riscv::register::minstret::read64();
+    let instret = riscv::register::minstret::read64();
     let cycles = riscv::register::mcycle::read64();
 
     sprintln!("Instructions retired: {instret}, cycles: {cycles}");
