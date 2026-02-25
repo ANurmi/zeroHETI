@@ -6,7 +6,7 @@ mod common;
 
 #[cfg(not(any(feature = "intc-hetic", feature = "intc-clic", feature = "intc-edfic")))]
 compile_error!(
-    "at least one interrupt controller feature is required, pass -Fclic-hetic, -Fclic-clic, -Fclic-edfic"
+    "at least one interrupt controller feature is required, pass -Fintc-hetic, -Fintc-clic, -Fintc-edfic"
 );
 
 use core::ptr::{self, addr_of, addr_of_mut};
