@@ -266,9 +266,9 @@ unsafe fn Mbx() {
         unsafe {
             riscv::interrupt::free(|| {
                 I2C.as_mut()
-                    .map(|i2c| i2c.write(2 + i * 3, &[0u8, bytes[i as usize]]))
+                    .map(|i2c| i2c.write(2 + i * 3, &[0u8, bytes[i as usize]]));
+                VOLTAGE_TARGET[i as usize] = ((bytes[i as usize]) as i32) << 8;
             });
-            VOLTAGE_TARGET[i as usize] = ((bytes[i as usize]) as i32) << 8;
         }
     }
 
