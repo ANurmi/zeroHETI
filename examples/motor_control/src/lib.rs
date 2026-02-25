@@ -44,6 +44,20 @@ pub fn setup_irq(irq: impl InterruptNumber, level: u8) {
     }
 }
 
+/// Setup `irq` for use with some basic defaults
+///
+/// Copy and customize this function if you need more involved configurations.
+#[cfg(feature = "intc-edfic")]
+pub fn setup_irq_dl(irq: impl InterruptNumber, dl: u32) {
+    log::debug!("Set up IRQ (id = {})", irq.number());
+    use bsp::edfic::{Edfic, Pol, Trig};
+
+    Edfic::line(irq.number()).set_pol(Pol::Pos);
+    Edfic::line(irq.number()).set_trig(Trig::Edge);
+    Edfic::line(irq.number()).enable();
+    Edfic::line(irq.number()).set_dl(dl);
+}
+
 /// Tear down the IRQ configuration to avoid side-effects for further testing
 ///
 /// Copy and customize this function if you need more involved configurations.

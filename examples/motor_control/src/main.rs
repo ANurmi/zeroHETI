@@ -91,16 +91,32 @@ fn main() -> ! {
     #[cfg(feature = "intc-clic")]
     bsp::clic::Clic::smclicconfig().set_mnlbits(8);
 
-    setup_irq(CoreInterrupt::MachineTimer, 0x88);
-    setup_irq(ExternalInterrupt::Timer0Cmp, 0x10);
-    setup_irq(ExternalInterrupt::Timer1Cmp, 0x10);
-    setup_irq(ExternalInterrupt::Timer2Cmp, 0x10);
-    setup_irq(ExternalInterrupt::Timer3Cmp, 0x10);
-    setup_irq(ExternalInterrupt::Mbx, 0x3);
-    setup_irq(ExternalInterrupt::Ext0, 0xFF);
-    setup_irq(ExternalInterrupt::Ext1, 0xFF);
-    setup_irq(ExternalInterrupt::Ext2, 0xFF);
-    setup_irq(ExternalInterrupt::Ext3, 0xFF);
+    #[cfg(any(feature = "intc-hetic", feature = "intc-clic"))]
+    {
+        setup_irq(CoreInterrupt::MachineTimer, 0x88);
+        setup_irq(ExternalInterrupt::Timer0Cmp, 0x10);
+        setup_irq(ExternalInterrupt::Timer1Cmp, 0x10);
+        setup_irq(ExternalInterrupt::Timer2Cmp, 0x10);
+        setup_irq(ExternalInterrupt::Timer3Cmp, 0x10);
+        setup_irq(ExternalInterrupt::Mbx, 0x3);
+        setup_irq(ExternalInterrupt::Ext0, 0xFF);
+        setup_irq(ExternalInterrupt::Ext1, 0xFF);
+        setup_irq(ExternalInterrupt::Ext2, 0xFF);
+        setup_irq(ExternalInterrupt::Ext3, 0xFF);
+    }
+    #[cfg(feature = "intc-edfic")]
+    {
+        setup_irq_dl(CoreInterrupt::MachineTimer, 0x88);
+        setup_irq_dl(ExternalInterrupt::Timer0Cmp, 0x10);
+        setup_irq_dl(ExternalInterrupt::Timer1Cmp, 0x10);
+        setup_irq_dl(ExternalInterrupt::Timer2Cmp, 0x10);
+        setup_irq_dl(ExternalInterrupt::Timer3Cmp, 0x10);
+        setup_irq_dl(ExternalInterrupt::Mbx, 0x3);
+        setup_irq_dl(ExternalInterrupt::Ext0, 0xFF);
+        setup_irq_dl(ExternalInterrupt::Ext1, 0xFF);
+        setup_irq_dl(ExternalInterrupt::Ext2, 0xFF);
+        setup_irq_dl(ExternalInterrupt::Ext3, 0xFF);
+    }
 
     let mut mtimer = MTimer::instance().into_oneshot();
 
