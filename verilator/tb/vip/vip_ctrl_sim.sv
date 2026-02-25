@@ -25,7 +25,7 @@ module vip_ctrl_sim #(
   localparam longint unsigned MbxPerUs = 'd5_000;
   localparam longint unsigned RepPerUs = 'd3_000;
 
-  localparam longint unsigned RepOfsUs = 'd0_250;
+  localparam longint unsigned RepOfsUs = 'd1_000;
   localparam longint unsigned MbxOfsUs = 'd2_000;
 
   localparam longint unsigned MbxDlUs = 'd5_000;

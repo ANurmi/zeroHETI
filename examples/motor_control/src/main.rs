@@ -152,15 +152,15 @@ fn main() -> ! {
     timers[0].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
     timers[1].set_period_offset(
         REP_TASK_PER_US.micros(),
-        REP_TASK_OFS_US.micros() - (1 * 250u32).micros(),
+        REP_TASK_OFS_US.micros() - (1 * 1000u32).micros(),
     );
     timers[2].set_period_offset(
         REP_TASK_PER_US.micros(),
-        REP_TASK_OFS_US.micros() - (2 * 250u32).micros(),
+        REP_TASK_OFS_US.micros() - (2 * 1000u32).micros(),
     );
     timers[3].set_period_offset(
         REP_TASK_PER_US.micros(),
-        REP_TASK_OFS_US.micros() - (3 * 250u32).micros(),
+        REP_TASK_OFS_US.micros() - (3 * 1000u32).micros(),
     );
 
     unsafe {
