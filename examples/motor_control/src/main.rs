@@ -116,15 +116,15 @@ fn main() -> ! {
     timers[0].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
     timers[1].set_period_offset(
         REP_TASK_PER_US.micros(),
-        REP_TASK_OFS_US.micros() - (1 * 150u32).micros(),
+        REP_TASK_OFS_US.micros() - (1 * 250u32).micros(),
     );
     timers[2].set_period_offset(
         REP_TASK_PER_US.micros(),
-        REP_TASK_OFS_US.micros() - (2 * 150u32).micros(),
+        REP_TASK_OFS_US.micros() - (2 * 250u32).micros(),
     );
     timers[3].set_period_offset(
         REP_TASK_PER_US.micros(),
-        REP_TASK_OFS_US.micros() - (3 * 150u32).micros(),
+        REP_TASK_OFS_US.micros() - (3 * 250u32).micros(),
     );
 
     unsafe {
@@ -424,5 +424,9 @@ fn usqrt4(val: u32) -> u32 {
 
 #[bsp::core_interrupt(CoreInterrupt::MachineTimer)]
 unsafe fn MachineTimer() {
+
+    // Explicitly terminate simulation to print task log
+    I2C.as_mut().unwrap().write(0x0, &[0]);
+
     signal_pass(None);
 }

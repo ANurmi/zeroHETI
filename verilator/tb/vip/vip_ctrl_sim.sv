@@ -25,7 +25,7 @@ module vip_ctrl_sim #(
   localparam longint unsigned MbxPerUs = 'd7_000;
   localparam longint unsigned RepPerUs = 'd5_000;
 
-  localparam longint unsigned RepOfsUs = 'd0_150;
+  localparam longint unsigned RepOfsUs = 'd0_250;
   localparam longint unsigned MbxOfsUs = 'd2_000;
 
   localparam longint unsigned MbxDlUs = 'd4_000;
@@ -49,7 +49,14 @@ module vip_ctrl_sim #(
     logic [63:0] dl_us;
   } task_t;
 
-  task_t [TaskSetSize-1:0] task_set;
+  typedef struct packed {
+    int unsigned count;
+    longint unsigned slack_worst;
+    longint unsigned slack_avg;
+  } task_ret_t;
+
+  task_t     [TaskSetSize-1:0] task_set;
+  task_ret_t [TaskSetSize-1:0] tasks_ret;
 
   initial begin
     for (int i = 0; i < TaskSetSize; i++) begin
@@ -87,13 +94,24 @@ module vip_ctrl_sim #(
 
   always @(posedge enable) begin
     time_us = 0; // clear vip time when first enabled
+
+    for (int i = 0; i< TaskSetSize; i++) begin
+      tasks_ret[i] = '{default:0};
+    end
+
     $display("[CTRL_SIM] Starting simulation for task set:");
     $display("[CTRL_SIM] (Periodic): Receive MBX directive,          DL: %3d us", MbxDlUs);
     $display("[CTRL_SIM] (Sporadic): Motor [0-3] speed warning,      DL: %3d us", WrnDlUs);
     $display("[CTRL_SIM] (Periodic): Report M[0-3] speed, timestamp, DL: %3d us", RepDlUs);
   end
 
-
+  always @(negedge enable) begin
+    $display("[CTRL_SIM] Simulation terminated");
+    for (int i = 0; i< TaskSetSize; i++) begin
+      $display("Task %0d - count: %3d, avg. slack: %4d us, worst slack: %4d us", 
+        i, tasks_ret[i].count, tasks_ret[i].slack_avg, tasks_ret[i].slack_worst);
+    end
+  end
 
   always @(time_us) begin : g_dl_counter
 
@@ -125,7 +143,7 @@ module vip_ctrl_sim #(
     // Dectivate warning tasks
     for (int i=0; i< NrMotors; i++) begin
       automatic int SporIdx = i + 1;
-      if (~irq_o[i]) begin
+      if (~irq_o[i] & task_set[SporIdx].active) begin
         ack_task(SporIdx);
       end
     end
@@ -239,7 +257,31 @@ module vip_ctrl_sim #(
 
   task ack_task(input int unsigned i);
     task_set[i].active = 1'b0;
+    log_slack(i);
   endtask
+
+  task log_slack(input int unsigned i);
+    if (tasks_ret[i].count == 0) begin // initial state
+      tasks_ret[i].slack_worst = task_set[i].dl_us;
+      tasks_ret[i].slack_avg   = task_set[i].dl_us;
+    end else begin
+      // update worst slack
+      if (tasks_ret[i].slack_worst > task_set[i].dl_us) begin
+        tasks_ret[i].slack_worst = task_set[i].dl_us;
+      end
+
+      // verilator lint_off WIDTHEXPAND
+      // update average slack
+      tasks_ret[i].slack_avg = ((tasks_ret[i].slack_avg * tasks_ret[i].count) + task_set[i].dl_us) 
+                                  / (tasks_ret[i].count + 32'd1);
+      // verilator lint_on WIDTHEXPAND
+      
+    end
+
+    tasks_ret[i].count += 1;
+  endtask
+
+
 
   task reset_task_dl(input int unsigned i);
     unique case (i) inside
