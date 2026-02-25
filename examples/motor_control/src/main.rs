@@ -81,9 +81,9 @@ fn main() -> ! {
     let riscv_isa = core::env!("RISCV_ISA");
     sprintln!("[Motor control demo] ISA = {riscv_isa}");
 
-    unsafe {
-        I2C.replace(I2c::init(4));
-    }
+    // Init I2C into the global context
+    unsafe { I2C.replace(I2c::init(4)) };
+
     // HACK: clear mintstatus
     unsafe { bsp::register::mintstatus::write(0.into()) };
 
@@ -116,19 +116,19 @@ fn main() -> ! {
     timers[0].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
     timers[1].set_period_offset(
         REP_TASK_PER_US.micros(),
-        REP_TASK_OFS_US.micros() - ExtU32::micros(1 * 150),
+        REP_TASK_OFS_US.micros() - (1 * 150u32).micros(),
     );
     timers[2].set_period_offset(
         REP_TASK_PER_US.micros(),
-        REP_TASK_OFS_US.micros() - ExtU32::micros(2 * 150),
+        REP_TASK_OFS_US.micros() - (2 * 150u32).micros(),
     );
     timers[3].set_period_offset(
         REP_TASK_PER_US.micros(),
-        REP_TASK_OFS_US.micros() - ExtU32::micros(3 * 150),
+        REP_TASK_OFS_US.micros() - (3 * 150u32).micros(),
     );
 
     unsafe {
-        // clear instruction & cycle counters
+        // Clear instruction & cycle counters
         riscv::register::minstret::write(0);
         riscv::register::mcycle::write(0);
         riscv::register::minstreth::write(0);
