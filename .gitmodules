@@ -1,3 +1,6 @@
 [submodule "examples/benchmarks/embench-iot"]
 	path = examples/benchmarks/embench-iot
 	url = https://github.com/embench/embench-iot.git
+[submodule "examples/mrtic"]
+	path = examples/mrtic
+	url = ssh://git@github.com/hegza/rtic-mc-experiments/
