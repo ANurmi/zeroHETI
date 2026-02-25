@@ -427,7 +427,7 @@ unsafe fn MachineTimer() {
     unsafe { END_TIME.replace(MTimer::instance().counter().into()) };
 
     // Explicitly terminate simulation to print task log
-    I2C.as_mut().unwrap().write(0x0, &[0]);
+    unsafe { I2C.as_mut() }.map(|i2c| i2c.write(0x0, &[0]));
 
     let instret = riscv::register::minstret::read64();
     let active_time_cc = riscv::register::mcycle::read64();
