@@ -228,8 +228,8 @@ unsafe fn Timer3Cmp() {
 #[nested_interrupt]
 unsafe fn Mbx() {
     let mail = unsafe { MBX.read_inbox() };
-    //let bytes: [u8; 4] = mail.to_be_bytes();
-    let bytes: [u8; 4] = [0, 0, 0, mail.to_be_bytes()[0]];
+    let bytes: [u8; 4] = mail.to_be_bytes();
+    //let bytes: [u8; 4] = [0, 0, 0, mail.to_be_bytes()[0]];
 
     for i in 0..4 {
         unsafe {
@@ -409,6 +409,11 @@ unsafe fn MachineTimer() {
 
     // Explicitly terminate simulation to print task log
     I2C.as_mut().unwrap().write(0x0, &[0]);
+
+    let instret= riscv::register::minstret::read64();
+    let cycles = riscv::register::mcycle::read64();
+
+    sprintln!("Instructions retired: {instret}, cycles: {cycles}");
 
     signal_pass(None);
 }

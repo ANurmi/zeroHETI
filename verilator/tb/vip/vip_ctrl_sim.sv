@@ -29,8 +29,8 @@ module vip_ctrl_sim #(
   localparam longint unsigned MbxOfsUs = 'd2_000;
 
   localparam longint unsigned MbxDlUs = 'd4_000;
-  localparam longint unsigned WrnDlUs = 'd1_000;
-  localparam longint unsigned RepDlUs = 'd2_000;
+  localparam longint unsigned WrnDlUs = 'd2_000;
+  localparam longint unsigned RepDlUs = 'd3_000;
 
   logic [3:0][31:0] voltages = 0;
   logic [3:0][15:0] tune     = 0;
