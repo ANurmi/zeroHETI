@@ -56,8 +56,14 @@ mod app {
     struct Shared {
         i2c: i2c::I2c,
         mbx: Mailbox,
-        /// Voltage target
-        v_target: [u32; 4],
+        /// Voltage target for motor 0
+        v_tgt0: u32,
+        /// Voltage target for motor 1
+        v_tgt1: u32,
+        /// Voltage target for motor 2
+        v_tgt2: u32,
+        /// Voltage target for motor 3
+        v_tgt3: u32,
     }
 
     #[init]
@@ -68,7 +74,6 @@ mod app {
 
         let i2c = I2c::init(4);
         let mbx = unsafe { Mailbox::instance() };
-        let v_target = [0; 4];
 
         // HACK: use mtimer to start the sim, CLIC cannot enable IRQ after pend,
         // see: https://github.com/ANurmi/zeroHETI/issues/42
@@ -77,7 +82,14 @@ mod app {
         MTimer::instance().into_oneshot().start(100u64.micros());
         //StartSim::spawn(()).unwrap();
 
-        Shared { i2c, mbx, v_target }
+        Shared {
+            i2c,
+            mbx,
+            v_tgt0: 0,
+            v_tgt1: 0,
+            v_tgt2: 0,
+            v_tgt3: 0,
+        }
     }
 
     //#[sw_task(priority = 0xff, shared=[i2c])]
@@ -285,7 +297,7 @@ mod app {
         }
     }
 
-    #[task(binds = Mbx, priority = 3, shared = [i2c, v_target])]
+    #[task(binds = Mbx, priority = 3, shared = [i2c, v_tgt0, v_tgt1, v_tgt2, v_tgt3])]
     struct GetMail;
     impl RticTask for GetMail {
         fn init() -> Self {
@@ -296,15 +308,26 @@ mod app {
             let mail = unsafe { Mailbox::instance() }.read_inbox();
             let bytes: [u8; 4] = mail.to_be_bytes();
 
-            for i in 0usize..4 {
-                self.shared().i2c.lock(|i2c| {
-                    i2c.write(I2C_ADDRS.motors[i].ctrl, &[0u8, bytes[i]]);
-                    let target_speed = (bytes[i] as u32) << 8;
-                    self.shared()
-                        .v_target
-                        .lock(|v_target| v_target[i] = target_speed);
-                });
-            }
+            self.shared().i2c.lock(|i2c| {
+                i2c.write(I2C_ADDRS.motors[0].ctrl, &[0u8, bytes[0]]);
+                let target_speed = (bytes[0] as u32) << 8;
+                self.shared().v_tgt0.lock(|v_tgt| *v_tgt = target_speed);
+            });
+            self.shared().i2c.lock(|i2c| {
+                i2c.write(I2C_ADDRS.motors[0].ctrl, &[0u8, bytes[1]]);
+                let target_speed = (bytes[0] as u32) << 8;
+                self.shared().v_tgt1.lock(|v_tgt| *v_tgt = target_speed);
+            });
+            self.shared().i2c.lock(|i2c| {
+                i2c.write(I2C_ADDRS.motors[1].ctrl, &[0u8, bytes[2]]);
+                let target_speed = (bytes[1] as u32) << 8;
+                self.shared().v_tgt2.lock(|v_tgt| *v_tgt = target_speed);
+            });
+            self.shared().i2c.lock(|i2c| {
+                i2c.write(I2C_ADDRS.motors[2].ctrl, &[0u8, bytes[3]]);
+                let target_speed = (bytes[2] as u32) << 8;
+                self.shared().v_tgt3.lock(|v_tgt| *v_tgt = target_speed);
+            });
 
             // SAFETY: the mailbox ACK_IRQ is not interacted with by any other
             // part of the code, and it does not interfere with other Mailbox
@@ -313,7 +336,7 @@ mod app {
         }
     }
 
-    #[task(binds = Ext0, priority = 0x10, shared = [i2c, v_target])]
+    #[task(binds = Ext0, priority = 0x10, shared = [i2c, v_tgt0])]
     struct TuneM0;
     impl RticTask for TuneM0 {
         fn init() -> Self {
@@ -328,16 +351,16 @@ mod app {
             let m0_speed_now = u32::from_le_bytes(rbuf);
             // HACK: there's something wrong with lock closure args in mrtic. Need an extra
             // line of init here.
-            let mut v_target: u32 = 0;
-            self.shared().v_target.lock(|v| v_target = v[0]);
-            let bytes: [u8; 2] = compute_control(v_target, m0_speed_now).to_le_bytes();
+            let mut v_tgt: u32 = 0;
+            self.shared().v_tgt0.lock(|v| v_tgt = *v);
+            let bytes: [u8; 2] = compute_control(v_tgt, m0_speed_now).to_le_bytes();
             self.shared()
                 .i2c
                 .lock(|i2c| i2c.write(I2C_ADDRS.motors[0].tune, &bytes));
         }
     }
 
-    #[task(binds = Ext1, priority = 0x10, shared = [i2c, v_target])]
+    #[task(binds = Ext1, priority = 0x10, shared = [i2c, v_tgt1])]
     struct TuneM1;
     impl RticTask for TuneM1 {
         fn init() -> Self {
@@ -352,16 +375,16 @@ mod app {
             let m1_speed_now = u32::from_le_bytes(rbuf);
             // HACK: there's something wrong with lock closure args in mrtic. Need an extra
             // line of init here.
-            let mut v_target: u32 = 0;
-            self.shared().v_target.lock(|v| v_target = v[1]);
-            let bytes: [u8; 2] = compute_control(v_target, m1_speed_now).to_le_bytes();
+            let mut v_tgt: u32 = 0;
+            self.shared().v_tgt1.lock(|v| v_tgt = *v);
+            let bytes: [u8; 2] = compute_control(v_tgt, m1_speed_now).to_le_bytes();
             self.shared()
                 .i2c
                 .lock(|i2c| i2c.write(I2C_ADDRS.motors[1].tune, &bytes));
         }
     }
 
-    #[task(binds = Ext2, priority = 0x10, shared = [i2c, v_target])]
+    #[task(binds = Ext2, priority = 0x10, shared = [i2c, v_tgt2])]
     struct TuneM2;
     impl RticTask for TuneM2 {
         fn init() -> Self {
@@ -376,16 +399,16 @@ mod app {
             let m2_speed_now = u32::from_le_bytes(rbuf);
             // HACK: there's something wrong with lock closure args in mrtic. Need an extra
             // line of init here.
-            let mut v_target: u32 = 0;
-            self.shared().v_target.lock(|v| v_target = v[2]);
-            let bytes: [u8; 2] = compute_control(v_target, m2_speed_now).to_le_bytes();
+            let mut v_tgt: u32 = 0;
+            self.shared().v_tgt2.lock(|v| v_tgt = *v);
+            let bytes: [u8; 2] = compute_control(v_tgt, m2_speed_now).to_le_bytes();
             self.shared()
                 .i2c
                 .lock(|i2c| i2c.write(I2C_ADDRS.motors[2].tune, &bytes));
         }
     }
 
-    #[task(binds = Ext3, priority = 0x10, shared = [i2c, v_target])]
+    #[task(binds = Ext3, priority = 0x10, shared = [i2c, v_tgt3])]
     struct TuneM3;
     impl RticTask for TuneM3 {
         fn init() -> Self {
@@ -400,9 +423,9 @@ mod app {
             let m3_speed_now = u32::from_le_bytes(rbuf);
             // HACK: there's something wrong with lock closure args in mrtic. Need an extra
             // line of init here.
-            let mut v_target: u32 = 0;
-            self.shared().v_target.lock(|v| v_target = v[3]);
-            let bytes: [u8; 2] = compute_control(v_target, m3_speed_now).to_le_bytes();
+            let mut v_tgt: u32 = 0;
+            self.shared().v_tgt3.lock(|v| v_tgt = *v);
+            let bytes: [u8; 2] = compute_control(v_tgt, m3_speed_now).to_le_bytes();
 
             self.shared()
                 .i2c
@@ -412,10 +435,10 @@ mod app {
 
     #[inline]
     /// Compute tuning voltage to control motor power.
-    fn compute_control(v_target: u32, speed_now: u32) -> i16 {
+    fn compute_control(v_tgt: u32, speed_now: u32) -> i16 {
         // Resistance in mOhm
         let res = 10_000;
-        let p_target = u32::pow(v_target, 2) / res; // mW
+        let p_target = u32::pow(v_tgt, 2) / res; // mW
 
         // Assume Power (mW) and Speed (RPM) directly correlated
         let error = p_target as i32 - speed_now as i32;
