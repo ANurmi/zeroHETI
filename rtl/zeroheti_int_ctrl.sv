@@ -96,7 +96,7 @@ module zeroheti_int_ctrl #(
   end else if (CoreCfg.ic == CLIC) begin : g_clic
 
     logic [7:0] irq_level;
-    assign irq_level_o = irq_level[IrqWidth-1:0];
+    assign irq_level_o = irq_level; /*irq_level[IrqWidth-1:0];*/
 
     APB ic_apb ();
 
