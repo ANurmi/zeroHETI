@@ -14,17 +14,20 @@ module vip_motor_sim #(
     output logic        irq_o
 );
 
-  localparam int R_motor = 10_000; // mOhm
+// verilator lint_off WIDTHTRUNC
+// verilator lint_off WIDTHEXPAND
+  localparam longint R_motor = 10_000; // mOhm
   localparam int MtrTol  = 1_000; // RPM
 
   longint timestep  = 0;
   int unsigned ps   = 0;
-  int seed = 721 * Idx + 1;
+  int seed = (721 * Idx + 1) % 100;
 
-  int voltage_real;
-  int power_real, power_ideal;
-  int speed_real, speed_ideal, delta;
-  int env_lin, env_trans;
+  longint voltage_real;
+  longint power_real, power_ideal;
+
+  longint speed_real, speed_ideal, delta;
+  longint env_lin, env_trans;
 
   always @(posedge clk_i) begin : timing_process
     if (enable_i) begin
@@ -45,22 +48,22 @@ module vip_motor_sim #(
 
   always @(timestep) begin : simulation_process
 
-    voltage_real = voltage_i + 32'($signed(tune_i));
+    voltage_real = 64'(voltage_i) + 64'($signed(tune_i));
 
     power_real  = (voltage_real**2)/R_motor;
-    power_ideal = (   voltage_i**2)/R_motor;
+    power_ideal = (64'(voltage_i)**2)/R_motor;
 
     if (speed_real > 0) begin
-      // Model transient enviromental distruptions with 1.5% probability
-      env_trans  = ($urandom() % 75 == 0) ? ($random() % 1200) : 0;
+      // Model transient enviromental distruptions with 1% probability
+      env_trans  = (64'($urandom()) % 100 == 0) ? (64'($random()) % 1200) : 0;
 
       // Model liner enviromental effects with changing direction
-      env_lin = ($urandom() % 50 == 0) ? ($random() % 20) : env_lin;
+      env_lin = (64'($urandom()) % 50 == 0) ? (64'($random()) % 20) : env_lin;
     end
 
     // Directly correllate speed to power
     speed_ideal = power_ideal;
-    speed_real  = power_real + env_lin + env_trans;
+    speed_real  = 32'(power_real + env_lin + env_trans);
     speed_o     = speed_real;
 
     delta       = speed_ideal - speed_real;
@@ -79,6 +82,8 @@ module vip_motor_sim #(
     if (x > 0) return x;
     else return x * (-1);
   endfunction
+// verilator lint_on WIDTHTRUNC
+// verilator lint_on WIDTHEXPAND
 
 endmodule : vip_motor_sim
 
