@@ -325,18 +325,18 @@ mod app {
                 self.shared().v_tgt0.lock(|v_tgt| *v_tgt = target_speed);
             });
             self.shared().i2c.lock(|i2c| {
-                i2c.write(I2C_ADDRS.motors[0].ctrl, &[0u8, bytes[1]]);
-                let target_speed = (bytes[0] as u32) << 8;
+                i2c.write(I2C_ADDRS.motors[1].ctrl, &[0u8, bytes[1]]);
+                let target_speed = (bytes[1] as u32) << 8;
                 self.shared().v_tgt1.lock(|v_tgt| *v_tgt = target_speed);
             });
             self.shared().i2c.lock(|i2c| {
-                i2c.write(I2C_ADDRS.motors[1].ctrl, &[0u8, bytes[2]]);
-                let target_speed = (bytes[1] as u32) << 8;
+                i2c.write(I2C_ADDRS.motors[2].ctrl, &[0u8, bytes[2]]);
+                let target_speed = (bytes[2] as u32) << 8;
                 self.shared().v_tgt2.lock(|v_tgt| *v_tgt = target_speed);
             });
             self.shared().i2c.lock(|i2c| {
-                i2c.write(I2C_ADDRS.motors[2].ctrl, &[0u8, bytes[3]]);
-                let target_speed = (bytes[2] as u32) << 8;
+                i2c.write(I2C_ADDRS.motors[3].ctrl, &[0u8, bytes[3]]);
+                let target_speed = (bytes[3] as u32) << 8;
                 self.shared().v_tgt3.lock(|v_tgt| *v_tgt = target_speed);
             });
 
