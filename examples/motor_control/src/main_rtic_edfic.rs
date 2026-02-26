@@ -103,8 +103,8 @@ mod app {
         }
     }
 
-    //#[sw_task(priority = 0x0, shared=[i2c])]
-    #[task(binds = MachineTimer, priority = 0x0, shared=[i2c])]
+    //#[sw_task(priority = 0x0)]
+    #[task(binds = MachineTimer, priority = 0x0)]
     struct StartSim {
         mtimer: mtimer::OneShot,
         start_time: Option<u64>,
@@ -164,7 +164,7 @@ mod app {
                     self.mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
                     // Start sim
-                    self.shared().i2c.lock(|i2c| i2c.write(0x0, &[1]));
+                    unsafe { I2c::instance() }.write(0x0, &[1]);
                 }
                 Some(start_time) => {
                     riscv::interrupt::disable();
