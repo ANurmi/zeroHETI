@@ -32,20 +32,25 @@ mod app {
         hyperperiod_ms: u64,
         rep_task_per_us: u32,
         rep_task_ofs_us: u32,
+        #[cfg(feature = "intc-edfic")]
+        mbx_dl_us: u32,
+        #[cfg(feature = "intc-edfic")]
+        wrn_dl_us: u32,
+        #[cfg(feature = "intc-edfic")]
+        rep_dl_us: u32,
     }
 
     const SIM_PARAMS: SimParams = SimParams {
         hyperperiod_ms: 20,
         rep_task_per_us: 4000,
         rep_task_ofs_us: 3900,
+        #[cfg(feature = "intc-edfic")]
+        mbx_dl_us: 5000,
+        #[cfg(feature = "intc-edfic")]
+        wrn_dl_us: 4000,
+        #[cfg(feature = "intc-edfic")]
+        rep_dl_us: 3000,
     };
-
-    #[cfg(feature = "intc-edfic")]
-    const MBX_DL_US: u32 = 5000;
-    #[cfg(feature = "intc-edfic")]
-    const WRN_DL_US: u32 = 4000;
-    #[cfg(feature = "intc-edfic")]
-    const REP_DL_US: u32 = 3000;
 
     #[shared]
     struct Shared {
