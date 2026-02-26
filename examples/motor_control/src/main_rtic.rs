@@ -422,48 +422,6 @@ mod app {
         };
 
         v_out
-        /*
-           let KI_DEN: i32 = 1;*
-           //let res: i32 = ((KP_NOM * err) / KP_DEN) + ((KI_DEN * INTEGRAL[idx]) /
-           // KI_DEN);
-           // KP = 2, KI = 1, KD = 0.2
-
-           let KP = 2;
-           let KI = 2;
-           //  KD == 0.2
-           let INV_KD = 5;
-
-
-           // Additional correction term
-           INTEGRAL[idx] += error;
-           let integral = INTEGRAL[idx];
-           let derivative = error - PREV_ERR[idx];
-
-           PREV_ERR[idx] = error;
-
-           let p_corr = KP * error + KI * integral + (derivative / INV_KD);
-
-           let mut v_tune: i16 = usqrt4((p_corr/(res)) as u32) as i16;
-
-           if error < 0 {
-               v_tune = v_tune * (-1);
-           };
-
-           /*
-           let mut neg = false;
-
-
-           //v_tune *= KV;
-           if (neg & ((v_tune as i16) > 0)) {
-               v_tune = i16::MIN as i32;
-           }
-
-           if (!neg & ((v_tune as i16) < 0)) {
-               v_tune = i16::MAX as i32;
-           }
-        */
-
-           v_tune */
     }
 
     #[inline]
