@@ -13,6 +13,39 @@ pub const UART_BAUD: u32 = if cfg!(feature = "rtl-tb") {
     115_200
 };
 
+pub struct I2cAddrs {
+    pub motors: [MotorI2cAddrs; 4],
+}
+pub struct MotorI2cAddrs {
+    pub stat: u8,
+    pub ctrl: u8,
+    pub tune: u8,
+}
+pub const I2C_ADDRS: I2cAddrs = I2cAddrs {
+    motors: [
+        MotorI2cAddrs {
+            stat: 1,
+            ctrl: 2,
+            tune: 3,
+        },
+        MotorI2cAddrs {
+            stat: 4,
+            ctrl: 5,
+            tune: 6,
+        },
+        MotorI2cAddrs {
+            stat: 7,
+            ctrl: 8,
+            tune: 9,
+        },
+        MotorI2cAddrs {
+            stat: 10,
+            ctrl: 11,
+            tune: 12,
+        },
+    ],
+};
+
 /// Setup `irq` for use with some basic defaults
 ///
 /// Copy and customize this function if you need more involved configurations.
