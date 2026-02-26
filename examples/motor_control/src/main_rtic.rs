@@ -97,7 +97,9 @@ mod app {
 
         // HACK: use mtimer to start the sim, CLIC cannot enable IRQ after pend,
         // see: https://github.com/ANurmi/zeroHETI/issues/42
-        MTimer::instance().into_oneshot().start(200u64.micros());
+        // It takes about 40 us for the rest of setup to complete. Let's leave a
+        // little margin.
+        MTimer::instance().into_oneshot().start(100u64.micros());
         //StartSim::spawn(()).unwrap();
 
         Shared { i2c, mbx, v_target }
