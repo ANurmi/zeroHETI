@@ -27,12 +27,15 @@ mod app {
 
     struct SimParams {
         hyperperiod_ms: u64,
+        rep_task_per_us: u32,
+        rep_task_ofs_us: u32,
     }
 
-    const SIM_PARAMS: SimParams = SimParams { hyperperiod_ms: 20 };
-
-    const REP_TASK_PER_US: u32 = 4000;
-    const REP_TASK_OFS_US: u32 = 3900;
+    const SIM_PARAMS: SimParams = SimParams {
+        hyperperiod_ms: 20,
+        rep_task_per_us: 4000,
+        rep_task_ofs_us: 3900,
+    };
 
     struct Motor {
         stat: u8,
@@ -126,18 +129,21 @@ mod app {
                     Timer::init::<TIMER3_ADDR>().into_periodic(),
                 ];
 
-                timers[0].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
+                timers[0].set_period_offset(
+                    SIM_PARAMS.rep_task_per_us.micros(),
+                    SIM_PARAMS.rep_task_ofs_us.micros(),
+                );
                 timers[1].set_period_offset(
-                    REP_TASK_PER_US.micros(),
-                    REP_TASK_OFS_US.micros() - (1 * 1000u32).micros(),
+                    SIM_PARAMS.rep_task_per_us.micros(),
+                    SIM_PARAMS.rep_task_ofs_us.micros() - (1 * 1000u32).micros(),
                 );
                 timers[2].set_period_offset(
-                    REP_TASK_PER_US.micros(),
-                    REP_TASK_OFS_US.micros() - (2 * 1000u32).micros(),
+                    SIM_PARAMS.rep_task_per_us.micros(),
+                    SIM_PARAMS.rep_task_ofs_us.micros() - (2 * 1000u32).micros(),
                 );
                 timers[3].set_period_offset(
-                    REP_TASK_PER_US.micros(),
-                    REP_TASK_OFS_US.micros() - (3 * 1000u32).micros(),
+                    SIM_PARAMS.rep_task_per_us.micros(),
+                    SIM_PARAMS.rep_task_ofs_us.micros() - (3 * 1000u32).micros(),
                 );
 
                 unsafe {
