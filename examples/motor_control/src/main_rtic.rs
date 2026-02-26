@@ -69,13 +69,6 @@ mod app {
     const REP_DL_US: u32 = 3000;
 
     // Global variables
-    static mut MBX: Mailbox = unsafe { Mailbox::instance() };
-
-    static mut SPEED_REAL: [u32; 4] = [0, 0, 0, 0];
-
-    static mut INTEGRAL: [i32; 4] = [0, 0, 0, 0];
-    static mut PREV_ERR: [i32; 4] = [0, 0, 0, 0];
-
     static mut START_TIME: Option<u64> = None;
     static mut END_TIME: Option<u64> = None;
 
@@ -155,11 +148,13 @@ mod app {
     }
 
     #[task(binds = Timer0Cmp, priority = 0x88, shared = [i2c, mbx])]
-    struct ReadM0 {}
+    struct ReadM0 {
+        speed_real: u32,
+    }
 
     impl RticTask for ReadM0 {
         fn init() -> Self {
-            Self {}
+            Self { speed_real: 0 }
         }
 
         fn exec(&mut self) {
@@ -172,7 +167,7 @@ mod app {
             let time = MTimer::instance().counter();
 
             // SAFETY: there are no other users of SPEED_REAL[0]
-            unsafe { SPEED_REAL[0] = m0_speed };
+            self.speed_real = m0_speed;
 
             self.shared()
                 .mbx
@@ -181,10 +176,12 @@ mod app {
     }
 
     #[task(binds = Timer1Cmp, priority = 0x88, shared = [i2c, mbx])]
-    struct ReadM1 {}
+    struct ReadM1 {
+        speed_real: u32,
+    }
     impl RticTask for ReadM1 {
         fn init() -> Self {
-            Self {}
+            Self { speed_real: 0 }
         }
         fn exec(&mut self) {
             let mut rbuf = [0; 4];
@@ -197,7 +194,7 @@ mod app {
             let time = MTimer::instance().counter();
 
             // SAFETY: there are no other users of SPEED_REAL[1]
-            unsafe { SPEED_REAL[1] = m1_speed };
+            self.speed_real = m1_speed;
 
             self.shared()
                 .mbx
@@ -206,10 +203,12 @@ mod app {
     }
 
     #[task(binds = Timer2Cmp, priority = 0x88, shared = [i2c, mbx])]
-    struct ReadM2 {}
+    struct ReadM2 {
+        speed_real: u32,
+    }
     impl RticTask for ReadM2 {
         fn init() -> Self {
-            Self {}
+            Self { speed_real: 0 }
         }
         fn exec(&mut self) {
             let mut rbuf = [0; 4];
@@ -221,7 +220,7 @@ mod app {
             let time = MTimer::instance().counter();
 
             // SAFETY: there are no other users of SPEED_REAL[2]
-            unsafe { SPEED_REAL[2] = m2_speed };
+            self.speed_real = m2_speed;
 
             self.shared()
                 .mbx
@@ -230,10 +229,12 @@ mod app {
     }
 
     #[task(binds = Timer3Cmp, priority = 0x88, shared = [i2c, mbx])]
-    struct ReadM3 {}
+    struct ReadM3 {
+        speed_real: u32,
+    }
     impl RticTask for ReadM3 {
         fn init() -> Self {
-            Self {}
+            Self { speed_real: 0 }
         }
         fn exec(&mut self) {
             let mut rbuf = [0; 4];
@@ -245,7 +246,7 @@ mod app {
             let time = MTimer::instance().counter();
 
             // SAFETY: there are no other users of SPEED_REAL[3]
-            unsafe { SPEED_REAL[3] = m3_speed };
+            self.speed_real = m3_speed;
 
             self.shared()
                 .mbx
@@ -261,7 +262,7 @@ mod app {
         }
         fn exec(&mut self) {
             // SAFETY: the inbox is not read by any other context
-            let mail = unsafe { MBX.read_inbox() };
+            let mail = unsafe { Mailbox::instance() }.read_inbox();
             let bytes: [u8; 4] = mail.to_be_bytes();
 
             for i in 0usize..4 {
@@ -274,9 +275,10 @@ mod app {
                 });
             }
 
-            unsafe {
-                MBX.ack_irq();
-            }
+            // SAFETY: the mailbox ACK_IRQ is not interacted with by any other
+            // part of the code, and it does not interfere with other Mailbox
+            // hardware operations.
+            unsafe { Mailbox::instance() }.ack_irq();
         }
     }
 
