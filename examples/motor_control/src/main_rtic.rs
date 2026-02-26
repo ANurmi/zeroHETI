@@ -38,10 +38,7 @@ mod app {
     };
 
     struct I2cAddrs {
-        m0: MotorI2cAddrs,
-        m1: MotorI2cAddrs,
-        m2: MotorI2cAddrs,
-        m3: MotorI2cAddrs,
+        motors: [MotorI2cAddrs; 4],
     }
     struct MotorI2cAddrs {
         stat: u8,
@@ -49,26 +46,28 @@ mod app {
         tune: u8,
     }
     const I2C_ADDRS: I2cAddrs = I2cAddrs {
-        m0: MotorI2cAddrs {
-            stat: 1,
-            ctrl: 2,
-            tune: 3,
-        },
-        m1: MotorI2cAddrs {
-            stat: 4,
-            ctrl: 5,
-            tune: 6,
-        },
-        m2: MotorI2cAddrs {
-            stat: 7,
-            ctrl: 8,
-            tune: 9,
-        },
-        m3: MotorI2cAddrs {
-            stat: 10,
-            ctrl: 11,
-            tune: 12,
-        },
+        motors: [
+            MotorI2cAddrs {
+                stat: 1,
+                ctrl: 2,
+                tune: 3,
+            },
+            MotorI2cAddrs {
+                stat: 4,
+                ctrl: 5,
+                tune: 6,
+            },
+            MotorI2cAddrs {
+                stat: 7,
+                ctrl: 8,
+                tune: 9,
+            },
+            MotorI2cAddrs {
+                stat: 10,
+                ctrl: 11,
+                tune: 12,
+            },
+        ],
     };
 
     #[cfg(feature = "intc-edfic")]
@@ -224,7 +223,7 @@ mod app {
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.m0.stat, &mut rbuf));
+                .lock(|i2c| i2c.read(I2C_ADDRS.motors[0].stat, &mut rbuf));
 
             let m0_speed = u32::from_le_bytes(rbuf);
             self.speed_real = m0_speed;
@@ -249,7 +248,7 @@ mod app {
 
             self.shared()
                 .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.m1.stat, &mut rbuf));
+                .lock(|i2c| i2c.read(I2C_ADDRS.motors[1].stat, &mut rbuf));
 
             let m1_speed = u32::from_le_bytes(rbuf);
             self.speed_real = m1_speed;
@@ -273,7 +272,7 @@ mod app {
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.m2.stat, &mut rbuf));
+                .lock(|i2c| i2c.read(I2C_ADDRS.motors[2].stat, &mut rbuf));
 
             let m2_speed = u32::from_le_bytes(rbuf);
             self.speed_real = m2_speed;
@@ -297,7 +296,7 @@ mod app {
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.m3.stat, &mut rbuf));
+                .lock(|i2c| i2c.read(I2C_ADDRS.motors[3].stat, &mut rbuf));
 
             let m3_speed = u32::from_le_bytes(rbuf);
             self.speed_real = m3_speed;
@@ -322,7 +321,7 @@ mod app {
 
             for i in 0usize..4 {
                 self.shared().i2c.lock(|i2c| {
-                    i2c.write((2 + i * 3) as u8, &[0u8, bytes[i]]);
+                    i2c.write(I2C_ADDRS.motors[i].ctrl, &[0u8, bytes[i]]);
                     let target_speed = (bytes[i] as u32) << 8;
                     self.shared()
                         .v_target
@@ -347,7 +346,7 @@ mod app {
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.m0.stat, &mut rbuf));
+                .lock(|i2c| i2c.read(I2C_ADDRS.motors[0].stat, &mut rbuf));
 
             let m0_speed_now = u32::from_le_bytes(rbuf);
             // HACK: there's something wrong with lock closure args in mrtic. Need an extra
@@ -357,7 +356,7 @@ mod app {
             let bytes: [u8; 2] = compute_control(v_target, m0_speed_now).to_le_bytes();
             self.shared()
                 .i2c
-                .lock(|i2c| i2c.write(I2C_ADDRS.m0.tune, &bytes));
+                .lock(|i2c| i2c.write(I2C_ADDRS.motors[0].tune, &bytes));
         }
     }
 
@@ -371,7 +370,7 @@ mod app {
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.m1.stat, &mut rbuf));
+                .lock(|i2c| i2c.read(I2C_ADDRS.motors[1].stat, &mut rbuf));
 
             let m1_speed_now = u32::from_le_bytes(rbuf);
             // HACK: there's something wrong with lock closure args in mrtic. Need an extra
@@ -381,7 +380,7 @@ mod app {
             let bytes: [u8; 2] = compute_control(v_target, m1_speed_now).to_le_bytes();
             self.shared()
                 .i2c
-                .lock(|i2c| i2c.write(I2C_ADDRS.m1.tune, &bytes));
+                .lock(|i2c| i2c.write(I2C_ADDRS.motors[1].tune, &bytes));
         }
     }
 
@@ -395,7 +394,7 @@ mod app {
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.m2.stat, &mut rbuf));
+                .lock(|i2c| i2c.read(I2C_ADDRS.motors[2].stat, &mut rbuf));
 
             let m2_speed_now = u32::from_le_bytes(rbuf);
             // HACK: there's something wrong with lock closure args in mrtic. Need an extra
@@ -405,7 +404,7 @@ mod app {
             let bytes: [u8; 2] = compute_control(v_target, m2_speed_now).to_le_bytes();
             self.shared()
                 .i2c
-                .lock(|i2c| i2c.write(I2C_ADDRS.m2.tune, &bytes));
+                .lock(|i2c| i2c.write(I2C_ADDRS.motors[2].tune, &bytes));
         }
     }
 
@@ -419,7 +418,7 @@ mod app {
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.m3.stat, &mut rbuf));
+                .lock(|i2c| i2c.read(I2C_ADDRS.motors[3].stat, &mut rbuf));
 
             let m3_speed_now = u32::from_le_bytes(rbuf);
             // HACK: there's something wrong with lock closure args in mrtic. Need an extra
@@ -430,7 +429,7 @@ mod app {
 
             self.shared()
                 .i2c
-                .lock(|i2c| i2c.write(I2C_ADDRS.m3.tune, &bytes));
+                .lock(|i2c| i2c.write(I2C_ADDRS.motors[3].tune, &bytes));
         }
     }
 
