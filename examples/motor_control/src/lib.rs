@@ -49,21 +49,21 @@ pub const I2C_ADDRS: I2cAddrs = I2cAddrs {
 /// Setup `irq` for use with some basic defaults
 ///
 /// Copy and customize this function if you need more involved configurations.
-pub fn setup_irq(irq: impl InterruptNumber, level: u8) {
+pub fn setup_irq(irq: impl InterruptNumber, _level: u8) {
     log::debug!("Set up IRQ (id = {})", irq.number());
     #[cfg(feature = "intc-clic")]
     {
         Clic::attr(irq).set_trig(Trig::Edge);
         Clic::attr(irq).set_polarity(Polarity::Pos);
         Clic::attr(irq).set_shv(true);
-        Clic::ctl(irq).set_level(level);
+        Clic::ctl(irq).set_level(_level);
         unsafe { Clic::ie(irq).enable() };
     }
     #[cfg(feature = "intc-hetic")]
     {
         use bsp::hetic::Hetic;
 
-        Hetic::line(irq.number()).set_level_prio(level);
+        Hetic::line(irq.number()).set_level_prio(_level);
         Hetic::line(irq.number()).enable();
     }
     #[cfg(feature = "intc-edfic")]
