@@ -52,9 +52,6 @@ static mut MBX: Mailbox = unsafe { Mailbox::instance() };
 static mut SPEED_REAL: [u32; 4] = [0, 0, 0, 0];
 static mut VOLTAGE_TARGET: [u32; 4] = [0, 0, 0, 0];
 
-static mut INTEGRAL: [i32; 4] = [0, 0, 0, 0];
-static mut PREV_ERR: [i32; 4] = [0, 0, 0, 0];
-
 static mut START_TIME: Option<u64> = None;
 static mut END_TIME: Option<u64> = None;
 
