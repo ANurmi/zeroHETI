@@ -5,7 +5,7 @@
 
 #[cfg(not(any(feature = "intc-hetic", feature = "intc-clic")))]
 compile_error!(
-    "at least one interrupt controller feature is required, pass -Fclic-hetic or -Fclic-clic, but NOT -Fclic-edfic"
+    "at least one interrupt controller feature is required, pass -Fintc-hetic or -Fintc-clic, but NOT -Fintc-edfic"
 );
 
 use bsp::rt as _;
