@@ -55,7 +55,7 @@ module vip_motor_sim #(
 
     if (speed_real > 0) begin
       // Model transient enviromental distruptions with 1% probability
-      env_trans  = (64'($urandom()) % 100 == 0) ? (64'($random()) % 1200) : 0;
+      env_trans  = (64'($urandom()) % 80 == 0) ? (64'($random()) % 1200) : 0;
 
       // Model liner enviromental effects with changing direction
       env_lin = (64'($urandom()) % 50 == 0) ? (64'($random()) % 20) : env_lin;
