@@ -104,7 +104,7 @@ mod app {
     }
 
     //#[sw_task(priority = 0x0)]
-    #[task(binds = MachineTimer, priority = 0x0)]
+    #[task(binds = MachineTimer, priority = 0xff)]
     struct StartSim {
         mtimer: mtimer::OneShot,
         start_time: Option<u64>,
@@ -209,7 +209,8 @@ mod app {
         }
     }
 
-    #[task(binds = Timer0Cmp, priority = 3000, shared = [i2c, mbx])]
+    // 255 - (3000 << 8) = 0xf4
+    #[task(binds = Timer0Cmp, priority = 0xf4, shared = [i2c, mbx])]
     struct ReadM0 {
         speed_real: u32,
     }
@@ -235,7 +236,8 @@ mod app {
         }
     }
 
-    #[task(binds = Timer1Cmp, priority = 3000, shared = [i2c, mbx])]
+    // 255 - (3000 << 8) = 0xf4
+    #[task(binds = Timer1Cmp, priority = 0xf4, shared = [i2c, mbx])]
     struct ReadM1 {
         speed_real: u32,
     }
@@ -260,7 +262,8 @@ mod app {
         }
     }
 
-    #[task(binds = Timer2Cmp, priority = 3000, shared = [i2c, mbx])]
+    // 255 - (3000 << 8) = 0xf4
+    #[task(binds = Timer2Cmp, priority = 0xf4, shared = [i2c, mbx])]
     struct ReadM2 {
         speed_real: u32,
     }
@@ -284,7 +287,8 @@ mod app {
         }
     }
 
-    #[task(binds = Timer3Cmp, priority = 3000, shared = [i2c, mbx])]
+    // 255 - (3000 << 8) = 0xf4
+    #[task(binds = Timer3Cmp, priority = 0xf4, shared = [i2c, mbx])]
     struct ReadM3 {
         speed_real: u32,
     }
@@ -308,7 +312,8 @@ mod app {
         }
     }
 
-    #[task(binds = Mbx, priority = 5000, shared = [i2c, v_tgt0, v_tgt1, v_tgt2, v_tgt3])]
+    // 255 - (5000 << 8) = 0xec
+    #[task(binds = Mbx, priority = 0xec, shared = [i2c, v_tgt0, v_tgt1, v_tgt2, v_tgt3])]
     struct GetMail;
     impl RticTask for GetMail {
         fn init() -> Self {
@@ -347,7 +352,8 @@ mod app {
         }
     }
 
-    #[task(binds = Ext0, priority = 4000, shared = [i2c, v_tgt0])]
+    // 255 - (4000 << 8) = 0xf0
+    #[task(binds = Ext0, priority = 0xf0, shared = [i2c, v_tgt0])]
     struct TuneM0;
     impl RticTask for TuneM0 {
         fn init() -> Self {
@@ -371,7 +377,8 @@ mod app {
         }
     }
 
-    #[task(binds = Ext1, priority = 4000, shared = [i2c, v_tgt1])]
+    // 255 - (4000 << 8) = 0xf0
+    #[task(binds = Ext1, priority = 0xf0, shared = [i2c, v_tgt1])]
     struct TuneM1;
     impl RticTask for TuneM1 {
         fn init() -> Self {
@@ -395,7 +402,8 @@ mod app {
         }
     }
 
-    #[task(binds = Ext2, priority = 4000, shared = [i2c, v_tgt2])]
+    // 255 - (4000 << 8) = 0xf0
+    #[task(binds = Ext2, priority = 0xf0, shared = [i2c, v_tgt2])]
     struct TuneM2;
     impl RticTask for TuneM2 {
         fn init() -> Self {
@@ -419,7 +427,8 @@ mod app {
         }
     }
 
-    #[task(binds = Ext3, priority = 4000, shared = [i2c, v_tgt3])]
+    // 255 - (4000 << 8) = 0xf0
+    #[task(binds = Ext3, priority = 0xf0, shared = [i2c, v_tgt3])]
     struct TuneM3;
     impl RticTask for TuneM3 {
         fn init() -> Self {
