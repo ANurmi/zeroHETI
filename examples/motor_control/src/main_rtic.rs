@@ -82,6 +82,9 @@ mod app {
         MTimer::instance().into_oneshot().start(100u64.micros());
         //StartSim::spawn(()).unwrap();
 
+        // N.b. do not do anything after setting off the above timer. It may break the
+        // system.
+
         Shared {
             i2c,
             mbx,
