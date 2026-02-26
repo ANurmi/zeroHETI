@@ -9,7 +9,7 @@ compile_error!(
 );
 
 use bsp::rt as _;
-#[rtic::app(device = bsp)]
+#[rtic::app(device = bsp/*, dispatchers = [MachineSoft]*/)]
 mod app {
     use bsp::{
         CPU_FREQ_HZ,
@@ -74,7 +74,6 @@ mod app {
 
     #[shared]
     struct Shared {
-        end_timer: mtimer::OneShot,
         i2c: i2c::I2c,
         mbx: Mailbox,
         /// Voltage target
@@ -87,63 +86,118 @@ mod app {
         let riscv_isa = core::env!("RISCV_ISA");
         sprintln!("[Motor control demo] ISA = {riscv_isa}");
 
-        let mut i2c = I2c::init(4);
-
-        // HACK: clear mintstatus
-        unsafe { bsp::register::mintstatus::write(0.into()) };
-
-        let mut end_timer = MTimer::instance().into_oneshot();
-
-        unsafe { START_TIME.replace(end_timer.counter()) };
-
-        end_timer.start(SIM_PARAMS.hyperperiod_ms.millis());
-
-        let timers = &mut [
-            Timer::init::<TIMER0_ADDR>().into_periodic(),
-            Timer::init::<TIMER1_ADDR>().into_periodic(),
-            Timer::init::<TIMER2_ADDR>().into_periodic(),
-            Timer::init::<TIMER3_ADDR>().into_periodic(),
-        ];
-
-        timers[0].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
-        timers[1].set_period_offset(
-            REP_TASK_PER_US.micros(),
-            REP_TASK_OFS_US.micros() - (1 * 1000u32).micros(),
-        );
-        timers[2].set_period_offset(
-            REP_TASK_PER_US.micros(),
-            REP_TASK_OFS_US.micros() - (2 * 1000u32).micros(),
-        );
-        timers[3].set_period_offset(
-            REP_TASK_PER_US.micros(),
-            REP_TASK_OFS_US.micros() - (3 * 1000u32).micros(),
-        );
-
+        let i2c = I2c::init(4);
         let mbx = unsafe { Mailbox::instance() };
         let v_target = [0; 4];
 
-        unsafe {
-            // Clear instruction & cycle counters
-            riscv::register::minstret::write(0);
-            riscv::register::mcycle::write(0);
-            riscv::register::minstreth::write(0);
-            riscv::register::mcycleh::write(0);
+        // HACK: use mtimer to start the sim, CLIC cannot enable IRQ after pend,
+        // see: https://github.com/ANurmi/zeroHETI/issues/42
+        MTimer::instance().into_oneshot().start(200u64.micros());
+        //StartSim::spawn(()).unwrap();
+
+        Shared { i2c, mbx, v_target }
+    }
+
+    //#[sw_task(priority = 0xff, shared=[i2c])]
+    #[task(binds = MachineTimer, priority = 0xff, shared=[i2c])]
+    struct StartSim {
+        mtimer: mtimer::OneShot,
+        first_time: bool,
+    }
+    //impl RticSwTask for StartSim {
+    impl RticTask for StartSim {
+        //type SpawnInput = ();
+
+        fn init() -> Self {
+            let mtimer = MTimer::instance().into_oneshot();
+            Self {
+                mtimer,
+                first_time: true,
+            }
         }
 
-        // Start periodic timers
-        timers.iter_mut().for_each(Periodic::start);
+        fn exec(&mut self /* , _: () */) {
+            if self.first_time {
+                self.first_time = false;
+                let timers = &mut [
+                    Timer::init::<TIMER0_ADDR>().into_periodic(),
+                    Timer::init::<TIMER1_ADDR>().into_periodic(),
+                    Timer::init::<TIMER2_ADDR>().into_periodic(),
+                    Timer::init::<TIMER3_ADDR>().into_periodic(),
+                ];
 
-        // Start sim
-        unsafe {
-            i2c.write(0x0, &[1]);
-            riscv::interrupt::enable();
-        }
+                timers[0].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
+                timers[1].set_period_offset(
+                    REP_TASK_PER_US.micros(),
+                    REP_TASK_OFS_US.micros() - (1 * 1000u32).micros(),
+                );
+                timers[2].set_period_offset(
+                    REP_TASK_PER_US.micros(),
+                    REP_TASK_OFS_US.micros() - (2 * 1000u32).micros(),
+                );
+                timers[3].set_period_offset(
+                    REP_TASK_PER_US.micros(),
+                    REP_TASK_OFS_US.micros() - (3 * 1000u32).micros(),
+                );
 
-        Shared {
-            end_timer,
-            i2c,
-            mbx,
-            v_target,
+                unsafe {
+                    // Clear instruction & cycle counters
+                    riscv::register::minstret::write(0);
+                    riscv::register::mcycle::write(0);
+                    riscv::register::minstreth::write(0);
+                    riscv::register::mcycleh::write(0);
+                }
+
+                // Start periodic timers
+                timers.iter_mut().for_each(Periodic::start);
+
+                // Start hyperperiod timer
+                unsafe { START_TIME.replace(self.mtimer.counter()) };
+                self.mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
+
+                // Start sim
+                self.shared().i2c.lock(|i2c| i2c.write(0x0, &[1]));
+            }
+            // 2nd time / finish
+            else {
+                riscv::interrupt::disable();
+
+                // SAFETY: interrupts are now disabled
+
+                unsafe { END_TIME.replace(MTimer::instance().counter().into()) };
+
+                // Explicitly terminate simulation to print task log
+                unsafe { I2c::instance() }.write(0x0, &[0]);
+
+                let instret = riscv::register::minstret::read64();
+                let active_time_cc = riscv::register::mcycle::read64();
+
+                sprintln!("Instructions retired: {instret}, cycles: {active_time_cc}");
+
+                let total_time_cc = unsafe { END_TIME.unwrap() - START_TIME.unwrap() };
+
+                // For microseconds, use the following:
+                /*
+                let active_time_us = active_time_cc / (1_000 * 1_000 * CPU_FREQ_HZ as u64);
+                let total_time_us = total_time_cc / (1_000 * 1_000 * CPU_FREQ_HZ as u64);
+                sprintln!(
+                    "Total time (us): {}, active time (us): {},",
+                    total_time_us,
+                    active_time_us
+                );
+                */
+                sprintln!(
+                    "Total time (cc): {}, active time (cc): {},",
+                    total_time_cc,
+                    active_time_cc
+                );
+                sprintln!(
+                    "CPU utilization: {}%",
+                    (active_time_cc * 100) / total_time_cc
+                );
+
+                signal_pass(None);
+            }
         }
     }
 
@@ -453,53 +507,19 @@ mod app {
     }
 
     /*
+    /*
     #[cfg_attr(not(feature = "intc-edfic"), task(binds = MachineTimer = 0xff, priority=1, shared=[mtimer]))]
     #[cfg_attr(feature = "intc-edfic", task(binds = MachineTimer = 0x0, priority=1, shared=[mtimer]))]
     */
-    #[task(binds = MachineTimer, priority = 1)]
+    #[task(binds = MachineTimer, priority = 0xff)]
     struct Finish;
     impl RticTask for Finish {
         fn init() -> Self {
             Self
         }
         fn exec(&mut self) {
-            riscv::interrupt::disable();
-
-            // SAFETY: interrupts are now disabled
-
-            unsafe { END_TIME.replace(MTimer::instance().counter().into()) };
-
-            // Explicitly terminate simulation to print task log
-            unsafe { I2c::instance() }.write(0x0, &[0]);
-
-            let instret = riscv::register::minstret::read64();
-            let active_time_cc = riscv::register::mcycle::read64();
-
-            sprintln!("Instructions retired: {instret}, cycles: {active_time_cc}");
-
-            let total_time_cc = unsafe { END_TIME.unwrap() - START_TIME.unwrap() };
-
-            // For microseconds, use the following:
-            /*
-            let active_time_us = active_time_cc / (1_000 * 1_000 * CPU_FREQ_HZ as u64);
-            let total_time_us = total_time_cc / (1_000 * 1_000 * CPU_FREQ_HZ as u64);
-            sprintln!(
-                "Total time (us): {}, active time (us): {},",
-                total_time_us,
-                active_time_us
-            );
-            */
-            sprintln!(
-                "Total time (cc): {}, active time (cc): {},",
-                total_time_cc,
-                active_time_cc
-            );
-            sprintln!(
-                "CPU utilization: {}%",
-                (active_time_cc * 100) / total_time_cc
-            );
-
-            signal_pass(None);
+            // HACK: exec moved to init task second run
         }
     }
+    */
 }
