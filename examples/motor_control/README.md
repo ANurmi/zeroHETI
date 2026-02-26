@@ -6,6 +6,9 @@ cargo run --release -Frtl-tb -Fintc-clic
 
 # Run RTIC version with CLIC
 cargo run --release -Frtl-tb -Fintc-clic -Frtic --bin motor_control_rtic
+
+# Run RTIC version with EDFIC
+cargo run --release -Frtl-tb -Fintc-edfic -Frtic --bin motor_control_rtic_edfic
 ```
 
 ## Motor control details
