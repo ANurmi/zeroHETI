@@ -3,9 +3,9 @@
 #![allow(static_mut_refs)]
 #![allow(non_snake_case)]
 
-#[cfg(not(any(feature = "intc-hetic", feature = "intc-clic", feature = "intc-edfic")))]
+#[cfg(not(any(feature = "intc-hetic", feature = "intc-clic")))]
 compile_error!(
-    "at least one interrupt controller feature is required, pass -Fclic-hetic, -Fclic-clic, -Fclic-edfic"
+    "at least one interrupt controller feature is required, pass -Fclic-hetic or -Fclic-clic, but NOT -Fclic-edfic"
 );
 
 use bsp::rt as _;
