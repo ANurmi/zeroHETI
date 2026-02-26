@@ -23,7 +23,10 @@ mod app {
     };
     use core::i16;
     use fugit::{ExtU32, ExtU64};
-    use motor_control::mailbox::{Mailbox, Motor::*};
+    use motor_control::{
+        I2C_ADDRS,
+        mailbox::{Mailbox, Motor::*},
+    };
 
     struct SimParams {
         hyperperiod_ms: u64,
@@ -35,39 +38,6 @@ mod app {
         hyperperiod_ms: 20,
         rep_task_per_us: 4000,
         rep_task_ofs_us: 3900,
-    };
-
-    struct I2cAddrs {
-        motors: [MotorI2cAddrs; 4],
-    }
-    struct MotorI2cAddrs {
-        stat: u8,
-        ctrl: u8,
-        tune: u8,
-    }
-    const I2C_ADDRS: I2cAddrs = I2cAddrs {
-        motors: [
-            MotorI2cAddrs {
-                stat: 1,
-                ctrl: 2,
-                tune: 3,
-            },
-            MotorI2cAddrs {
-                stat: 4,
-                ctrl: 5,
-                tune: 6,
-            },
-            MotorI2cAddrs {
-                stat: 7,
-                ctrl: 8,
-                tune: 9,
-            },
-            MotorI2cAddrs {
-                stat: 10,
-                ctrl: 11,
-                tune: 12,
-            },
-        ],
     };
 
     #[cfg(feature = "intc-edfic")]
