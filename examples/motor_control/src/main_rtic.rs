@@ -43,7 +43,6 @@ mod app {
         m2: MotorI2cAddrs,
         m3: MotorI2cAddrs,
     }
-    #[allow(dead_code)]
     struct MotorI2cAddrs {
         stat: u8,
         ctrl: u8,
@@ -79,10 +78,6 @@ mod app {
     #[cfg(feature = "intc-edfic")]
     const REP_DL_US: u32 = 3000;
 
-    // Global variables
-    static mut START_TIME: Option<u64> = None;
-    static mut END_TIME: Option<u64> = None;
-
     #[shared]
     struct Shared {
         i2c: i2c::I2c,
@@ -113,7 +108,7 @@ mod app {
     #[task(binds = MachineTimer, priority = 0xff, shared=[i2c])]
     struct StartSim {
         mtimer: mtimer::OneShot,
-        first_time: bool,
+        start_time: Option<u64>,
     }
     //impl RticSwTask for StartSim {
     impl RticTask for StartSim {
@@ -123,94 +118,94 @@ mod app {
             let mtimer = MTimer::instance().into_oneshot();
             Self {
                 mtimer,
-                first_time: true,
+                start_time: None,
             }
         }
 
         fn exec(&mut self /* , _: () */) {
-            if self.first_time {
-                self.first_time = false;
-                let timers = &mut [
-                    Timer::init::<TIMER0_ADDR>().into_periodic(),
-                    Timer::init::<TIMER1_ADDR>().into_periodic(),
-                    Timer::init::<TIMER2_ADDR>().into_periodic(),
-                    Timer::init::<TIMER3_ADDR>().into_periodic(),
-                ];
+            match self.start_time.as_mut() {
+                None => {
+                    let timers = &mut [
+                        Timer::init::<TIMER0_ADDR>().into_periodic(),
+                        Timer::init::<TIMER1_ADDR>().into_periodic(),
+                        Timer::init::<TIMER2_ADDR>().into_periodic(),
+                        Timer::init::<TIMER3_ADDR>().into_periodic(),
+                    ];
 
-                timers[0].set_period_offset(
-                    SIM_PARAMS.rep_task_per_us.micros(),
-                    SIM_PARAMS.rep_task_ofs_us.micros(),
-                );
-                timers[1].set_period_offset(
-                    SIM_PARAMS.rep_task_per_us.micros(),
-                    SIM_PARAMS.rep_task_ofs_us.micros() - (1 * 1000u32).micros(),
-                );
-                timers[2].set_period_offset(
-                    SIM_PARAMS.rep_task_per_us.micros(),
-                    SIM_PARAMS.rep_task_ofs_us.micros() - (2 * 1000u32).micros(),
-                );
-                timers[3].set_period_offset(
-                    SIM_PARAMS.rep_task_per_us.micros(),
-                    SIM_PARAMS.rep_task_ofs_us.micros() - (3 * 1000u32).micros(),
-                );
+                    timers[0].set_period_offset(
+                        SIM_PARAMS.rep_task_per_us.micros(),
+                        SIM_PARAMS.rep_task_ofs_us.micros(),
+                    );
+                    timers[1].set_period_offset(
+                        SIM_PARAMS.rep_task_per_us.micros(),
+                        SIM_PARAMS.rep_task_ofs_us.micros() - (1 * 1000u32).micros(),
+                    );
+                    timers[2].set_period_offset(
+                        SIM_PARAMS.rep_task_per_us.micros(),
+                        SIM_PARAMS.rep_task_ofs_us.micros() - (2 * 1000u32).micros(),
+                    );
+                    timers[3].set_period_offset(
+                        SIM_PARAMS.rep_task_per_us.micros(),
+                        SIM_PARAMS.rep_task_ofs_us.micros() - (3 * 1000u32).micros(),
+                    );
 
-                unsafe {
-                    // Clear instruction & cycle counters
-                    riscv::register::minstret::write(0);
-                    riscv::register::mcycle::write(0);
-                    riscv::register::minstreth::write(0);
-                    riscv::register::mcycleh::write(0);
+                    unsafe {
+                        // Clear instruction & cycle counters
+                        riscv::register::minstret::write(0);
+                        riscv::register::mcycle::write(0);
+                        riscv::register::minstreth::write(0);
+                        riscv::register::mcycleh::write(0);
+                    }
+
+                    // Start periodic timers
+                    timers.iter_mut().for_each(Periodic::start);
+
+                    // Start hyperperiod timer
+                    self.start_time.replace(self.mtimer.counter());
+                    self.mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
+
+                    // Start sim
+                    self.shared().i2c.lock(|i2c| i2c.write(0x0, &[1]));
                 }
+                Some(start_time) => {
+                    riscv::interrupt::disable();
 
-                // Start periodic timers
-                timers.iter_mut().for_each(Periodic::start);
+                    // SAFETY: interrupts are now disabled
 
-                // Start hyperperiod timer
-                unsafe { START_TIME.replace(self.mtimer.counter()) };
-                self.mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
+                    let end_time: u64 = MTimer::instance().counter().into();
 
-                // Start sim
-                self.shared().i2c.lock(|i2c| i2c.write(0x0, &[1]));
-            }
-            // 2nd time / finish
-            else {
-                riscv::interrupt::disable();
+                    // Explicitly terminate simulation to print task log
+                    unsafe { I2c::instance() }.write(0x0, &[0]);
 
-                // SAFETY: interrupts are now disabled
+                    let instret = riscv::register::minstret::read64();
+                    let active_time_cc = riscv::register::mcycle::read64();
 
-                unsafe { END_TIME.replace(MTimer::instance().counter().into()) };
+                    sprintln!("Instructions retired: {instret}, cycles: {active_time_cc}");
 
-                // Explicitly terminate simulation to print task log
-                unsafe { I2c::instance() }.write(0x0, &[0]);
+                    let total_time_cc = end_time - *start_time;
 
-                let instret = riscv::register::minstret::read64();
-                let active_time_cc = riscv::register::mcycle::read64();
+                    // For microseconds, use the following:
+                    /*
+                    let active_time_us = active_time_cc / (1_000 * 1_000 * CPU_FREQ_HZ as u64);
+                    let total_time_us = total_time_cc / (1_000 * 1_000 * CPU_FREQ_HZ as u64);
+                    sprintln!(
+                        "Total time (us): {}, active time (us): {},",
+                        total_time_us,
+                        active_time_us
+                    );
+                    */
+                    sprintln!(
+                        "Total time (cc): {}, active time (cc): {},",
+                        total_time_cc,
+                        active_time_cc
+                    );
+                    sprintln!(
+                        "CPU utilization: {}%",
+                        (active_time_cc * 100) / total_time_cc
+                    );
 
-                sprintln!("Instructions retired: {instret}, cycles: {active_time_cc}");
-
-                let total_time_cc = unsafe { END_TIME.unwrap() - START_TIME.unwrap() };
-
-                // For microseconds, use the following:
-                /*
-                let active_time_us = active_time_cc / (1_000 * 1_000 * CPU_FREQ_HZ as u64);
-                let total_time_us = total_time_cc / (1_000 * 1_000 * CPU_FREQ_HZ as u64);
-                sprintln!(
-                    "Total time (us): {}, active time (us): {},",
-                    total_time_us,
-                    active_time_us
-                );
-                */
-                sprintln!(
-                    "Total time (cc): {}, active time (cc): {},",
-                    total_time_cc,
-                    active_time_cc
-                );
-                sprintln!(
-                    "CPU utilization: {}%",
-                    (active_time_cc * 100) / total_time_cc
-                );
-
-                signal_pass(None);
+                    signal_pass(None);
+                }
             }
         }
     }
