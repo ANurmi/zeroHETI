@@ -175,7 +175,7 @@ unsafe fn Timer0Cmp() {
         use riscv_rt::InterruptNumber;
 
         let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Timer0Cmp.number()).dl();
-        let ceiling = 255 - (dl << 8);
+        let ceiling = 255 - (dl >> 8);
         mintthresh::write((ceiling as usize).into())
     };
 
@@ -206,7 +206,7 @@ unsafe fn Timer1Cmp() {
         use riscv_rt::InterruptNumber;
 
         let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Timer1Cmp.number()).dl();
-        let ceiling = 255 - (dl << 8);
+        let ceiling = 255 - (dl >> 8);
         mintthresh::write((ceiling as usize).into())
     };
 
@@ -237,7 +237,7 @@ unsafe fn Timer2Cmp() {
         use riscv_rt::InterruptNumber;
 
         let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Timer2Cmp.number()).dl();
-        let ceiling = 255 - (dl << 8);
+        let ceiling = 255 - (dl >> 8);
         mintthresh::write((ceiling as usize).into())
     };
 
@@ -268,7 +268,7 @@ unsafe fn Timer3Cmp() {
         use riscv_rt::InterruptNumber;
 
         let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Timer3Cmp.number()).dl();
-        let ceiling = 255 - (dl << 8);
+        let ceiling = 255 - (dl >> 8);
         mintthresh::write((ceiling as usize).into())
     };
 
@@ -299,7 +299,7 @@ unsafe fn Mbx() {
         use riscv_rt::InterruptNumber;
 
         let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Mbx.number()).dl();
-        let ceiling = 255 - (dl << 8);
+        let ceiling = 255 - (dl >> 8);
         mintthresh::write((ceiling as usize).into())
     };
 
@@ -335,7 +335,7 @@ unsafe fn Ext0() {
         use riscv_rt::InterruptNumber;
 
         let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Ext0.number()).dl();
-        let ceiling = 255 - (dl << 8);
+        let ceiling = 255 - (dl >> 8);
         mintthresh::write((ceiling as usize).into())
     };
 
@@ -363,7 +363,7 @@ unsafe fn Ext1() {
         use riscv_rt::InterruptNumber;
 
         let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Ext1.number()).dl();
-        let ceiling = 255 - (dl << 8);
+        let ceiling = 255 - (dl >> 8);
         mintthresh::write((ceiling as usize).into())
     };
 
@@ -391,7 +391,7 @@ unsafe fn Ext2() {
         use riscv_rt::InterruptNumber;
 
         let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Ext2.number()).dl();
-        let ceiling = 255 - (dl << 8);
+        let ceiling = 255 - (dl >> 8);
         mintthresh::write((ceiling as usize).into())
     };
 
@@ -419,7 +419,7 @@ unsafe fn Ext3() {
         use riscv_rt::InterruptNumber;
 
         let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Ext3.number()).dl();
-        let ceiling = 255 - (dl << 8);
+        let ceiling = 255 - (dl >> 8);
         mintthresh::write((ceiling as usize).into())
     };
 
