@@ -164,11 +164,9 @@ mod app {
                 .lock(|i2c| i2c.read(M0_ADDR.stat, &mut rbuf));
 
             let m0_speed = u32::from_le_bytes(rbuf);
-            let time = MTimer::instance().counter();
-
-            // SAFETY: there are no other users of SPEED_REAL[0]
             self.speed_real = m0_speed;
 
+            let time = MTimer::instance().counter();
             self.shared()
                 .mbx
                 .lock(|mbx| mbx.write_time_and_stat(time, m0_speed as u32, M0));
@@ -191,11 +189,9 @@ mod app {
                 .lock(|i2c| i2c.read(M1_ADDR.stat, &mut rbuf));
 
             let m1_speed = u32::from_le_bytes(rbuf);
-            let time = MTimer::instance().counter();
-
-            // SAFETY: there are no other users of SPEED_REAL[1]
             self.speed_real = m1_speed;
 
+            let time = MTimer::instance().counter();
             self.shared()
                 .mbx
                 .lock(|mbx| mbx.write_time_and_stat(time, m1_speed as u32, M1));
@@ -217,11 +213,9 @@ mod app {
                 .lock(|i2c| i2c.read(M2_ADDR.stat, &mut rbuf));
 
             let m2_speed = u32::from_le_bytes(rbuf);
-            let time = MTimer::instance().counter();
-
-            // SAFETY: there are no other users of SPEED_REAL[2]
             self.speed_real = m2_speed;
 
+            let time = MTimer::instance().counter();
             self.shared()
                 .mbx
                 .lock(|mbx| mbx.write_time_and_stat(time, m2_speed as u32, M2));
@@ -243,11 +237,9 @@ mod app {
                 .lock(|i2c| i2c.read(M3_ADDR.stat, &mut rbuf));
 
             let m3_speed = u32::from_le_bytes(rbuf);
-            let time = MTimer::instance().counter();
-
-            // SAFETY: there are no other users of SPEED_REAL[3]
             self.speed_real = m3_speed;
 
+            let time = MTimer::instance().counter();
             self.shared()
                 .mbx
                 .lock(|mbx| mbx.write_time_and_stat(time, m3_speed as u32, M3));
