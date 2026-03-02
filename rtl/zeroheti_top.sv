@@ -119,7 +119,8 @@ module zeroheti_top
       .pready_o (demux_apb[1].pready),
       .pslverr_o(demux_apb[1].pslverr)
   );
-  assign uart_irq = 1'b0;
+  assign uart_irq  = 1'b0;
+  assign uart_tx_o = 1'b0;
 `else
   apb_uart i_apb_uart (
       .CLK    (clk_i),
