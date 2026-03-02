@@ -10,6 +10,8 @@ config SOC_ZEROHETI
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV
 	select RISCV_PRIVILEGED
-	# OpenTitan Ibex core mtvec mode is read-only / forced to vectored mode.
 	select RISCV_VECTORED_MODE
 	select GEN_IRQ_VECTOR_TABLE
+	select LEGACY_CLIC_MEMORYMAP_ACCESS
+	select RISCV_HAS_CLIC
+	select CLIC_SMCLICSHV_EXT
