@@ -104,8 +104,6 @@ int main(void)
     } else {
         printf("[CLIC] FAIL no ISR\n");
     }
-	printf("halt=%u\n", (unsigned)halt);
-
   	debug_signal_pass();
 
     return 0;
