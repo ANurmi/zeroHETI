@@ -121,14 +121,13 @@ module zeroheti_top
   );
   assign uart_irq = 1'b0;
 `else
-  /*
   apb_uart i_apb_uart (
       .CLK    (clk_i),
       .RSTN   (rst_ni),
       .PSEL   (demux_apb[1].psel),
       .PENABLE(demux_apb[1].penable),
       .PWRITE (demux_apb[1].pwrite),
-      .PADDR  (demux_apb[1].paddr[4:2]),
+      .PADDR  (demux_apb[1].paddr[2:0]),
       .PWDATA (demux_apb[1].pwdata),
       .PRDATA (demux_apb[1].prdata),
       .PREADY (demux_apb[1].pready),
@@ -144,8 +143,7 @@ module zeroheti_top
       .DTRN   (),
       .SIN    (uart_rx_i),
       .SOUT   (uart_tx_o)
-  );*/
-  $fatal(1, "TODO: remap full UART");
+  );
 
 `endif
 
