@@ -1,3 +1,7 @@
+`include "obi/typedef.svh"
+`include "obi/assign.svh"
+
+
 module zeroheti_core
   import zeroheti_pkg::*;
 #(
