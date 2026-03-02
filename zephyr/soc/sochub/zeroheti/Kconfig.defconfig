@@ -19,4 +19,7 @@ config RISCV_SOC_EXCEPTION_FROM_IRQ
 	bool
 	default y
 
+config RISCV_TRAP_HANDLER_ALIGNMENT
+	default 256
+
 endif # SOC_ZEROHETI
