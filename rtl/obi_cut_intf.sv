@@ -1,7 +1,15 @@
+// Copyright 2023 ETH Zurich and University of Bologna.
+// Solderpad Hardware License, Version 0.51, see LICENSE for details.
+// SPDX-License-Identifier: SHL-0.51
+
+// Michael Rogenmoser <michaero@iis.ee.ethz.ch>
+
 `include "obi/typedef.svh"
 `include "obi/assign.svh"
 
 module obi_cut_intf #(
+  parameter obi_pkg::obi_cfg_t ObiCfg  = obi_pkg::ObiDefaultConfig,
+  bit Bypass = 1'b0
 )(
   input logic         clk_i,
   input logic         rst_ni,
@@ -9,40 +17,34 @@ module obi_cut_intf #(
   OBI_BUS.Subordinate obi_s
 );
 
-`OBI_TYPEDEF_ALL(sbr_port_obi, obi_pkg::ObiDefaultConfig)
-`OBI_TYPEDEF_ALL(mgr_port_obi, obi_pkg::ObiDefaultConfig)
+typedef logic [31:0] addr_t;
 
-sbr_port_obi_req_t sbr_ports_req;
-sbr_port_obi_rsp_t sbr_ports_rsp;
-mgr_port_obi_req_t mgr_ports_req;
-mgr_port_obi_rsp_t mgr_ports_rsp;
+  spill_register #(
+    .T      ( addr_t),
+    .Bypass ( Bypass   )
+  ) i_reg_a (
+    .clk_i,
+    .rst_ni,
+    .valid_i ( obi_s.req ),
+    .ready_o ( obi_s.gnt ),
+    .data_i  ( obi_s.addr ),
+    .valid_o ( obi_m.req ),
+    .ready_i ( obi_m.gnt ),
+    .data_o  ( obi_m.addr )
+  );
 
-`OBI_ASSIGN_TO_REQ(sbr_ports_req, obi_s, obi_pkg::ObiDefaultConfig)
-`OBI_ASSIGN_FROM_RSP(obi_s, sbr_ports_rsp, obi_pkg::ObiDefaultConfig)
-
-`OBI_ASSIGN_FROM_REQ(obi_m, mgr_ports_req, obi_pkg::ObiDefaultConfig)
-`OBI_ASSIGN_TO_RSP(mgr_ports_rsp, obi_m, obi_pkg::ObiDefaultConfig)
-
-obi_cut #(
-  .obi_a_chan_t (sbr_port_obi_a_chan_t),
-  .obi_r_chan_t (sbr_port_obi_r_chan_t),
-  .obi_req_t    (sbr_port_obi_req_t),
-  .obi_rsp_t    (sbr_port_obi_rsp_t)
-) i_obi_cut (
-  .clk_i,
-  .rst_ni,
-  .sbr_port_req_i (sbr_ports_req),
-  .sbr_port_rsp_o (sbr_ports_rsp),
-  .mgr_port_req_o (mgr_ports_req),
-  .mgr_port_rsp_i (mgr_ports_rsp)
-);
-
-assign obi_m.reqpar    = 0;
-assign obi_m.rready    = 0;
-assign obi_m.rreadypar = 0;
-
-assign obi_s.gntpar    = 0;
-assign obi_s.rvalidpar = 0;
-
+  spill_register #(
+    .T      ( addr_t),
+    .Bypass ( Bypass    )
+  ) i_req_r (
+    .clk_i,
+    .rst_ni,
+    .valid_i ( obi_m.rvalid ),
+    .ready_o ( ),
+    .data_i  ( obi_m.rdata      ),
+    .valid_o ( obi_s.rvalid ),
+    .ready_i ( 1'b1 ),
+    .data_o  ( obi_s.rdata      )
+  );
 
 endmodule

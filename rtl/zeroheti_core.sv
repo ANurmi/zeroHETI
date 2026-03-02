@@ -38,6 +38,8 @@ module zeroheti_core
 
   OBI_BUS mgr_bus[NumSbrPorts] ();
   OBI_BUS sbr_bus[NumMgrPorts] ();
+  OBI_BUS data_bus ();
+  OBI_BUS per_bus ();
 
   logic irq_heti, irq_ack, irq_valid, irq_shv, irq_nest;
   logic [Cfg.num_irqs-1:0] core_irq;
@@ -69,9 +71,13 @@ module zeroheti_core
   obi_to_apb_intf i_obi_to_apb (
       .clk_i,
       .rst_ni,
-      .obi_i(sbr_bus[4]),
+      .obi_i(per_bus),
       .apb_o(apb_mgr)
   );
+
+
+
+  obi_cut_intf i_per_cut (.clk_i, .rst_ni, .obi_s(sbr_bus[4]),   .obi_m(per_bus));
 
   typedef struct packed {
     int unsigned idx;
@@ -106,6 +112,11 @@ module zeroheti_core
   assign sbr_bus[5].rid        = 1'b0;
   assign sbr_bus[5].r_optional = 1'b0;
 */
+
+  //obi_cut_intf i_ext_cut (.clk_i, .rst_ni, .obi_s(sbr_bus[5]),   .obi_m(obi_mgr));
+  obi_cut_intf i_data_cut (.clk_i, .rst_ni, .obi_s(data_bus),   .obi_m(mgr_bus[2]));
+
+  //`OBI_ASSIGN(mgr_bus[2], data_bus,  obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
   `OBI_ASSIGN(obi_mgr, sbr_bus[5], obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
 
   logic debug_req;
@@ -183,15 +194,15 @@ module zeroheti_core
       .instr_rdata_intg_i(7'b0),
       .instr_err_i       (mgr_bus[1].err),
 
-      .data_req_o       (mgr_bus[2].req),
-      .data_gnt_i       (mgr_bus[2].gnt),
-      .data_rvalid_i    (mgr_bus[2].rvalid),
-      .data_we_o        (mgr_bus[2].we),
-      .data_be_o        (mgr_bus[2].be),
-      .data_addr_o      (mgr_bus[2].addr),
-      .data_wdata_o     (mgr_bus[2].wdata),
-      .data_rdata_i     (mgr_bus[2].rdata),
-      .data_err_i       (mgr_bus[2].err),
+      .data_req_o       (data_bus.req),
+      .data_gnt_i       (data_bus.gnt),
+      .data_rvalid_i    (data_bus.rvalid),
+      .data_we_o        (data_bus.we),
+      .data_be_o        (data_bus.be),
+      .data_addr_o      (data_bus.addr),
+      .data_wdata_o     (data_bus.wdata),
+      .data_rdata_i     (data_bus.rdata),
+      .data_err_i       (data_bus.err),
       .data_rdata_intg_i(7'b0),
       .data_wdata_intg_o(),
 
@@ -228,10 +239,11 @@ module zeroheti_core
   assign mgr_bus[1].we    = 1'b0;
   assign mgr_bus[1].wdata = 32'b0;
 
+/*
   assign mgr_bus[2].reqpar = 1'b0;
   assign mgr_bus[2].aid    = 1'b0;
   assign mgr_bus[2].a_optional = 1'b0;
-
+*/
   zeroheti_dbg_wrapper #() i_debug (
       .clk_i,
       .rst_ni,

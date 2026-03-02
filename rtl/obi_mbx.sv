@@ -6,13 +6,15 @@ module obi_mbx #(
            OBI_BUS.Subordinate obi_sbr
 );
 
-  assign obi_sbr.gnt = obi_sbr.req;
+ // assign obi_sbr.gnt = obi_sbr.req;
 
   always_ff @(posedge clk_i) begin
     if (~rst_ni) begin
       obi_sbr.rvalid <= 1'b0;
+      obi_sbr.gnt    <= 1'b0;
     end else begin
-      obi_sbr.rvalid <= obi_sbr.req;
+      obi_sbr.gnt    <= obi_sbr.req;
+      obi_sbr.rvalid <= obi_sbr.gnt;
     end
   end
 
@@ -28,6 +30,7 @@ module obi_mbx #(
       .rdata_o(obi_sbr.rdata)
   );
 `else
+  assign irq_o = 1'b0;
   assign obi_sbr.rdata = 32'b0;
 `endif
 

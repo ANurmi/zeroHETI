@@ -122,6 +122,6 @@ module zeroheti_int_ctrl #(
         .irq_kill_req_o()
     );
 
-  end
+  end else $fatal(1, "INTC not defined!");
 
 endmodule : zeroheti_int_ctrl
