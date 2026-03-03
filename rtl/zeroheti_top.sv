@@ -75,10 +75,10 @@ module zeroheti_top
   );
 
   obi_mbx i_mbx (
-    .clk_i,
-    .rst_ni,
-    .irq_o   (mbx_irq),
-    .obi_sbr (mbx_obi)
+      .clk_i,
+      .rst_ni,
+      .irq_o  (mbx_irq),
+      .obi_sbr(mbx_obi)
   );
 
   always_comb begin : apb_decode
@@ -119,7 +119,7 @@ module zeroheti_top
       .pready_o (demux_apb[1].pready),
       .pslverr_o(demux_apb[1].pslverr)
   );
-  assign uart_irq  = 1'b0;
+  assign uart_irq  = 1'b0; 
   assign uart_tx_o = 1'b0;
 `else
   apb_uart i_apb_uart (
@@ -222,8 +222,9 @@ module zeroheti_top
       @(posedge rst_ni);
       $display("[DUT:SimLoader] Initializing program with $readmemh");
       $display("[DUT:SimLoader] APPLICABLE TO SIMULATED DESIGNS ONLY");
-      $readmemh({zeroHetiRoot, "/build/verilator_build/imem_stim.hex"}, i_core.i_imem.i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/dmem_stim.hex"}, i_core.i_dmem.i_sram.sram);
+      $fatal(1, "Preloading not implemented for banked memories, TODO");
+      //$readmemh({zeroHetiRoot, "/build/verilator_build/imem_stim.hex"}, i_core.i_imem.i_sram.sram);
+      //$readmemh({zeroHetiRoot, "/build/verilator_build/dmem_stim.hex"}, i_core.i_dmem.i_sram.sram);
     end
   end
 
