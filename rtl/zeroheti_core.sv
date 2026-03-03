@@ -114,9 +114,9 @@ module zeroheti_core
 */
 
   //obi_cut_intf i_ext_cut (.clk_i, .rst_ni, .obi_s(sbr_bus[5]),   .obi_m(obi_mgr));
-  obi_cut_intf i_data_cut (.clk_i, .rst_ni, .obi_s(data_bus),   .obi_m(mgr_bus[2]));
+  //obi_cut_intf i_data_cut (.clk_i, .rst_ni, .obi_s(data_bus),   .obi_m(mgr_bus[2]));
 
-  //`OBI_ASSIGN(mgr_bus[2], data_bus,  obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
+  `OBI_ASSIGN(mgr_bus[2], data_bus,  obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
   `OBI_ASSIGN(obi_mgr, sbr_bus[5], obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
 
   logic debug_req;
