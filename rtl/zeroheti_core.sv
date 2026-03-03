@@ -77,7 +77,6 @@ module zeroheti_core
 
 
 
-  obi_cut_intf i_per_cut (.clk_i, .rst_ni, .obi_s(sbr_bus[4]),   .obi_m(per_bus));
 
   typedef struct packed {
     int unsigned idx;
@@ -99,24 +98,12 @@ module zeroheti_core
       '{idx: 5, start_addr: AddrMap.ext.base, end_addr: AddrMap.ext.last}
   };
 
-  /*
-  // TODO: add ext port when needed
-  assign sbr_bus[5].gnt        = 1'b0;
-  assign sbr_bus[5].gntpar     = 1'b0;
-  assign sbr_bus[5].err        = 1'b0;
-  assign sbr_bus[5].rready     = 1'b0;
-  assign sbr_bus[5].rreadypar  = 1'b0;
-  assign sbr_bus[5].rvalid     = 1'b0;
-  assign sbr_bus[5].rdata      = 32'b0;
-  assign sbr_bus[5].rvalidpar  = 1'b0;
-  assign sbr_bus[5].rid        = 1'b0;
-  assign sbr_bus[5].r_optional = 1'b0;
-*/
-
   //obi_cut_intf i_ext_cut (.clk_i, .rst_ni, .obi_s(sbr_bus[5]),   .obi_m(obi_mgr));
-  obi_cut_intf i_data_cut (.clk_i, .rst_ni, .obi_s(data_bus),   .obi_m(mgr_bus[2]));
-
-  //`OBI_ASSIGN(mgr_bus[2], data_bus,  obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
+  //obi_cut_intf i_data_cut (.clk_i, .rst_ni, .obi_s(data_bus),   .obi_m(mgr_bus[2]));
+  //obi_cut_intf i_per_cut (.clk_i, .rst_ni, .obi_s(sbr_bus[4]),   .obi_m(per_bus));
+  
+  `OBI_ASSIGN(per_bus, sbr_bus[4],  obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
+  `OBI_ASSIGN(mgr_bus[2], data_bus,  obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
   `OBI_ASSIGN(obi_mgr, sbr_bus[5], obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
 
   logic debug_req;
