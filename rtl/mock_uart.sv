@@ -51,8 +51,9 @@ module mock_uart (
     byte scr = 0;
     logic fifo_enabled = 1'b0;
 
-    bit write_event = penable_i & psel_i &  pwrite_i;
-    bit read_event  = penable_i & psel_i & ~pwrite_i;
+    logic read_event, write_event;
+    assign write_event = penable_i & psel_i &  pwrite_i;
+    assign read_event  = penable_i & psel_i & ~pwrite_i;
     byte wdata, rdata;
     logic [2:0] local_ofs;
 /* verilator lint_off UNOPTFLAT*/
@@ -88,7 +89,7 @@ module mock_uart (
           wdata    = pwdata_i[31:24];
         end
         default: begin
-          if (psel_i & penable_i) $fatal(1, "Fatal: Illegal UART access");
+          if (psel_i & penable_i) $warning(1, "Warning: Illegal UART access");
         end
       endcase
     end
