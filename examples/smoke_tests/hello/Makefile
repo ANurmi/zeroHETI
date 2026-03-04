@@ -16,8 +16,8 @@ link:
 	-o $(BUILD_DIR)/$(TEST).elf \
 	$(BUILD_DIR)/crt0.o \
 	$(BUILD_DIR)/$(TEST).o
-	#Clean up
-	rm $(BUILD_DIR)/crt0.o $(BUILD_DIR)/$(TEST).o
+	@#Clean up
+	@rm $(BUILD_DIR)/crt0.o $(BUILD_DIR)/$(TEST).o
 
 
 .PHONY: test

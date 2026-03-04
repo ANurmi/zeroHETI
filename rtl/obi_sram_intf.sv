@@ -19,7 +19,7 @@ module obi_sram_intf #(
   logic [29:0] word_addr;
   logic [AddrWidth-1:0] sram_addr;
 
-  logic rvalid_q;
+  logic  rvalid_q;
 
   assign offset_addr = sbr.addr - BaseAddr;
   assign word_addr   = offset_addr[31:2];

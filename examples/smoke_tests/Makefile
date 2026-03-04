@@ -19,20 +19,24 @@ export CFLAGS      = -O2 -ffunction-sections -fdata-sections -g -c
 
 .PHONY: init
 init:
-	mkdir -p $(BUILD_DIR)
+	@mkdir -p $(BUILD_DIR)
 
 .PHONY: elf
 elf: init
-	$(MAKE) -C $(CURDIR)/$(TEST) test
-	$(MAKE) -C $(CURDIR) objdump
+	@echo "### Compiling TEST: \"$(TEST)\" for ISA: $(ISA) ###"
+	@$(MAKE) -C $(CURDIR)/$(TEST) test
+	@$(MAKE) -C $(CURDIR) objdump
 
 .PHONY: objdump
 objdump:
 	@$(TOOLCHAIN)objdump $(BUILD_DIR)/$(TEST).elf -D > $(BUILD_DIR)/$(TEST).asm
+	@echo "### Compile complete ###"
+	@echo "ELF: $(BUILD_DIR)/$(TEST).elf"
+	@echo "Objdump: $(BUILD_DIR)/$(TEST).asm"
 
 .PHONY: hex
 hex:
-	$(TOOLCHAIN)objcopy $(BUILD_DIR)/$(TEST).elf -O binary $(BUILD_DIR)/tmp.bin
+	@$(TOOLCHAIN)objcopy $(BUILD_DIR)/$(TEST).elf -O binary $(BUILD_DIR)/tmp.bin
 	@xxd -ps $(BUILD_DIR)/tmp.bin $(BUILD_DIR)/tmp.hex
 	@tr -d '\n' < $(BUILD_DIR)/tmp.hex > $(BUILD_DIR)/tmp_nl.hex
 	@sed -r 's/(.{8})/\1\n/g' < $(BUILD_DIR)/tmp_nl.hex > $(BUILD_DIR)/tmp_be.hex
@@ -47,4 +51,4 @@ trim:
 .PHONY: test
 test:
 	@echo "TEST not set!"
-	exit 1
+	@exit 1

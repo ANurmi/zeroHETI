@@ -75,10 +75,10 @@ module zeroheti_top
   );
 
   obi_mbx i_mbx (
-    .clk_i,
-    .rst_ni,
-    .irq_o   (mbx_irq),
-    .obi_sbr (mbx_obi)
+      .clk_i,
+      .rst_ni,
+      .irq_o  (mbx_irq),
+      .obi_sbr(mbx_obi)
   );
 
   always_comb begin : apb_decode
@@ -222,8 +222,23 @@ module zeroheti_top
       @(posedge rst_ni);
       $display("[DUT:SimLoader] Initializing program with $readmemh");
       $display("[DUT:SimLoader] APPLICABLE TO SIMULATED DESIGNS ONLY");
-      $readmemh({zeroHetiRoot, "/build/verilator_build/imem_stim.hex"}, i_core.i_imem.i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/dmem_stim.hex"}, i_core.i_dmem.i_sram.sram);
+
+      // Preload 4 IMEM banks
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_0.hex"},
+                  i_core.i_imem.g_banks[0].i_sram.sram);
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_1.hex"},
+                  i_core.i_imem.g_banks[1].i_sram.sram);
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_2.hex"},
+                  i_core.i_imem.g_banks[2].i_sram.sram);
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_3.hex"},
+                  i_core.i_imem.g_banks[3].i_sram.sram);
+
+      // Preload 2 DMEM banks
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_0.hex"},
+                  i_core.i_dmem.g_banks[0].i_sram.sram);
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_1.hex"},
+                  i_core.i_dmem.g_banks[1].i_sram.sram);
+
     end
   end
 

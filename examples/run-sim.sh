@@ -34,4 +34,4 @@ rm ${SW_BUILD_DIR}/tmp*
 
 # Run verilator simulation with ELF
 cd ${PROJECT_ROOT}
-make simv TEST=$(basename $1) XLEN=${XLEN}
+make verilate simv TEST=$(basename $1) XLEN=${XLEN}

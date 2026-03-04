@@ -75,9 +75,6 @@ module zeroheti_core
       .apb_o(apb_mgr)
   );
 
-
-
-
   typedef struct packed {
     int unsigned idx;
     logic [31:0] start_addr;
@@ -101,7 +98,6 @@ module zeroheti_core
   //obi_cut_intf i_ext_cut (.clk_i, .rst_ni, .obi_s(sbr_bus[5]),   .obi_m(obi_mgr));
   //obi_cut_intf i_data_cut (.clk_i, .rst_ni, .obi_s(data_bus),   .obi_m(mgr_bus[2]));
   //obi_cut_intf i_per_cut (.clk_i, .rst_ni, .obi_s(sbr_bus[4]),   .obi_m(per_bus));
-  
   `OBI_ASSIGN(per_bus, sbr_bus[4],  obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
   `OBI_ASSIGN(mgr_bus[2], data_bus,  obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
   `OBI_ASSIGN(obi_mgr, sbr_bus[5], obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
@@ -246,7 +242,8 @@ module zeroheti_core
       .sba_mgr    (mgr_bus[0])
   );
 
-  obi_sram_intf #(
+  obi_mb_sram_intf #(
+      .NrBanks (32'd4),
       .BaseAddr(AddrMap.imem.base),
       .NumWords(zeroheti_pkg::ImemWSize)
   ) i_imem (
@@ -255,7 +252,8 @@ module zeroheti_core
       .sbr(sbr_bus[1])
   );
 
-  obi_sram_intf #(
+  obi_mb_sram_intf #(
+      .NrBanks (32'd2),
       .BaseAddr(AddrMap.dmem.base),
       .NumWords(zeroheti_pkg::DmemWSize)
   ) i_dmem (
