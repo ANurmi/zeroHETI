@@ -60,7 +60,7 @@ tail -n +$DMEM_START $STIMS/elf.hex > $STIMS/dmem.hex
 for i in $(seq 0 $(($IMEM_BANKS-1)));
 do
   BASE=$(($i * $IWORDS_BANK + 1))
-  RANGE=$(($BASE + IWORDS_BANK))
+  RANGE=$(($BASE + IWORDS_BANK - 1))
   END=$(($RANGE + 1))
   sed -n "${BASE},${RANGE}p;${END}q" $STIMS/imem.hex > $STIMS/imem_$i.hex
 done
