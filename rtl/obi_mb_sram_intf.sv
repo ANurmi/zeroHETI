@@ -32,7 +32,7 @@ module obi_mb_sram_intf #(
 
 `ifndef SYNTHESIS
   initial begin
-    if (NrBanks > 16) $fatal(1, "Maximun supported bank number is 16!");
+    if (NrBanks > 8) $fatal(1, "Maximun supported bank number is 8!");
   end
 `endif
 
@@ -54,6 +54,9 @@ module obi_mb_sram_intf #(
       4: rdata_sel = 2;
       8: rdata_sel = 3;
       16: rdata_sel = 4;
+      32: rdata_sel = 5;
+      64: rdata_sel = 7;
+      128: rdata_sel = 8;
       default: rdata_sel = 0;
     endcase
   end
