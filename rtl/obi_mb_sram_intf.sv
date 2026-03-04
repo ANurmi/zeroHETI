@@ -21,13 +21,20 @@ module obi_mb_sram_intf #(
   logic               rvalid_q;
   logic [NrBanks-1:0] req_mux;
   logic [NrBanks-1:0] req_q, req_d;
-  logic [NrBanks-1:0]                we_mux;
-  logic [NrBanks-1:0][DataWidth-1:0] rdata_mux;
-  logic [       31:0]                mem_addr;
-  logic [       29:0]                word_addr;
+  logic [        NrBanks-1:0]                we_mux;
+  logic [        NrBanks-1:0][DataWidth-1:0] rdata_mux;
+  logic [               31:0]                mem_addr;
+  logic [               29:0]                word_addr;
+  logic [$clog2(NrBanks)-1:0]                rdata_sel;
 
   assign mem_addr  = sbr.addr - BaseAddr;
   assign word_addr = mem_addr[31:2];
+
+`ifndef SYNTHESIS
+  initial begin
+    if (NrBanks > 16) $fatal(1, "Maximun supported bank number is 16!");
+  end
+`endif
 
   always_ff @(posedge clk_i) begin
     if (~rst_ni) begin
@@ -39,7 +46,19 @@ module obi_mb_sram_intf #(
     end
   end
 
-  assign sbr.rdata = rdata_mux[req_q];
+  always_comb begin : rdata_lut
+    //rdata_sel = 0;
+    unique case (req_q)
+      1: rdata_sel = 0;
+      2: rdata_sel = 1;
+      4: rdata_sel = 2;
+      8: rdata_sel = 3;
+      16: rdata_sel = 4;
+      default: rdata_sel = 0;
+    endcase
+  end
+
+  assign sbr.rdata = rdata_mux[rdata_sel];
 
   for (genvar i = 0; i < NrBanks; i++) begin : g_banks
 
