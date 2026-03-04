@@ -119,7 +119,7 @@ module zeroheti_top
       .pready_o (demux_apb[1].pready),
       .pslverr_o(demux_apb[1].pslverr)
   );
-  assign uart_irq  = 1'b0; 
+  assign uart_irq  = 1'b0;
   assign uart_tx_o = 1'b0;
 `else
   apb_uart i_apb_uart (
@@ -222,9 +222,23 @@ module zeroheti_top
       @(posedge rst_ni);
       $display("[DUT:SimLoader] Initializing program with $readmemh");
       $display("[DUT:SimLoader] APPLICABLE TO SIMULATED DESIGNS ONLY");
-      $fatal(1, "Preloading not implemented for banked memories, TODO");
-      //$readmemh({zeroHetiRoot, "/build/verilator_build/imem_stim.hex"}, i_core.i_imem.i_sram.sram);
-      //$readmemh({zeroHetiRoot, "/build/verilator_build/dmem_stim.hex"}, i_core.i_dmem.i_sram.sram);
+
+      // Preload 4 IMEM banks
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_0.hex"},
+                  i_core.i_imem.g_banks[0].i_sram.sram);
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_1.hex"},
+                  i_core.i_imem.g_banks[1].i_sram.sram);
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_2.hex"},
+                  i_core.i_imem.g_banks[2].i_sram.sram);
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_3.hex"},
+                  i_core.i_imem.g_banks[3].i_sram.sram);
+
+      // Preload 2 DMEM banks
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_0.hex"},
+                  i_core.i_dmem.g_banks[0].i_sram.sram);
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_1.hex"},
+                  i_core.i_dmem.g_banks[1].i_sram.sram);
+
     end
   end
 
