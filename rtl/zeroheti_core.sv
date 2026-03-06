@@ -26,6 +26,7 @@ module zeroheti_core
            APB.Master                    apb_mgr
 );
 
+/*
   localparam int unsigned NumSbrPorts = 32'd3;
   localparam int unsigned NumMgrPorts = 32'd6;
   localparam int unsigned NumAddrRules = NumMgrPorts;  // works for single, continuous regions
@@ -35,11 +36,17 @@ module zeroheti_core
       '{1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1},
       '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}
   };
-
   OBI_BUS mgr_bus[NumSbrPorts] ();
   OBI_BUS sbr_bus[NumMgrPorts] ();
+*/
+  OBI_BUS inst_bus ();
   OBI_BUS data_bus ();
+  OBI_BUS imem_bus ();
+  OBI_BUS dmem_bus ();
+  OBI_BUS intc_bus ();
   OBI_BUS per_bus ();
+  OBI_BUS sba_bus ();
+  OBI_BUS dbg_bus ();
 
   logic irq_heti, irq_ack, irq_valid, irq_shv, irq_nest;
   logic [Cfg.num_irqs-1:0] core_irq;
@@ -49,7 +56,7 @@ module zeroheti_core
   logic [             1:0] irq_priv;
 
   zeroheti_int_ctrl #(
-      .CoreCfg(Cfg),
+.CoreCfg(Cfg),
       .TsWidth(TsWidth)
   ) i_int_ctrl (
       .clk_i,
@@ -65,7 +72,7 @@ module zeroheti_core
       .irq_level_o(irq_level),
       .irq_priv_o (irq_priv),
       .irq_shv_o  (irq_shv),
-      .obi_sbr    (sbr_bus[3])
+      .obi_sbr    (intc_bus)
   );
 
   obi_to_apb_intf i_obi_to_apb (
@@ -75,6 +82,20 @@ module zeroheti_core
       .apb_o(apb_mgr)
   );
 
+  zeroheti_xbar i_xbar (
+      .clk_i,
+      .rst_ni,
+      .inst_bus (),
+      .data_bus (),
+      .imem_bus (),
+      .dmem_bus (),
+      .intc_bus (),
+      .per_bus (),
+      .sba_bus (),
+      .dbg_bus ()
+    );
+
+  /*
   typedef struct packed {
     int unsigned idx;
     logic [31:0] start_addr;
@@ -101,7 +122,7 @@ module zeroheti_core
   `OBI_ASSIGN(per_bus, sbr_bus[4],  obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
   `OBI_ASSIGN(mgr_bus[2], data_bus,  obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
   `OBI_ASSIGN(obi_mgr, sbr_bus[5], obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
-
+*/
   logic debug_req;
 
   always_comb begin : g_core_irq
@@ -111,6 +132,7 @@ module zeroheti_core
     end
   end
 
+  /*
   obi_xbar_intf #(
       .NumSbrPorts    (NumSbrPorts),
       .NumMgrPorts    (NumMgrPorts),
@@ -127,7 +149,7 @@ module zeroheti_core
       .default_idx_i   (9'b0),
       .sbr_ports       (mgr_bus),
       .mgr_ports       (sbr_bus)
-  );
+  );*/
 
 
   `ifndef SYNTHESIS
@@ -169,13 +191,13 @@ module zeroheti_core
       .test_en_i  (testmode_i),
       .boot_addr_i(Cfg.boot_addr),
 
-      .instr_req_o       (mgr_bus[1].req),
-      .instr_addr_o      (mgr_bus[1].addr),
-      .instr_gnt_i       (mgr_bus[1].gnt),
-      .instr_rvalid_i    (mgr_bus[1].rvalid),
-      .instr_rdata_i     (mgr_bus[1].rdata),
+      .instr_req_o       (inst_bus.req),
+      .instr_addr_o      (inst_bus.addr),
+      .instr_gnt_i       (inst_bus.gnt),
+      .instr_rvalid_i    (inst_bus.rvalid),
+      .instr_rdata_i     (inst_bus.rdata),
       .instr_rdata_intg_i(7'b0),
-      .instr_err_i       (mgr_bus[1].err),
+      .instr_err_i       (inst_bus.err),
 
       .data_req_o       (data_bus.req),
       .data_gnt_i       (data_bus.gnt),
@@ -215,6 +237,7 @@ module zeroheti_core
   );
 
   // CPU tie-offs
+  /*
   assign mgr_bus[1].reqpar = 1'b0;
   assign mgr_bus[1].aid    = 1'b0;
   assign mgr_bus[1].a_optional = 1'b0;
@@ -222,11 +245,12 @@ module zeroheti_core
   assign mgr_bus[1].we    = 1'b0;
   assign mgr_bus[1].wdata = 32'b0;
 
-/*
+
   assign mgr_bus[2].reqpar = 1'b0;
   assign mgr_bus[2].aid    = 1'b0;
   assign mgr_bus[2].a_optional = 1'b0;
 */
+
   zeroheti_dbg_wrapper #() i_debug (
       .clk_i,
       .rst_ni,
@@ -238,8 +262,8 @@ module zeroheti_core
       .jtag_td_o,
       .ndmreset_o (),
       .debug_req_o(debug_req),
-      .mem_sbr    (sbr_bus[0]),
-      .sba_mgr    (mgr_bus[0])
+      .mem_sbr    (dbg_bus),
+      .sba_mgr    (sba_bus)
   );
 
   obi_mb_sram_intf #(
@@ -249,7 +273,7 @@ module zeroheti_core
   ) i_imem (
       .clk_i,
       .rst_ni,
-      .sbr(sbr_bus[1])
+      .sbr(imem_bus)
   );
 
   obi_mb_sram_intf #(
@@ -259,7 +283,7 @@ module zeroheti_core
   ) i_dmem (
       .clk_i,
       .rst_ni,
-      .sbr(sbr_bus[2])
+      .sbr(dmem_bus)
   );
 
 endmodule : zeroheti_core
