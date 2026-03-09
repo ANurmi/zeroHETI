@@ -38,7 +38,7 @@ package zeroheti_pkg;
   localparam core_cfg_t RV32EMCCfg = '{
       rve       : 1,
       bt_alu    : 1,
-      wb_stage  : 1,
+      wb_stage  : 0,
       mul       : ibex_pkg::RV32MSingleCycle,
       ic        : IntController,
       num_irqs  : 32,
