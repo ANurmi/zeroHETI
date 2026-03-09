@@ -1,7 +1,3 @@
-`include "obi/typedef.svh"
-`include "obi/assign.svh"
-
-
 module zeroheti_core
   import zeroheti_pkg::*;
 #(
@@ -26,19 +22,6 @@ module zeroheti_core
            APB.Master                    apb_mgr
 );
 
-/*
-  localparam int unsigned NumSbrPorts = 32'd3;
-  localparam int unsigned NumMgrPorts = 32'd6;
-  localparam int unsigned NumAddrRules = NumMgrPorts;  // works for single, continuous regions
-
-  localparam bit [NumSbrPorts-1:0][NumMgrPorts-1:0] Connectivity = '{
-      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
-      '{1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1},
-      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}
-  };
-  OBI_BUS mgr_bus[NumSbrPorts] ();
-  OBI_BUS sbr_bus[NumMgrPorts] ();
-*/
   OBI_BUS inst_bus ();
   OBI_BUS data_bus ();
   OBI_BUS imem_bus ();
@@ -85,44 +68,17 @@ module zeroheti_core
   zeroheti_xbar i_xbar (
       .clk_i,
       .rst_ni,
-      .inst_bus (),
-      .data_bus (),
-      .imem_bus (),
-      .dmem_bus (),
-      .intc_bus (),
-      .per_bus (),
-      .sba_bus (),
-      .dbg_bus ()
+      .inst_bus (inst_bus),
+      .data_bus (data_bus),
+      .imem_bus (imem_bus),
+      .dmem_bus (dmem_bus),
+      .intc_bus (intc_bus),
+      .per_bus (per_bus),
+      .sba_bus (sba_bus),
+      .dbg_bus (dbg_bus),
+      .mbx_bus (obi_mgr)
     );
 
-  /*
-  typedef struct packed {
-    int unsigned idx;
-    logic [31:0] start_addr;
-    logic [31:0] end_addr;
-  } addr_map_rule_t;
-
-  localparam addr_map_rule_t [NumAddrRules-1:0] CoreAddrMap = '{
-      '{idx: 0, start_addr: AddrMap.dbg.base, end_addr: AddrMap.dbg.last},
-      '{idx: 1, start_addr: AddrMap.imem.base, end_addr: AddrMap.imem.last},
-      '{idx: 2, start_addr: AddrMap.dmem.base, end_addr: AddrMap.dmem.last},
-      '{idx: 3, start_addr: AddrMap.hetic.base, end_addr: AddrMap.hetic.last},
-      // TODO: map other APB peripherals
-      '{
-          idx: 4,
-          start_addr: AddrMap.uart.base,
-          end_addr: AddrMap.tg.last
-      },
-      '{idx: 5, start_addr: AddrMap.ext.base, end_addr: AddrMap.ext.last}
-  };
-
-  //obi_cut_intf i_ext_cut (.clk_i, .rst_ni, .obi_s(sbr_bus[5]),   .obi_m(obi_mgr));
-  //obi_cut_intf i_data_cut (.clk_i, .rst_ni, .obi_s(data_bus),   .obi_m(mgr_bus[2]));
-  //obi_cut_intf i_per_cut (.clk_i, .rst_ni, .obi_s(sbr_bus[4]),   .obi_m(per_bus));
-  `OBI_ASSIGN(per_bus, sbr_bus[4],  obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
-  `OBI_ASSIGN(mgr_bus[2], data_bus,  obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
-  `OBI_ASSIGN(obi_mgr, sbr_bus[5], obi_pkg::ObiDefaultConfig, obi_pkg::ObiDefaultConfig)
-*/
   logic debug_req;
 
   always_comb begin : g_core_irq
@@ -131,25 +87,6 @@ module zeroheti_core
       core_irq[irq_id] = 1'b1;
     end
   end
-
-  /*
-  obi_xbar_intf #(
-      .NumSbrPorts    (NumSbrPorts),
-      .NumMgrPorts    (NumMgrPorts),
-      .NumMaxTrans    (32'd1),
-      .NumAddrRules   (NumAddrRules),
-      .addr_map_rule_t(addr_map_rule_t),
-      .Connectivity   (Connectivity)
-  ) i_xbar (
-      .clk_i,
-      .rst_ni,
-      .testmode_i,
-      .addr_map_i      (CoreAddrMap),
-      .en_default_idx_i(3'b0),
-      .default_idx_i   (9'b0),
-      .sbr_ports       (mgr_bus),
-      .mgr_ports       (sbr_bus)
-  );*/
 
 
   `ifndef SYNTHESIS
