@@ -191,7 +191,7 @@ module zeroheti_xbar
       .obi_m(dmem_mux[1])
   );
   obi_connection #(
-      .Cut(1'b0)
+      .Cut(1'b1)
   ) i_conn_data_intc (
       .clk_i,
       .rst_ni,
@@ -199,7 +199,7 @@ module zeroheti_xbar
       .obi_m(intc_mux[1])
   );
   obi_connection #(
-      .Cut(1'b0)
+      .Cut(1'b1)
   ) i_conn_data_per (
       .clk_i,
       .rst_ni,
