@@ -40,7 +40,7 @@ module obi_connection #(
     assign obi_m.wdata = a_mgr.wdata;
 
     assign obi_s.rdata  = r_sbr.rdata;
-    assign obi_s.rvalid = r_sbr.rvalid;
+    //assign obi_s.rvalid = r_sbr.rvalid;
     assign obi_s.err    = r_sbr.err;
 
     assign r_mgr.rdata  = obi_m.rdata;
