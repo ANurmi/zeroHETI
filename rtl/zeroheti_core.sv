@@ -174,20 +174,18 @@ module zeroheti_core
   );
 
   // CPU tie-offs
-  /*
-  assign mgr_bus[1].reqpar = 1'b0;
-  assign mgr_bus[1].aid    = 1'b0;
-  assign mgr_bus[1].a_optional = 1'b0;
-  assign mgr_bus[1].be    = 4'b0;
-  assign mgr_bus[1].we    = 1'b0;
-  assign mgr_bus[1].wdata = 32'b0;
+  assign inst_bus.reqpar = 1'b0;
+  assign inst_bus.aid    = 1'b0;
+  assign inst_bus.a_optional = 1'b0;
+  assign inst_bus.be    = 4'b0;
+  assign inst_bus.we    = 1'b0;
+  assign inst_bus.wdata = 32'b0;
 
-
+/*
   assign mgr_bus[2].reqpar = 1'b0;
   assign mgr_bus[2].aid    = 1'b0;
   assign mgr_bus[2].a_optional = 1'b0;
 */
-
   zeroheti_dbg_wrapper #() i_debug (
       .clk_i,
       .rst_ni,
