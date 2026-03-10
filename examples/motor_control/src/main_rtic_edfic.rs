@@ -15,7 +15,8 @@ mod app {
         i2c::{self, I2c},
         mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mtimer::{self, *},
-        riscv, sprintln,
+        register::{self, mintthresh::Mintthresh}, riscv::{self, csr, write_csr_as_rv32},
+        sprintln,
         tb::signal_pass,
         timer_group::{Periodic, Timer},
     };
@@ -221,6 +222,8 @@ mod app {
         }
 
         fn exec(&mut self) {
+            let last_mintthresh = bsp::register::mintthresh::write(0xf4.into());
+
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
@@ -233,6 +236,8 @@ mod app {
             self.shared()
                 .mbx
                 .lock(|mbx| mbx.write_time_and_stat(time, m0_speed as u32, M0));
+            bsp::register::mintthresh::write(last_mintthresh.into());
+
         }
     }
 
@@ -246,6 +251,8 @@ mod app {
             Self { speed_real: 0 }
         }
         fn exec(&mut self) {
+            let last_mintthresh = bsp::register::mintthresh::write(0xf4.into());
+
             let mut rbuf = [0; 4];
 
             self.shared()
@@ -259,6 +266,8 @@ mod app {
             self.shared()
                 .mbx
                 .lock(|mbx| mbx.write_time_and_stat(time, m1_speed as u32, M1));
+            bsp::register::mintthresh::write(last_mintthresh.into());
+
         }
     }
 
@@ -272,6 +281,8 @@ mod app {
             Self { speed_real: 0 }
         }
         fn exec(&mut self) {
+            let last_mintthresh = bsp::register::mintthresh::write(0xf4.into());
+
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
@@ -284,6 +295,8 @@ mod app {
             self.shared()
                 .mbx
                 .lock(|mbx| mbx.write_time_and_stat(time, m2_speed as u32, M2));
+            bsp::register::mintthresh::write(last_mintthresh.into());
+
         }
     }
 
@@ -297,6 +310,8 @@ mod app {
             Self { speed_real: 0 }
         }
         fn exec(&mut self) {
+            let last_mintthresh = bsp::register::mintthresh::write(0xf4.into());
+
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
@@ -309,6 +324,8 @@ mod app {
             self.shared()
                 .mbx
                 .lock(|mbx| mbx.write_time_and_stat(time, m3_speed as u32, M3));
+            bsp::register::mintthresh::write(last_mintthresh.into());
+
         }
     }
 
@@ -320,6 +337,7 @@ mod app {
             Self
         }
         fn exec(&mut self) {
+            let last_mintthresh = bsp::register::mintthresh::write(0xec.into());
             // SAFETY: the inbox is not read by any other context
             let mail = unsafe { Mailbox::instance() }.read_inbox();
             let bytes: [u8; 4] = mail.to_be_bytes();
@@ -349,6 +367,8 @@ mod app {
             // part of the code, and it does not interfere with other Mailbox
             // hardware operations.
             unsafe { Mailbox::instance() }.ack_irq();
+            bsp::register::mintthresh::write(last_mintthresh.into());
+
         }
     }
 
@@ -360,6 +380,8 @@ mod app {
             Self
         }
         fn exec(&mut self) {
+            let last_mintthresh = bsp::register::mintthresh::write(0xf0.into());
+
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
@@ -374,6 +396,7 @@ mod app {
             self.shared()
                 .i2c
                 .lock(|i2c| i2c.write(I2C_ADDRS.motors[0].tune, &bytes));
+            bsp::register::mintthresh::write(last_mintthresh.into());
         }
     }
 
@@ -385,6 +408,8 @@ mod app {
             Self
         }
         fn exec(&mut self) {
+            let last_mintthresh = bsp::register::mintthresh::write(0xf0.into());
+
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
@@ -399,6 +424,8 @@ mod app {
             self.shared()
                 .i2c
                 .lock(|i2c| i2c.write(I2C_ADDRS.motors[1].tune, &bytes));
+            bsp::register::mintthresh::write(last_mintthresh.into());
+
         }
     }
 
@@ -410,6 +437,8 @@ mod app {
             Self
         }
         fn exec(&mut self) {
+            let last_mintthresh = bsp::register::mintthresh::write(0xf0.into());
+
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
@@ -424,6 +453,8 @@ mod app {
             self.shared()
                 .i2c
                 .lock(|i2c| i2c.write(I2C_ADDRS.motors[2].tune, &bytes));
+            bsp::register::mintthresh::write(last_mintthresh.into());
+
         }
     }
 
@@ -435,6 +466,8 @@ mod app {
             Self
         }
         fn exec(&mut self) {
+            let last_mintthresh = bsp::register::mintthresh::write(0xf0.into());
+
             let mut rbuf = [0; 4];
             self.shared()
                 .i2c
@@ -450,6 +483,8 @@ mod app {
             self.shared()
                 .i2c
                 .lock(|i2c| i2c.write(I2C_ADDRS.motors[3].tune, &bytes));
+            bsp::register::mintthresh::write(last_mintthresh.into());
+
         }
     }
 
