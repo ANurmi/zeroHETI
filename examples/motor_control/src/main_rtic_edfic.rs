@@ -15,7 +15,8 @@ mod app {
         i2c::{self, I2c},
         mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mtimer::{self, *},
-        register::{self, mintthresh::Mintthresh}, riscv::{self, csr, write_csr_as_rv32},
+        register::{self, mintthresh::Mintthresh},
+        riscv::{self, csr, write_csr_as_rv32},
         sprintln,
         tb::signal_pass,
         timer_group::{Periodic, Timer},
@@ -44,12 +45,16 @@ mod app {
         rep_task_per_us: 4000,
         rep_task_ofs_us: 3900,
         #[cfg(feature = "intc-edfic")]
-        mbx_dl_us: 5000,
+        mbx_dl_us: 3000,
         #[cfg(feature = "intc-edfic")]
-        wrn_dl_us: 4000,
+        wrn_dl_us: 2000,
         #[cfg(feature = "intc-edfic")]
-        rep_dl_us: 3000,
+        rep_dl_us: 1500,
     };
+
+    const REL_PRIO_MBX: usize = (255 - (SIM_PARAMS.mbx_dl_us >> 8)) as usize;
+    const REL_PRIO_WRN: usize = (255 - (SIM_PARAMS.wrn_dl_us >> 8)) as usize;
+    const REL_PRIO_REP: usize = (255 - (SIM_PARAMS.rep_dl_us >> 8)) as usize;
 
     #[shared]
     struct Shared {
@@ -210,8 +215,8 @@ mod app {
         }
     }
 
-    // 255 - (3000 >> 8) = 0xf4
-    #[task(binds = Timer0Cmp, priority = 0xf4, shared = [i2c, mbx])]
+    // 255 - (REL_PRIO_REP >> 8) = 0xfa
+    #[task(binds = Timer0Cmp, priority = 0xfa, shared = [i2c, mbx])]
     struct ReadM0 {
         speed_real: u32,
     }
@@ -222,7 +227,7 @@ mod app {
         }
 
         fn exec(&mut self) {
-            let last_mintthresh = bsp::register::mintthresh::write(0xf4.into());
+            let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_REP.into());
 
             let mut rbuf = [0; 4];
             self.shared()
@@ -237,12 +242,11 @@ mod app {
                 .mbx
                 .lock(|mbx| mbx.write_time_and_stat(time, m0_speed as u32, M0));
             bsp::register::mintthresh::write(last_mintthresh.into());
-
         }
     }
 
-    // 255 - (3000 >> 8) = 0xf4
-    #[task(binds = Timer1Cmp, priority = 0xf4, shared = [i2c, mbx])]
+    // 255 - (REL_PRIO_REP >> 8) = 0xfa
+    #[task(binds = Timer1Cmp, priority = 0xfa, shared = [i2c, mbx])]
     struct ReadM1 {
         speed_real: u32,
     }
@@ -251,7 +255,7 @@ mod app {
             Self { speed_real: 0 }
         }
         fn exec(&mut self) {
-            let last_mintthresh = bsp::register::mintthresh::write(0xf4.into());
+            let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_REP.into());
 
             let mut rbuf = [0; 4];
 
@@ -267,12 +271,11 @@ mod app {
                 .mbx
                 .lock(|mbx| mbx.write_time_and_stat(time, m1_speed as u32, M1));
             bsp::register::mintthresh::write(last_mintthresh.into());
-
         }
     }
 
-    // 255 - (3000 >> 8) = 0xf4
-    #[task(binds = Timer2Cmp, priority = 0xf4, shared = [i2c, mbx])]
+    // 255 - (REL_PRIO_REP >> 8) = 0xfa
+    #[task(binds = Timer2Cmp, priority = 0xfa, shared = [i2c, mbx])]
     struct ReadM2 {
         speed_real: u32,
     }
@@ -281,7 +284,7 @@ mod app {
             Self { speed_real: 0 }
         }
         fn exec(&mut self) {
-            let last_mintthresh = bsp::register::mintthresh::write(0xf4.into());
+            let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_REP.into());
 
             let mut rbuf = [0; 4];
             self.shared()
@@ -296,12 +299,11 @@ mod app {
                 .mbx
                 .lock(|mbx| mbx.write_time_and_stat(time, m2_speed as u32, M2));
             bsp::register::mintthresh::write(last_mintthresh.into());
-
         }
     }
 
-    // 255 - (3000 >> 8) = 0xf4
-    #[task(binds = Timer3Cmp, priority = 0xf4, shared = [i2c, mbx])]
+    // 255 - (REL_PRIO_REP >> 8) = 0xfa
+    #[task(binds = Timer3Cmp, priority = 0xfa, shared = [i2c, mbx])]
     struct ReadM3 {
         speed_real: u32,
     }
@@ -310,7 +312,7 @@ mod app {
             Self { speed_real: 0 }
         }
         fn exec(&mut self) {
-            let last_mintthresh = bsp::register::mintthresh::write(0xf4.into());
+            let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_REP.into());
 
             let mut rbuf = [0; 4];
             self.shared()
@@ -325,19 +327,18 @@ mod app {
                 .mbx
                 .lock(|mbx| mbx.write_time_and_stat(time, m3_speed as u32, M3));
             bsp::register::mintthresh::write(last_mintthresh.into());
-
         }
     }
 
-    // 255 - (5000 >> 8) = 0xec
-    #[task(binds = Mbx, priority = 0xec, shared = [i2c, v_tgt0, v_tgt1, v_tgt2, v_tgt3])]
+    // 255 - (REL_PRIO_MBX >> 8) = 0xf4
+    #[task(binds = Mbx, priority = 0xf4, shared = [i2c, v_tgt0, v_tgt1, v_tgt2, v_tgt3])]
     struct GetMail;
     impl RticTask for GetMail {
         fn init() -> Self {
             Self
         }
         fn exec(&mut self) {
-            let last_mintthresh = bsp::register::mintthresh::write(0xec.into());
+            let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_MBX.into());
             // SAFETY: the inbox is not read by any other context
             let mail = unsafe { Mailbox::instance() }.read_inbox();
             let bytes: [u8; 4] = mail.to_be_bytes();
@@ -368,19 +369,18 @@ mod app {
             // hardware operations.
             unsafe { Mailbox::instance() }.ack_irq();
             bsp::register::mintthresh::write(last_mintthresh.into());
-
         }
     }
 
-    // 255 - (4000 >> 8) = 0xf0
-    #[task(binds = Ext0, priority = 0xf0, shared = [i2c, v_tgt0])]
+    // 255 - (REL_PRIO_WRN >> 8) = 0xf8
+    #[task(binds = Ext0, priority = 0xf8, shared = [i2c, v_tgt0])]
     struct TuneM0;
     impl RticTask for TuneM0 {
         fn init() -> Self {
             Self
         }
         fn exec(&mut self) {
-            let last_mintthresh = bsp::register::mintthresh::write(0xf0.into());
+            let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_WRN.into());
 
             let mut rbuf = [0; 4];
             self.shared()
@@ -400,15 +400,15 @@ mod app {
         }
     }
 
-    // 255 - (4000 >> 8) = 0xf0
-    #[task(binds = Ext1, priority = 0xf0, shared = [i2c, v_tgt1])]
+    // 255 - (REL_PRIO_WRN >> 8) = 0xf8
+    #[task(binds = Ext1, priority = 0xf8, shared = [i2c, v_tgt1])]
     struct TuneM1;
     impl RticTask for TuneM1 {
         fn init() -> Self {
             Self
         }
         fn exec(&mut self) {
-            let last_mintthresh = bsp::register::mintthresh::write(0xf0.into());
+            let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_WRN.into());
 
             let mut rbuf = [0; 4];
             self.shared()
@@ -425,19 +425,18 @@ mod app {
                 .i2c
                 .lock(|i2c| i2c.write(I2C_ADDRS.motors[1].tune, &bytes));
             bsp::register::mintthresh::write(last_mintthresh.into());
-
         }
     }
 
-    // 255 - (4000 >> 8) = 0xf0
-    #[task(binds = Ext2, priority = 0xf0, shared = [i2c, v_tgt2])]
+    // 255 - (REL_PRIO_WRN >> 8) = 0xf8
+    #[task(binds = Ext2, priority = 0xf8, shared = [i2c, v_tgt2])]
     struct TuneM2;
     impl RticTask for TuneM2 {
         fn init() -> Self {
             Self
         }
         fn exec(&mut self) {
-            let last_mintthresh = bsp::register::mintthresh::write(0xf0.into());
+            let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_WRN.into());
 
             let mut rbuf = [0; 4];
             self.shared()
@@ -454,19 +453,18 @@ mod app {
                 .i2c
                 .lock(|i2c| i2c.write(I2C_ADDRS.motors[2].tune, &bytes));
             bsp::register::mintthresh::write(last_mintthresh.into());
-
         }
     }
 
-    // 255 - (4000 >> 8) = 0xf0
-    #[task(binds = Ext3, priority = 0xf0, shared = [i2c, v_tgt3])]
+    // 255 - (REL_PRIO_WRN >> 8) = 0xf8
+    #[task(binds = Ext3, priority = 0xf8, shared = [i2c, v_tgt3])]
     struct TuneM3;
     impl RticTask for TuneM3 {
         fn init() -> Self {
             Self
         }
         fn exec(&mut self) {
-            let last_mintthresh = bsp::register::mintthresh::write(0xf0.into());
+            let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_WRN.into());
 
             let mut rbuf = [0; 4];
             self.shared()
@@ -484,7 +482,6 @@ mod app {
                 .i2c
                 .lock(|i2c| i2c.write(I2C_ADDRS.motors[3].tune, &bytes));
             bsp::register::mintthresh::write(last_mintthresh.into());
-
         }
     }
 
