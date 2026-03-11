@@ -230,17 +230,22 @@ mod app {
             let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_REP.into());
 
             let mut rbuf = [0; 4];
-            self.shared()
-                .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.motors[0].stat, &mut rbuf));
 
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().read(I2C_ADDRS.motors[0].stat, &mut rbuf);
+                riscv::interrupt::enable();
+            }
             let m0_speed = u32::from_le_bytes(rbuf);
             self.speed_real = m0_speed;
 
             let time = MTimer::instance().counter();
-            self.shared()
-                .mbx
-                .lock(|mbx| mbx.write_time_and_stat(time, m0_speed as u32, M0));
+
+            unsafe {
+                riscv::interrupt::disable();
+                Mailbox::instance().write_time_and_stat(time, m0_speed as u32, M0);
+                riscv::interrupt::enable();
+            };
             bsp::register::mintthresh::write(last_mintthresh.into());
         }
     }
@@ -259,17 +264,21 @@ mod app {
 
             let mut rbuf = [0; 4];
 
-            self.shared()
-                .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.motors[1].stat, &mut rbuf));
-
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().read(I2C_ADDRS.motors[1].stat, &mut rbuf);
+                riscv::interrupt::enable();
+            }
             let m1_speed = u32::from_le_bytes(rbuf);
             self.speed_real = m1_speed;
 
             let time = MTimer::instance().counter();
-            self.shared()
-                .mbx
-                .lock(|mbx| mbx.write_time_and_stat(time, m1_speed as u32, M1));
+
+            unsafe {
+                riscv::interrupt::disable();
+                Mailbox::instance().write_time_and_stat(time, m1_speed as u32, M1);
+                riscv::interrupt::enable();
+            };
             bsp::register::mintthresh::write(last_mintthresh.into());
         }
     }
@@ -287,17 +296,22 @@ mod app {
             let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_REP.into());
 
             let mut rbuf = [0; 4];
-            self.shared()
-                .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.motors[2].stat, &mut rbuf));
 
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().read(I2C_ADDRS.motors[2].stat, &mut rbuf);
+                riscv::interrupt::enable();
+            }
             let m2_speed = u32::from_le_bytes(rbuf);
             self.speed_real = m2_speed;
 
             let time = MTimer::instance().counter();
-            self.shared()
-                .mbx
-                .lock(|mbx| mbx.write_time_and_stat(time, m2_speed as u32, M2));
+
+            unsafe {
+                riscv::interrupt::disable();
+                Mailbox::instance().write_time_and_stat(time, m2_speed as u32, M2);
+                riscv::interrupt::enable();
+            };
             bsp::register::mintthresh::write(last_mintthresh.into());
         }
     }
@@ -315,17 +329,22 @@ mod app {
             let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_REP.into());
 
             let mut rbuf = [0; 4];
-            self.shared()
-                .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.motors[3].stat, &mut rbuf));
 
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().read(I2C_ADDRS.motors[3].stat, &mut rbuf);
+                riscv::interrupt::enable();
+            }
             let m3_speed = u32::from_le_bytes(rbuf);
             self.speed_real = m3_speed;
 
             let time = MTimer::instance().counter();
-            self.shared()
-                .mbx
-                .lock(|mbx| mbx.write_time_and_stat(time, m3_speed as u32, M3));
+
+            unsafe {
+                riscv::interrupt::disable();
+                Mailbox::instance().write_time_and_stat(time, m3_speed as u32, M3);
+                riscv::interrupt::enable();
+            };
             bsp::register::mintthresh::write(last_mintthresh.into());
         }
     }
@@ -343,26 +362,34 @@ mod app {
             let mail = unsafe { Mailbox::instance() }.read_inbox();
             let bytes: [u8; 4] = mail.to_be_bytes();
 
-            self.shared().i2c.lock(|i2c| {
-                i2c.write(I2C_ADDRS.motors[0].ctrl, &[0u8, bytes[0]]);
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().write(I2C_ADDRS.motors[0].ctrl, &[0u8, bytes[0]]);
                 let target_speed = (bytes[0] as u32) << 8;
                 self.shared().v_tgt0.lock(|v_tgt| *v_tgt = target_speed);
-            });
-            self.shared().i2c.lock(|i2c| {
-                i2c.write(I2C_ADDRS.motors[1].ctrl, &[0u8, bytes[1]]);
+                riscv::interrupt::enable();
+            };
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().write(I2C_ADDRS.motors[1].ctrl, &[0u8, bytes[1]]);
                 let target_speed = (bytes[1] as u32) << 8;
                 self.shared().v_tgt1.lock(|v_tgt| *v_tgt = target_speed);
-            });
-            self.shared().i2c.lock(|i2c| {
-                i2c.write(I2C_ADDRS.motors[2].ctrl, &[0u8, bytes[2]]);
+                riscv::interrupt::enable();
+            };
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().write(I2C_ADDRS.motors[2].ctrl, &[0u8, bytes[2]]);
                 let target_speed = (bytes[2] as u32) << 8;
                 self.shared().v_tgt2.lock(|v_tgt| *v_tgt = target_speed);
-            });
-            self.shared().i2c.lock(|i2c| {
-                i2c.write(I2C_ADDRS.motors[3].ctrl, &[0u8, bytes[3]]);
+                riscv::interrupt::enable();
+            };
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().write(I2C_ADDRS.motors[3].ctrl, &[0u8, bytes[3]]);
                 let target_speed = (bytes[3] as u32) << 8;
                 self.shared().v_tgt3.lock(|v_tgt| *v_tgt = target_speed);
-            });
+                riscv::interrupt::enable();
+            };
 
             // SAFETY: the mailbox ACK_IRQ is not interacted with by any other
             // part of the code, and it does not interfere with other Mailbox
@@ -383,19 +410,34 @@ mod app {
             let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_WRN.into());
 
             let mut rbuf = [0; 4];
-            self.shared()
-                .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.motors[0].stat, &mut rbuf));
+
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().read(I2C_ADDRS.motors[0].stat, &mut rbuf);
+                riscv::interrupt::enable();
+            };
 
             let m0_speed_now = u32::from_le_bytes(rbuf);
             // HACK: there's something wrong with lock closure args in mrtic. Need an extra
             // line of init here.
             let mut v_tgt: u32 = 0;
+
+            unsafe {
+                riscv::interrupt::disable();
+            };
             self.shared().v_tgt0.lock(|v| v_tgt = *v);
+            unsafe {
+                riscv::interrupt::enable();
+            };
+
             let bytes: [u8; 2] = compute_control(v_tgt, m0_speed_now).to_le_bytes();
-            self.shared()
-                .i2c
-                .lock(|i2c| i2c.write(I2C_ADDRS.motors[0].tune, &bytes));
+
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().write(I2C_ADDRS.motors[0].tune, &bytes);
+                riscv::interrupt::enable();
+            };
+
             bsp::register::mintthresh::write(last_mintthresh.into());
         }
     }
@@ -411,19 +453,34 @@ mod app {
             let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_WRN.into());
 
             let mut rbuf = [0; 4];
-            self.shared()
-                .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.motors[1].stat, &mut rbuf));
+
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().read(I2C_ADDRS.motors[1].stat, &mut rbuf);
+                riscv::interrupt::enable();
+            };
 
             let m1_speed_now = u32::from_le_bytes(rbuf);
             // HACK: there's something wrong with lock closure args in mrtic. Need an extra
             // line of init here.
             let mut v_tgt: u32 = 0;
+
+            unsafe {
+                riscv::interrupt::disable();
+            };
             self.shared().v_tgt1.lock(|v| v_tgt = *v);
+            unsafe {
+                riscv::interrupt::enable();
+            };
+
             let bytes: [u8; 2] = compute_control(v_tgt, m1_speed_now).to_le_bytes();
-            self.shared()
-                .i2c
-                .lock(|i2c| i2c.write(I2C_ADDRS.motors[1].tune, &bytes));
+
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().write(I2C_ADDRS.motors[1].tune, &bytes);
+                riscv::interrupt::enable();
+            };
+
             bsp::register::mintthresh::write(last_mintthresh.into());
         }
     }
@@ -439,19 +496,34 @@ mod app {
             let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_WRN.into());
 
             let mut rbuf = [0; 4];
-            self.shared()
-                .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.motors[2].stat, &mut rbuf));
+
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().read(I2C_ADDRS.motors[2].stat, &mut rbuf);
+                riscv::interrupt::enable();
+            };
 
             let m2_speed_now = u32::from_le_bytes(rbuf);
             // HACK: there's something wrong with lock closure args in mrtic. Need an extra
             // line of init here.
             let mut v_tgt: u32 = 0;
+
+            unsafe {
+                riscv::interrupt::disable();
+            };
             self.shared().v_tgt2.lock(|v| v_tgt = *v);
+            unsafe {
+                riscv::interrupt::enable();
+            };
+
             let bytes: [u8; 2] = compute_control(v_tgt, m2_speed_now).to_le_bytes();
-            self.shared()
-                .i2c
-                .lock(|i2c| i2c.write(I2C_ADDRS.motors[2].tune, &bytes));
+
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().write(I2C_ADDRS.motors[2].tune, &bytes);
+                riscv::interrupt::enable();
+            };
+
             bsp::register::mintthresh::write(last_mintthresh.into());
         }
     }
@@ -467,20 +539,34 @@ mod app {
             let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_WRN.into());
 
             let mut rbuf = [0; 4];
-            self.shared()
-                .i2c
-                .lock(|i2c| i2c.read(I2C_ADDRS.motors[3].stat, &mut rbuf));
+
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().read(I2C_ADDRS.motors[3].stat, &mut rbuf);
+                riscv::interrupt::enable();
+            };
 
             let m3_speed_now = u32::from_le_bytes(rbuf);
             // HACK: there's something wrong with lock closure args in mrtic. Need an extra
             // line of init here.
             let mut v_tgt: u32 = 0;
+
+            unsafe {
+                riscv::interrupt::disable();
+            };
             self.shared().v_tgt3.lock(|v| v_tgt = *v);
+            unsafe {
+                riscv::interrupt::enable();
+            };
+
             let bytes: [u8; 2] = compute_control(v_tgt, m3_speed_now).to_le_bytes();
 
-            self.shared()
-                .i2c
-                .lock(|i2c| i2c.write(I2C_ADDRS.motors[3].tune, &bytes));
+            unsafe {
+                riscv::interrupt::disable();
+                I2c::instance().write(I2C_ADDRS.motors[3].tune, &bytes);
+                riscv::interrupt::enable();
+            };
+
             bsp::register::mintthresh::write(last_mintthresh.into());
         }
     }
