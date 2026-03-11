@@ -43,7 +43,7 @@ mod app {
     const SIM_PARAMS: SimParams = SimParams {
         hyperperiod_ms: 20,
         rep_task_per_us: 4000,
-        rep_task_ofs_us: 3900,
+        rep_task_ofs_us: 3923,
         #[cfg(feature = "intc-edfic")]
         mbx_dl_us: 3000,
         #[cfg(feature = "intc-edfic")]
@@ -52,9 +52,9 @@ mod app {
         rep_dl_us: 1500,
     };
 
-    const REL_PRIO_MBX: usize = (255 - (SIM_PARAMS.mbx_dl_us >> 8)) as usize;
-    const REL_PRIO_WRN: usize = (255 - (SIM_PARAMS.wrn_dl_us >> 8)) as usize;
-    const REL_PRIO_REP: usize = (255 - (SIM_PARAMS.rep_dl_us >> 8)) as usize;
+    const REL_PRIO_MBX: usize = (255 - (SIM_PARAMS.mbx_dl_us >> 6)) as usize;
+    const REL_PRIO_WRN: usize = (255 - (SIM_PARAMS.wrn_dl_us >> 6)) as usize;
+    const REL_PRIO_REP: usize = (255 - (SIM_PARAMS.rep_dl_us >> 6)) as usize;
 
     #[shared]
     struct Shared {
@@ -215,8 +215,8 @@ mod app {
         }
     }
 
-    // 255 - (REL_PRIO_REP >> 8) = 0xfa
-    #[task(binds = Timer0Cmp, priority = 0xfa, shared = [i2c, mbx])]
+    // 255 - (REL_PRIO_REP >> 6) = 0xe8
+    #[task(binds = Timer0Cmp, priority = 0xe8, shared = [i2c, mbx])]
     struct ReadM0 {
         speed_real: u32,
     }
@@ -250,8 +250,8 @@ mod app {
         }
     }
 
-    // 255 - (REL_PRIO_REP >> 8) = 0xfa
-    #[task(binds = Timer1Cmp, priority = 0xfa, shared = [i2c, mbx])]
+    // 255 - (REL_PRIO_REP >> 6) = 0xe8
+    #[task(binds = Timer1Cmp, priority = 0xe8, shared = [i2c, mbx])]
     struct ReadM1 {
         speed_real: u32,
     }
@@ -283,8 +283,8 @@ mod app {
         }
     }
 
-    // 255 - (REL_PRIO_REP >> 8) = 0xfa
-    #[task(binds = Timer2Cmp, priority = 0xfa, shared = [i2c, mbx])]
+    // 255 - (REL_PRIO_REP >> 6) = 0xe8
+    #[task(binds = Timer2Cmp, priority = 0xe8, shared = [i2c, mbx])]
     struct ReadM2 {
         speed_real: u32,
     }
@@ -316,8 +316,8 @@ mod app {
         }
     }
 
-    // 255 - (REL_PRIO_REP >> 8) = 0xfa
-    #[task(binds = Timer3Cmp, priority = 0xfa, shared = [i2c, mbx])]
+    // 255 - (REL_PRIO_REP >> 6) = 0xe8
+    #[task(binds = Timer3Cmp, priority = 0xe8, shared = [i2c, mbx])]
     struct ReadM3 {
         speed_real: u32,
     }
@@ -349,8 +349,8 @@ mod app {
         }
     }
 
-    // 255 - (REL_PRIO_MBX >> 8) = 0xf4
-    #[task(binds = Mbx, priority = 0xf4, shared = [i2c, v_tgt0, v_tgt1, v_tgt2, v_tgt3])]
+    // 255 - (REL_PRIO_MBX >> 6) = 0xd1
+    #[task(binds = Mbx, priority = 0xd1, shared = [i2c, v_tgt0, v_tgt1, v_tgt2, v_tgt3])]
     struct GetMail;
     impl RticTask for GetMail {
         fn init() -> Self {
@@ -399,8 +399,8 @@ mod app {
         }
     }
 
-    // 255 - (REL_PRIO_WRN >> 8) = 0xf8
-    #[task(binds = Ext0, priority = 0xf8, shared = [i2c, v_tgt0])]
+    // 255 - (REL_PRIO_WRN >> 6) = 0xe0
+    #[task(binds = Ext0, priority = 0xe0, shared = [i2c, v_tgt0])]
     struct TuneM0;
     impl RticTask for TuneM0 {
         fn init() -> Self {
@@ -442,8 +442,8 @@ mod app {
         }
     }
 
-    // 255 - (REL_PRIO_WRN >> 8) = 0xf8
-    #[task(binds = Ext1, priority = 0xf8, shared = [i2c, v_tgt1])]
+    // 255 - (REL_PRIO_WRN >> 6) = 0xe0
+    #[task(binds = Ext1, priority = 0xe0, shared = [i2c, v_tgt1])]
     struct TuneM1;
     impl RticTask for TuneM1 {
         fn init() -> Self {
@@ -485,8 +485,8 @@ mod app {
         }
     }
 
-    // 255 - (REL_PRIO_WRN >> 8) = 0xf8
-    #[task(binds = Ext2, priority = 0xf8, shared = [i2c, v_tgt2])]
+    // 255 - (REL_PRIO_WRN >> 6) = 0xe0
+    #[task(binds = Ext2, priority = 0xe0, shared = [i2c, v_tgt2])]
     struct TuneM2;
     impl RticTask for TuneM2 {
         fn init() -> Self {
@@ -528,8 +528,8 @@ mod app {
         }
     }
 
-    // 255 - (REL_PRIO_WRN >> 8) = 0xf8
-    #[task(binds = Ext3, priority = 0xf8, shared = [i2c, v_tgt3])]
+    // 255 - (REL_PRIO_WRN >> 6) = 0xe0
+    #[task(binds = Ext3, priority = 0xe0, shared = [i2c, v_tgt3])]
     struct TuneM3;
     impl RticTask for TuneM3 {
         fn init() -> Self {
