@@ -54,10 +54,10 @@ module vip_motor_sim #(
     power_ideal = (64'(voltage_i)**2)/R_motor;
 
     if (speed_real > 0) begin
-      // Model transient enviromental distruptions with 1% probability
-      env_trans  = (64'($urandom()) % 80 == 0) ? (64'($random()) % 1200) : 0;
+      // Model transient enviromental distruptions with x% probability
+      env_trans  = (64'($urandom()) % 66 == 0) ? (64'($random()) % 1200) : 0;
 
-      // Model liner enviromental effects with changing direction
+      // Model linear enviromental effects with changing direction
       env_lin = (64'($urandom()) % 50 == 0) ? (64'($random()) % 20) : env_lin;
     end
 

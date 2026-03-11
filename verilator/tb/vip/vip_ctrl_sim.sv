@@ -7,7 +7,7 @@ module vip_ctrl_sim #(
     output logic [NrIrqs-1:0] irq_o
 );
 
-  /* Internal address mapping 
+/* Internal address mapping
 * 0: 31'h0, sim_en
 * 1: reserved
 * 2: M0 status
@@ -33,9 +33,9 @@ module vip_ctrl_sim #(
   localparam longint unsigned RepDlUs = 'd1_500;
 
   logic [3:0][31:0] voltages = 0;
-  logic [3:0][15:0] tune     = 0;
+  logic [3:0][15:0] tune = 0;
   logic [3:0]       tune_vld = 0;
-  logic [3:0][31:0] speeds   = 0;
+  logic [3:0][31:0] speeds = 0;
 
   typedef enum logic [1:0] {
     MBX = 0,
@@ -93,10 +93,10 @@ module vip_ctrl_sim #(
 
 
   always @(posedge enable) begin
-    time_us = 0; // clear vip time when first enabled
+    time_us = 0;  // clear vip time when first enabled
 
-    for (int i = 0; i< TaskSetSize; i++) begin
-      tasks_ret[i] = '{default:0};
+    for (int i = 0; i < TaskSetSize; i++) begin
+      tasks_ret[i] = '{default: 0};
     end
 
     $display("[CTRL_SIM] Starting simulation for task set:");
@@ -107,9 +107,9 @@ module vip_ctrl_sim #(
 
   always @(negedge enable) begin
     $display("[CTRL_SIM] Simulation terminated");
-    for (int i = 0; i< TaskSetSize; i++) begin
-      $display("Task %0d - count: %3d, avg. slack: %4d us, worst slack: %4d us", 
-        i, tasks_ret[i].count, tasks_ret[i].slack_avg, tasks_ret[i].slack_worst);
+    for (int i = 0; i < TaskSetSize; i++) begin
+      $display("Task %0d - count: %3d, avg. slack: %4d us, worst slack: %4d us", i,
+               tasks_ret[i].count, tasks_ret[i].slack_avg, tasks_ret[i].slack_worst);
     end
   end
 
@@ -135,15 +135,15 @@ module vip_ctrl_sim #(
     end
 
     // Activate periodic reporting tasks with appropriate offset
-    for (int i=0; i<4; i++) begin
-      if (enable & ((time_us - RepOfsUs*i) % RepPerUs == 0)) begin
-        pend_task(5+i);
-        reset_task_dl(5+i);
+    for (int i = 0; i < 4; i++) begin
+      if (enable & ((time_us - RepOfsUs * i) % RepPerUs == 0)) begin
+        pend_task(5 + i);
+        reset_task_dl(5 + i);
       end
     end
 
     // Dectivate warning tasks
-    for (int i=0; i< NrMotors; i++) begin
+    for (int i = 0; i < NrMotors; i++) begin
       automatic int SporIdx = i + 1;
       if (~irq_o[i] & task_set[SporIdx].active) begin
         ack_task(SporIdx);
@@ -168,12 +168,12 @@ module vip_ctrl_sim #(
     ) i_motor (
         .clk_i,
         .rst_ni,
-        .enable_i (enable),
-        .voltage_i(voltages[i]),
-        .tune_i   (tune[i]),
-        .tune_vld_i (tune_vld[i]),
-        .speed_o  (speeds[i]),
-        .irq_o    (irq_o[i])
+        .enable_i  (enable),
+        .voltage_i (voltages[i]),
+        .tune_i    (tune[i]),
+        .tune_vld_i(tune_vld[i]),
+        .speed_o   (speeds[i]),
+        .irq_o     (irq_o[i])
     );
   end
 
@@ -184,7 +184,7 @@ module vip_ctrl_sim #(
         enable    = data[0];
         addr_name = "SimCtrl";
       end
-      7'd2: begin 
+      7'd2: begin
         voltages[0] = data;
         tune[0]     = 0;
         addr_name   = "M0_Ctrl";
@@ -195,7 +195,7 @@ module vip_ctrl_sim #(
         addr_name = "M0_Tune";
       end
       7'd5: begin
-        voltages[1] = data; 
+        voltages[1] = data;
         tune[1]     = 0;
         addr_name   = "M1_Ctrl";
       end
@@ -263,7 +263,7 @@ module vip_ctrl_sim #(
   endtask
 
   task log_slack(input int unsigned i);
-    if (tasks_ret[i].count == 0) begin // initial state
+    if (tasks_ret[i].count == 0) begin  // initial state
       tasks_ret[i].slack_worst = task_set[i].dl_us;
       tasks_ret[i].slack_avg   = task_set[i].dl_us;
     end else begin
@@ -277,7 +277,7 @@ module vip_ctrl_sim #(
       tasks_ret[i].slack_avg = ((tasks_ret[i].slack_avg * tasks_ret[i].count) + task_set[i].dl_us) 
                                   / (tasks_ret[i].count + 32'd1);
       // verilator lint_on WIDTHEXPAND
-      
+
     end
 
     tasks_ret[i].count += 1;
