@@ -38,7 +38,7 @@ struct SimParams {
 const SIM_PARAMS: SimParams = SimParams { hyperperiod_ms: 20 };
 
 const REP_TASK_PER_US: u32 = 4000;
-const REP_TASK_OFS_US: u32 = 3900;
+const REP_TASK_OFS_US: u32 = 3923;
 
 #[cfg(feature = "intc-edfic")]
 const MBX_DL_US: u32 = 5000;
