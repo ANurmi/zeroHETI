@@ -579,11 +579,11 @@ mod app {
         let p_target = u32::pow(v_tgt, 2) / res; // mW
 
         // Assume Power (mW) and Speed (RPM) directly correlated
-        let error = p_target as i32 - speed_now as i32;
+        let error = p_target as f32 - speed_now as f32;
 
-        let mut v_out: i16 = usqrt4((error / res as i32).abs() as u32) as i16;
+        let mut v_out: i16 = usqrt4(((error as i32) / res as i32).abs() as u32) as i16;
 
-        if error < 0 {
+        if error < 0.0 {
             v_out = v_out * (-1);
         };
 
