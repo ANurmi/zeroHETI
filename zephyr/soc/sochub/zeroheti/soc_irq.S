@@ -12,6 +12,9 @@
 #include <zephyr/linker/sections.h>
 #include <soc_common.h>
 
+#ifdef CONFIG_INTC_CLIC_ZEROHETI
+/* Zephyr's CLIC driver provides __soc_handle_irq */
+#else
 /* exports */
 GTEXT(__soc_handle_irq)
 
@@ -27,7 +30,7 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 
 	/* Return */
 	jalr x0, ra
-
+#endif
 /*
  * __soc_is_irq is defined as .weak to allow re-implementation by
  * SOCs that does not truly follow the riscv privilege specification.

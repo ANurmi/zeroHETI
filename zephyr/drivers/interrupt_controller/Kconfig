@@ -1,0 +1,45 @@
+# Copyright (c) 2025 zeroheti
+# SPDX-License-Identifier: Apache-2.0
+
+config INTC_CLIC_ZEROHETI
+	bool "Zeroheti custom CLIC driver"
+	depends on DT_HAS_RISCV_ZEROHETI_CLIC_ENABLED
+	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	select GEN_IRQ_VECTOR_TABLE
+	help
+	  CLIC Interrupt controller for ZEROHETI SoC core.
+
+config ZEROHETI_CLIC_SMCLICSHV_EXT
+	bool
+	default y
+	depends on INTC_CLIC_ZEROHETI
+
+config ZEROHETI_LEGACY_CLIC_MEMORYMAP_ACCESS
+	bool
+	default y
+	depends on INTC_CLIC_ZEROHETI
+
+config ZEROHETI_CLIC_SMCLICCONFIG_EXT
+	bool
+	default y
+	help
+	  Enables the SMCLICCONFIG extension, allowing configuration of CLIC
+	  parameters such as the number of interrupt level bits.
+
+config ZEROHETI_CLIC_PARAMETER_INTCTLBITS
+	int "The number of modifiable bits in the clicintctl registers"
+	range 0 8
+	default 8
+	depends on INTC_CLIC_ZEROHETI
+	help
+	  This option specifies the number of modifiable bits in the clicintctl
+	  registers.
+
+config ZEROHETI_CLIC_PARAMETER_MNLBITS
+	int "The number of bits in CLICINTCTLBITS to encode the interrupt level"
+	range 0 CLIC_PARAMETER_INTCTLBITS
+	default 0
+	depends on INTC_CLIC_ZEROHETI
+	help
+	  This option specifies the number of bits in CLICINTCTLBITS assigned to
+	  encode the interrupt level at machine mode.

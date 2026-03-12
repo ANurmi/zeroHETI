@@ -19,4 +19,14 @@ config RISCV_SOC_EXCEPTION_FROM_IRQ
 	bool
 	default y
 
+config RISCV_TRAP_HANDLER_ALIGNMENT
+	default 256
+
+config RISCV_MCAUSE_EXCEPTION_MASK
+	default 0x00000fff
+
+config INTC_CLIC_ZEROHETI
+	bool
+	default y
+	
 endif # SOC_ZEROHETI
