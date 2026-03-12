@@ -29,6 +29,17 @@ module zeroheti_xbar
   localparam int unsigned InstAccess = 32'd2;
   localparam int unsigned Dataccess = 32'd5;
 
+  OBI_BUS sba_bus_cut ();
+  // input SBA cut
+  obi_connection #(
+      .Cut(1'b1)
+  ) i_cut_sba (
+      .clk_i,
+      .rst_ni,
+      .obi_s(sba_bus),
+      .obi_m(sba_bus_cut)
+  );
+
   OBI_BUS sba_demux[SbaAccess] ();
   OBI_BUS inst_demux[InstAccess] ();
   OBI_BUS data_demux[Dataccess] ();
@@ -79,7 +90,7 @@ module zeroheti_xbar
       .clk_i,
       .rst_ni,
       .sbr_port_select_i(sba_sel),
-      .sbr_port(sba_bus),
+      .sbr_port(sba_bus_cut),
       .mgr_ports(sba_demux)
   );
   obi_demux_intf #(
