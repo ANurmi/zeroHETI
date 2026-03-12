@@ -11,10 +11,10 @@
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 #include </home/abdelkadir/workspace_dir/zephyr/drivers/interrupt_controller/intc_clic.h>
 
-#if DT_HAS_COMPAT_STATUS_OKAY(riscv_clic)
-#define CLIC_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(riscv_clic)
-#else
-#error "No okay CLIC node found"
+#define CLIC_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(riscv_zeroheti_clic)
+
+#if !DT_NODE_HAS_STATUS(CLIC_NODE, okay)
+#error "No okay Zeroheti CLIC node found"
 #endif
 
 #define IRQN  26
@@ -48,15 +48,13 @@ int main(void)
 
     riscv_clic_irq_enable(IRQN);
 
-	printf("ip=%02x ie=%02x attr=%02x ctl=%02x\n",
-		sys_read8(CLIC_IP(IRQN)), sys_read8(CLIC_IE(IRQN)), 
-		sys_read8(CLIC_ATTR(IRQN)), sys_read8(CLIC_CTRL(IRQN)));
+	printf("ip=%02x ie=%02x attr=%02x\n",
+		sys_read8(CLIC_IP(IRQN)), sys_read8(CLIC_IE(IRQN)), sys_read8(CLIC_ATTR(IRQN)));
 
 	riscv_clic_irq_set_pending(IRQN);
 
-	printf("set_pending: ip=%02x ie=%02x attr=%02x ctl=%02x\n",
-	       sys_read8(CLIC_IP(IRQN)), sys_read8(CLIC_IE(IRQN)), 
-		   sys_read8(CLIC_ATTR(IRQN)), sys_read8(CLIC_CTRL(IRQN)));
+	printf("set pending: ip=%02x ie=%02x attr=%02x\n",
+	       sys_read8(CLIC_IP(IRQN)), sys_read8(CLIC_IE(IRQN)), sys_read8(CLIC_ATTR(IRQN)));
 
 	//currently causes hang
 	//k_busy_wait(10); 
