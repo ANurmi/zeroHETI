@@ -56,10 +56,11 @@
 			compatible = "ns,16550";
 		};
 		clic0: interrupt-controller@100000 {
-      		compatible = "riscv,clic";
+      		compatible = "riscv,zeroheti-clic";
       		interrupt-controller;
       		#interrupt-cells = <2>;
       		reg = <0x00100000 0x00002000>;
+			status = "okay";
     };
 	};
 };
