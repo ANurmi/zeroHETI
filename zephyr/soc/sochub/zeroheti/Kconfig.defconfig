@@ -24,5 +24,9 @@ config RISCV_TRAP_HANDLER_ALIGNMENT
 
 config RISCV_MCAUSE_EXCEPTION_MASK
 	default 0x00000fff
+
+config INTC_CLIC_ZEROHETI
+	bool
+	default y
 	
 endif # SOC_ZEROHETI
