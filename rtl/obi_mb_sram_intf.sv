@@ -81,7 +81,7 @@ module obi_mb_sram_intf #(
       we_mux[i]  = 1'b0;
       req_d[i]   = 'b0;
 
-      if (mem_addr inside {[LocalWordBase : LocalWordLast]}) begin
+      if (mem_addr inside {[LocalWordBase*4 : LocalWordLast*4]}) begin
         req_mux[i] = sbr.req;
         req_d[i]   = sbr.req;
         we_mux[i]  = sbr.we;
