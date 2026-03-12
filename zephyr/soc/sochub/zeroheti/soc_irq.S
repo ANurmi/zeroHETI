@@ -12,7 +12,7 @@
 #include <zephyr/linker/sections.h>
 #include <soc_common.h>
 
-#ifdef CONFIG_CLIC
+#ifdef CONFIG_INTC_CLIC_ZEROHETI
 /* Zephyr's CLIC driver provides __soc_handle_irq */
 #else
 /* exports */
