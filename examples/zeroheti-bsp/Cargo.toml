@@ -51,3 +51,8 @@ required-features = ["intc-hetic"]
 [[example]]
 name = "all_irqs"
 path = "examples/all_irqs.rs"
+
+[[example]]
+name = "issue_42"
+path = "examples/issue_42.rs"
+required-features = ["intc-clic"]
