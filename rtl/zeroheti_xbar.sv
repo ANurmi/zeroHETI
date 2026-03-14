@@ -60,24 +60,24 @@ module zeroheti_xbar
   always_comb begin : g_sba_decode
     sba_sel = 0;
     unique case (sba_bus.addr) inside
-      [AddrMap.dbg.base : AddrMap.dbg.last]:     sba_sel = 0;
-      [AddrMap.imem.base : AddrMap.imem.last]:   sba_sel = 1;
-      [AddrMap.dmem.base : AddrMap.dmem.last]:   sba_sel = 2;
-      [AddrMap.hetic.base : AddrMap.hetic.last]: sba_sel = 3;
-      [AddrMap.uart.base : AddrMap.i2c.last]:    sba_sel = 4;
-      [AddrMap.ext.base : AddrMap.ext.last]:     sba_sel = 5;
-      default:                                   ;
+      [AddrMap.dbg.base : AddrMap.dbg.last - 1]:     sba_sel = 0;
+      [AddrMap.imem.base : AddrMap.imem.last - 1]:   sba_sel = 1;
+      [AddrMap.dmem.base : AddrMap.dmem.last - 1]:   sba_sel = 2;
+      [AddrMap.hetic.base : AddrMap.hetic.last - 1]: sba_sel = 3;
+      [AddrMap.uart.base : AddrMap.i2c.last - 1]:    sba_sel = 4;
+      [AddrMap.ext.base : AddrMap.ext.last - 1]:     sba_sel = 5;
+      default:                                       ;
     endcase
   end : g_sba_decode
 
   always_comb begin : g_data_decode
     data_sel = 0;
     unique case (data_bus.addr) inside
-      [AddrMap.dbg.base : AddrMap.dbg.last]:     data_sel = 0;
-      [AddrMap.dmem.base : AddrMap.dmem.last]:   data_sel = 1;
-      [AddrMap.hetic.base : AddrMap.hetic.last]: data_sel = 2;
-      [AddrMap.uart.base : AddrMap.i2c.last]:    data_sel = 3;
-      [AddrMap.ext.base : AddrMap.ext.last]:     data_sel = 4;
+      [AddrMap.dbg.base : AddrMap.dbg.last-1]:     data_sel = 0;
+      [AddrMap.dmem.base : AddrMap.dmem.last-1]:   data_sel = 1;
+      [AddrMap.hetic.base : AddrMap.hetic.last-1]: data_sel = 2;
+      [AddrMap.uart.base : AddrMap.i2c.last-1]:    data_sel = 3;
+      [AddrMap.ext.base : AddrMap.ext.last-1]:     data_sel = 4;
       default:                                   ;
     endcase
   end : g_data_decode
