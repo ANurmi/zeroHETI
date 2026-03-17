@@ -31,6 +31,11 @@ jobs:
       - name: Install Verilator
         run: sudo apt install verilator=5.020-1
 
+      - name: Install gcc
+        run: |
+          wget -qO- https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2023.07.05/riscv32-elf-ubuntu-22.04-gcc-nightly-2023.07.05-nightly.tar.gz | tar xz
+          echo $GITHUB_WORKSPACE/riscv/bin >> $GITHUB_PATH
+
       - name: Build
         run: |
           cd examples/zeroheti-bsp
