@@ -30,12 +30,33 @@ jobs:
       - name: Install Verilator
         run: sudo apt install verilator=5.020-1
 
-      - name: Build Verilator model of DUT
-        run: make verilate
-
       - name: Build
         run: |
           cd examples/zeroheti-bsp
           cargo check -Frtl-tb -Fintc-hetic --lib --examples
           cargo check -Frtl-tb -Fintc-clic --lib --examples
           cargo check -Frtl-tb -Fintc-edfic --lib --examples
+
+      - name: Test Hello
+        run: |
+          make verilate
+          cd examples/zeroheti-bsp
+          cargo run --release -Frtl-tb -Fintc-clic --example all_irqs
+
+      - name: Test all IRQs (CLIC)
+        run: |
+          make verilate INTC=CLIC
+          cd examples/zeroheti-bsp
+          cargo run --release -Frtl-tb -Fintc-clic --example all_irqs
+
+      - name: Test all IRQs (HETIC)
+        run: |
+          make verilate INTC=HETIC
+          cd examples/zeroheti-bsp
+          cargo run --release -Frtl-tb -Fintc-hetic --example all_irqs
+
+      - name: Test all IRQs (EDFIC)
+        run: |
+          make verilate INTC=EDFIC
+          cd examples/zeroheti-bsp
+          cargo run --release -Frtl-tb -Fintc-edfic --example all_irqs
