@@ -49,6 +49,12 @@ jobs:
           cd examples/zeroheti-bsp
           RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb --example hello
 
+      - name: Test failure
+        run: |
+          make verilate
+          cd examples/zeroheti-bsp
+          ! RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb --example fail
+
       - name: Test all IRQs (CLIC)
         run: |
           make verilate INTC=CLIC
