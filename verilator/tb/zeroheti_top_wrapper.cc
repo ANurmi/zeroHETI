@@ -76,8 +76,8 @@ int main(int argc, char** argv) {
                 << std::endl;
       tb->jtag_resume_hart_from(tb->get_entry(elfpath.string()));
     }
-    tb->jtag_wait_eoc();
+    uint32_t exit_code = tb->jtag_wait_eoc();
 
   delete tb;
-  return 0;
+  return exit_code;
 }

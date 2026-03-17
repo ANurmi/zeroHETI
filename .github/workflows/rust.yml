@@ -1,23 +1,74 @@
-name: Rust
+name: Rust regression tests
 
+# Triggers when there is any activity on a pull request, e.g. opened, updated.
 on:
-  push:
-    paths:
-    - examples/zeroheti-bsp/**
+  merge_group:
+    types:
+      - checks_requested
+  pull_request:
+    branches:
+      - "*"
 
 env:
   CARGO_TERM_COLOR: always
+  TEST_BUILD_RUSTFLAGS: "-Clinker=riscv32-unknown-elf-gcc -Clink-arg=-Wl,-Tmemory.x -Clink-arg=-Wl,-Tlink.x -Clink-arg=-nostartfiles -Clink-arg=-march=rv32ec -Clink-arg=-mabi=ilp32e"
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: |
-        cd examples/zeroheti-bsp
-        cargo check -Frtl-tb -Fintc-hetic --lib --examples
-        cargo check -Frtl-tb -Fintc-clic --lib --examples
-        cargo check -Frtl-tb -Fintc-edfic --lib --examples
+      - uses: actions/checkout@v4
+
+      - name: Install Bender
+        run: |
+          curl -L https://github.com/pulp-platform/bender/releases/download/v0.29.1/bender-0.29.1-x86_64-linux-gnu-ubuntu24.04.tar.gz | tar xz -C .
+          echo $GITHUB_WORKSPACE >> $GITHUB_PATH
+
+      - name: Fetch dependencies
+        run: bender update && bender vendor init
+
+      - name: Install Verilator
+        run: sudo apt install verilator=5.020-1
+
+      - name: Install gcc
+        run: |
+          wget -qO- https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2023.07.05/riscv32-elf-ubuntu-22.04-gcc-nightly-2023.07.05-nightly.tar.gz | tar xz
+          echo $GITHUB_WORKSPACE/riscv/bin >> $GITHUB_PATH
+
+      - name: Build
+        run: |
+          cd examples/zeroheti-bsp
+          cargo check -Frtl-tb -Fintc-hetic --lib --examples
+          cargo check -Frtl-tb -Fintc-clic --lib --examples
+          cargo check -Frtl-tb -Fintc-edfic --lib --examples
+
+      - name: Test Hello
+        run: |
+          make verilate
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb --example hello
+
+      - name: Test failure
+        run: |
+          make verilate
+          cd examples/zeroheti-bsp
+          ! RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb --example fail
+
+      - name: Test all IRQs (CLIC)
+        run: |
+          make verilate INTC=CLIC
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-clic --example all_irqs
+
+      - name: Test all IRQs (HETIC)
+        run: |
+          make verilate INTC=HETIC
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-hetic --example all_irqs
+
+      - name: Test all IRQs (EDFIC)
+        run: |
+          make verilate INTC=EDFIC
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-edfic --example all_irqs
