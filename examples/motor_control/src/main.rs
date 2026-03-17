@@ -16,7 +16,6 @@ use bsp::{
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mtimer::*,
     nested_interrupt,
-    register::mintthresh,
     riscv::{self, asm::wfi},
     rt::entry,
     sprintln,
@@ -167,276 +166,184 @@ fn lock<R>(f: impl FnOnce() -> R) -> R {
     }
 }
 
-#[nested_interrupt]
-unsafe fn Timer0Cmp() {
-    // Save mintthresh
+/// Stacks and unstacks mintthresh based on the deadline of the supplied
+/// interrupt
+fn with_dl_mintthresh(_irq: ExternalInterrupt, f: impl FnOnce()) {
     #[cfg(feature = "intc-edfic")]
     let current = {
         use riscv_rt::InterruptNumber;
-
-        let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Timer0Cmp.number()).dl();
+        let dl = bsp::edfic::Edfic::line(_irq.number()).dl();
         let ceiling = 255 - (dl >> 8);
-        mintthresh::write((ceiling as usize).into())
+        bsp::register::mintthresh::write((ceiling as usize).into())
     };
 
-    let mut rbuf = [0; 4];
-    lock(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.read(I2C_ADDRS.motors[0].stat, &mut rbuf));
+    f();
 
-    let m0_speed = u32::from_le_bytes(rbuf);
-    let time = MTimer::instance().counter();
-
-    // SAFETY: there are no other users of SPEED_REAL[0]
-    unsafe { SPEED_REAL[0] = m0_speed };
-    lock(||
-        // SAFETY: other users of MBX are excluded
-        unsafe { MBX.write_time_and_stat(time, m0_speed as u32, M0) });
-
-    // Restore mintthresh
     #[cfg(feature = "intc-edfic")]
-    mintthresh::write((current as usize).into());
+    bsp::register::mintthresh::write((current as usize).into());
+}
+
+#[nested_interrupt]
+unsafe fn Timer0Cmp() {
+    with_dl_mintthresh(ExternalInterrupt::Timer0Cmp, || {
+        let mut rbuf = [0; 4];
+        lock(||
+                // SAFETY: other users of I2C are excluded
+                unsafe { I2c::instance() }.read(I2C_ADDRS.motors[0].stat, &mut rbuf));
+
+        let m0_speed = u32::from_le_bytes(rbuf);
+        let time = MTimer::instance().counter();
+
+        // SAFETY: there are no other users of SPEED_REAL[0]
+        unsafe { SPEED_REAL[0] = m0_speed };
+        lock(||
+                // SAFETY: other users of MBX are excluded
+                unsafe { MBX.write_time_and_stat(time, m0_speed as u32, M0) });
+    });
 }
 
 #[nested_interrupt]
 unsafe fn Timer1Cmp() {
-    // Save mintthresh
-    #[cfg(feature = "intc-edfic")]
-    let current = {
-        use riscv_rt::InterruptNumber;
+    with_dl_mintthresh(ExternalInterrupt::Timer1Cmp, || {
+        let mut rbuf = [0; 4];
+        lock(||
+                // SAFETY: other users of I2C are excluded
+                unsafe { I2c::instance() }.read(I2C_ADDRS.motors[1].stat, &mut rbuf));
 
-        let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Timer1Cmp.number()).dl();
-        let ceiling = 255 - (dl >> 8);
-        mintthresh::write((ceiling as usize).into())
-    };
+        let m1_speed = u32::from_le_bytes(rbuf);
+        let time = MTimer::instance().counter();
 
-    let mut rbuf = [0; 4];
-    lock(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.read(I2C_ADDRS.motors[1].stat, &mut rbuf));
-
-    let m1_speed = u32::from_le_bytes(rbuf);
-    let time = MTimer::instance().counter();
-
-    // SAFETY: there are no other users of SPEED_REAL[1]
-    unsafe { SPEED_REAL[1] = m1_speed };
-    lock(||
-        // SAFETY: other users of MBX are excluded
-        unsafe { MBX.write_time_and_stat(time, m1_speed as u32, M1) });
-
-    // Restore mintthresh
-    #[cfg(feature = "intc-edfic")]
-    mintthresh::write((current as usize).into());
+        // SAFETY: there are no other users of SPEED_REAL[1]
+        unsafe { SPEED_REAL[1] = m1_speed };
+        lock(||
+                // SAFETY: other users of MBX are excluded
+                unsafe { MBX.write_time_and_stat(time, m1_speed as u32, M1) });
+    });
 }
 
 #[nested_interrupt]
 unsafe fn Timer2Cmp() {
-    // Save mintthresh
-    #[cfg(feature = "intc-edfic")]
-    let current = {
-        use riscv_rt::InterruptNumber;
+    with_dl_mintthresh(ExternalInterrupt::Timer2Cmp, || {
+        let mut rbuf = [0; 4];
+        lock(||
+                // SAFETY: other users of I2C are excluded
+                unsafe { I2c::instance() }.read(I2C_ADDRS.motors[2].stat, &mut rbuf));
 
-        let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Timer2Cmp.number()).dl();
-        let ceiling = 255 - (dl >> 8);
-        mintthresh::write((ceiling as usize).into())
-    };
+        let m2_speed = u32::from_le_bytes(rbuf);
+        let time = MTimer::instance().counter();
 
-    let mut rbuf = [0; 4];
-    lock(||
-        // SAFETY: other users of I2C are excluded
-         unsafe { I2c::instance() }.read(I2C_ADDRS.motors[2].stat, &mut rbuf));
-
-    let m2_speed = u32::from_le_bytes(rbuf);
-    let time = MTimer::instance().counter();
-
-    // SAFETY: there are no other users of SPEED_REAL[2]
-    unsafe { SPEED_REAL[2] = m2_speed };
-    lock(||
-        // SAFETY: other users of MBX are excluded
-        unsafe { MBX.write_time_and_stat(time, m2_speed as u32, M2)});
-
-    // Restore mintthresh
-    #[cfg(feature = "intc-edfic")]
-    mintthresh::write((current as usize).into());
+        // SAFETY: there are no other users of SPEED_REAL[2]
+        unsafe { SPEED_REAL[2] = m2_speed };
+        lock(||
+                // SAFETY: other users of MBX are excluded
+                unsafe { MBX.write_time_and_stat(time, m2_speed as u32, M2)});
+    });
 }
 
 #[nested_interrupt]
 unsafe fn Timer3Cmp() {
-    // Save mintthresh
-    #[cfg(feature = "intc-edfic")]
-    let current = {
-        use riscv_rt::InterruptNumber;
+    with_dl_mintthresh(ExternalInterrupt::Timer3Cmp, || {
+        let mut rbuf = [0; 4];
+        lock(||
+                // SAFETY: other users of I2C are excluded
+                unsafe { I2c::instance() }.read(I2C_ADDRS.motors[3].stat, &mut rbuf));
 
-        let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Timer3Cmp.number()).dl();
-        let ceiling = 255 - (dl >> 8);
-        mintthresh::write((ceiling as usize).into())
-    };
+        let m3_speed = u32::from_le_bytes(rbuf);
+        let time = MTimer::instance().counter();
 
-    let mut rbuf = [0; 4];
-    lock(||
-        // SAFETY: other users of I2C are excluded
-         unsafe { I2c::instance() }.read(I2C_ADDRS.motors[3].stat, &mut rbuf));
-
-    let m3_speed = u32::from_le_bytes(rbuf);
-    let time = MTimer::instance().counter();
-
-    // SAFETY: there are no other users of SPEED_REAL[3]
-    unsafe { SPEED_REAL[3] = m3_speed };
-    lock(||
-        // SAFETY: other users of MBX are excluded
-        unsafe { MBX.write_time_and_stat(time, m3_speed as u32, M3)});
-
-    // Restore mintthresh
-    #[cfg(feature = "intc-edfic")]
-    mintthresh::write((current as usize).into());
+        // SAFETY: there are no other users of SPEED_REAL[3]
+        unsafe { SPEED_REAL[3] = m3_speed };
+        lock(||
+                // SAFETY: other users of MBX are excluded
+                unsafe { MBX.write_time_and_stat(time, m3_speed as u32, M3)});
+    });
 }
 
 #[nested_interrupt]
 unsafe fn Mbx() {
-    // Save mintthresh
-    #[cfg(feature = "intc-edfic")]
-    let current = {
-        use riscv_rt::InterruptNumber;
+    with_dl_mintthresh(ExternalInterrupt::Mbx, || {
+        // SAFETY: the inbox is not read by any other context
+        let mail = unsafe { MBX.read_inbox() };
+        let bytes: [u8; 4] = mail.to_be_bytes();
 
-        let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Mbx.number()).dl();
-        let ceiling = 255 - (dl >> 8);
-        mintthresh::write((ceiling as usize).into())
-    };
+        for i in 0usize..4 {
+            lock(|| {
+                // SAFETY: other users of I2C are excluded
+                unsafe { I2c::instance() }.write((2 + i * 3) as u8, &[0u8, bytes[i]]);
+                let target_speed = (bytes[i] as u32) << 8;
+                // SAFETY: it is not significant whether motors read the newest or the last
+                // value from VOLTAGE_TARGET[i], or if they are mixed up.
+                unsafe { VOLTAGE_TARGET[i] = target_speed };
+            });
+        }
 
-    // SAFETY: the inbox is not read by any other context
-    let mail = unsafe { MBX.read_inbox() };
-    let bytes: [u8; 4] = mail.to_be_bytes();
-
-    for i in 0usize..4 {
-        lock(|| {
-            // SAFETY: other users of I2C are excluded
-            unsafe { I2c::instance() }.write((2 + i * 3) as u8, &[0u8, bytes[i]]);
-            let target_speed = (bytes[i] as u32) << 8;
-            // SAFETY: it is not significant whether motors read the newest or the last
-            // value from VOLTAGE_TARGET[i], or if they are mixed up.
-            unsafe { VOLTAGE_TARGET[i] = target_speed };
-        });
-    }
-
-    unsafe {
-        MBX.ack_irq();
-    }
-
-    // Restore mintthresh
-    #[cfg(feature = "intc-edfic")]
-    mintthresh::write((current as usize).into());
+        unsafe { MBX.ack_irq() };
+    });
 }
 
 #[nested_interrupt]
 unsafe fn Ext0() {
-    // Save mintthresh
-    #[cfg(feature = "intc-edfic")]
-    let current = {
-        use riscv_rt::InterruptNumber;
+    with_dl_mintthresh(ExternalInterrupt::Ext0, || {
+        let mut rbuf = [0; 4];
+        lock(||
+                // SAFETY: other users of I2C are excluded
+                unsafe { I2c::instance() }.read(I2C_ADDRS.motors[0].stat, &mut rbuf));
 
-        let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Ext0.number()).dl();
-        let ceiling = 255 - (dl >> 8);
-        mintthresh::write((ceiling as usize).into())
-    };
-
-    let mut rbuf = [0; 4];
-    lock(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.read(I2C_ADDRS.motors[0].stat, &mut rbuf));
-
-    let m0_speed_now = u32::from_le_bytes(rbuf);
-    let bytes: [u8; 2] = compute_control(0, m0_speed_now).to_le_bytes();
-    lock(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.write(I2C_ADDRS.motors[0].tune, &bytes));
-
-    // Restore mintthresh
-    #[cfg(feature = "intc-edfic")]
-    mintthresh::write((current as usize).into());
+        let m0_speed_now = u32::from_le_bytes(rbuf);
+        let bytes: [u8; 2] = compute_control(0, m0_speed_now).to_le_bytes();
+        lock(||
+                // SAFETY: other users of I2C are excluded
+                unsafe { I2c::instance() }.write(I2C_ADDRS.motors[0].tune, &bytes));
+    });
 }
 
 #[nested_interrupt]
 unsafe fn Ext1() {
     // Save mintthresh
-    #[cfg(feature = "intc-edfic")]
-    let current = {
-        use riscv_rt::InterruptNumber;
+    with_dl_mintthresh(ExternalInterrupt::Ext1, || {
+        let mut rbuf = [0; 4];
+        lock(||
+                // SAFETY: other users of I2C are excluded
+                unsafe { I2c::instance() }.read(I2C_ADDRS.motors[1].stat, &mut rbuf));
 
-        let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Ext1.number()).dl();
-        let ceiling = 255 - (dl >> 8);
-        mintthresh::write((ceiling as usize).into())
-    };
-
-    let mut rbuf = [0; 4];
-    lock(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.read(I2C_ADDRS.motors[1].stat, &mut rbuf));
-
-    let m1_speed_now = u32::from_le_bytes(rbuf);
-    let bytes: [u8; 2] = compute_control(1, m1_speed_now).to_le_bytes();
-    lock(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.write(I2C_ADDRS.motors[1].tune, &bytes));
-
-    // Restore mintthresh
-    #[cfg(feature = "intc-edfic")]
-    mintthresh::write((current as usize).into());
+        let m1_speed_now = u32::from_le_bytes(rbuf);
+        let bytes: [u8; 2] = compute_control(1, m1_speed_now).to_le_bytes();
+        lock(||
+                // SAFETY: other users of I2C are excluded
+                unsafe { I2c::instance() }.write(I2C_ADDRS.motors[1].tune, &bytes));
+    });
 }
 
 #[nested_interrupt]
 unsafe fn Ext2() {
-    // Save mintthresh
-    #[cfg(feature = "intc-edfic")]
-    let current = {
-        use riscv_rt::InterruptNumber;
+    with_dl_mintthresh(ExternalInterrupt::Ext2, || {
+        let mut rbuf = [0; 4];
+        lock(||
+                // SAFETY: other users of I2C are excluded
+                unsafe { I2c::instance() }.read(I2C_ADDRS.motors[2].stat, &mut rbuf));
 
-        let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Ext2.number()).dl();
-        let ceiling = 255 - (dl >> 8);
-        mintthresh::write((ceiling as usize).into())
-    };
-
-    let mut rbuf = [0; 4];
-    lock(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.read(I2C_ADDRS.motors[2].stat, &mut rbuf));
-
-    let m2_speed_now = u32::from_le_bytes(rbuf);
-    let bytes: [u8; 2] = compute_control(2, m2_speed_now).to_le_bytes();
-    lock(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.write(I2C_ADDRS.motors[2].tune, &bytes));
-
-    // Restore mintthresh
-    #[cfg(feature = "intc-edfic")]
-    mintthresh::write((current as usize).into());
+        let m2_speed_now = u32::from_le_bytes(rbuf);
+        let bytes: [u8; 2] = compute_control(2, m2_speed_now).to_le_bytes();
+        lock(||
+                // SAFETY: other users of I2C are excluded
+                unsafe { I2c::instance() }.write(I2C_ADDRS.motors[2].tune, &bytes));
+    });
 }
 
 #[nested_interrupt]
 unsafe fn Ext3() {
-    // Save mintthresh
-    #[cfg(feature = "intc-edfic")]
-    let current = {
-        use riscv_rt::InterruptNumber;
+    with_dl_mintthresh(ExternalInterrupt::Ext3, || {
+        let mut rbuf = [0; 4];
+        lock(||
+                // SAFETY: other users of I2C are excluded
+                unsafe { I2c::instance() }.read(I2C_ADDRS.motors[3].stat, &mut rbuf));
 
-        let dl = bsp::edfic::Edfic::line(ExternalInterrupt::Ext3.number()).dl();
-        let ceiling = 255 - (dl >> 8);
-        mintthresh::write((ceiling as usize).into())
-    };
-
-    let mut rbuf = [0; 4];
-    lock(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.read(I2C_ADDRS.motors[3].stat, &mut rbuf));
-
-    let m3_speed_now = u32::from_le_bytes(rbuf);
-    let bytes: [u8; 2] = compute_control(3, m3_speed_now).to_le_bytes();
-    lock(||
-        // SAFETY: other users of I2C are excluded
-        unsafe { I2c::instance() }.write(I2C_ADDRS.motors[3].tune, &bytes));
-
-    // Restore mintthresh
-    #[cfg(feature = "intc-edfic")]
-    mintthresh::write((current as usize).into());
+        let m3_speed_now = u32::from_le_bytes(rbuf);
+        let bytes: [u8; 2] = compute_control(3, m3_speed_now).to_le_bytes();
+        lock(||
+                // SAFETY: other users of I2C are excluded
+                unsafe { I2c::instance() }.write(I2C_ADDRS.motors[3].tune, &bytes));
+    });
 }
 
 #[inline]
