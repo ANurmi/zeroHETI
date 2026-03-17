@@ -1,9 +1,13 @@
 name: Rust
 
+# Triggers when there is any activity on a pull request, e.g. opened, updated.
 on:
-  push:
-    paths:
-    - examples/zeroheti-bsp/**
+  merge_group:
+    types:
+      - checks_requested
+  pull_request:
+    branches:
+      - "*"
 
 env:
   CARGO_TERM_COLOR: always
