@@ -2,6 +2,7 @@
 #![no_main]
 #![no_std]
 use riscv::InterruptNumber;
+use riscv_rt::external_interrupt;
 use zeroheti_bsp::{
     CPU_FREQ_HZ,
     apb_uart::ApbUart,
@@ -38,13 +39,8 @@ fn main() -> ! {
     // STEP 2: enable the interrupt after pending
     unsafe { Clic::ie(irq).enable() };
 
-    // Simulator should now be hung, and the following signal OK is not reached
-
-    #[cfg(feature = "rtl-tb")]
-    zeroheti_bsp::tb::rtl_tb_signal_ok();
-
     loop {
-        asm_delay(1_000_000);
+        asm_delay(1_000);
         sprintln!("[UART] OK\r\n");
     }
 }
@@ -66,3 +62,10 @@ unsafe fn custom_interrupt_handler() {
         )
     }
 }
+
+/*
+#[external_interrupt(ExternalInterrupt::Uart)]
+fn handler() {
+    tb::signal_pass(Some(&mut unsafe { ApbUart::instance() }));
+}
+*/
