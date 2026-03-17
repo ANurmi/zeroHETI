@@ -1,7 +1,10 @@
 //! Demonstrate https://github.com/ANurmi/zeroHETI/issues/42
 #![no_main]
 #![no_std]
-use riscv::InterruptNumber;
+use riscv::{
+    InterruptNumber,
+    asm::{self, nop},
+};
 use riscv_rt::external_interrupt;
 use zeroheti_bsp::{
     CPU_FREQ_HZ,
@@ -42,9 +45,16 @@ fn main() -> ! {
     // STEP 2: enable the interrupt after pending
     unsafe { Clic::ie(irq).enable() };
 
+    for _ in 0..1000 {
+        asm::nop();
+    }
+
+    // Timeout
+    tb::signal_fail(Some(&mut unsafe { ApbUart::instance() }));
+
     loop {
         asm_delay(1_000);
-        sprintln!("[UART] OK\r\n");
+        sprintln!("[UART] Tick\r\n");
     }
 }
 
@@ -63,6 +73,12 @@ unsafe fn custom_interrupt_handler() {
             code,
             ExternalInterrupt::from_number(riscv::register::mcause::read().code() & 0xfff)
         )
+    }
+
+    if ExternalInterrupt::from_number(code).unwrap() == ExternalInterrupt::Uart {
+        tb::signal_pass(Some(&mut unsafe { ApbUart::instance() }));
+    } else {
+        tb::signal_fail(Some(&mut unsafe { ApbUart::instance() }));
     }
 }
 
