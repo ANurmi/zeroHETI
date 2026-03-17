@@ -14,14 +14,28 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: |
-        cd examples/zeroheti-bsp
-        cargo check -Frtl-tb -Fintc-hetic --lib --examples
-        cargo check -Frtl-tb -Fintc-clic --lib --examples
-        cargo check -Frtl-tb -Fintc-edfic --lib --examples
+      - uses: actions/checkout@v4
+
+      - name: Install Bender
+        run: |
+          curl -L https://github.com/pulp-platform/bender/releases/download/v0.29.1/bender-0.29.1-x86_64-linux-gnu-ubuntu24.04.tar.gz | tar xz -C .
+          echo $GITHUB_WORKSPACE >> $GITHUB_PATH
+
+      - name: Fetch dependencies
+        run: bender update && bender vendor init
+
+      - name: Install Verilator
+        run: sudo apt install verilator=5.020-1
+
+      - name: Build Verilator model of DUT
+        run: make verilate
+
+      - name: Build
+        run: |
+          cd examples/zeroheti-bsp
+          cargo check -Frtl-tb -Fintc-hetic --lib --examples
+          cargo check -Frtl-tb -Fintc-clic --lib --examples
+          cargo check -Frtl-tb -Fintc-edfic --lib --examples
