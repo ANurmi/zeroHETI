@@ -11,7 +11,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  TEST_BUILD_RUSTFLAGS: "-Clinker=riscv64-unknown-elf-gcc -Clink-arg=-Wl,-Tmemory.x -Clink-arg=-Wl,-Tlink.x -Clink-arg=-nostartfiles -Clink-arg=-march=rv32ec -Clink-arg=-mabi=ilp32e"
+  TEST_BUILD_RUSTFLAGS: "-Clinker=riscv32-unknown-elf-gcc -Clink-arg=-Wl,-Tmemory.x -Clink-arg=-Wl,-Tlink.x -Clink-arg=-nostartfiles -Clink-arg=-march=rv32ec -Clink-arg=-mabi=ilp32e"
 
 jobs:
   build:
