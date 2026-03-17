@@ -17,6 +17,8 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     container:
+      # Container sourced from https://github.com/soc-hub-fi/ci-images
+      # .../zeroheti/Dockerfile
       image: ghcr.io/soc-hub-fi/zeroheti-ci:latest
       options: --user 0
 
