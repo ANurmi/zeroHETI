@@ -41,22 +41,22 @@ jobs:
         run: |
           make verilate
           cd examples/zeroheti-bsp
-          cargo run --release -Frtl-tb -Fintc-clic --example all_irqs
+          RUSTFLAGS="-Clinker=riscv64-unknown-elf-gcc -Clink-arg=-Wl,-Tmemory.x -Clink-arg=-Wl,-Tlink.x -Clink-arg=-nostartfiles -Clink-arg=-march=rv32ec -Clink-arg=-mabi=ilp32e" cargo run --release -Frtl-tb -Fintc-clic --example all_irqs
 
       - name: Test all IRQs (CLIC)
         run: |
           make verilate INTC=CLIC
           cd examples/zeroheti-bsp
-          cargo run --release -Frtl-tb -Fintc-clic --example all_irqs
+          RUSTFLAGS="-Clinker=riscv64-unknown-elf-gcc -Clink-arg=-Wl,-Tmemory.x -Clink-arg=-Wl,-Tlink.x -Clink-arg=-nostartfiles -Clink-arg=-march=rv32ec -Clink-arg=-mabi=ilp32e" cargo run --release -Frtl-tb -Fintc-clic --example all_irqs
 
       - name: Test all IRQs (HETIC)
         run: |
           make verilate INTC=HETIC
           cd examples/zeroheti-bsp
-          cargo run --release -Frtl-tb -Fintc-hetic --example all_irqs
+          RUSTFLAGS="-Clinker=riscv64-unknown-elf-gcc -Clink-arg=-Wl,-Tmemory.x -Clink-arg=-Wl,-Tlink.x -Clink-arg=-nostartfiles -Clink-arg=-march=rv32ec -Clink-arg=-mabi=ilp32e" cargo run --release -Frtl-tb -Fintc-hetic --example all_irqs
 
       - name: Test all IRQs (EDFIC)
         run: |
           make verilate INTC=EDFIC
           cd examples/zeroheti-bsp
-          cargo run --release -Frtl-tb -Fintc-edfic --example all_irqs
+          RUSTFLAGS="-Clinker=riscv64-unknown-elf-gcc -Clink-arg=-Wl,-Tmemory.x -Clink-arg=-Wl,-Tlink.x -Clink-arg=-nostartfiles -Clink-arg=-march=rv32ec -Clink-arg=-mabi=ilp32e" cargo run --release -Frtl-tb -Fintc-edfic --example all_irqs
