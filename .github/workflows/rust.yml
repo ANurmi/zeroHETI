@@ -1,4 +1,4 @@
-name: Rust
+name: Rust regression tests
 
 # Triggers when there is any activity on a pull request, e.g. opened, updated.
 on:
