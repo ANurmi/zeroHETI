@@ -9,7 +9,7 @@ use zeroheti_bsp::{
     clic::{Clic, Polarity, Trig},
     interrupt::{CoreInterrupt, ExternalInterrupt},
     rt::entry,
-    sprintln,
+    sprintln, tb,
 };
 
 #[entry]
@@ -20,11 +20,17 @@ fn main() -> ! {
 
     let irq = ExternalInterrupt::Uart;
 
+    Clic::smclicconfig().set_mnlbits(8);
+
     // Setup IRQ with standard procedure
     Clic::attr(irq).set_trig(Trig::Edge);
     Clic::attr(irq).set_polarity(Polarity::Pos);
     Clic::attr(irq).set_shv(true);
     Clic::ctl(irq).set_level(0xff);
+
+    // Enable global interrupts
+    sprintln!("mstatus.mie=1");
+    unsafe { riscv::interrupt::enable() };
 
     // STEP 1: pend the interrupt first
     unsafe { Clic::ip(irq).pend() }
