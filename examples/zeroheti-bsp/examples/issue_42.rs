@@ -19,9 +19,12 @@ fn main() -> ! {
 
     sprintln!("[{} ({})]", core::file!(), env!("RISCV_EXTS"));
 
-    let irq = ExternalInterrupt::Uart;
+    // HACK: clear mintstatus, required for zeroHETI
+    unsafe { zeroheti_bsp::register::mintstatus::write(0.into()) };
 
     Clic::smclicconfig().set_mnlbits(8);
+
+    let irq = ExternalInterrupt::Uart;
 
     // Setup IRQ with standard procedure
     Clic::attr(irq).set_trig(Trig::Edge);
