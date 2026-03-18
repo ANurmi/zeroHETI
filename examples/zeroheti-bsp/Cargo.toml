@@ -42,6 +42,7 @@ debug = true
 
 [build-dependencies]
 serde_json = "1.0.149"
+riscv-target-parser = "0.1.3"
 
 [[example]]
 name = "hetic_pend"
