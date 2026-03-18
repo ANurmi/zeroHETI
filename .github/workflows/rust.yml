@@ -28,28 +28,33 @@ jobs:
       - name: Fetch dependencies
         run: bender update && bender vendor init
 
-      - name: Build
+      - name: Check BSP
         run: |
           cd examples/zeroheti-bsp
           cargo check -Frtl-tb -Fintc-hetic --lib --examples
           cargo check -Frtl-tb -Fintc-clic --lib --examples
           cargo check -Frtl-tb -Fintc-edfic --lib --examples
 
+      - name: Build hardware (CLIC)
+        run: make verilate INTC=CLIC
+
+      - name: Build examples (CLIC)
+        run: |
+          cd examples/zeroheti-bsp
+          cargo build -Frtl-tb -Fintc-clic --lib --examples
+
       - name: Test Hello
         run: |
-          make verilate
           cd examples/zeroheti-bsp
           RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb --example hello
 
       - name: Test failure
         run: |
-          make verilate
           cd examples/zeroheti-bsp
           ! RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb --example fail
 
       - name: Test all IRQs (CLIC)
         run: |
-          make verilate INTC=CLIC
           cd examples/zeroheti-bsp
           RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-clic --example all_irqs
 
