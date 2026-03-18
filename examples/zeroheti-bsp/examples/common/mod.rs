@@ -1,4 +1,10 @@
 #![allow(unused)]
+
+#[cfg(not(any(feature = "intc-hetic", feature = "intc-clic", feature = "intc-edfic")))]
+compile_error!(
+    "at least one interrupt controller feature is required, pass -Fintc-hetic, -Fintc-clic, -Fintc-edfic"
+);
+
 use riscv_pac::InterruptNumber;
 use zeroheti_bsp::sprintln;
 
