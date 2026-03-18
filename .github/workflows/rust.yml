@@ -64,14 +64,24 @@ jobs:
           RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-clic --example all_irqs
 
       - name: Test all IRQs (HETIC)
-        if: ${{ inputs.run_hetic_edfic }}
+        # Run optionally, or if HETIC is mentioned in commit
+        if: >
+          ${{
+            inputs.run_hetic_edfic ||
+            contains(github.event.head_commit.message, 'HETIC')
+          }}
         run: |
           make verilate INTC=HETIC
           cd examples/zeroheti-bsp
           RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-hetic --example all_irqs
 
       - name: Test all IRQs (EDFIC)
-        if: ${{ inputs.run_hetic_edfic }}
+        # Run optionally, or if EDFIC is mentioned in commit
+        if: >
+          ${{
+            inputs.run_hetic_edfic ||
+            contains(github.event.head_commit.message, 'EDFIC')
+          }}
         run: |
           make verilate INTC=EDFIC
           cd examples/zeroheti-bsp
