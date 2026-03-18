@@ -134,4 +134,16 @@ impl Periodic {
         self.0.disable();
         self.0.set_cmp(u32::MAX);
     }
+
+    /// Returns the current counter value
+    #[inline]
+    pub fn counter(&self) -> u32 {
+        self.0.counter()
+    }
+
+    /// Returns the current duration since zero as tracked by the timer
+    #[inline]
+    pub fn duration(&self) -> Duration {
+        Duration::from_ticks(self.0.counter())
+    }
 }
