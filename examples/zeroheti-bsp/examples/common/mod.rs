@@ -8,6 +8,9 @@ pub const UART_BAUD: u32 = if cfg!(feature = "rtl-tb") {
 };
 
 pub fn init_intc() {
+    // HACK: clear mintstatus, required for zeroHETI
+    unsafe { zeroheti_bsp::register::mintstatus::write(0.into()) };
+
     #[cfg(feature = "intc-clic")]
     {
         use zeroheti_bsp::clic::Clic;
