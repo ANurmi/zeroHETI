@@ -58,6 +58,11 @@ jobs:
           cd examples/zeroheti-bsp
           ! RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb --example fail
 
+      - name: Test periphs
+        run: |
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-clic --example mtimer
+
       - name: Test all IRQs (CLIC)
         run: |
           cd examples/zeroheti-bsp
