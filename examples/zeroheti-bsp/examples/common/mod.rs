@@ -1,3 +1,4 @@
+#![allow(unused)]
 use riscv_pac::InterruptNumber;
 use zeroheti_bsp::sprintln;
 
