@@ -8,7 +8,12 @@ on:
   pull_request:
     branches:
       - "*"
-
+  workflow_dispatch:
+    inputs:
+      run_hetic_edfic:
+        description: "Run HETIC/EDFIC tests?"
+        type: boolean
+        default: false
 env:
   CARGO_TERM_COLOR: always
   TEST_BUILD_RUSTFLAGS: "-Clinker=riscv32-unknown-elf-gcc -Clink-arg=-Wl,-Tmemory.x -Clink-arg=-Wl,-Tlink.x -Clink-arg=-nostartfiles -Clink-arg=-march=rv32ec -Clink-arg=-mabi=ilp32e"
@@ -28,38 +33,60 @@ jobs:
       - name: Fetch dependencies
         run: bender update && bender vendor init
 
-      - name: Build
+      - name: Check BSP
         run: |
           cd examples/zeroheti-bsp
           cargo check -Frtl-tb -Fintc-hetic --lib --examples
           cargo check -Frtl-tb -Fintc-clic --lib --examples
           cargo check -Frtl-tb -Fintc-edfic --lib --examples
 
+      - name: Build hardware (CLIC)
+        run: make verilate INTC=CLIC
+
+      - name: Build examples (CLIC)
+        run: |
+          cd examples/zeroheti-bsp
+          cargo build -Frtl-tb -Fintc-clic --lib --examples
+
       - name: Test Hello
         run: |
-          make verilate
           cd examples/zeroheti-bsp
           RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb --example hello
 
       - name: Test failure
         run: |
-          make verilate
           cd examples/zeroheti-bsp
           ! RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb --example fail
 
+      - name: Test periphs
+        run: |
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-clic --example mtimer
+
       - name: Test all IRQs (CLIC)
         run: |
-          make verilate INTC=CLIC
           cd examples/zeroheti-bsp
           RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-clic --example all_irqs
 
       - name: Test all IRQs (HETIC)
+        # Run optionally, or if HETIC is mentioned in commit
+        if: >
+          ${{
+            inputs.run_hetic_edfic ||
+            contains(github.event.head_commit.message, 'HETIC')
+          }}
         run: |
           make verilate INTC=HETIC
           cd examples/zeroheti-bsp
           RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-hetic --example all_irqs
 
       - name: Test all IRQs (EDFIC)
+        # Run optionally, or if EDFIC is mentioned in commit
+        if: >
+          ${{
+            inputs.run_hetic_edfic ||
+            contains(github.event.head_commit.message, 'EDFIC')
+          }}
         run: |
           make verilate INTC=EDFIC
           cd examples/zeroheti-bsp

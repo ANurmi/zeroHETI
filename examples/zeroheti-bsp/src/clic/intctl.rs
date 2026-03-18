@@ -1,5 +1,5 @@
 //! CLIC interrupt control register.
-use riscv_peripheral::common::{Reg, RW};
+use riscv_peripheral::common::{RW, Reg};
 
 /// CLIC interrupt control register.
 ///

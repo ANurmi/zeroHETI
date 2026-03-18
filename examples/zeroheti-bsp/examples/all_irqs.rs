@@ -61,9 +61,6 @@ fn main() -> ! {
     let mut serial = ApbUart::init(CPU_FREQ_HZ, UART_BAUD);
     //print_example_name!();
 
-    // HACK: clear mintstatus, required for zeroHETI
-    unsafe { zeroheti_bsp::register::mintstatus::write(0.into()) };
-
     init_intc();
 
     for &irq in CORE_IRQS {

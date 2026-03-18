@@ -1,3 +1,10 @@
+#![allow(unused)]
+
+#[cfg(not(any(feature = "intc-hetic", feature = "intc-clic", feature = "intc-edfic")))]
+compile_error!(
+    "at least one interrupt controller feature is required, pass -Fintc-hetic, -Fintc-clic, -Fintc-edfic"
+);
+
 use riscv_pac::InterruptNumber;
 use zeroheti_bsp::sprintln;
 
@@ -8,6 +15,9 @@ pub const UART_BAUD: u32 = if cfg!(feature = "rtl-tb") {
 };
 
 pub fn init_intc() {
+    // HACK: clear mintstatus, required for zeroHETI
+    unsafe { zeroheti_bsp::register::mintstatus::write(0.into()) };
+
     #[cfg(feature = "intc-clic")]
     {
         use zeroheti_bsp::clic::Clic;
