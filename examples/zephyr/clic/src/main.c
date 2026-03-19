@@ -16,56 +16,84 @@
 #if !DT_NODE_HAS_STATUS(CLIC_NODE, okay)
 #error "No okay Zeroheti CLIC node found"
 #endif
-
-#define IRQN  26
+#define BUSY_WAIT 100
+#define IRQN26 26
+#define IRQN27 27
 #define CLIC_BASE_ADDR  DT_REG_ADDR(CLIC_NODE)
-#define CLIC_IP(IRQN)   (CLIC_BASE_ADDR + 0x1000 + (IRQN) * 4)
-#define CLIC_IE(IRQN)   (CLIC_BASE_ADDR + 0x1001 + (IRQN) * 4)
-#define CLIC_ATTR(IRQN) (CLIC_BASE_ADDR + 0x1002 + (IRQN) * 4)
-#define CLIC_CTL(IRQN)  (CLIC_BASE_ADDR + 0x1003 + (IRQN) * 4)
+#define CLIC_SLOT(irq)   (CLIC_BASE_ADDR + 0x1000 + ((irq) * 4))
+#define CLIC_IP(irq)     (CLIC_SLOT(irq) + 0)
+#define CLIC_IE(irq)     (CLIC_SLOT(irq) + 1)
+#define CLIC_ATTR(irq)   (CLIC_SLOT(irq) + 2)
+#define CLIC_CTL(irq)   (CLIC_SLOT(irq) + 3)
 
-static volatile bool interrupt_fired = false;
+static volatile uint32_t halt = 1;
+
+static volatile uint32_t hits = 0;
+static volatile bool isr26_entered = false;
+static volatile bool isr27_entered = false;
+static volatile bool nesting_worked = false;
 
 void riscv_clic_irq_set_pending(uint32_t irq);
-static void clic_isr(void)
+static void clic_isr27(void)
 {
-    interrupt_fired = true;
+    isr27_entered = true;
+    hits += 100;
 }
 
+static void clic_isr26(void)
+{
+    isr26_entered = true;
+    hits += 1;
+
+    // Re-enable interrupts
+    __asm__ volatile("csrsi mstatus, 0x8");
+    riscv_clic_irq_set_pending(IRQN27);
+
+    for (volatile int i = 0; i < BUSY_WAIT; i++) {
+		;
+    }
+	
+	if (isr27_entered) {
+        nesting_worked = true;
+    }
+
+    hits += 2;
+}
 int main(void)
 {
     printf("CLIC Demonstrator on %s\n", CONFIG_BOARD_TARGET);
 	
-	uint32_t halt 	  =1;	
+    uint32_t halt 	  =1;	
 
-    IRQ_CONNECT(IRQN, 0xFF, clic_isr, NULL, 0);
-	riscv_clic_irq_priority_set(IRQN, 0xFF, 1);
-	riscv_clic_irq_vector_set(IRQN);
+    /** 
+     * Populate the interrupt table with the interrupt's parameters.
+     * Set the priority in the interrupt controller at runtime.
+     * Enable vectoring .shv = 1
+    */
+    IRQ_CONNECT(IRQN26, 0x01, clic_isr26, NULL, 1);
+    IRQ_CONNECT(IRQN27, 0x02, clic_isr27, NULL, 1);
+	riscv_clic_irq_vector_set(IRQN26);
+    riscv_clic_irq_vector_set(IRQN27);
+    irq_enable(IRQN26);
+    irq_enable(IRQN27);
 
-	//Force place the interrupt handler address into the mtvt table
-	uint32_t *irq_vector_table = (uint32_t *)(0x10100);
-	irq_vector_table[IRQN] = (uint32_t)clic_isr;
-
-    riscv_clic_irq_enable(IRQN);
-
-	printf("ip=%02x ie=%02x attr=%02x\n",
-		sys_read8(CLIC_IP(IRQN)), sys_read8(CLIC_IE(IRQN)), sys_read8(CLIC_ATTR(IRQN)));
-
-	riscv_clic_irq_set_pending(IRQN);
-
-	printf("set pending: ip=%02x ie=%02x attr=%02x\n",
-	       sys_read8(CLIC_IP(IRQN)), sys_read8(CLIC_IE(IRQN)), sys_read8(CLIC_ATTR(IRQN)));
-
-	//currently causes hang
+     printf("cliccfg=%08x, clicinfo=%08x\n", sys_read32(CLIC_BASE_ADDR), sys_read32((CLIC_BASE_ADDR + 0x0004)));
+    //Pend an interrupt 
+	riscv_clic_irq_set_pending(IRQN26);
+	
+    //currently causes hang
 	//k_busy_wait(10); 
-	for(volatile int  i=0; i < 200; i++){
+	for(volatile int  i=0; i < BUSY_WAIT; i++){
 		halt+=i;
 	}
+	
+    printf("hits=%u isr26=%d isr27=%d nested=%d\n",
+           hits, isr26_entered, isr27_entered, nesting_worked);
 
-    if (interrupt_fired) {
-        printf("[CLIC] PASS\n");
+    if (nesting_worked) {
+        printf("[CLIC] PASS nested interrupt worked\n");
     } else {
-        printf("[CLIC] FAIL no ISR\n");
+        printf("[CLIC] FAIL no nesting\n");
     }
 	
   	debug_signal_pass();

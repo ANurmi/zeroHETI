@@ -37,8 +37,7 @@ config ZEROHETI_CLIC_PARAMETER_INTCTLBITS
 
 config ZEROHETI_CLIC_PARAMETER_MNLBITS
 	int "The number of bits in CLICINTCTLBITS to encode the interrupt level"
-	range 0 CLIC_PARAMETER_INTCTLBITS
-	default 0
+	default 8
 	depends on INTC_CLIC_ZEROHETI
 	help
 	  This option specifies the number of bits in CLICINTCTLBITS assigned to
