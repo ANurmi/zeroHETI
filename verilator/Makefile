@@ -40,7 +40,6 @@ ISA              = RV32$(BASE)$(MULT)$(COMP)
 
 VDEFS ?= \
   +define+VERILATOR=1 \
-  +define+MOCK_UART \
   +define+MBX_SIM \
 	+define+ZH_ROOT=$(ZH_ROOT) \
 	+define+IMEM_BYTES=$(IMEM_BYTES) \
@@ -49,6 +48,10 @@ VDEFS ?= \
 	+define+LOAD=$(LOAD) \
   +define+COMMON_CELLS_ASSERTS_OFF \
 	+define+CORE_CFG=$(ISA)Cfg \
+
+ifdef FULL_UART
+VDEFS += +define+FULL_UART
+endif
 
 VFLAGS           = \
   $(VDEFS) \
