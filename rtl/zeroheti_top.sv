@@ -122,15 +122,51 @@ module zeroheti_top
   assign uart_irq  = 1'b0;
   assign uart_tx_o = 1'b0;
 `else
+  logic [31:0] rdata_local;
+  logic [31:0] wdata_local;
+  logic [ 2:0] addr_local;
+  logic [ 2:0] addr_offs;
+
+  assign addr_local = demux_apb[1].paddr[2:0] + addr_offs;
+
+  always_comb begin
+    addr_offs           = 0;
+    wdata_local         = 0;
+    demux_apb[1].prdata = 0;
+    unique case (demux_apb[1].pstrb)
+      4'b0001: begin
+        addr_offs = 0;
+        demux_apb[1].prdata = {24'h0, rdata_local[7:0]};
+        wdata_local = {24'h0, demux_apb[1].pwdata[7:0]};
+      end
+      4'b0010: begin
+        addr_offs = 1;
+        demux_apb[1].prdata = {16'h0, rdata_local[7:0], 8'h0};
+        wdata_local = {24'h0, demux_apb[1].pwdata[15:8]};
+      end
+      4'b0100: begin
+        addr_offs = 2;
+        demux_apb[1].prdata = {8'h0, rdata_local[7:0], 16'h0};
+        wdata_local = {24'h0, demux_apb[1].pwdata[23:16]};
+      end
+      4'b1000: begin
+        addr_offs = 3;
+        demux_apb[1].prdata = {rdata_local[7:0], 24'h0};
+        wdata_local = {24'h0, demux_apb[1].pwdata[31:24]};
+      end
+      default: ;
+    endcase
+  end
+
   apb_uart i_apb_uart (
       .CLK    (clk_i),
       .RSTN   (rst_ni),
       .PSEL   (demux_apb[1].psel),
       .PENABLE(demux_apb[1].penable),
       .PWRITE (demux_apb[1].pwrite),
-      .PADDR  (demux_apb[1].paddr[2:0]),
-      .PWDATA (demux_apb[1].pwdata),
-      .PRDATA (demux_apb[1].prdata),
+      .PADDR  (addr_local),
+      .PWDATA (wdata_local),
+      .PRDATA (rdata_local),
       .PREADY (demux_apb[1].pready),
       .PSLVERR(demux_apb[1].pslverr),
       .INT    (uart_irq),
