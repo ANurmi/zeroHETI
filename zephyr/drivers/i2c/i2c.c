@@ -3,7 +3,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/sys_io.h>
 
-#define I2C_BASE 0x00002200
+#define I2C_BASE 0x00003200
 #define I2C_CLK_PRESCALER I2C_BASE + 0
 #define I2C_CTRL          I2C_BASE + 4
 #define I2C_RX            I2C_BASE + 8
