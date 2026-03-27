@@ -84,9 +84,9 @@ module zeroheti_top
   always_comb begin : apb_decode
     unique case (core_apb.paddr) inside
       [AddrMap.cfg.base : AddrMap.cfg.last - 1]:       demux_sel = SelWidth'('d0);
-      [AddrMap.tg.base : AddrMap.tg.last - 1]:         demux_sel = SelWidth'('d3);
+      [AddrMap.tg.base : AddrMap.tg.last - 1]:         demux_sel = SelWidth'('d1);
       [AddrMap.uart.base : AddrMap.uart.last - 1]:     demux_sel = SelWidth'('d2);
-      [AddrMap.mtimer.base : AddrMap.mtimer.last - 1]: demux_sel = SelWidth'('d1);
+      [AddrMap.mtimer.base : AddrMap.mtimer.last - 1]: demux_sel = SelWidth'('d3);
       [AddrMap.i2c.base : AddrMap.i2c.last - 1]:       demux_sel = SelWidth'('d4);
       default: begin
         demux_sel = SelWidth'('d0);
