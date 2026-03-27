@@ -38,8 +38,11 @@ MULT             = M
 COMP             = C
 ISA              = RV32$(BASE)$(MULT)$(COMP)
 
+GIT_HASH = $(shell git rev-parse --short HEAD)
+
 VDEFS ?= \
   +define+VERILATOR=1 \
+	+define+GIT_HASH=$(GIT_HASH) \
   +define+MBX_SIM \
 	+define+ZH_ROOT=$(ZH_ROOT) \
 	+define+IMEM_BYTES=$(IMEM_BYTES) \

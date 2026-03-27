@@ -25,6 +25,7 @@ sources:
       - rtl/i2c_master_bit_ctrl.sv
       - rtl/i2c_master_byte_ctrl.sv
       - rtl/apb_i2c.sv
+      - rtl/apb_cfg_regs.sv
       - rtl/apb_mtimer.sv
       - rtl/obi_hetic.sv
       - rtl/obi_mbx.sv

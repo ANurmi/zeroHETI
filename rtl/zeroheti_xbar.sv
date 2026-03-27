@@ -76,7 +76,7 @@ module zeroheti_xbar
       [AddrMap.dbg.base : AddrMap.dbg.last-1]:     data_sel = 0;
       [AddrMap.dmem.base : AddrMap.dmem.last-1]:   data_sel = 1;
       [AddrMap.hetic.base : AddrMap.hetic.last-1]: data_sel = 2;
-      [AddrMap.uart.base : AddrMap.i2c.last-1]:    data_sel = 3;
+      [AddrMap.uart.base : AddrMap.cfg.last-1]:    data_sel = 3;
       [AddrMap.ext.base : AddrMap.ext.last-1]:     data_sel = 4;
       default:                                   ;
     endcase

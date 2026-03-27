@@ -41,7 +41,9 @@ jobs:
           cargo check -Frtl-tb -Fintc-edfic --lib --examples
 
       - name: Build hardware (CLIC)
-        run: make verilate INTC=CLIC
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          make verilate INTC=CLIC
 
       - name: Build examples (CLIC)
         run: |
