@@ -14,7 +14,6 @@ fn main() -> ! {
 
     let rd = mmio::read_u32(CFG_BASE_ADDR);
 
-    let git_hash = "deadbeefbollocks";
     sprintln!("zeroHETI HW build from commit: {:8x}", rd);
 
     #[cfg(feature = "rtl-tb")]
