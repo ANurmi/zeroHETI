@@ -133,7 +133,7 @@ module zeroheti_top
   always_comb begin
     addr_offs           = 0;
     wdata_local         = 0;
-    demux_apb[1].prdata = 0;
+    demux_apb[2].prdata = 0;
     unique case (demux_apb[2].pstrb)
       4'b0001: begin
         addr_offs = 0;
