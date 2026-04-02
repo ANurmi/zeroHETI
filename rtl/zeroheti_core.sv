@@ -117,7 +117,7 @@ module zeroheti_core
       .DbgTriggerEn    (0),
       .DmHaltAddr      (dm::HaltAddress),
       .DmExceptionAddr (dm::ExceptionAddress),
-      .MClicBaseAddr   (zeroheti_pkg::AddrMap.hetic.base),
+      .MClicBaseAddr   (zeroheti_pkg::AddrMap.intc.base),
       .BranchTargetALU (Cfg.bt_alu)
   ) i_rt_ibex (
       .clk_i,
