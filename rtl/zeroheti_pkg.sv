@@ -82,7 +82,7 @@ package zeroheti_pkg;
     addr_rule_t dbg;
     addr_rule_t imem;
     addr_rule_t dmem;
-    addr_rule_t hetic;
+    addr_rule_t intc;
     addr_rule_t uart;
     addr_rule_t i2c;
     addr_rule_t tg;
@@ -108,7 +108,7 @@ package zeroheti_pkg;
   localparam addr_rule_t ImemAddr = '{base : 32'h0001_0000, last : (32'h0001_0000 + ImemSize)};
   localparam addr_rule_t DmemAddr = '{base : 32'h0002_0000, last : (32'h0002_0000 + DmemSize)};
   localparam addr_rule_t ExtAddr = '{base : 32'h0003_0000, last : 32'h0010_0000};
-  localparam addr_rule_t HetIcAddr = '{base : 32'h0010_0000, last : 32'h0010_2000};
+  localparam addr_rule_t IntcAddr = '{base : 32'h0010_0000, last : 32'h0010_2000};
 
   // imem size in words
   localparam int unsigned ImemWSize = ImemSize / 4;
@@ -119,7 +119,7 @@ package zeroheti_pkg;
       dbg    : DbgAddr,
       imem   : ImemAddr,
       dmem   : DmemAddr,
-      hetic  : HetIcAddr,
+      intc   : IntcAddr,
       uart   : UartAddr,
       i2c    : I2cAddr,
       cfg    : CfgAddr,

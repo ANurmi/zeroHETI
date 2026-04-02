@@ -1,3 +1,5 @@
+`include "obi/assign.svh"
+
 module zeroheti_xbar
   import zeroheti_pkg::AddrMap;
 #(
@@ -14,20 +16,34 @@ module zeroheti_xbar
           OBI_BUS.Manager     dbg_bus,
           OBI_BUS.Manager     mbx_bus
 );
+  localparam obi_pkg::obi_cfg_t ObiCfg = obi_pkg::ObiDefaultConfig;
 
-  localparam int unsigned DemuxMaxTrans = 32'd1;
-  localparam int unsigned MuxMaxTrans = 32'd1;
+  localparam int unsigned NumMgr = 3;
+  localparam int unsigned NumSbr = 6;
 
-  localparam int unsigned MuxInstInputs = 2;
-  localparam int unsigned MuxDataInputs = 2;
-  localparam int unsigned MuxIntcInputs = 2;
-  localparam int unsigned MuxPerInputs = 2;
-  localparam int unsigned MuxDbgInputs = 3;
-  localparam int unsigned MuxMbxInputs = 2;
+  localparam bit [NumMgr-1:0][NumSbr-1:0] Connectivity = '{
+            '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
+      '{1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1},
+      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}
+  };
 
-  localparam int unsigned SbaAccess = 32'd6;
-  localparam int unsigned InstAccess = 32'd2;
-  localparam int unsigned Dataccess = 32'd5;
+  typedef struct packed {
+    int unsigned idx;
+    logic [31:0] start_addr;
+    logic [31:0] end_addr;
+  } rule_t;
+
+  localparam rule_t [NumSbr-1:0] CoreAddrMap = '{
+      rule_t'{idx: 0, start_addr: AddrMap.dbg.base, end_addr: AddrMap.dbg.last},
+      rule_t'{idx: 1, start_addr: AddrMap.imem.base, end_addr: AddrMap.imem.last},
+      rule_t'{idx: 2, start_addr: AddrMap.dmem.base, end_addr: AddrMap.dmem.last},
+      rule_t'{idx: 3, start_addr: AddrMap.intc.base, end_addr: AddrMap.intc.last},
+      rule_t'{idx: 4, start_addr: AddrMap.dbg.last, end_addr: AddrMap.imem.base},
+      rule_t'{idx: 5, start_addr: AddrMap.ext.base, end_addr: AddrMap.ext.last}
+  };
+
+  OBI_BUS sbr_ports[NumMgr] ();
+  OBI_BUS mgr_ports[NumSbr] ();
 
   OBI_BUS sba_bus_cut ();
   // input SBA cut
@@ -40,253 +56,89 @@ module zeroheti_xbar
       .obi_m(sba_bus_cut)
   );
 
-  OBI_BUS sba_demux[SbaAccess] ();
-  OBI_BUS inst_demux[InstAccess] ();
-  OBI_BUS data_demux[Dataccess] ();
+  `OBI_ASSIGN(sbr_ports[0], sba_bus_cut, ObiCfg, ObiCfg)
+  `OBI_ASSIGN(sbr_ports[1], inst_bus, ObiCfg, ObiCfg)
+  `OBI_ASSIGN(sbr_ports[2], data_bus, ObiCfg, ObiCfg)
 
-  OBI_BUS imem_mux[MuxInstInputs] ();
-  OBI_BUS dmem_mux[MuxDataInputs] ();
-  OBI_BUS intc_mux[MuxIntcInputs] ();
-  OBI_BUS per_mux[MuxPerInputs] ();
-  OBI_BUS dbg_mux[MuxDbgInputs] ();
-  OBI_BUS mbx_mux[MuxMbxInputs] ();
+  `OBI_ASSIGN(dbg_bus, mgr_ports[0], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(imem_bus, mgr_ports[1], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(dmem_bus, mgr_ports[2], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(intc_bus, mgr_ports[3], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(per_bus, mgr_ports[4], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(mbx_bus, mgr_ports[5], ObiCfg, ObiCfg)
 
-  logic [2:0] sba_sel;
-  logic       inst_sel;
-  logic [2:0] data_sel;
+  typedef struct packed {
+    logic [31:0] addr;
+    logic        we;
+    logic [3:0]  be;
+    logic [31:0] wdata;
+    logic        aid;
+    logic        a_optional;
+  } a_chan_t;
 
-  assign inst_sel = !((inst_bus.addr >= AddrMap.imem.base) & (inst_bus.addr < AddrMap.dmem.base));
+  typedef struct packed {
+    logic [31:0] rdata;
+    logic rid;
+    logic err;
+    logic r_optional;
+  } r_chan_t;
 
-  always_comb begin : g_sba_decode
-    sba_sel = 0;
-    unique case (sba_bus.addr) inside
-      [AddrMap.dbg.base : AddrMap.dbg.last - 1]:     sba_sel = 0;
-      [AddrMap.imem.base : AddrMap.imem.last - 1]:   sba_sel = 1;
-      [AddrMap.dmem.base : AddrMap.dmem.last - 1]:   sba_sel = 2;
-      [AddrMap.hetic.base : AddrMap.hetic.last - 1]: sba_sel = 3;
-      [AddrMap.uart.base : AddrMap.i2c.last - 1]:    sba_sel = 4;
-      [AddrMap.ext.base : AddrMap.ext.last - 1]:     sba_sel = 5;
-      default:                                       ;
-    endcase
-  end : g_sba_decode
+  typedef struct packed {
+    a_chan_t a;
+    logic req;
+  } req_t;
 
-  always_comb begin : g_data_decode
-    data_sel = 0;
-    unique case (data_bus.addr) inside
-      [AddrMap.dbg.base : AddrMap.dbg.last-1]:     data_sel = 0;
-      [AddrMap.dmem.base : AddrMap.dmem.last-1]:   data_sel = 1;
-      [AddrMap.hetic.base : AddrMap.hetic.last-1]: data_sel = 2;
-      [AddrMap.uart.base : AddrMap.cfg.last-1]:    data_sel = 3;
-      [AddrMap.ext.base : AddrMap.ext.last-1]:     data_sel = 4;
-      default:                                   ;
-    endcase
-  end : g_data_decode
+  typedef struct packed {
+    r_chan_t r;
+    logic gnt;
+    logic rvalid;
+  } rsp_t;
 
-  // Manager demuxes
-  obi_demux_intf #(
-      .NumMgrPorts(SbaAccess),
-      .NumMaxTrans(DemuxMaxTrans)
-  ) i_sba_demux (
-      .clk_i,
-      .rst_ni,
-      .sbr_port_select_i(sba_sel),
-      .sbr_port(sba_bus_cut),
-      .mgr_ports(sba_demux)
-  );
-  obi_demux_intf #(
-      .NumMgrPorts(InstAccess),
-      .NumMaxTrans(DemuxMaxTrans)
-  ) i_inst_demux (
-      .clk_i,
-      .rst_ni,
-      .sbr_port_select_i(inst_sel),
-      .sbr_port(inst_bus),
-      .mgr_ports(inst_demux)
-  );
-  obi_demux_intf #(
-      .NumMgrPorts(Dataccess),
-      .NumMaxTrans(DemuxMaxTrans)
-  ) i_data_demux (
-      .clk_i,
-      .rst_ni,
-      .sbr_port_select_i(data_sel),
-      .sbr_port(data_bus),
-      .mgr_ports(data_demux)
-  );
+  req_t [NumMgr-1:0] sbr_ports_req;
+  rsp_t [NumMgr-1:0] sbr_ports_rsp;
 
-  // Internal routing w/ potential cuts
+  req_t [NumSbr-1:0] mgr_ports_req;
+  rsp_t [NumSbr-1:0] mgr_ports_rsp;
 
-  // SBA routing
-  obi_connection #(
-      .Cut(1'b0)
-  ) i_conn_sba_dbg (
+
+  for (genvar i = 0; i < NumMgr; i++) begin : gen_sbr_ports_assign
+    `OBI_ASSIGN_TO_REQ(sbr_ports_req[i], sbr_ports[i], ObiCfg)
+    `OBI_ASSIGN_FROM_RSP(sbr_ports[i], sbr_ports_rsp[i], ObiCfg)
+  end
+
+  for (genvar i = 0; i < NumSbr; i++) begin : gen_mgr_ports_assign
+    `OBI_ASSIGN_FROM_REQ(mgr_ports[i], mgr_ports_req[i], ObiCfg)
+    `OBI_ASSIGN_TO_RSP(mgr_ports_rsp[i], mgr_ports[i], ObiCfg)
+  end
+
+
+  obi_xbar #(
+      .sbr_port_obi_req_t(req_t),
+      .sbr_port_a_chan_t (a_chan_t),
+      .sbr_port_obi_rsp_t(rsp_t),
+      .sbr_port_r_chan_t (r_chan_t),
+      .mgr_port_obi_req_t(req_t),
+      .mgr_port_obi_rsp_t(rsp_t),
+      .NumSbrPorts       (NumMgr),
+      .NumMgrPorts       (NumSbr),
+      .NumMaxTrans       (32'd1),
+      .NumAddrRules      (NumSbr),
+      .addr_map_rule_t   (rule_t),
+      .UseIdForRouting   (1'b0),
+      .Connectivity      (Connectivity)
+  ) i_obi_xbar (
       .clk_i,
       .rst_ni,
-      .obi_s(sba_demux[0]),
-      .obi_m(dbg_mux[0])
-  );
-  obi_connection #(
-      .Cut(1'b0)
-  ) i_conn_sba_imem (
-      .clk_i,
-      .rst_ni,
-      .obi_s(sba_demux[1]),
-      .obi_m(imem_mux[0])
-  );
-  obi_connection #(
-      .Cut(1'b0)
-  ) i_conn_sba_dmem (
-      .clk_i,
-      .rst_ni,
-      .obi_s(sba_demux[2]),
-      .obi_m(dmem_mux[0])
-  );
-  obi_connection #(
-      .Cut(1'b0)
-  ) i_conn_sba_intc (
-      .clk_i,
-      .rst_ni,
-      .obi_s(sba_demux[3]),
-      .obi_m(intc_mux[0])
-  );
-  obi_connection #(
-      .Cut(1'b0)
-  ) i_conn_sba_per (
-      .clk_i,
-      .rst_ni,
-      .obi_s(sba_demux[4]),
-      .obi_m(per_mux[0])
-  );
-  obi_connection #(
-      .Cut(1'b0)
-  ) i_conn_sba_mbx (
-      .clk_i,
-      .rst_ni,
-      .obi_s(sba_demux[5]),
-      .obi_m(mbx_mux[0])
+      .testmode_i      (1'b0),
+      .sbr_ports_req_i (sbr_ports_req),
+      .sbr_ports_rsp_o (sbr_ports_rsp),
+      .mgr_ports_req_o (mgr_ports_req),
+      .mgr_ports_rsp_i (mgr_ports_rsp),
+      .addr_map_i      (CoreAddrMap),
+      .en_default_idx_i('0),
+      .default_idx_i   ('0)
   );
 
-  // Instruction fetch routing
-  obi_connection #(
-      .Cut(1'b0)
-  ) i_conn_inst_imem (
-      .clk_i,
-      .rst_ni,
-      .obi_s(inst_demux[0]),
-      .obi_m(imem_mux[1])
-  );
-  obi_connection #(
-      .Cut(1'b0)
-  ) i_conn_inst_dbg (
-      .clk_i,
-      .rst_ni,
-      .obi_s(inst_demux[1]),
-      .obi_m(dbg_mux[1])
-  );
-
-  // Load-store unit routing
-  obi_connection #(
-      .Cut(1'b0)
-  ) i_conn_data_dbg (
-      .clk_i,
-      .rst_ni,
-      .obi_s(data_demux[0]),
-      .obi_m(dbg_mux[2])
-  );
-  obi_connection #(
-      .Cut(1'b0)
-  ) i_conn_data_dmem (
-      .clk_i,
-      .rst_ni,
-      .obi_s(data_demux[1]),
-      .obi_m(dmem_mux[1])
-  );
-  obi_connection #(
-      .Cut(1'b1)
-  ) i_conn_data_intc (
-      .clk_i,
-      .rst_ni,
-      .obi_s(data_demux[2]),
-      .obi_m(intc_mux[1])
-  );
-  obi_connection #(
-      .Cut(1'b1)
-  ) i_conn_data_per (
-      .clk_i,
-      .rst_ni,
-      .obi_s(data_demux[3]),
-      .obi_m(per_mux[1])
-  );
-  obi_connection #(
-      .Cut(1'b0)
-  ) i_conn_data_mbx (
-      .clk_i,
-      .rst_ni,
-      .obi_s(data_demux[4]),
-      .obi_m(mbx_mux[1])
-  );
-
-  // Subordinate muxes
-  obi_mux_intf #(
-      .NumSbrPorts(MuxInstInputs),
-      .NumMaxTrans(MuxMaxTrans)
-  ) i_imem_mux (
-      .clk_i,
-      .rst_ni,
-      .testmode_i(1'b0),
-      .sbr_ports (imem_mux),
-      .mgr_port  (imem_bus)
-  );
-  obi_mux_intf #(
-      .NumSbrPorts(MuxDataInputs),
-      .NumMaxTrans(MuxMaxTrans)
-  ) i_dmem_mux (
-      .clk_i,
-      .rst_ni,
-      .testmode_i(1'b0),
-      .sbr_ports (dmem_mux),
-      .mgr_port  (dmem_bus)
-  );
-  obi_mux_intf #(
-      .NumSbrPorts(MuxIntcInputs),
-      .NumMaxTrans(MuxMaxTrans)
-  ) i_intc_mux (
-      .clk_i,
-      .rst_ni,
-      .testmode_i(1'b0),
-      .sbr_ports (intc_mux),
-      .mgr_port  (intc_bus)
-  );
-  obi_mux_intf #(
-      .NumSbrPorts(MuxPerInputs),
-      .NumMaxTrans(MuxMaxTrans)
-  ) i_per_mux (
-      .clk_i,
-      .rst_ni,
-      .testmode_i(1'b0),
-      .sbr_ports (per_mux),
-      .mgr_port  (per_bus)
-  );
-  obi_mux_intf #(
-      .NumSbrPorts(MuxDbgInputs),
-      .NumMaxTrans(MuxMaxTrans)
-  ) i_dbg_mux (
-      .clk_i,
-      .rst_ni,
-      .testmode_i(1'b0),
-      .sbr_ports (dbg_mux),
-      .mgr_port  (dbg_bus)
-  );
-  obi_mux_intf #(
-      .NumSbrPorts(MuxMbxInputs),
-      .NumMaxTrans(MuxMaxTrans)
-  ) i_mbx_mux (
-      .clk_i,
-      .rst_ni,
-      .testmode_i(1'b0),
-      .sbr_ports (mbx_mux),
-      .mgr_port  (mbx_bus)
-  );
 
 endmodule : zeroheti_xbar
 
