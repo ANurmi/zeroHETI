@@ -1,0 +1,63 @@
+[package]
+name = "motor_control"
+version = "0.1.0"
+edition = "2024"
+default-run = "motor_control"
+
+[dependencies]
+bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp", features = [
+    "rt",
+] }
+fugit = "0.3.7"
+ufmt = "0.2.0"
+more-asserts = "0.3.1"
+# It is strange that this is needed as a direct dependency; build breaks otherwise
+riscv-rt = { version = "0.16.0", features = ["single-hart", "v-trap", "no-interrupts"] }
+log = { version = "0.4.29", default-features = false }
+rtic = { version = "0.1.0", path = "../mrtic/distributions/zeroheti-rtic", optional = true, features = ["rtl-tb"] }
+
+[lib]
+name = "motor_control"
+
+[features]
+default = []
+ufmt = ["bsp/ufmt"]
+
+intc-hetic = ["bsp/intc-hetic", "rtic/intc-hetic"]
+intc-clic = ["bsp/intc-clic", "rtic/intc-clic"]
+intc-edfic = ["bsp/intc-edfic", "rtic/intc-edfic"]
+
+# Use this feature when using cosimulators such as QuestaSim
+rtl-tb = ["bsp/rtl-tb"]
+# Use this feature when deploying on FPGA
+fpga = ["bsp/fpga"]
+rtic = ["dep:rtic"]
+
+[profile.dev]
+# There seems to be a problem in riscv-rt with regards to linking in default_start_trap in debug
+# mode. `codegen-units = 1` avoids that
+codegen-units = 1
+opt-level = "s"
+
+[profile.release]
+# There seems to be a problem in riscv-rt with regards to linking in default_start_trap in debug
+# mode. `codegen-units = 1` avoids that
+codegen-units = 1
+opt-level = "s"
+
+[build-dependencies]
+riscv-target-parser = "0.1.3"
+
+[[bin]]
+name = "motor_control"
+path = "src/main.rs"
+
+[[bin]]
+name = "motor_control_rtic"
+path = "src/main_rtic.rs"
+required-features = ["rtic"]
+
+[[bin]]
+name = "motor_control_rtic_edfic"
+path = "src/main_rtic_edfic.rs"
+required-features = ["rtic", "intc-edfic"]

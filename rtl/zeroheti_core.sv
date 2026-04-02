@@ -3,10 +3,11 @@ module zeroheti_core
 #(
     parameter zeroheti_pkg::core_cfg_t Cfg = zeroheti_pkg::DefaultCfg,
     localparam int unsigned IrqWidth = $clog2(Cfg.num_irqs),
-    localparam int unsigned TsWidth = 12,
-    localparam int unsigned PrioWidth = (zeroheti_pkg::IntController == EDFIC) ? TsWidth : $clog2(
-        Cfg.num_prio
-    )
+    localparam int unsigned TsWidth = 14,
+    localparam int unsigned PrioWidth = 8
+    //localparam int unsigned PrioWidth = (zeroheti_pkg::IntController == EDFIC) ? TsWidth : $clog2(
+    //    Cfg.num_prio
+    //)
 ) (
     input  logic                         clk_i,
     input  logic                         rst_ni,
