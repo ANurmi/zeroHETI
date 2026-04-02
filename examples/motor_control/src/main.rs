@@ -113,13 +113,12 @@ fn main() -> ! {
 
     mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
-    let timers = &mut [
-        Timer::init::<TIMER0_ADDR>().into_periodic(),
-        Timer::init::<TIMER1_ADDR>().into_periodic(),
-        Timer::init::<TIMER2_ADDR>().into_periodic(),
-        Timer::init::<TIMER3_ADDR>().into_periodic(),
-    ];
-
+       let timers = &mut [
+           Timer::init::<TIMER0_ADDR>().into_periodic(),
+           Timer::init::<TIMER1_ADDR>().into_periodic(),
+           Timer::init::<TIMER2_ADDR>().into_periodic(),
+           Timer::init::<TIMER3_ADDR>().into_periodic(),
+       ];
     timers[0].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
     timers[1].set_period_offset(
         REP_TASK_PER_US.micros(),
@@ -143,7 +142,7 @@ fn main() -> ! {
     }
 
     // Start periodic timers
-    timers.iter_mut().for_each(Periodic::start);
+    // timers.iter_mut().for_each(Periodic::start);
 
     // Start sim
     unsafe {

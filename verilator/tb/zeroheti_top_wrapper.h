@@ -48,35 +48,4 @@ class TbZeroHeti: public Testbench<Vzeroheti_top_wrapper> {
           }
           printf("[JTAG] Detected update on memory      - address: 0x%08X, value 0x%08X\n", addr, updated);
         }
-/*
-        void didactic_memtest () {
-
-            printf("[TB] Running JTAG memory access test\n");
-            printf("[JTAG] Test IMEM base address (0x0100_0000) access: ");
-            if(readback_test(0x1000000, 0xDEADBEEF)){
-                printf("OK\n");
-            }
-
-            printf("[JTAG] Test DMEM base address (0x0101_0000) access: ");
-            if(readback_test(0x01010000, 0xBADC0FFE)){
-                printf("OK\n");
-            }
-            
-            printf("[JTAG] Test Debug base address (0x0102_0000) access: ");
-            if(readback_test(0x01012000, 0xFEEDC0DE)){
-                printf("OK\n");
-            }
-            printf("[JTAG] Test Staff Peripherals base address (0x0103_0000) access: ");
-            if(readback_test(0x01013000, 0xBABEBABE)){
-                printf("OK\n");
-            }
-            printf("[JTAG] Test Control Registers base address (0x0104_0000) access: ");
-            if(readback_test(0x01013000, 0xFEEDBEEF)){
-                printf("OK\n");
-            }
-
-            printf("[TB] JTAG test done\n");
-        }
-
-*/
 };

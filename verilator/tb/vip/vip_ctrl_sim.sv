@@ -131,7 +131,7 @@ module vip_ctrl_sim #(
     if (enable & ((time_us - MbxOfsUs) % MbxPerUs == 0)) begin
       pend_task(0);
       reset_task_dl(0);
-      i_zeroheti.i_mbx.i_sim_mbx.raise_irq();
+      //i_zeroheti.i_mbx.i_sim_mbx.raise_irq();
     end
 
     // Activate periodic reporting tasks with appropriate offset

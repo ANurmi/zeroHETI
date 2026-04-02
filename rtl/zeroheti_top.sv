@@ -14,6 +14,25 @@ module zeroheti_top
     input  logic                  jtag_td_i,
     output logic                  jtag_td_o,
     input  logic [NumExtIrqs-1:0] ext_irq_i,
+    input  logic [          31:0] axil_aw_addr_i,
+    input  logic [           2:0] axil_aw_prot_i,
+    input  logic                  axil_aw_valid_i,
+    output logic                  axil_aw_ready_o,
+    input  logic [          31:0] axil_w_data_i,
+    input  logic [           3:0] axil_w_strb_i,
+    input  logic                  axil_w_valid_i,
+    output logic                  axil_w_ready_o,
+    output logic [           1:0] axil_b_resp_o,
+    output logic                  axil_b_valid_o,
+    input  logic                  axil_b_ready_i,
+    input  logic [          31:0] axil_ar_addr_i,
+    input  logic [           2:0] axil_ar_prot_i,
+    input  logic                  axil_ar_valid_i,
+    output logic                  axil_ar_ready_o,
+    output logic [          31:0] axil_r_data_o,
+    output logic [           1:0] axil_r_resp_o,
+    output logic                  axil_r_valid_o,
+    input  logic                  axil_r_ready_i,
     input  logic                  uart_rx_i,
     output logic                  uart_tx_o,
     input  logic                  i2c_scl_pad_i,
@@ -31,6 +50,12 @@ module zeroheti_top
   localparam int unsigned SelWidth = $clog2(NrApbPerip);
 
   OBI_BUS mbx_obi ();
+
+  AXI_LITE #(
+      .AXI_ADDR_WIDTH(32'd32),
+      .AXI_DATA_WIDTH(DataWidth)
+  ) mbx_axi ();
+
   APB core_apb ();
   APB demux_apb[NrApbPerip] ();
 
@@ -77,8 +102,9 @@ module zeroheti_top
   obi_mbx i_mbx (
       .clk_i,
       .rst_ni,
-      .irq_o  (mbx_irq),
-      .obi_sbr(mbx_obi)
+      .irq_o(mbx_irq),
+      .obi_sbr(mbx_obi),
+      .axil_sbr(mbx_axi)
   );
 
   always_comb begin : apb_decode
@@ -244,6 +270,30 @@ module zeroheti_top
       .rst_ni,
       .apb_i(demux_apb[4])
   );
+
+  assign mbx_axi.aw_valid = axil_aw_valid_i;
+  assign mbx_axi.aw_addr = axil_aw_addr_i;
+  assign mbx_axi.aw_prot = axil_aw_prot_i;
+  assign axil_aw_ready_o = mbx_axi.aw_ready;
+
+  assign mbx_axi.w_valid = axil_w_valid_i;
+  assign mbx_axi.w_data = axil_w_data_i;
+  assign mbx_axi.w_strb = axil_w_strb_i;
+  assign axil_w_ready_o = mbx_axi.w_ready;
+
+  assign axil_b_resp_o = mbx_axi.b_resp;
+  assign axil_b_valid_o = mbx_axi.b_valid;
+  assign mbx_axi.b_ready = axil_b_ready_i;
+
+  assign mbx_axi.ar_valid = axil_ar_valid_i;
+  assign mbx_axi.ar_addr = axil_ar_addr_i;
+  assign mbx_axi.ar_prot = axil_ar_prot_i;
+  assign axil_ar_ready_o = mbx_axi.ar_ready;
+
+  assign axil_r_data_o = mbx_axi.r_data;
+  assign axil_r_resp_o = mbx_axi.r_resp;
+  assign axil_r_valid_o = mbx_axi.r_valid;
+  assign mbx_axi.r_ready = axil_r_ready_i;
 
 `ifndef SYNTHESIS
 `ifndef TECH_MEMORY

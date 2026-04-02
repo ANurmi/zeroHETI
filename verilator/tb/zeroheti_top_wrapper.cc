@@ -52,12 +52,6 @@ int main(int argc, char** argv) {
               << std::endl;
     std::exit(0);
   }
-    /*
-     * '--isa=rv32imc'
-     * '+signature=/<>/riscof_work/src/add-01.S/dut/DUT-zeroheti.signature'
-     * '+signature-granularity=4'
-     * 'my.elf'
-     */
 
     std::filesystem::path elfpath = tb->resolve_elf(elf_name);
 
