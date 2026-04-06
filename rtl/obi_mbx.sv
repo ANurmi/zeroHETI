@@ -26,6 +26,8 @@ module obi_mbx #(
   letter_t in_letter_q, in_letter_d;
 
   logic out_letter_send;
+  logic flush_ob, flush_ib;
+  logic irq_clear, irq_set;
 
   logic inbox_full, inbox_empty;
   logic outbox_full, outbox_empty;
@@ -67,18 +69,36 @@ module obi_mbx #(
     end
   end
 
+  always_ff @(posedge clk_i) begin
+    if (~rst_ni) begin
+      irq_o <= 1'b0;
+    end else begin
+      if (irq_clear) irq_o <= 1'b0;
+      else if (irq_set) irq_o <= 1'b1;
+      else irq_o <= irq_o;
+    end
+  end
+
   always_comb begin : obi_decode
 
-    rdata_d      = 32'h0;
+    rdata_d         = 32'h0;
     out_letter_send = 1'b0;
-    control_d    = control_q;
-    out_letter_d = out_letter_q;
-    in_letter_d  = in_letter_q;
+    flush_ib        = 1'b0;
+    flush_ob        = 1'b0;
+    irq_clear       = 1'b0;
+    irq_set         = 1'b0;
+    control_d       = control_q;
+    out_letter_d    = out_letter_q;
+    in_letter_d     = in_letter_q;
 
     if (obi_write_event) begin
       unique case (obi_sbr.addr)
         CtrlAddr: begin
           out_letter_send = obi_sbr.wdata[0];
+          flush_ib        = obi_sbr.wdata[8];
+          flush_ob        = obi_sbr.wdata[9];
+          irq_set         = obi_sbr.wdata[16];
+          irq_clear       = obi_sbr.wdata[17];
         end
         OboxAddrAddr: out_letter_d.addr = obi_sbr.wdata;
         OboxDataAddr: out_letter_d.data = obi_sbr.wdata;
@@ -107,7 +127,7 @@ module obi_mbx #(
   ) i_inbox_fifo (
       .clk_i,
       .rst_ni,
-      .flush_i   (),
+      .flush_i   (flush_ib),
       .testmode_i(),
       .full_o    (inbox_full),
       .empty_o   (inbox_empty),
@@ -123,7 +143,7 @@ module obi_mbx #(
   ) i_outbox_fifo (
       .clk_i,
       .rst_ni,
-      .flush_i   (),
+      .flush_i   (flush_ob),
       .testmode_i(),
       .full_o    (outbox_full),
       .empty_o   (outbox_empty),

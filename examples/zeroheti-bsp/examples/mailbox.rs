@@ -18,9 +18,17 @@ fn main() -> ! {
     let letter_0 = 0x2b00b1e5;
 
     let rd = mmio::read_u32(MBX_STAT_ADDR);
-    mmio::write_u32(MBX_OADD_ADDR, 0x67);
+    mmio::write_u32(MBX_OADD_ADDR, 0x1000);
     mmio::write_u32(MBX_ODAT_ADDR, letter_0);
+
+    // send letter
     mmio::write_u32(MBX_CTRL_ADDR, 0x1);
+    // flush outbox
+    mmio::write_u32(MBX_CTRL_ADDR, 0x1 << 9);
+    // irq set
+    mmio::write_u32(MBX_CTRL_ADDR, 0x1 << 16);
+    // irq clear
+    mmio::write_u32(MBX_CTRL_ADDR, 0x1 << 17);
 
     sprintln!("zeroHETI mailbox test, rd: {:X}", rd);
 
