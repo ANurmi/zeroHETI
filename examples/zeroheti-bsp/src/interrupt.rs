@@ -1,11 +1,21 @@
 use riscv::CoreInterruptNumber;
-use riscv_pac::{ExternalInterruptNumber, InterruptNumber};
+use riscv_pac::InterruptNumber;
 use strum::FromRepr;
 
 #[derive(Clone, Copy, PartialEq, FromRepr)]
 #[repr(usize)]
 #[cfg_attr(not(feature = "ufmt"), derive(Debug))]
-pub enum ExternalInterrupt {
+pub enum Interrupt {
+    // NC: SupervisorSoft = 1,
+    MachineSoft = 3,
+    // NC: SupervisorTimer = 5,
+    MachineTimer = 7,
+    // NC: SupervisorExternal = 9,
+    // ???(BUG): MachineExternal broken on HETIC
+    // Attempting to pend MachineExternal (line 11) on HETIC will freeze the
+    // simulation or the application
+    #[cfg(not(feature = "intc-hetic"))]
+    MachineExternal = 11,
     /// Timer 0 overflow
     Timer0Ovf = 16,
     /// Timer 0 compare
@@ -41,9 +51,7 @@ pub enum ExternalInterrupt {
     Nmi = 31,
 }
 
-unsafe impl ExternalInterruptNumber for ExternalInterrupt {}
-
-unsafe impl InterruptNumber for ExternalInterrupt {
+unsafe impl InterruptNumber for Interrupt {
     const MAX_INTERRUPT_NUMBER: usize = Self::Nmi as usize;
 
     fn number(self) -> usize {
@@ -55,44 +63,5 @@ unsafe impl InterruptNumber for ExternalInterrupt {
     }
 }
 
-/// Standard M-mode RISC-V interrupts
-///
-/// Should be used in place of riscv::Interrupt
-#[derive(Clone, Copy, PartialEq, FromRepr)]
-#[repr(usize)]
-#[cfg_attr(not(feature = "ufmt"), derive(Debug))]
-pub enum CoreInterrupt {
-    // NC: SupervisorSoft = 1,
-    MachineSoft = 3,
-    // NC: SupervisorTimer = 5,
-    MachineTimer = 7,
-    // NC: SupervisorExternal = 9,
-    // ???(BUG): MachineExternal broken on HETIC
-    // Attempting to pend MachineExternal (line 11) on HETIC will freeze the
-    // simulation or the application
-    #[cfg(not(feature = "intc-hetic"))]
-    MachineExternal = 11,
-}
-
-/// SAFETY: `Interrupt` represents the standard RISC-V interrupts
-unsafe impl InterruptNumber for CoreInterrupt {
-    // Attempting to pend MachineExternal (line 11) on HETIC will freeze the
-    // simulation or the application
-    #[cfg(not(feature = "intc-hetic"))]
-    const MAX_INTERRUPT_NUMBER: usize = Self::MachineExternal as usize;
-    #[cfg(feature = "intc-hetic")]
-    const MAX_INTERRUPT_NUMBER: usize = Self::MachineTimer as usize;
-
-    #[inline]
-    fn number(self) -> usize {
-        self as usize
-    }
-
-    #[inline]
-    fn from_number(value: usize) -> Result<Self, riscv_pac::result::Error> {
-        Self::from_repr(value).ok_or(riscv_pac::result::Error::InvalidVariant(value))
-    }
-}
-
 /// SAFETY: `Interrupt` represents the standard RISC-V core interrupts
-unsafe impl CoreInterruptNumber for CoreInterrupt {}
+unsafe impl CoreInterruptNumber for Interrupt {}

@@ -14,42 +14,35 @@ use riscv_pac::InterruptNumber;
 
 use crate::common::{UART_BAUD, init_intc, pend_irq, setup_irq};
 use zeroheti_bsp::{
-    CPU_FREQ_HZ,
-    apb_uart::ApbUart,
-    interrupt::{CoreInterrupt, ExternalInterrupt},
-    riscv,
-    rt::entry,
-    sprintln, tb,
+    CPU_FREQ_HZ, apb_uart::ApbUart, interrupt::Interrupt, riscv, rt::entry, sprintln, tb,
 };
 
 /// Interrupts under testing
-const CORE_IRQS: &[CoreInterrupt] = &[
-    CoreInterrupt::MachineSoft,
-    CoreInterrupt::MachineTimer,
+const IRQS: &[Interrupt] = &[
+    Interrupt::MachineSoft,
+    Interrupt::MachineTimer,
     // ???(BUG): MachineExternal broken on HETIC
     // Attempting to pend MachineExternal (line 11) on HETIC will freeze the
     // simulation or the application
     #[cfg(not(any(feature = "intc-hetic", feature = "intc-edfic")))]
-    CoreInterrupt::MachineExternal,
-];
-const EXT_IRQS: &[ExternalInterrupt] = &[
-    ExternalInterrupt::Timer0Ovf,
-    ExternalInterrupt::Timer0Cmp,
-    ExternalInterrupt::Timer1Ovf,
-    ExternalInterrupt::Timer1Cmp,
-    ExternalInterrupt::Timer2Ovf,
-    ExternalInterrupt::Timer2Cmp,
-    ExternalInterrupt::Timer3Ovf,
-    ExternalInterrupt::Timer3Cmp,
-    ExternalInterrupt::Uart,
-    ExternalInterrupt::I2c,
-    ExternalInterrupt::Mbx,
-    ExternalInterrupt::Ext0,
-    ExternalInterrupt::Ext1,
-    ExternalInterrupt::Ext2,
-    ExternalInterrupt::Ext3,
+    Interrupt::MachineExternal,
+    Interrupt::Timer0Ovf,
+    Interrupt::Timer0Cmp,
+    Interrupt::Timer1Ovf,
+    Interrupt::Timer1Cmp,
+    Interrupt::Timer2Ovf,
+    Interrupt::Timer2Cmp,
+    Interrupt::Timer3Ovf,
+    Interrupt::Timer3Cmp,
+    Interrupt::Uart,
+    Interrupt::I2c,
+    Interrupt::Mbx,
+    Interrupt::Ext0,
+    Interrupt::Ext1,
+    Interrupt::Ext2,
+    Interrupt::Ext3,
     //TODO: ???: enabling Nmi fails the test case
-    //ExternalInterrupt::Nmi,
+    //Interrupt::Nmi,
 ];
 
 /// An array of 64 bits, one for each possible interrupt 0..64
@@ -63,12 +56,8 @@ fn main() -> ! {
 
     init_intc();
 
-    for &irq in CORE_IRQS {
-        sprintln!("Set up core {irq:?} (id = {})", irq.number());
-        setup_irq(irq);
-    }
-    for &irq in EXT_IRQS {
-        sprintln!("Set up exti {irq:?} (id = {})", irq.number());
+    for &irq in IRQS {
+        sprintln!("Set up IRQ {irq:?} (id = {})", irq.number());
         setup_irq(irq);
     }
 
@@ -77,11 +66,7 @@ fn main() -> ! {
     unsafe { riscv::interrupt::enable() };
 
     // Raise each IRQ
-    for &irq in CORE_IRQS.iter() {
-        sprintln!("pend({})", irq.number());
-        pend_irq(irq);
-    }
-    for &irq in EXT_IRQS {
+    for &irq in IRQS {
         sprintln!("pend({})", irq.number());
         pend_irq(irq);
     }
@@ -89,10 +74,7 @@ fn main() -> ! {
     sprintln!("wait for acks...");
     // Busy wait for a while, or until all interrupts passed to make sure all interrupts have had time to be handled
     for _ in 0..2_000 {
-        if CORE_IRQS.iter().all(|irq| {
-            let bit: u64 = 0b1 << irq.number();
-            (unsafe { ptr::read_volatile(addr_of!(IRQ_RECVD) as *const _) & bit } == bit)
-        }) && EXT_IRQS.iter().all(|irq: &ExternalInterrupt| {
+        if IRQS.iter().all(|irq: &Interrupt| {
             let bit: u64 = 0b1 << irq.number();
             (unsafe { ptr::read_volatile(addr_of!(IRQ_RECVD) as *const _) & bit } == bit)
         }) {
@@ -102,16 +84,7 @@ fn main() -> ! {
 
     // Assert each interrupt was raised
     let mut failures = 0;
-    for &irq in CORE_IRQS {
-        let bit: u64 = 0b1 << irq.number();
-        if unsafe { ptr::read_volatile(addr_of!(IRQ_RECVD) as *const _) & bit } == bit {
-            tb::signal_partial_ok!("{:?} = {}", irq, irq.number());
-        } else {
-            tb::signal_partial_fail!("{:?} = {}", irq, irq.number());
-            failures += 1;
-        }
-    }
-    for &irq in EXT_IRQS {
+    for &irq in IRQS {
         let bit: u64 = 0b1 << irq.number();
         if unsafe { ptr::read_volatile(addr_of!(IRQ_RECVD) as *const _) & bit } == bit {
             tb::signal_partial_ok!("{:?} = {}", irq, irq.number());
@@ -123,11 +96,7 @@ fn main() -> ! {
 
     // Save time, don't tear IRQs in RTL sim which gets exploded anyway
     #[cfg(not(feature = "rtl-tb"))]
-    for &irq in CORE_IRQS {
-        crate::common::tear_irq(irq);
-    }
-    #[cfg(not(feature = "rtl-tb"))]
-    for &irq in EXT_IRQS {
+    for &irq in IRQS {
         crate::common::tear_irq(irq);
     }
 
