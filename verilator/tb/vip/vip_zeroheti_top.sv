@@ -36,19 +36,33 @@ module vip_zeroheti_top #(
   ) drv_bus ();
 
   typedef struct packed {
+    bit          valid;
     bit          write;
     logic [6:0]  addr;
     logic [31:0] wdata;
   } i2c_req_t;
 
   typedef struct packed {
-    bit          valid;
+    //bit          valid;
+    bit          write;
+    logic [31:0] addr;
+    logic [31:0] wdata;
+  } mbx_req_t;
+
+  typedef struct packed {
+    //bit          valid;
     logic [31:0] rdata;
-  } i2c_rsp_t;
+  } gen_rsp_t;
+
+  i2c_req_t i2c_req;
+  mbx_req_t mbx_req;
+
+  gen_rsp_t i2c_rsp;
+  gen_rsp_t mbx_rsp;
 
   vip_i2c #(
       .req_t(i2c_req_t),
-      .rsp_t(i2c_rsp_t)
+      .rsp_t(gen_rsp_t)
   ) i_vip_i2c (
       .clk_i,
       .rst_ni,
@@ -56,15 +70,34 @@ module vip_zeroheti_top #(
       .scl_i,
       .sda_i,
       .sda_o,
-      .irq_o(i2c_irq),
-      .vip_req_o(),
-      .vip_rsp_i()
+      .irq_o    (i2c_irq),
+      .vip_req_o(i2c_req),
+      .vip_rsp_i(i2c_rsp)
   );
 
-  vip_mbx_driver i_mbx_drv (
+  vip_mbx_driver #(
+      .mbx_req_t(mbx_req_t),
+      .mbx_rsp_t(gen_rsp_t)
+    ) i_mbx_drv (
       .clk_i,
       .rst_ni,
-      .axi_mgr(drv_bus)
+      .axi_mgr(drv_bus),
+      .mbx_req_o(mbx_req),
+      .mbx_rsp_i(mbx_rsp)
+  );
+
+  vip_sim_env #(
+      .i2c_req_t(i2c_req_t),
+      .i2c_rsp_t(gen_rsp_t),
+      .mbx_req_t(mbx_req_t),
+      .mbx_rsp_t(gen_rsp_t)
+  ) i_sim_env (
+      .clk_i,
+      .rst_ni,
+      .i2c_req_i(i2c_req),
+      .i2c_rsp_o(i2c_rsp),
+      .mbx_req_o(mbx_req),
+      .mbx_rsp_i(mbx_rsp)
   );
 
   assign aw_valid_o       = drv_bus.aw_valid;

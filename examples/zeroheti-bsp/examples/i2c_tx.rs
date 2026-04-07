@@ -10,7 +10,7 @@ use zeroheti_bsp::{
     i2c::I2c,
     interrupt::{CoreInterrupt, ExternalInterrupt},
     mmap::edfic::IE_BIT,
-    mmio,
+    mmio, nested_interrupt,
     rt::entry,
     sprintln,
 };
@@ -21,9 +21,6 @@ use crate::common::{UART_BAUD, init_intc, pend_irq, setup_irq};
 fn main() -> ! {
     let mut serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
 
-    // send letter
-    //mmio::write_u32(MBX_CTRL_ADDR, 0x1);
-
     sprintln!("zeroHETI i2c test");
     let mut i2c = I2c::init(4);
 
@@ -31,22 +28,22 @@ fn main() -> ! {
 
     setup_irq(ExternalInterrupt::I2c);
 
-    let wbuf = [0; 4];
-    let mut rbuf = [0; 4];
-
+    // 0xDEADBEEF
+    let wbuf_0 = [0xEF, 0xBE, 0xAD, 0xDE];
+    let wbuf_1 = [0x55, 0x7A, 0xEA];
+    let mut rbuf_4 = [0; 4];
+    let mut rbuf_1 = [0];
     unsafe { riscv::interrupt::enable() };
+    i2c.irq_enable();
 
-    i2c.i2c.irq_enable();
-    i2c.write(0x68, &wbuf);
-    i2c.irq_disable();
+    i2c.write(0x60, &wbuf_0);
+    i2c.read(0x68, &mut rbuf_4);
+    i2c.read(0x11, &mut rbuf_1);
+    i2c.write(0x01, &wbuf_1);
 
-    i2c.write(0x60, &mut rbuf);
+    let rdata = u32::from_le_bytes(rbuf_4);
 
-    //unsafe { I2c::instance() }.write(0x0, &wbuf);
-    //unsafe { I2c::instance() }.read(0x0, &mut rbuf);
-
-    //let m2_speed = u32::from_le_bytes(rbuf);
-
+    sprintln!("SW read: {:x}", rdata);
     #[cfg(feature = "rtl-tb")]
     zeroheti_bsp::tb::rtl_tb_signal_ok();
 
@@ -56,10 +53,9 @@ fn main() -> ! {
     }
 }
 
-#[zeroheti_bsp::external_interrupt(ExternalInterrupt::I2c)]
-fn i2c_isr() {
-    //
-    sprintln!("knob")
+#[nested_interrupt]
+fn I2c() {
+    unsafe { I2c::instance() }.irq_ack();
 }
 
 #[unsafe(export_name = "DefaultHandler")]
