@@ -5,7 +5,7 @@ compile_error!(
     "at least one interrupt controller feature is required, pass -Fintc-hetic, -Fintc-clic, -Fintc-edfic"
 );
 
-use riscv_pac::InterruptNumber;
+use riscv_types::InterruptNumber;
 use zeroheti_bsp::sprintln;
 
 pub const UART_BAUD: u32 = if cfg!(feature = "rtl-tb") {

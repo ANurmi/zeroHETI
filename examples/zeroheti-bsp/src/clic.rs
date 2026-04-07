@@ -10,8 +10,8 @@ pub mod inttrig;
 pub mod smclicconfig;
 
 pub use intattr::{Polarity, Trig};
-// Re-export useful riscv-pac traits
-pub use riscv_pac::{HartIdNumber, InterruptNumber, PriorityNumber};
+// Re-export useful riscv-types traits
+pub use riscv_types::{HartIdNumber, InterruptNumber, PriorityNumber};
 
 /// Core-Local Interrupt Controller (CLIC) peripheral.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]

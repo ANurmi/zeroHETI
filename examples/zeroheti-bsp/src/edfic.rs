@@ -1,8 +1,8 @@
 use crate::mmap::{INTC_BASE, edfic::*};
 use crate::mmio;
 
-// Re-export useful riscv-pac traits
-pub use riscv_pac::{HartIdNumber, PriorityNumber};
+// Re-export useful riscv-types traits
+pub use riscv_types::{HartIdNumber, PriorityNumber};
 
 pub struct EdficIrqLine {
     idx: usize,
