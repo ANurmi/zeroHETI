@@ -19,3 +19,8 @@ cargo run --release -Frtl-tb --example hello
 # Run with an example with a specific interrupt controller
 cargo run --release -Frtl-tb -Fintc-clic --example all_irqs
 ```
+
+## Features
+
+* default-trap-print: Insert a weakly linked `DefaultHandler` interrupt handler
+  that prints the mcause.code of the interrupt that was called.
