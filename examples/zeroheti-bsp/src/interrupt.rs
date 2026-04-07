@@ -1,5 +1,5 @@
 use riscv::CoreInterruptNumber;
-use riscv_pac::InterruptNumber;
+use riscv_types::InterruptNumber;
 use strum::FromRepr;
 
 #[derive(Clone, Copy, PartialEq, FromRepr)]
@@ -58,8 +58,8 @@ unsafe impl InterruptNumber for Interrupt {
         self as usize
     }
 
-    fn from_number(value: usize) -> Result<Self, riscv_pac::result::Error> {
-        Self::from_repr(value).ok_or(riscv_pac::result::Error::InvalidVariant(value))
+    fn from_number(value: usize) -> Result<Self, riscv_types::result::Error> {
+        Self::from_repr(value).ok_or(riscv_types::result::Error::InvalidVariant(value))
     }
 }
 

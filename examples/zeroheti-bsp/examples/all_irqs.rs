@@ -10,7 +10,7 @@ compile_error!(
 );
 
 use core::ptr::{self, addr_of, addr_of_mut};
-use riscv_pac::InterruptNumber;
+use riscv_types::InterruptNumber;
 
 use crate::common::{UART_BAUD, init_intc, pend_irq, setup_irq};
 use zeroheti_bsp::{

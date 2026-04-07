@@ -32,9 +32,9 @@ pub use embedded_hal;
 pub use embedded_io;
 pub use peripherals::Peripherals;
 pub use riscv;
-pub use riscv_pac;
 #[cfg(feature = "rt")]
 pub use riscv_rt::{self as rt, core_interrupt};
+pub use riscv_types;
 
 use core::arch::asm;
 
