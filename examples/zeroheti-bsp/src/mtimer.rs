@@ -220,6 +220,12 @@ impl OneShot {
         ((hi as u64) << 32) | lo as u64
     }
 
+    /// Returns the current duration since zero as tracked by the timer
+    #[inline]
+    pub fn duration(&self) -> Duration {
+        Duration::from_ticks(self.0.counter())
+    }
+
     /// Gets the timer compare value
     ///
     /// # Safety
