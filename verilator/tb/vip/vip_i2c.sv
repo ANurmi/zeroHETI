@@ -1,22 +1,26 @@
 module vip_i2c #(
+    parameter type req_t = logic,
+    parameter type rsp_t = logic
 ) (
-    input  logic       clk_i,
-    input  logic       rst_ni,
-    input  logic       sda_i,
-    output logic       sda_o,
-    input  logic       scl_i,
-    output logic       scl_o,
-    output logic [3:0] irq_o
+    input  logic        clk_i,
+    input  logic        rst_ni,
+    input  logic        sda_i,
+    output logic        sda_o,
+    input  logic        scl_i,
+    output logic        scl_o,
+    output logic [ 3:0] irq_o,
+    output req_t        vip_req_o,
+    input  rsp_t vip_rsp_i
 );
 
-  localparam InternalPrescaler = 16;
-  localparam BufLen = 4;
-
-  assign scl_o = scl_i;
+  localparam int unsigned InternalPrescaler = 16;
+  localparam int unsigned BufLen = 4;
 
   bit          active_tx = 0;
   bit          active_byte = 0;
   int unsigned g_counter = 0;
+
+  assign scl_o = scl_i;
 
   initial begin
     sda_o = 1'b1;
@@ -38,16 +42,6 @@ module vip_i2c #(
     end
   end
 
-  vip_ctrl_sim i_ctrl_sim (
-      .clk_i,
-      .rst_ni,
-      .irq_o
-  );
-
-  task automatic test_vip();
-    $display("Testing vip call [OK]");
-  endtask
-
   task automatic handle_tx();
     automatic bit we;
     automatic logic [6:0] addr;
@@ -64,7 +58,7 @@ module vip_i2c #(
 
     delay_half(4);
 
-    if (!we) i_ctrl_sim.read(addr, read_buf);
+    //if (!we) i_ctrl_sim.read(addr, read_buf);
 
     while (!scl_i) begin
       active_byte = 1;
@@ -85,7 +79,7 @@ module vip_i2c #(
     end
 
     // Model writeback
-    if (we) i_ctrl_sim.write(addr, write_buf);
+    //if (we) i_ctrl_sim.write(addr, write_buf);
 
     active_tx = 0;
 

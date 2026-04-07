@@ -28,19 +28,37 @@ module vip_zeroheti_top #(
     output logic        r_ready_o
 );
 
+  logic [3:0] i2c_irq;
+
   AXI_LITE #(
       .AXI_ADDR_WIDTH(32),
       .AXI_DATA_WIDTH(32)
   ) drv_bus ();
 
-  vip_i2c i_vip_i2c (
+  typedef struct packed {
+    bit          write;
+    logic [6:0]  addr;
+    logic [31:0] wdata;
+  } i2c_req_t;
+
+  typedef struct packed {
+    bit          valid;
+    logic [31:0] rdata;
+  } i2c_rsp_t;
+
+  vip_i2c #(
+      .req_t(i2c_req_t),
+      .rsp_t(i2c_rsp_t)
+  ) i_vip_i2c (
       .clk_i,
       .rst_ni,
       .scl_o,
       .scl_i,
       .sda_i,
       .sda_o,
-      .irq_o()
+      .irq_o(i2c_irq),
+      .vip_req_o(),
+      .vip_rsp_i()
   );
 
   vip_mbx_driver i_mbx_drv (
