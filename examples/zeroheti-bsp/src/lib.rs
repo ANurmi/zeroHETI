@@ -34,7 +34,7 @@ pub use peripherals::Peripherals;
 pub use riscv;
 pub use riscv_pac;
 #[cfg(feature = "rt")]
-pub use riscv_rt::{self as rt, core_interrupt, external_interrupt};
+pub use riscv_rt::{self as rt, core_interrupt};
 
 use core::arch::asm;
 
