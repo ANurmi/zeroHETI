@@ -21,12 +21,16 @@ fn main() -> ! {
     setup_irq(CoreInterrupt::MachineTimer);
 
     let mut mtimer = MTimer::instance().into_oneshot();
-    mtimer.start(10u64.micros());
+
+    let timeout = 10u64.micros();
+    let margin = 100u64.micros();
+    mtimer.start(timeout);
 
     unsafe { riscv::interrupt::enable() };
 
-    // Wait for 100 us
-    asm_delay(NOPS_PER_SEC / 1_000 / 10);
+    // Wait for timeout, fail afterwards, if pass signal is not received from
+    // interrupt
+    while mtimer.duration() < timeout + margin {}
 
     zeroheti_bsp::tb::signal_fail(Some(&mut serial));
 
