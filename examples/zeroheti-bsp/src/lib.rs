@@ -1,4 +1,5 @@
 #![no_std]
+#![cfg_attr(feature = "default-trap-print", feature(linkage))]
 
 pub mod apb_uart;
 #[cfg(feature = "intc-clic")]
@@ -91,4 +92,16 @@ pub fn asm_delay(t: u32) {
     for _ in 0..t {
         unsafe { asm!("nop") }
     }
+}
+
+// Weakly link in a minimal but informative default handler to make debugging
+// incorrect interrupt handling slightly more obvious.
+#[cfg(feature = "default-trap-print")]
+#[linkage = "weak"]
+#[unsafe(export_name = "DefaultHandler")]
+unsafe fn print_irq() {
+    sprintln!(
+        "call to DefaultHandler, mcause.code={:#x?}",
+        riscv::register::mcause::read().code() & 0xfff,
+    );
 }

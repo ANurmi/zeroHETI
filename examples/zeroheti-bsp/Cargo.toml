@@ -18,7 +18,7 @@ embedded-hal = { version = "1.0.0", optional = true }
 bitflags = "2.11.0"
 
 [features]
-default = ["panic", "rt", "core-fmt", "nest-continue"]
+default = ["panic", "rt", "core-fmt", "nest-continue", "default-trap-print"]
 core-fmt = []
 ufmt = ["dep:ufmt"]
 rtl-tb = []
@@ -30,6 +30,7 @@ intc-hetic = []
 intc-clic = []
 intc-edfic = []
 embedded-hal = ["dep:embedded-hal"]
+default-trap-print = []
 
 [profile.dev]
 # There seems to be a problem in riscv-rt with regards to linking in default_start_trap in debug
