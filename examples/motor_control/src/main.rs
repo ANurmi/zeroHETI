@@ -9,10 +9,9 @@ compile_error!(
 );
 
 use bsp::{
-    CPU_FREQ_HZ,
     apb_uart::*,
     i2c::I2c,
-    interrupt::{CoreInterrupt, ExternalInterrupt},
+    interrupt::Interrupt,
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mtimer::*,
     nested_interrupt,
@@ -21,13 +20,13 @@ use bsp::{
     sprintln,
     tb::signal_pass,
     timer_group::{Periodic, Timer},
+    CPU_FREQ_HZ,
 };
 use core::i16;
 use fugit::{ExtU32, ExtU64};
 use motor_control::{
-    I2C_ADDRS,
     mailbox::{Mailbox, Motor::*},
-    *,
+    I2C_ADDRS, *,
 };
 
 struct SimParams {
@@ -73,16 +72,16 @@ fn main() -> ! {
     // Setup HetIc / CLIC with priority
     #[cfg(any(feature = "intc-hetic", feature = "intc-clic"))]
     {
-        setup_irq(CoreInterrupt::MachineTimer, 0xFF);
-        setup_irq(ExternalInterrupt::Timer0Cmp, 0x88);
-        setup_irq(ExternalInterrupt::Timer1Cmp, 0x88);
-        setup_irq(ExternalInterrupt::Timer2Cmp, 0x88);
-        setup_irq(ExternalInterrupt::Timer3Cmp, 0x88);
-        setup_irq(ExternalInterrupt::Mbx, 0x3);
-        setup_irq(ExternalInterrupt::Ext0, 0x10);
-        setup_irq(ExternalInterrupt::Ext1, 0x10);
-        setup_irq(ExternalInterrupt::Ext2, 0x10);
-        setup_irq(ExternalInterrupt::Ext3, 0x10);
+        setup_irq(Interrupt::MachineTimer, 0xFF);
+        setup_irq(Interrupt::Timer0Cmp, 0x88);
+        setup_irq(Interrupt::Timer1Cmp, 0x88);
+        setup_irq(Interrupt::Timer2Cmp, 0x88);
+        setup_irq(Interrupt::Timer3Cmp, 0x88);
+        setup_irq(Interrupt::Mbx, 0x3);
+        setup_irq(Interrupt::Ext0, 0x10);
+        setup_irq(Interrupt::Ext1, 0x10);
+        setup_irq(Interrupt::Ext2, 0x10);
+        setup_irq(Interrupt::Ext3, 0x10);
     }
     // Setup EDFIC with deadlines
     #[cfg(feature = "intc-edfic")]
@@ -95,16 +94,16 @@ fn main() -> ! {
         );
         // MachineTimer should have the shortest deadline to ensure it can preempt other
         // interrupts and print the log before simulation termination
-        setup_irq_dl(CoreInterrupt::MachineTimer, 0x0);
-        setup_irq_dl(ExternalInterrupt::Timer0Cmp, REP_DL_US);
-        setup_irq_dl(ExternalInterrupt::Timer1Cmp, REP_DL_US);
-        setup_irq_dl(ExternalInterrupt::Timer2Cmp, REP_DL_US);
-        setup_irq_dl(ExternalInterrupt::Timer3Cmp, REP_DL_US);
-        setup_irq_dl(ExternalInterrupt::Mbx, MBX_DL_US);
-        setup_irq_dl(ExternalInterrupt::Ext0, WRN_DL_US);
-        setup_irq_dl(ExternalInterrupt::Ext1, WRN_DL_US);
-        setup_irq_dl(ExternalInterrupt::Ext2, WRN_DL_US);
-        setup_irq_dl(ExternalInterrupt::Ext3, WRN_DL_US);
+        setup_irq_dl(Interrupt::MachineTimer, 0x0);
+        setup_irq_dl(Interrupt::Timer0Cmp, REP_DL_US);
+        setup_irq_dl(Interrupt::Timer1Cmp, REP_DL_US);
+        setup_irq_dl(Interrupt::Timer2Cmp, REP_DL_US);
+        setup_irq_dl(Interrupt::Timer3Cmp, REP_DL_US);
+        setup_irq_dl(Interrupt::Mbx, MBX_DL_US);
+        setup_irq_dl(Interrupt::Ext0, WRN_DL_US);
+        setup_irq_dl(Interrupt::Ext1, WRN_DL_US);
+        setup_irq_dl(Interrupt::Ext2, WRN_DL_US);
+        setup_irq_dl(Interrupt::Ext3, WRN_DL_US);
     }
 
     let mut mtimer = MTimer::instance().into_oneshot();
@@ -113,12 +112,12 @@ fn main() -> ! {
 
     mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
-       let timers = &mut [
-           Timer::init::<TIMER0_ADDR>().into_periodic(),
-           Timer::init::<TIMER1_ADDR>().into_periodic(),
-           Timer::init::<TIMER2_ADDR>().into_periodic(),
-           Timer::init::<TIMER3_ADDR>().into_periodic(),
-       ];
+    let timers = &mut [
+        Timer::init::<TIMER0_ADDR>().into_periodic(),
+        Timer::init::<TIMER1_ADDR>().into_periodic(),
+        Timer::init::<TIMER2_ADDR>().into_periodic(),
+        Timer::init::<TIMER3_ADDR>().into_periodic(),
+    ];
     timers[0].set_period_offset(REP_TASK_PER_US.micros(), REP_TASK_OFS_US.micros());
     timers[1].set_period_offset(
         REP_TASK_PER_US.micros(),
@@ -167,7 +166,7 @@ fn lock<R>(f: impl FnOnce() -> R) -> R {
 
 /// Stacks and unstacks mintthresh based on the deadline of the supplied
 /// interrupt
-fn with_dl_mintthresh(_irq: ExternalInterrupt, f: impl FnOnce()) {
+fn with_dl_mintthresh(_irq: Interrupt, f: impl FnOnce()) {
     #[cfg(feature = "intc-edfic")]
     let current = {
         use riscv_rt::InterruptNumber;
@@ -184,7 +183,7 @@ fn with_dl_mintthresh(_irq: ExternalInterrupt, f: impl FnOnce()) {
 
 #[nested_interrupt]
 unsafe fn Timer0Cmp() {
-    with_dl_mintthresh(ExternalInterrupt::Timer0Cmp, || {
+    with_dl_mintthresh(Interrupt::Timer0Cmp, || {
         let mut rbuf = [0; 4];
         lock(||
                 // SAFETY: other users of I2C are excluded
@@ -203,7 +202,7 @@ unsafe fn Timer0Cmp() {
 
 #[nested_interrupt]
 unsafe fn Timer1Cmp() {
-    with_dl_mintthresh(ExternalInterrupt::Timer1Cmp, || {
+    with_dl_mintthresh(Interrupt::Timer1Cmp, || {
         let mut rbuf = [0; 4];
         lock(||
                 // SAFETY: other users of I2C are excluded
@@ -222,7 +221,7 @@ unsafe fn Timer1Cmp() {
 
 #[nested_interrupt]
 unsafe fn Timer2Cmp() {
-    with_dl_mintthresh(ExternalInterrupt::Timer2Cmp, || {
+    with_dl_mintthresh(Interrupt::Timer2Cmp, || {
         let mut rbuf = [0; 4];
         lock(||
                 // SAFETY: other users of I2C are excluded
@@ -241,7 +240,7 @@ unsafe fn Timer2Cmp() {
 
 #[nested_interrupt]
 unsafe fn Timer3Cmp() {
-    with_dl_mintthresh(ExternalInterrupt::Timer3Cmp, || {
+    with_dl_mintthresh(Interrupt::Timer3Cmp, || {
         let mut rbuf = [0; 4];
         lock(||
                 // SAFETY: other users of I2C are excluded
@@ -260,7 +259,7 @@ unsafe fn Timer3Cmp() {
 
 #[nested_interrupt]
 unsafe fn Mbx() {
-    with_dl_mintthresh(ExternalInterrupt::Mbx, || {
+    with_dl_mintthresh(Interrupt::Mbx, || {
         // SAFETY: the inbox is not read by any other context
         let mail = unsafe { MBX.read_inbox() };
         let bytes: [u8; 4] = mail.to_be_bytes();
@@ -282,7 +281,7 @@ unsafe fn Mbx() {
 
 #[nested_interrupt]
 unsafe fn Ext0() {
-    with_dl_mintthresh(ExternalInterrupt::Ext0, || {
+    with_dl_mintthresh(Interrupt::Ext0, || {
         let mut rbuf = [0; 4];
         lock(||
                 // SAFETY: other users of I2C are excluded
@@ -299,7 +298,7 @@ unsafe fn Ext0() {
 #[nested_interrupt]
 unsafe fn Ext1() {
     // Save mintthresh
-    with_dl_mintthresh(ExternalInterrupt::Ext1, || {
+    with_dl_mintthresh(Interrupt::Ext1, || {
         let mut rbuf = [0; 4];
         lock(||
                 // SAFETY: other users of I2C are excluded
@@ -315,7 +314,7 @@ unsafe fn Ext1() {
 
 #[nested_interrupt]
 unsafe fn Ext2() {
-    with_dl_mintthresh(ExternalInterrupt::Ext2, || {
+    with_dl_mintthresh(Interrupt::Ext2, || {
         let mut rbuf = [0; 4];
         lock(||
                 // SAFETY: other users of I2C are excluded
@@ -331,7 +330,7 @@ unsafe fn Ext2() {
 
 #[nested_interrupt]
 unsafe fn Ext3() {
-    with_dl_mintthresh(ExternalInterrupt::Ext3, || {
+    with_dl_mintthresh(Interrupt::Ext3, || {
         let mut rbuf = [0; 4];
         lock(||
                 // SAFETY: other users of I2C are excluded
@@ -387,7 +386,7 @@ fn usqrt4(val: u32) -> u32 {
     a
 }
 
-#[bsp::core_interrupt(CoreInterrupt::MachineTimer)]
+#[bsp::core_interrupt(Interrupt::MachineTimer)]
 unsafe fn MachineTimer() {
     riscv::interrupt::disable();
 
