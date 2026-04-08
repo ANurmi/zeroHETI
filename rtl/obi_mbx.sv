@@ -128,14 +128,14 @@ module obi_mbx #(
       .clk_i,
       .rst_ni,
       .flush_i   (flush_ib),
-      .testmode_i(),
+      .testmode_i(1'b0),
       .full_o    (inbox_full),
       .empty_o   (inbox_empty),
       .usage_o   (),
-      .data_i    (),
-      .push_i    (),
+      .data_i    ('0),
+      .push_i    (1'b0),
       .data_o    (),
-      .pop_i     ()
+      .pop_i     (1'b0)
   );
   fifo_v3 #(
       .DEPTH(OutboxDepth),
@@ -144,14 +144,14 @@ module obi_mbx #(
       .clk_i,
       .rst_ni,
       .flush_i   (flush_ob),
-      .testmode_i(),
+      .testmode_i(1'b0),
       .full_o    (outbox_full),
       .empty_o   (outbox_empty),
       .usage_o   (),
       .data_i    (out_letter_q),
       .push_i    (out_letter_send),
       .data_o    (),
-      .pop_i     ()
+      .pop_i     (1'b0)
   );
 
 endmodule : obi_mbx

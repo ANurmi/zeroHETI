@@ -182,6 +182,9 @@ module zeroheti_core
   assign inst_bus.we    = 1'b0;
   assign inst_bus.wdata = 32'b0;
 
+  assign data_bus.aid    = 1'b0;
+  assign data_bus.a_optional = 1'b0;
+
 /*
   assign mgr_bus[2].reqpar = 1'b0;
   assign mgr_bus[2].aid    = 1'b0;
