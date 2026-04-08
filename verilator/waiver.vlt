@@ -21,6 +21,7 @@ lint_off -rule WIDTHTRUNC -file "*/rtl/obi_*" -match "*"
 lint_off -rule WIDTHTRUNC -file "*/tech_cells_generic-*/*" -match "*"
 lint_off -rule WIDTHTRUNC -file "*/common_cells-*/*" -match "*"
 lint_off -rule WIDTHTRUNC -file "*/ibex_top_tracing.sv" -match "*"
+lint_off -rule WIDTHTRUNC -file "*/zeroheti_int_ctrl.sv" -match "*"
 lint_off -rule WIDTHTRUNC -file "*/pulp_i2c/*" -match "*"
 lint_off -rule WIDTHTRUNC -file "*/apb_timer-*/*" -match "*"
 
