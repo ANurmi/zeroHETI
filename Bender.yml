@@ -28,7 +28,6 @@ sources:
       - rtl/apb_cfg_regs.sv
       - rtl/apb_mtimer.sv
       - rtl/obi_hetic.sv
-      - rtl/mbx_axi_ctrl.sv
       - rtl/obi_mbx.sv
       - rtl/zeroheti_xbar.sv
       - rtl/zeroheti_int_ctrl.sv

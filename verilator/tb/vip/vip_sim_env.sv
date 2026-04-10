@@ -15,6 +15,7 @@ module vip_sim_env #(
   typedef logic [31:0] dtype;
   typedef logic [6:0] atype;
 
+  // use associative arrays for sim env memory space
   dtype array[atype];
 
   initial begin
@@ -25,24 +26,10 @@ module vip_sim_env #(
 
   always @(posedge i2c_req_i.valid) begin
     if (i2c_req_i.write) begin
-      $display("[VIP] write - addr: %h, data: %h", i2c_req_i.addr, i2c_req_i.wdata);
+      $display("[VIP_I2C] write - addr: %h, data: %h", i2c_req_i.addr, i2c_req_i.wdata);
     end else begin
-      $display("[VIP] read  - addr: %h, data: %h", i2c_req_i.addr, array[i2c_req_i.addr]);
+      $display("[VIP_I2C] read  - addr: %h, data: %h", i2c_req_i.addr, array[i2c_req_i.addr]);
     end
   end
 
-  /*
-  always @(posedge i2c_req_i.valid) begin
-    $display("Got addr %h", i2c_req_i.addr);
-    if (i2c_req_i.write) $display("Wdata: %h", i2c_req_i.wdata);
-    else begin
-      if (i2c_req_i.addr == 7'h68) i2c_rsp_o.rdata = 32'hAB;
-      else i2c_rsp_o.rdata = 32'h11;
-    end
-    //i2c_rsp_o.valid = 1'b1;
-    //@(i2c_req_i.valid == 0);
-    //i2c_rsp_o.valid = 1'b0;
-    //i2c_rsp_o.rdata = 32'h0;
-  end
-*/
 endmodule : vip_sim_env

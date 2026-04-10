@@ -8,11 +8,12 @@ module obi_mbx #(
 );
 
   localparam logic [31:0] StatAddr = 32'h0003_0000;
-  localparam logic [31:0] CtrlAddr = 32'h0003_0004;
-  localparam logic [31:0] IboxAddrAddr = 32'h0003_0008;
-  localparam logic [31:0] IboxDataAddr = 32'h0003_000C;
-  localparam logic [31:0] OboxAddrAddr = 32'h0003_0010;
-  localparam logic [31:0] OboxDataAddr = 32'h0003_0014;
+  localparam logic [31:0] ObiCtrlAddr = 32'h0003_0004;
+  localparam logic [31:0] AxiCtrlAddr = 32'h0003_0008;
+  localparam logic [31:0] IboxAddrAddr = 32'h0003_000C;
+  localparam logic [31:0] IboxDataAddr = 32'h0003_0010;
+  localparam logic [31:0] OboxAddrAddr = 32'h0003_0014;
+  localparam logic [31:0] OboxDataAddr = 32'h0003_0018;
 
   localparam int unsigned InboxDepth = 3;
   localparam int unsigned OutboxDepth = 3;
@@ -33,33 +34,46 @@ module obi_mbx #(
   logic outbox_full, outbox_empty;
   logic obi_write_event, obi_read_event;
 
+  logic aw_valid_q, ar_valid_q;
+
   logic [31:0] status_d, status_q;
-  logic [31:0] control_d, control_q;
-  logic [31:0] rdata_d, rdata_q;
+  logic [31:0] obi_control_d, obi_control_q;
+  logic [31:0] obi_rdata_d, obi_rdata_q;
+  logic [31:0] axi_rdata_d, axi_rdata_q;
 
   assign obi_write_event = obi_sbr.req & obi_sbr.we;
   assign obi_read_event = obi_sbr.req & ~obi_sbr.we;
 
   assign status_d = {28'h0, outbox_full, outbox_empty, inbox_full, inbox_empty};
 
+  assign axil_sbr.r_data = axi_rdata_q;
+
   always_ff @(posedge clk_i) begin
     if (~rst_ni) begin
-      status_q     <= 32'h0;
-      control_q    <= 32'h0;
-      rdata_q      <= 32'h0;
-      out_letter_q <= 'h0;
-      in_letter_q  <= 'h0;
+      status_q         <= 32'h0;
+      obi_control_q    <= 32'h0;
+      ar_valid_q       <= 1'b0;
+      aw_valid_q       <= 1'b0;
+      obi_rdata_q      <= 32'h0;
+      axi_rdata_q      <= 32'h0;
+      out_letter_q     <= 'h0;
+      in_letter_q      <= 'h0;
+      axil_sbr.r_valid <= 1'b0;
     end else begin
-      status_q     <= status_d;
-      control_q    <= control_d;
-      rdata_q      <= rdata_d;
-      out_letter_q <= out_letter_d;
-      in_letter_q  <= in_letter_d;
+      status_q         <= status_d;
+      obi_control_q    <= obi_control_d;
+      ar_valid_q       <= axil_sbr.ar_valid;
+      aw_valid_q       <= axil_sbr.aw_valid;
+      obi_rdata_q      <= obi_rdata_d;
+      axi_rdata_q      <= axi_rdata_d;
+      out_letter_q     <= out_letter_d;
+      in_letter_q      <= in_letter_d;
+      axil_sbr.r_valid <= axil_sbr.ar_valid;
     end
   end
 
   assign obi_sbr.gnt   = obi_sbr.req;
-  assign obi_sbr.rdata = rdata_q;
+  assign obi_sbr.rdata = obi_rdata_q;
 
   always_ff @(posedge clk_i) begin
     if (~rst_ni) begin
@@ -79,21 +93,33 @@ module obi_mbx #(
     end
   end
 
-  always_comb begin : obi_decode
+  always_comb begin : addr_decode
 
-    rdata_d         = 32'h0;
-    out_letter_send = 1'b0;
-    flush_ib        = 1'b0;
-    flush_ob        = 1'b0;
-    irq_clear       = 1'b0;
-    irq_set         = 1'b0;
-    control_d       = control_q;
-    out_letter_d    = out_letter_q;
-    in_letter_d     = in_letter_q;
+    obi_rdata_d       = 32'h0;
+    axi_rdata_d       = 32'h0;
+    out_letter_send   = 1'b0;
+    flush_ib          = 1'b0;
+    flush_ob          = 1'b0;
+    irq_clear         = 1'b0;
+    irq_set           = 1'b0;
+
+    axil_sbr.ar_ready = 0;
+
+    obi_control_d     = obi_control_q;
+    out_letter_d      = out_letter_q;
+    in_letter_d       = in_letter_q;
+
+    if (axil_sbr.aw_valid) begin
+    end
+
+    if (axil_sbr.ar_valid) begin
+      axil_sbr.ar_ready = 1;
+      axi_rdata_d = 32'h0b0110c5;
+    end
 
     if (obi_write_event) begin
       unique case (obi_sbr.addr)
-        CtrlAddr: begin
+        ObiCtrlAddr: begin
           out_letter_send = obi_sbr.wdata[0];
           flush_ib        = obi_sbr.wdata[8];
           flush_ob        = obi_sbr.wdata[9];
@@ -106,20 +132,14 @@ module obi_mbx #(
       endcase
     end else if (obi_read_event) begin
       unique case (obi_sbr.addr)
-        StatAddr:     rdata_d = status_q;
-        CtrlAddr:     rdata_d = control_q;
-        IboxAddrAddr: rdata_d = in_letter_d.addr;
-        IboxDataAddr: rdata_d = in_letter_d.data;
+        StatAddr:     obi_rdata_d = status_q;
+        ObiCtrlAddr:  obi_rdata_d = obi_control_q;
+        IboxAddrAddr: obi_rdata_d = in_letter_d.addr;
+        IboxDataAddr: obi_rdata_d = in_letter_d.data;
         default:      ;
       endcase
     end
   end
-
-  mbx_axi_ctrl i_axi_ctrl (
-      .clk_i,
-      .rst_ni,
-      .axil_sbr
-  );
 
   fifo_v3 #(
       .DEPTH(InboxDepth),

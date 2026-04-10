@@ -19,7 +19,6 @@ module vip_i2c #(
   bit          active_tx = 0;
   bit          active_byte = 0;
   bit          stop_cond = 0;
-  bit          dbg_sentinel = 0;
   int unsigned g_counter = 0;
 
   assign scl_o = scl_i;
@@ -29,7 +28,6 @@ module vip_i2c #(
   end
 
   always @(posedge clk_i) begin : counters
-    // # delays are a no-no with Verilator
     if (active_tx) begin
       if (g_counter == InternalPrescaler - 1) begin
         g_counter = 0;
@@ -59,46 +57,57 @@ module vip_i2c #(
     vip_req_o.addr  = rbyte[7:1];
     vip_req_o.write = rbyte[0];
 
-    if (rbyte[0]) begin
+    if (vip_req_o.write) begin
+
       automatic logic [31:0] wbuf;
+
       for (int i = 0; !stop_cond; i++) begin
         automatic logic [7:0] wbyte;
         receive_byte(wbyte);
         wbuf[(8*i)+:8] = wbyte;
       end
+
       vip_req_o.valid = 1;
       vip_req_o.wdata = wbuf;
+
     end else begin
+
       vip_req_o.valid = 1;
-      //rbuf = vip_rsp_i.rdata;
-      // RB here
+
       for (int i = 0; !stop_cond; i++) begin
-        //send_byte(vip_rsp_i.rdata[7:0]);
-        send_byte(8'hDE);
+        delay_half(2);
+        send_byte(vip_rsp_i.rdata[(8*i)+:8]);
       end
-      dbg_sentinel = 1;
+
     end
+
     active_tx = 0;
+
   endtask
 
   task automatic receive_byte(output logic [7:0] rbyte);
+
     active_byte = 1;
+
     for (int i = 0; i < 8; i++) begin
       @(posedge scl_i);
       rbyte[7-i] = sda_i;
     end
+
     delay_half(1);
     rbyte[0] = sda_i;
     delay_half(6);
     send_ack();
     active_byte = 0;
     delay_half(8);
+
   endtask
 
   task automatic send_byte(input logic [7:0] dbyte);
+
     active_byte = 1;
-    $display("dbyte %h", dbyte);
     sda_o = dbyte[7];
+
     for (int i = 0; i < 9; i++) begin
       @(negedge scl_i);
       delay_half(2);
@@ -107,11 +116,11 @@ module vip_i2c #(
         sda_o = dbyte[6-i];
       end
     end
-    sda_o = 1;
-    dbg_sentinel = 1;
-    active_byte = 0;
 
+    sda_o = 1;
+    active_byte = 0;
     delay_half(8);
+
   endtask
 
   task automatic send_ack();
