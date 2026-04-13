@@ -15,8 +15,8 @@ module obi_mbx #(
   localparam logic [31:0] OboxAddrAddr = 32'h0003_0014;
   localparam logic [31:0] OboxDataAddr = 32'h0003_0018;
 
-  localparam int unsigned InboxDepth = 3;
-  localparam int unsigned OutboxDepth = 3;
+  localparam int unsigned InboxDepth = 5;
+  localparam int unsigned OutboxDepth = 5;
 
   typedef struct packed {
     logic [31:0] addr;
@@ -106,6 +106,7 @@ module obi_mbx #(
   always_comb begin : addr_decode
 
     out_letter_send   = 1'b0;
+    in_letter_send    = 1'b0;
     flush_ib          = 1'b0;
     flush_ob          = 1'b0;
     irq_clear         = 1'b0;
@@ -133,6 +134,18 @@ module obi_mbx #(
         AxiCtrlAddr: begin
           if (axil_sbr.w_strb[0]) axi_mbx_read_ack = axil_sbr.w_data[0];
           if (axil_sbr.w_strb[1]) in_letter_send = axil_sbr.w_data[8];
+          if (axil_sbr.w_strb[2]) irq_set = axil_sbr.w_data[16];
+        end
+        IboxAddrAddr: begin
+          for (int i = 0; i < 4; i++) begin
+            if (axil_sbr.w_strb[i]) in_letter_d.addr[(8*i)+:8] = axil_sbr.w_data[(8*i)+:8];
+          end
+        end
+        IboxDataAddr: begin
+          for (int i = 0; i < 4; i++) begin
+            if (axil_sbr.w_strb[i]) in_letter_d.data[(8*i)+:8] = axil_sbr.w_data[(8*i)+:8];
+          end
+
         end
         default: ;
       endcase

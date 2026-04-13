@@ -1,11 +1,7 @@
 module vip_mbx_driver #(
-    parameter type mbx_req_t = logic,
-    parameter type mbx_rsp_t = logic
 ) (
     input logic           clk_i,
     input logic           rst_ni,
-    input mbx_req_t       mbx_req_o,
-    input mbx_rsp_t       mbx_rsp_i,
           AXI_LITE.Master axi_mgr
 );
   // Assume similar address mapping from both sides of mailbox
@@ -17,18 +13,21 @@ module vip_mbx_driver #(
   localparam logic [31:0] OboxAddrAddr = 32'h0003_0014;
   localparam logic [31:0] OboxDataAddr = 32'h0003_0018;
 
-  localparam time TA = 0.1ns;
+  localparam logic [31:0] SimParam0 = 32'h0100_0000;
+  localparam logic [31:0] SimParam1 = 32'h0200_0000;
+  localparam logic [31:0] SimParam2 = 32'h0300_0000;
+  localparam logic [31:0] SimParam3 = 32'h0400_0000;
 
   typedef struct packed {
     logic [31:0] addr;
     logic [31:0] data;
   } letter_t;
 
-  localparam int unsigned Prescaler = 'd600;
+  int unsigned ps = 'd600;
   int unsigned cnt = 0;
 
   always @(posedge clk_i) begin
-    if (cnt >= Prescaler) begin
+    if (cnt >= ps) begin
       poll_empty();
       cnt = 0;
     end else cnt++;
@@ -82,16 +81,35 @@ module vip_mbx_driver #(
   task automatic poll_empty();
     automatic logic [31:0] status;
     axi_read(StatAddr, status);
-    if (~status[2]) get_mail();
+    while (~status[2]) begin
+      get_mail();
+      axi_read(StatAddr, status);
+    end
   endtask
 
   task automatic get_mail();
+
     automatic letter_t letter;
     axi_read(OboxAddrAddr, letter.addr);
     axi_read(OboxDataAddr, letter.data);
-    $display("[VIP_AXI] got letter, addr: %08h data: %08h", letter.addr, letter.data);
+
     // Ack letter after read
     axi_write(AxiCtrlAddr, 32'h1);
+
+    // pass letter to sim env
+    i_sim_env.recv_letter(letter.addr, letter.data);
+
+  endtask
+
+  task automatic send_letter(input logic [31:0] addr, input logic [31:0] data);
+    axi_write(IboxAddrAddr, addr);
+    axi_write(IboxDataAddr, data);
+    // set send and irq bits
+    axi_write(AxiCtrlAddr, 32'h0000_0100);
+  endtask
+
+  task automatic raise_irq();
+    axi_write(AxiCtrlAddr, 32'h0001_0000);
   endtask
 
 
