@@ -26,60 +26,70 @@ module obi_mbx #(
   letter_t out_letter_q, out_letter_d;
   letter_t in_letter_q, in_letter_d;
 
-  logic out_letter_send;
-  logic flush_ob, flush_ib;
-  logic irq_clear, irq_set;
+  letter_t out_letter_axi;
+  letter_t in_letter_axi;
 
-  logic inbox_full, inbox_empty;
-  logic outbox_full, outbox_empty;
+  logic in_letter_send, out_letter_send;
+  logic flush_ob, flush_ib, irq_clear, irq_set;
+
+  logic inbox_full, inbox_empty, outbox_full, outbox_empty;
   logic obi_write_event, obi_read_event;
 
-  logic aw_valid_q, ar_valid_q;
+  logic axi_mbx_read_ack;
+  logic aw_valid_q, ar_valid_q, w_valid_q;
 
+  logic [31:0] waddr_q;
+  logic [31:0] axi_int_addr;
   logic [31:0] status_d, status_q;
   logic [31:0] obi_control_d, obi_control_q;
   logic [31:0] obi_rdata_d, obi_rdata_q;
   logic [31:0] axi_rdata_d, axi_rdata_q;
 
-  assign obi_write_event = obi_sbr.req & obi_sbr.we;
-  assign obi_read_event = obi_sbr.req & ~obi_sbr.we;
+  assign obi_write_event  = obi_sbr.req & obi_sbr.we;
+  assign obi_read_event   = obi_sbr.req & ~obi_sbr.we;
 
-  assign status_d = {28'h0, outbox_full, outbox_empty, inbox_full, inbox_empty};
+  assign status_d         = {28'h0, outbox_full, outbox_empty, inbox_full, inbox_empty};
+  assign axi_int_addr     = (axil_sbr.aw_valid) ? axil_sbr.aw_addr : waddr_q;
 
-  assign axil_sbr.r_data = axi_rdata_q;
+  assign axil_sbr.r_data  = axi_rdata_q;
+  assign axil_sbr.b_valid = w_valid_q;
+
+  assign obi_sbr.gnt      = obi_sbr.req;
+  assign obi_sbr.rdata    = obi_rdata_q;
 
   always_ff @(posedge clk_i) begin
     if (~rst_ni) begin
       status_q         <= 32'h0;
       obi_control_q    <= 32'h0;
+
       ar_valid_q       <= 1'b0;
       aw_valid_q       <= 1'b0;
+      w_valid_q        <= 1'b0;
+      waddr_q          <= 32'h0;
+      axil_sbr.r_valid <= 1'b0;
+
+      obi_sbr.rvalid   <= 1'b0;
       obi_rdata_q      <= 32'h0;
       axi_rdata_q      <= 32'h0;
+
       out_letter_q     <= 'h0;
       in_letter_q      <= 'h0;
-      axil_sbr.r_valid <= 1'b0;
     end else begin
       status_q         <= status_d;
       obi_control_q    <= obi_control_d;
+
       ar_valid_q       <= axil_sbr.ar_valid;
       aw_valid_q       <= axil_sbr.aw_valid;
+      w_valid_q        <= axil_sbr.w_valid;
+      waddr_q          <= axil_sbr.aw_addr;
+      axil_sbr.r_valid <= axil_sbr.ar_valid;
+
+      obi_sbr.rvalid   <= obi_sbr.gnt;
       obi_rdata_q      <= obi_rdata_d;
       axi_rdata_q      <= axi_rdata_d;
+
       out_letter_q     <= out_letter_d;
       in_letter_q      <= in_letter_d;
-      axil_sbr.r_valid <= axil_sbr.ar_valid;
-    end
-  end
-
-  assign obi_sbr.gnt   = obi_sbr.req;
-  assign obi_sbr.rdata = obi_rdata_q;
-
-  always_ff @(posedge clk_i) begin
-    if (~rst_ni) begin
-      obi_sbr.rvalid <= 1'b0;
-    end else begin
-      obi_sbr.rvalid <= obi_sbr.gnt;
     end
   end
 
@@ -95,26 +105,47 @@ module obi_mbx #(
 
   always_comb begin : addr_decode
 
-    obi_rdata_d       = 32'h0;
-    axi_rdata_d       = 32'h0;
     out_letter_send   = 1'b0;
     flush_ib          = 1'b0;
     flush_ob          = 1'b0;
     irq_clear         = 1'b0;
     irq_set           = 1'b0;
 
-    axil_sbr.ar_ready = 0;
+    obi_rdata_d       = 32'h0;
+    axi_rdata_d       = 32'h0;
+
+    axil_sbr.ar_ready = 1'b0;
+    axil_sbr.aw_ready = 1'b0;
+    axil_sbr.w_ready  = 1'b0;
 
     obi_control_d     = obi_control_q;
     out_letter_d      = out_letter_q;
     in_letter_d       = in_letter_q;
+    axi_mbx_read_ack  = 1'b0;
 
     if (axil_sbr.aw_valid) begin
+      axil_sbr.aw_ready = 1'b1;
+    end
+
+    if (axil_sbr.w_valid) begin
+      axil_sbr.w_ready = 1'b1;
+      unique case (axi_int_addr)
+        AxiCtrlAddr: begin
+          if (axil_sbr.w_strb[0]) axi_mbx_read_ack = axil_sbr.w_data[0];
+          if (axil_sbr.w_strb[1]) in_letter_send = axil_sbr.w_data[8];
+        end
+        default: ;
+      endcase
     end
 
     if (axil_sbr.ar_valid) begin
-      axil_sbr.ar_ready = 1;
-      axi_rdata_d = 32'h0b0110c5;
+      axil_sbr.ar_ready = 1'b1;
+      unique case (axil_sbr.ar_addr)
+        StatAddr: axi_rdata_d = status_q;
+        OboxAddrAddr: axi_rdata_d = out_letter_axi.addr;
+        OboxDataAddr: axi_rdata_d = out_letter_axi.data;
+        default: ;
+      endcase
     end
 
     if (obi_write_event) begin
@@ -153,7 +184,7 @@ module obi_mbx #(
       .empty_o   (inbox_empty),
       .usage_o   (),
       .data_i    ('0),
-      .push_i    (1'b0),
+      .push_i    (in_letter_send),
       .data_o    (),
       .pop_i     (1'b0)
   );
@@ -170,8 +201,8 @@ module obi_mbx #(
       .usage_o   (),
       .data_i    (out_letter_q),
       .push_i    (out_letter_send),
-      .data_o    (),
-      .pop_i     (1'b0)
+      .data_o    (out_letter_axi),
+      .pop_i     (axi_mbx_read_ack)
   );
 
   // qverify tieoffs
