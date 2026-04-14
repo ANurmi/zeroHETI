@@ -3,6 +3,8 @@
 #![no_std]
 mod common;
 
+use fugit::ExtU64;
+
 use zeroheti_bsp::{
     CPU_FREQ_HZ, NOPS_PER_SEC,
     apb_uart::ApbUart,
@@ -10,7 +12,9 @@ use zeroheti_bsp::{
     i2c::I2c,
     interrupt::{CoreInterrupt, ExternalInterrupt},
     mmap::edfic::IE_BIT,
-    mmio, nested_interrupt,
+    mmio,
+    mtimer::MTimer,
+    nested_interrupt,
     rt::entry,
     sprintln,
 };
@@ -30,13 +34,26 @@ const SIM_PARAM_1_ADDR: u32 = 0x0200_0000;
 const SIM_PARAM_2_ADDR: u32 = 0x0300_0000;
 const SIM_PARAM_3_ADDR: u32 = 0x0400_0000;
 
+struct SimParams {
+    hyperperiod_ms: u64,
+}
+
+const SIM_PARAMS: SimParams = SimParams { hyperperiod_ms: 1 };
+
 #[entry]
 fn main() -> ! {
     let mut serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
     sprintln!("zeroHETI control sim demonstrator");
     let mut i2c = I2c::init(4);
+
     init_intc();
     setup_irq(ExternalInterrupt::I2c);
+    setup_irq(ExternalInterrupt::Mbx);
+    setup_irq(CoreInterrupt::MachineTimer);
+
+    let mut mtimer = MTimer::instance().into_oneshot();
+    mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
+
     unsafe { riscv::interrupt::enable() };
     i2c.irq_enable();
 
@@ -58,6 +75,8 @@ fn main() -> ! {
         mmio::write_u32(MBX_OBI_CTRL_ADDR, 0x1);
         // send letter
     */
+
+    // can't use global critical section if i2c driver requires
     i2c.write(0x60, &[0x67]);
 
     /*
@@ -90,8 +109,19 @@ fn send_letter(addr: u32, data: u32) {
 }
 
 #[nested_interrupt]
+fn MachineTimer() {
+    sprintln!("Mtimeirq");
+}
+
+#[nested_interrupt]
 fn Mbx() {
-    sprintln!("Ding dong");
+    unsafe { riscv::interrupt::disable() };
+    let addr = mmio::read_u32(MBX_IADD_ADDR as usize);
+    let data = mmio::read_u32(MBX_IDAT_ADDR as usize);
+    mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0100_0000);
+    sprintln!("[ISR] read {:x} from {:x}", data, addr);
+    mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0002_0000);
+    unsafe { riscv::interrupt::enable() };
 }
 
 #[nested_interrupt]

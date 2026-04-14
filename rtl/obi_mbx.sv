@@ -28,6 +28,7 @@ module obi_mbx #(
 
   letter_t out_letter_axi;
   letter_t in_letter_axi;
+  letter_t in_letter_obi;
 
   logic in_letter_send, out_letter_send;
   logic flush_ob, flush_ib, irq_clear, irq_set;
@@ -35,7 +36,7 @@ module obi_mbx #(
   logic inbox_full, inbox_empty, outbox_full, outbox_empty;
   logic obi_write_event, obi_read_event;
 
-  logic axi_mbx_read_ack;
+  logic axi_mbx_read_ack, obi_read_ack;
   logic aw_valid_q, ar_valid_q, w_valid_q;
 
   logic [31:0] waddr_q;
@@ -107,6 +108,7 @@ module obi_mbx #(
 
     out_letter_send   = 1'b0;
     in_letter_send    = 1'b0;
+    obi_read_ack      = 1'b0;
     flush_ib          = 1'b0;
     flush_ob          = 1'b0;
     irq_clear         = 1'b0;
@@ -169,6 +171,7 @@ module obi_mbx #(
           flush_ob        = obi_sbr.wdata[9];
           irq_set         = obi_sbr.wdata[16];
           irq_clear       = obi_sbr.wdata[17];
+          obi_read_ack    = obi_sbr.wdata[24];
         end
         OboxAddrAddr: out_letter_d.addr = obi_sbr.wdata;
         OboxDataAddr: out_letter_d.data = obi_sbr.wdata;
@@ -196,10 +199,10 @@ module obi_mbx #(
       .full_o    (inbox_full),
       .empty_o   (inbox_empty),
       .usage_o   (),
-      .data_i    ('0),
+      .data_i    (in_letter_q),
       .push_i    (in_letter_send),
-      .data_o    (),
-      .pop_i     (1'b0)
+      .data_o    (in_letter_obi),
+      .pop_i     (obi_read_ack)
   );
   fifo_v3 #(
       .DEPTH(OutboxDepth),
