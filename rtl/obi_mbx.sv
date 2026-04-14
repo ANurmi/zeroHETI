@@ -222,14 +222,8 @@ module obi_mbx #(
   );
 
   // qverify tieoffs
-  assign axil_sbr.aw_ready = 1'b0;
-  assign axil_sbr.ar_ready = 1'b0;
-  assign axil_sbr.w_ready = 1'b0;
-  assign axil_sbr.b_resp = 'b0;
-  assign axil_sbr.b_valid= 1'b0;
-  assign axil_sbr.r_data = 32'h0;
-  assign axil_sbr.r_resp = 'b0;
-  assign axil_sbr.r_valid= 1'b0;
+  assign axil_sbr.b_resp   = 'b0;
+  assign axil_sbr.r_resp   = 'b0;
 
 endmodule : obi_mbx
 
