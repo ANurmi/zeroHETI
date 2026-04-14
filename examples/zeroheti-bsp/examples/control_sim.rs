@@ -19,6 +19,8 @@ use zeroheti_bsp::{
     sprintln,
 };
 
+use riscv::asm::wfi;
+
 use crate::common::{UART_BAUD, init_intc, pend_irq, setup_irq};
 
 const MBX_STAT_ADDR: u32 = 0x0003_0000;
@@ -34,11 +36,28 @@ const SIM_PARAM_1_ADDR: u32 = 0x0200_0000;
 const SIM_PARAM_2_ADDR: u32 = 0x0300_0000;
 const SIM_PARAM_3_ADDR: u32 = 0x0400_0000;
 
+const fn parse_u32(s: &str) -> u32 {
+    let mut out: u32 = 0;
+    let mut i: usize = 0;
+    while i < s.len() {
+        out *= 10;
+        out += (s.as_bytes()[i] - b'0') as u32;
+        i += 1;
+    }
+    out
+}
+
+const LF: u32 = parse_u32(env!("LOAD_FACTOR"));
+const PS: u32 = 10;
+const RUNTIME_MS: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
+
 struct SimParams {
     hyperperiod_ms: u64,
 }
 
-const SIM_PARAMS: SimParams = SimParams { hyperperiod_ms: 1 };
+const SIM_PARAMS: SimParams = SimParams {
+    hyperperiod_ms: RUNTIME_MS,
+};
 
 #[entry]
 fn main() -> ! {
@@ -54,49 +73,26 @@ fn main() -> ! {
     let mut mtimer = MTimer::instance().into_oneshot();
     mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
-    unsafe { riscv::interrupt::enable() };
-    i2c.irq_enable();
-
-    sprintln!("TODO: program sim env configuration");
+    sprintln!("Simulation configuration and parameters:");
+    sprintln!(" - Simulation runtime (ms) : {}", SIM_PARAMS.hyperperiod_ms);
+    sprintln!(" - Simulation prescaler    : {}", PS);
+    sprintln!(" - Load factor     (0-100) : {}", LF);
 
     send_letter(SIM_PARAM_0_ADDR, 0xDEAD_BEEF);
     send_letter(SIM_PARAM_1_ADDR, 0xAAAA_AAAA);
     send_letter(SIM_PARAM_2_ADDR, 0xBBBB_BBBB);
     send_letter(SIM_PARAM_3_ADDR, 0xCCCC_CCCC);
 
-    /*
-        mmio::write_u32(MBX_OADD_ADDR, 0x0100_0000);
-        mmio::write_u32(MBX_ODAT_ADDR, 0xDEAD_BEEF);
-        // send letter
-        mmio::write_u32(MBX_OBI_CTRL_ADDR, 0x1);
+    //i2c.read(0x68, &mut rbuf_4);
 
-        mmio::write_u32(MBX_OADD_ADDR, 0x0200_0000);
-        mmio::write_u32(MBX_ODAT_ADDR, 0xAAAA_AAAA);
-        mmio::write_u32(MBX_OBI_CTRL_ADDR, 0x1);
-        // send letter
-    */
+    unsafe { riscv::interrupt::enable() };
+    i2c.irq_enable();
 
     // can't use global critical section if i2c driver requires
     i2c.write(0x60, &[0x67]);
 
-    /*
-        i2c.write(0x60, &wbuf_0);
-        i2c.read(0x68, &mut rbuf_4);
-        i2c.read(0x11, &mut rbuf_1);
-        i2c.write(0x01, &wbuf_1);
-
-        let rdata_4 = u32::from_le_bytes(rbuf_4);
-        let rdata_1 = u8::from_le_bytes(rbuf_1);
-
-        sprintln!("SW read 4: {:x}", rdata_4);
-        sprintln!("SW read 1: {:x}", rdata_1);
-    */
-    #[cfg(feature = "rtl-tb")]
-    zeroheti_bsp::tb::rtl_tb_signal_ok();
-
     loop {
-        asm_delay(NOPS_PER_SEC / 2);
-        serial.write_str("[UART] tick\r\n");
+        wfi();
     }
 }
 
@@ -111,6 +107,8 @@ fn send_letter(addr: u32, data: u32) {
 #[nested_interrupt]
 fn MachineTimer() {
     sprintln!("Mtimeirq");
+    #[cfg(feature = "rtl-tb")]
+    zeroheti_bsp::tb::rtl_tb_signal_ok();
 }
 
 #[nested_interrupt]
