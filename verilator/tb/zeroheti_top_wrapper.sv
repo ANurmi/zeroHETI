@@ -36,7 +36,7 @@ module zeroheti_top_wrapper #(
       .jtag_trst_ni,
       .jtag_td_i,
       .jtag_td_o,
-      .uart_rx_i,
+      .uart_rx_i (1'b1),
       .uart_tx_o,
       .axil_aw_addr_i  (),
       .axil_aw_valid_i (),
