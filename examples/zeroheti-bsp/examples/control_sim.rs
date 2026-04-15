@@ -6,17 +6,8 @@ mod common;
 use fugit::ExtU64;
 
 use zeroheti_bsp::{
-    CPU_FREQ_HZ, NOPS_PER_SEC,
-    apb_uart::ApbUart,
-    asm_delay,
-    i2c::I2c,
-    interrupt::{CoreInterrupt, ExternalInterrupt},
-    mmap::edfic::IE_BIT,
-    mmio,
-    mtimer::MTimer,
-    nested_interrupt,
-    rt::entry,
-    sprintln,
+    CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, i2c::I2c, interrupt::Interrupt,
+    mmap::edfic::IE_BIT, mmio, mtimer::MTimer, nested_interrupt, rt::entry, sprintln,
 };
 
 use riscv::asm::wfi;
@@ -66,9 +57,9 @@ fn main() -> ! {
     let mut i2c = I2c::init(4);
 
     init_intc();
-    setup_irq(ExternalInterrupt::I2c);
-    setup_irq(ExternalInterrupt::Mbx);
-    setup_irq(CoreInterrupt::MachineTimer);
+    setup_irq(Interrupt::I2c);
+    setup_irq(Interrupt::Mbx);
+    setup_irq(Interrupt::MachineTimer);
 
     let mut mtimer = MTimer::instance().into_oneshot();
     mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
