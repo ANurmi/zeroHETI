@@ -5,7 +5,7 @@ ENTRY(_start)
 MEMORY
 {
   IMEM (rx ) : ORIGIN = 0x10000, LENGTH = 0x8000
-  DMEM (rwx) : ORIGIN = 0x20000, LENGTH = 0x8000
+  DMEM (rwx) : ORIGIN = 0x20000, LENGTH = 0x4000
 }
 
 /* Regions are setup like in link.ld for rt-ss written by Antti Nurmi. I didn't put any more thought into it. */
