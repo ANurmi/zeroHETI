@@ -70,6 +70,11 @@ jobs:
           cd examples/zeroheti-bsp
           RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-clic --example all_irqs
 
+      - name: Test high-level IRQ blocks low-level IRQ (CLIC)
+        run: |
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-clic --example hi_blocks_lo
+
       - name: Test all IRQs (HETIC)
         # Run optionally, or if HETIC is mentioned in commit
         if: >
