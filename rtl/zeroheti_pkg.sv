@@ -3,7 +3,7 @@ package zeroheti_pkg;
   localparam logic [31:0] BootAddr = 32'h0800;
 
   typedef enum integer {
-    HETIC = 0,
+    //HETIC = 0, Deprecated
     CLIC  = 1,
     EDFIC = 2
   } int_ctrl_e;
@@ -11,62 +11,17 @@ package zeroheti_pkg;
   localparam int_ctrl_e IntController = `INTC;
 
   typedef struct packed {
-    bit rve;
-    bit bt_alu;
-    bit wb_stage;
-    ibex_pkg::rv32m_e mul;
-    int_ctrl_e ic;
+    int_ctrl_e   ic;
     int unsigned num_irqs;
     int unsigned num_prio;
     int unsigned hart_id;
     logic [31:0] boot_addr;
   } core_cfg_t;
 
-
-  localparam core_cfg_t RV32ECCfg = '{
-      rve       : 1,
-      bt_alu    : 0,
-      wb_stage  : 0,
-      mul       : ibex_pkg::RV32MNone,
-      ic        : IntController,
-      num_irqs  : 32,
-      num_prio  : 32,
-      hart_id   : 0,
-      boot_addr : BootAddr
-  };
-
   localparam core_cfg_t RV32EMCCfg = '{
-      rve       : 1,
-      bt_alu    : 1,
-      wb_stage  : 0,
-      mul       : ibex_pkg::RV32MSingleCycle,
       ic        : IntController,
-      num_irqs  : 32,
-      num_prio  : 32,
-      hart_id   : 0,
-      boot_addr : BootAddr
-  };
-
-  localparam core_cfg_t RV32ICCfg = '{
-      rve       : 0,
-      bt_alu    : 0,
-      wb_stage  : 0,
-      mul       : ibex_pkg::RV32MNone,
-      ic        : IntController,
-      num_irqs  : 32,
-      num_prio  : 32,
-      hart_id   : 0,
-      boot_addr : BootAddr
-  };
-
-  localparam core_cfg_t RV32IMCCfg = '{
-      rve       : 0,
-      bt_alu    : 1,
-      wb_stage  : 1,
-      mul       : ibex_pkg::RV32MSingleCycle,
-      ic        : IntController,
-      num_irqs  : 32,
-      num_prio  : 32,
+      num_irqs  : 64,
+      num_prio  : 64,
       hart_id   : 0,
       boot_addr : BootAddr
   };
