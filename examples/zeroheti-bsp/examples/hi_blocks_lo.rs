@@ -7,8 +7,7 @@ use crate::common::{init_intc, pend_irq};
 use fugit::ExtU64;
 use riscv::InterruptNumber;
 use zeroheti_bsp::{
-    CPU_FREQ_HZ, apb_uart::ApbUart, interrupt::Interrupt, mtimer::MTimer, rt::entry,
-    sprintln,
+    CPU_FREQ_HZ, apb_uart::ApbUart, interrupt::Interrupt, mtimer::MTimer, rt::entry, sprintln,
 };
 
 /// Indicates that the high-level interrupt was called
@@ -66,9 +65,7 @@ fn Ext0() {
 #[zeroheti_bsp::nested_interrupt]
 #[allow(non_snake_case)]
 fn Ext1() {
-    unsafe {
-        LO_VISITED = true;
-    }
+    unsafe { LO_VISITED = true };
     // This should never happen, since high_level should block low_level
     assert!(false, "low-level interrupt should have been blocked");
     sprintln!("lo enter");
