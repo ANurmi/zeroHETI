@@ -55,6 +55,7 @@ fn main() -> ! {
     sprintln!("Simulation parameters:");
     sprintln!(" - Runtime     (ms): {}", RUNTIME_MS);
     sprintln!(" - Task period (us): {}", TASK_PER_US);
+    sprintln!("Printing result of (mcycle × pi) % 10");
     sprintln!("### SIM START ###");
 
     let mut mtimer = MTimer::instance().into_oneshot();
@@ -82,7 +83,7 @@ fn main() -> ! {
 #[nested_interrupt]
 fn Timer0Cmp() {
     let time_f = riscv::register::mcycle::read64() as f32;
-    sprintln!("mcycle × pi = {}", (time_f * PI) as u32);
+    sprintln!("{}", ((time_f * PI) as u32) % 10);
 }
 
 #[nested_interrupt]
