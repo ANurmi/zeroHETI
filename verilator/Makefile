@@ -31,7 +31,7 @@ DMEM_REL_OFFS_WORDS = 16385
 IMEM_WORDS       = $(shell echo $$(($(IMEM_BYTES) / 4)))
 DMEM_START       = $(DMEM_REL_OFFS_WORDS)
 
-INTC             = HETIC
+INTC             = CLIC
 
 BASE             = E
 MULT             = M

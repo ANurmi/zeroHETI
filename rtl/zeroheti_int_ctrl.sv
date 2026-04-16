@@ -3,10 +3,9 @@ module zeroheti_int_ctrl #(
     localparam int unsigned NrIrqs = CoreCfg.num_irqs,
     parameter int unsigned TsWidth = 12,
     localparam int unsigned IrqWidth = $clog2(CoreCfg.num_irqs),
-    localparam int unsigned PrioWidth = 8
-    //localparam int unsigned PrioWidth = (zeroheti_pkg::IntController == zeroheti_pkg::EDFIC) ? TsWidth : $clog2(
-    //    CoreCfg.num_prio
-    //)
+    localparam int unsigned PrioWidth = (zeroheti_pkg::IntController == zeroheti_pkg::EDFIC) ? TsWidth : $clog2(
+        CoreCfg.num_prio
+    )
 ) (
     input  logic                               clk_i,
     input  logic                               rst_ni,
@@ -96,7 +95,7 @@ module zeroheti_int_ctrl #(
   end else if (CoreCfg.ic == CLIC) begin : g_clic
 
     logic [7:0] irq_level;
-    assign irq_level_o = irq_level; /*irq_level[IrqWidth-1:0];*/
+    assign irq_level_o = irq_level;  /*irq_level[IrqWidth-1:0];*/
 
     APB ic_apb ();
 
