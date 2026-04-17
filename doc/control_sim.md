@@ -15,7 +15,10 @@ This demonstrator simulates the operation of zeroHETI in cyber-physical control 
 
 ## System Description
 
-The simulated system is illustrated in the following figure. The Design Under Test (DUT) interfaces with the simulation environment via
+The simulation environment models a system where the zeroHETI Design Under Test (DUT) communicates with on-chip entities (e.g., application processors, accelerators) and applies high-level control directives to four peripheral-controlled motor models. This setup can be scaled in complexity and aims to be representative of a medium-complexity cyber-physical hard real-time system.
+
+
+The simulated system is illustrated in the following figure. Specifically, the DUT interfaces with the simulation environment via
 - A bi-directional hardware mailbox, accessible externally through an AXI Lite Subordinate interface.
 - An I²C controller peripheral driving a common bus.
 - A set of interrupt inputs (irq).
