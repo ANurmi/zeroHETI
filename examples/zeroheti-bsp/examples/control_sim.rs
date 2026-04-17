@@ -24,7 +24,11 @@ const MBX_ODAT_ADDR: u32 = 0x0003_0018;
 
 const SIM_START_ADDR: u32 = 0x0100_0000;
 const SIM_END_ADDR: u32 = 0x0100_0001;
-const SIM_PARAM_1_ADDR: u32 = 0x0200_0000;
+
+const DL_MBX_ADDR: u32 = 0x0200_0000;
+const DL_WRN_ADDR: u32 = 0x0200_0001;
+const DL_REP_ADDR: u32 = 0x0200_0002;
+
 const SIM_PARAM_2_ADDR: u32 = 0x0300_0000;
 const SIM_PARAM_3_ADDR: u32 = 0x0400_0000;
 
@@ -70,7 +74,10 @@ fn main() -> ! {
     sprintln!(" - Simulation prescaler    : {}", PS);
     sprintln!(" - Load factor     (0-100) : {}", LF);
 
-    send_letter(SIM_PARAM_1_ADDR, 0xAAAA_AAAA);
+    send_letter(DL_MBX_ADDR, 0x100);
+    send_letter(DL_WRN_ADDR, 0x200);
+    send_letter(DL_REP_ADDR, 0x300);
+
     send_letter(SIM_PARAM_2_ADDR, 0xBBBB_BBBB);
     send_letter(SIM_PARAM_3_ADDR, 0xCCCC_CCCC);
 

@@ -12,11 +12,20 @@ module vip_sim_env #(
 
   localparam logic [31:0] SimStartAddr = 32'h0100_0000;
   localparam logic [31:0] SimEndAddr = 32'h0100_0001;
+  localparam logic [31:0] DlMbxAddr = 32'h0200_0000;
+  localparam logic [31:0] DlWrnAddr = 32'h0200_0001;
+  localparam logic [31:0] DlRepAddr = 32'h0200_0002;
 
-  logic        [3:0] motor_irqs;
-  logic              motor_enable;
+  logic            [3:0] motor_irqs;
+  logic                  motor_enable;
 
-  int unsigned       motor_prescaler = 0;
+  int unsigned           motor_prescaler;
+
+  logic                  scb_enable;
+
+  longint unsigned       dl_mbx_us;
+  longint unsigned       dl_wrn_us;
+  longint unsigned       dl_rep_us;
 
   typedef logic [31:0] dtype;
   typedef logic [6:0] atype;
@@ -25,6 +34,14 @@ module vip_sim_env #(
   dtype array[atype];
 
   initial begin
+
+    motor_prescaler = 0;
+    scb_enable = 0;
+
+    dl_mbx_us = 0;
+    dl_wrn_us = 0;
+    dl_rep_us = 0;
+
     array = '{
         7'h68 : 32'hBA11_55AB,
         7'h13 : 32'h0000_1234,
@@ -50,6 +67,7 @@ module vip_sim_env #(
   end
 
   always @(posedge sim_term_signal) begin
+    // Clear out outbox when simulation is terminated.
     i_vip_zeroheti_top.i_mbx_drv.get_mail();
   end
 
@@ -67,18 +85,29 @@ module vip_sim_env #(
     );
   end
 
-  vip_task_scoreboard i_scoreboard ();
+  vip_task_scoreboard i_scoreboard (
+      .clk_i,
+      .enable_i(scb_enable),
+      .mbx_dl_us_i(dl_mbx_us),
+      .wrn_dl_us_i(dl_wrn_us),
+      .rep_dl_us_i(dl_rep_us)
+  );
 
   task automatic recv_letter(input logic [31:0] addr, input logic [31:0] data);
     unique case (addr)
       SimStartAddr: begin
         $display("Start trig");
         motor_enable = 1'b1;
+        scb_enable   = 1'b1;
       end
       SimEndAddr: begin
         $display("End trig");
         motor_enable = 1'b0;
+        scb_enable   = 1'b0;
       end
+      DlMbxAddr: dl_mbx_us = 64'(data);
+      DlWrnAddr: dl_wrn_us = 64'(data);
+      DlRepAddr: dl_rep_us = 64'(data);
       default:
       $display("[VIP_SIM_ENV]: Warning! Received letter with unknown address: 0x%8h", addr);
     endcase
