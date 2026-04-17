@@ -22,7 +22,8 @@ const MBX_IDAT_ADDR: u32 = 0x0003_0010;
 const MBX_OADD_ADDR: u32 = 0x0003_0014;
 const MBX_ODAT_ADDR: u32 = 0x0003_0018;
 
-const SIM_PARAM_0_ADDR: u32 = 0x0100_0000;
+const SIM_START_ADDR: u32 = 0x0100_0000;
+const SIM_END_ADDR: u32 = 0x0100_0001;
 const SIM_PARAM_1_ADDR: u32 = 0x0200_0000;
 const SIM_PARAM_2_ADDR: u32 = 0x0300_0000;
 const SIM_PARAM_3_ADDR: u32 = 0x0400_0000;
@@ -69,11 +70,11 @@ fn main() -> ! {
     sprintln!(" - Simulation prescaler    : {}", PS);
     sprintln!(" - Load factor     (0-100) : {}", LF);
 
-    send_letter(SIM_PARAM_0_ADDR, 0xDEAD_BEEF);
     send_letter(SIM_PARAM_1_ADDR, 0xAAAA_AAAA);
     send_letter(SIM_PARAM_2_ADDR, 0xBBBB_BBBB);
     send_letter(SIM_PARAM_3_ADDR, 0xCCCC_CCCC);
 
+    send_letter(SIM_START_ADDR, 0x0);
     //i2c.read(0x68, &mut rbuf_4);
 
     unsafe { riscv::interrupt::enable() };
@@ -98,6 +99,7 @@ fn send_letter(addr: u32, data: u32) {
 #[nested_interrupt]
 fn MachineTimer() {
     sprintln!("Mtimeirq");
+    send_letter(SIM_END_ADDR, 0x0);
     #[cfg(feature = "rtl-tb")]
     zeroheti_bsp::tb::rtl_tb_signal_ok();
 }

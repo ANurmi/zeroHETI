@@ -42,8 +42,8 @@ sources:
       - rtl/zeroheti_top.sv
   - target: verilator
     files:
-      #- verilator/tb/vip/vip_motor_sim.sv
-      #- verilator/tb/vip/vip_ctrl_sim.sv
+      - verilator/tb/vip/vip_motor_sim.sv
+      - verilator/tb/vip/vip_task_scoreboard.sv
       - verilator/tb/vip/vip_sim_env.sv
       - verilator/tb/vip/vip_i2c.sv
       - verilator/tb/vip/vip_mbx_driver.sv
