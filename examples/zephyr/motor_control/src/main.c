@@ -75,28 +75,55 @@
 #define I2C_M3_TUNE_ADDR   12
 
 #define PRESCALER 4
-	debug_signal_pass();
+
+static volatile uint32_t target_voltage[4];
+static volatile uint32_t rep3_count;
+static volatile uint8_t sim_finished;
+static uint64_t sim_start_cycles;
+
+static inline uint32_t motor_read_stat(uint8_t stat_addr)
+{
+	uint8_t rbuf[4] = {0};
+	i2c_read_tx(stat_addr, rbuf, 4);
 }
 
-/* REP task ISRs */
+static inline void motor_write_ctrl(uint8_t ctrl_addr, uint8_t cmd_hi)
+{
+	uint8_t buf[2] = {0x00, cmd_hi};
+	i2c_write_tx(ctrl_addr, buf, 2);
+}
+
+/* Fires when simulation time is up */
+static void ktimer_elapsed(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+	printf("[ktimer] 20ms elapsed\n");
+	debug_signal_pass();
+}
+K_TIMER_DEFINE(sim_ktimer, ktimer_elapsed, NULL);
+
 static void isr_timer0cmp(void *arg)
 {
 	ARG_UNUSED(arg);
+	printf("[ISR] Timer0Cmp\n");
 }
 
 static void isr_timer1cmp(void *arg)
 {
 	ARG_UNUSED(arg);
+	printf("[ISR] Timer1Cmp\n");
 }
 
 static void isr_timer2cmp(void *arg)
 {
 	ARG_UNUSED(arg);
+	printf("[ISR] Timer2Cmp\n");
 }
 
 static void isr_timer3cmp(void *arg)
 {
 	ARG_UNUSED(arg);
+	printf("[ISR] Timer3Cmp\n");
 }
 
 /* MBX ISR */
@@ -128,8 +155,26 @@ static void isr_mbx(void *arg)
 
 	sys_write32(1, MBX_IRQ_ACK_ADDR);
 }
+
+static void isr_ext0(void *arg) 
+{ 
+  ARG_UNUSED(arg); 
+  printf("[ISR] Motor0 \n"); 
 }
+static void isr_ext1(void *arg) 
+{ 
+  ARG_UNUSED(arg); 
+  printf("[ISR] Motor1 \n"); 
 }
+static void isr_ext2(void *arg) 
+{ 
+  ARG_UNUSED(arg); 
+  printf("[ISR] Motor2 \n"); 
+}
+static void isr_ext3(void *arg) 
+{ 
+  ARG_UNUSED(arg); 
+  printf("[ISR] Motor3 \n"); 
 }
 
 
@@ -141,6 +186,8 @@ int main(void)
 	memset((void*)target_voltage, 0, sizeof(target_voltage));
 	rep3_count = 0;
 	sim_finished = 0;
+
+	/* Setup IRQs */
 	IRQ_CONNECT(IRQ_TIMER0CMP, PRIO_TIMER_CMP, isr_timer0cmp, NULL, 1);
 	IRQ_CONNECT(IRQ_TIMER1CMP, PRIO_TIMER_CMP, isr_timer1cmp, NULL, 1);
 	IRQ_CONNECT(IRQ_TIMER2CMP, PRIO_TIMER_CMP, isr_timer2cmp, NULL, 1);
