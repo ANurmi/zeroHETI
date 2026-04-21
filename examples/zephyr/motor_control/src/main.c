@@ -5,22 +5,16 @@
  */
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/sys_io.h>
 #include <debug/debug.h>
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 #include <i2c/i2c.h>
 
-#define PRESCALER 4
-#define BUF_BYTES 4
-
-uint8_t tx_buf[BUF_BYTES] = {0};
-uint8_t rx_buf[BUF_BYTES] = {0};
-
-/*
- * all_irqs[23:16] = apb_timer_irqs  
- * Select only CMP lines.
- */
+/* IRQ lines */
 #define IRQ_TIMER0CMP  17
 #define IRQ_TIMER1CMP  19
 #define IRQ_TIMER2CMP  21
@@ -46,90 +40,79 @@ uint8_t rx_buf[BUF_BYTES] = {0};
 #define MBX_M2_STAT_ADDR 0x30018
 #define MBX_M3_STAT_ADDR 0x3001C
 
-/* I2C addresses */
-#define I2C_SIM_CTRL_ADDR 0
-#define I2C_M0_STAT_ADDR  1
-#define I2C_M0_CTRL_ADDR  2
-#define I2C_M0_TUNE_ADDR  3
-#define I2C_M1_STAT_ADDR  4
-#define I2C_M1_CTRL_ADDR  5
-#define I2C_M1_TUNE_ADDR  6
-#define I2C_M2_STAT_ADDR  7
-#define I2C_M2_CTRL_ADDR  8
-#define I2C_M2_TUNE_ADDR  9
-#define I2C_M3_STAT_ADDR  10
-#define I2C_M3_CTRL_ADDR  11
-#define I2C_M3_TUNE_ADDR  12
+/* APB timer registers */
+#define TIMER0_BASE  0x3300
+#define TIMER1_BASE  0x3310
+#define TIMER2_BASE  0x3320
+#define TIMER3_BASE  0x3330
 
-/* Fires when simulation time is up */
-static void ktimer_elapsed(struct k_timer *timer)
-{
-	ARG_UNUSED(timer);
-	printf("[ktimer] 20ms elapsed\n");
+#define TIMER_CNT(base)   ((base) + 0x0)
+#define TIMER_CTRL(base)  ((base) + 0x4)
+#define TIMER_CMP(base)   ((base) + 0x8)
+
+/* Time to cpu ticks */
+#define US_TO_TICKS(us)  ((us) * 10U)
+
+#define REP_PERIOD_TICKS  US_TO_TICKS(4000U)
+#define REP_OFS0_TICKS    US_TO_TICKS(3900U)
+#define REP_OFS1_TICKS    US_TO_TICKS(2900U)
+#define REP_OFS2_TICKS    US_TO_TICKS(1900U)
+#define REP_OFS3_TICKS    US_TO_TICKS( 900U)
+
+/* I2C slave addresses */
+#define I2C_SIM_CTRL_ADDR  0
+#define I2C_M0_STAT_ADDR   1
+#define I2C_M0_CTRL_ADDR   2
+#define I2C_M0_TUNE_ADDR   3
+#define I2C_M1_STAT_ADDR   4
+#define I2C_M1_CTRL_ADDR   5
+#define I2C_M1_TUNE_ADDR   6
+#define I2C_M2_STAT_ADDR   7
+#define I2C_M2_CTRL_ADDR   8
+#define I2C_M2_TUNE_ADDR   9
+#define I2C_M3_STAT_ADDR   10
+#define I2C_M3_CTRL_ADDR   11
+#define I2C_M3_TUNE_ADDR   12
+
+#define PRESCALER 4
 	debug_signal_pass();
 }
-K_TIMER_DEFINE(sim_ktimer, ktimer_elapsed, NULL);
 
 static void isr_timer0cmp(void *arg)
 {
 	ARG_UNUSED(arg);
-	printf("[ISR] Timer0Cmp\n");
 }
 
 static void isr_timer1cmp(void *arg)
 {
 	ARG_UNUSED(arg);
-	printf("[ISR] Timer1Cmp\n");
 }
 
 static void isr_timer2cmp(void *arg)
 {
 	ARG_UNUSED(arg);
-	printf("[ISR] Timer2Cmp\n");
 }
 
 static void isr_timer3cmp(void *arg)
 {
 	ARG_UNUSED(arg);
-	printf("[ISR] Timer3Cmp\n");
 }
 
 static void isr_mbx(void *arg)
 {
 	ARG_UNUSED(arg);
-	printf("[ISR] Mbx\n");
-}
 
-static void isr_ext0(void *arg) 
-{ 
-  ARG_UNUSED(arg); 
-  printf("[ISR] Motor0 \n"); 
 }
-static void isr_ext1(void *arg) 
-{ 
-  ARG_UNUSED(arg); 
-  printf("[ISR] Motor1 \n"); 
 }
-static void isr_ext2(void *arg) 
-{ 
-  ARG_UNUSED(arg); 
-  printf("[ISR] Motor2 \n"); 
 }
-static void isr_ext3(void *arg) 
-{ 
-  ARG_UNUSED(arg); 
-  printf("[ISR] Motor3 \n"); 
 }
 
 
 int main(void)
 {
 	printf("Motor Control demo %s\n", CONFIG_BOARD_TARGET);
-
-	/* I2C init */
 	i2c_init(PRESCALER);
 
-	/* Setup IRQS */
 	IRQ_CONNECT(IRQ_TIMER0CMP, PRIO_TIMER_CMP, isr_timer0cmp, NULL, 1);
 	IRQ_CONNECT(IRQ_TIMER1CMP, PRIO_TIMER_CMP, isr_timer1cmp, NULL, 1);
 	IRQ_CONNECT(IRQ_TIMER2CMP, PRIO_TIMER_CMP, isr_timer2cmp, NULL, 1);
