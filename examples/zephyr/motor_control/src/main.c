@@ -78,6 +78,7 @@
 	debug_signal_pass();
 }
 
+/* REP task ISRs */
 static void isr_timer0cmp(void *arg)
 {
 	ARG_UNUSED(arg);
@@ -98,10 +99,34 @@ static void isr_timer3cmp(void *arg)
 	ARG_UNUSED(arg);
 }
 
+/* MBX ISR */
 static void isr_mbx(void *arg)
 {
 	ARG_UNUSED(arg);
 
+	uint32_t mail = sys_read32(MBX_INBOX_ADDR);
+	uint8_t bytes[4] = {
+		(uint8_t)(mail >> 24),
+		(uint8_t)(mail >> 16),
+		(uint8_t)(mail >> 8),
+		(uint8_t)(mail >> 0),
+	};
+
+	//All I2C transactions should be locked
+	unsigned int key = irq_lock();
+	motor_write_ctrl(I2C_M0_CTRL_ADDR, bytes[0]);
+	motor_write_ctrl(I2C_M1_CTRL_ADDR, bytes[1]);
+	motor_write_ctrl(I2C_M2_CTRL_ADDR, bytes[2]);
+	motor_write_ctrl(I2C_M3_CTRL_ADDR, bytes[3]);
+	irq_unlock(key);
+
+	//Save current voltages for later tune computation 
+	target_voltage[0] = ((uint32_t)bytes[0]) << 8;
+	target_voltage[1] = ((uint32_t)bytes[1]) << 8;
+	target_voltage[2] = ((uint32_t)bytes[2]) << 8;
+	target_voltage[3] = ((uint32_t)bytes[3]) << 8;
+
+	sys_write32(1, MBX_IRQ_ACK_ADDR);
 }
 }
 }
@@ -113,6 +138,9 @@ int main(void)
 	printf("Motor Control demo %s\n", CONFIG_BOARD_TARGET);
 	i2c_init(PRESCALER);
 
+	memset((void*)target_voltage, 0, sizeof(target_voltage));
+	rep3_count = 0;
+	sim_finished = 0;
 	IRQ_CONNECT(IRQ_TIMER0CMP, PRIO_TIMER_CMP, isr_timer0cmp, NULL, 1);
 	IRQ_CONNECT(IRQ_TIMER1CMP, PRIO_TIMER_CMP, isr_timer1cmp, NULL, 1);
 	IRQ_CONNECT(IRQ_TIMER2CMP, PRIO_TIMER_CMP, isr_timer2cmp, NULL, 1);
