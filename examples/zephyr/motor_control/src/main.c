@@ -209,6 +209,27 @@ int main(void)
 	irq_enable(IRQ_EXT2);
 	irq_enable(IRQ_EXT3);
 
+	// Block all interrupts
+	__asm__ volatile ("csrw 0x347, %0" :: "r"(0xFF));
+
+	/*Set timer compare and counter values with 1000us ofs*/
+	sys_write32(REP_PERIOD_TICKS, TIMER_CMP(TIMER0_BASE));
+	sys_write32(REP_OFS0_TICKS,   TIMER_CNT(TIMER0_BASE));
+	sys_write32(REP_PERIOD_TICKS, TIMER_CMP(TIMER1_BASE));
+	sys_write32(REP_OFS1_TICKS,   TIMER_CNT(TIMER1_BASE));
+	sys_write32(REP_PERIOD_TICKS, TIMER_CMP(TIMER2_BASE));
+	sys_write32(REP_OFS2_TICKS,   TIMER_CNT(TIMER2_BASE));
+	sys_write32(REP_PERIOD_TICKS, TIMER_CMP(TIMER3_BASE));
+	sys_write32(REP_OFS3_TICKS,   TIMER_CNT(TIMER3_BASE));
+
+	k_busy_wait(100);
+
+	//Start all timers simultaneously
+	sys_write32(0x1, TIMER_CTRL(TIMER0_BASE));
+	sys_write32(0x1, TIMER_CTRL(TIMER1_BASE));
+	sys_write32(0x1, TIMER_CTRL(TIMER2_BASE));
+	sys_write32(0x1, TIMER_CTRL(TIMER3_BASE));
+
 	//Latch time
 	sim_start_cycles = k_cycle_get_64();
 
