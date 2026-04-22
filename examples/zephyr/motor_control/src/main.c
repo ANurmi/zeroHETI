@@ -93,15 +93,6 @@ static inline void motor_write_ctrl(uint8_t ctrl_addr, uint8_t cmd_hi)
 	i2c_write_tx(ctrl_addr, buf, 2);
 }
 
-/* Fires when simulation time is up */
-static void ktimer_elapsed(struct k_timer *timer)
-{
-	ARG_UNUSED(timer);
-	printf("[ktimer] 20ms elapsed\n");
-	debug_signal_pass();
-}
-K_TIMER_DEFINE(sim_ktimer, ktimer_elapsed, NULL);
-
 static void isr_timer0cmp(void *arg)
 {
 	ARG_UNUSED(arg);
@@ -218,14 +209,17 @@ int main(void)
 	irq_enable(IRQ_EXT2);
 	irq_enable(IRQ_EXT3);
 
-	/* Start 20ms watchdog */
-	k_timer_start(&sim_ktimer, K_MSEC(20), K_NO_WAIT);
+	//Latch time
+	sim_start_cycles = k_cycle_get_64();
 
-	// Start simulation
-	tx_buf[0] = 0x1;
-	i2c_write_tx(I2C_SIM_CTRL_ADDR, tx_buf, BUF_BYTES);
+	//Kickstart the simulation
+	uint8_t sim_on = 1;
+	i2c_write_tx(I2C_SIM_CTRL_ADDR, &sim_on, 1);
 
-	/* Sleep */
+	// Release interrupts
+	__asm__ volatile ("csrw 0x347, %0" :: "r"(0x00));
+	
+	//Suspend main
 	k_sleep(K_FOREVER);
 
 	return 0;
