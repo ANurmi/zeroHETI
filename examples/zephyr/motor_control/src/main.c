@@ -81,6 +81,15 @@ static volatile uint32_t rep3_count;
 static volatile uint8_t sim_finished;
 static uint64_t sim_start_cycles;
 
+static inline void mbx_wr_stat(uint32_t stat_addr, uint32_t stat)
+{
+	uint64_t time_now = k_cycle_get_64();
+
+	sys_write32((uint32_t)(time_now & 0xffffffffULL), MBX_TIME_LO_ADDR);
+	sys_write32((uint32_t)(time_now >> 32), MBX_TIME_HI_ADDR);
+	sys_write32(stat, stat_addr);
+}
+
 static inline uint32_t motor_read_stat(uint8_t stat_addr)
 {
 	uint8_t rbuf[4] = {0};
@@ -96,25 +105,41 @@ static inline void motor_write_ctrl(uint8_t ctrl_addr, uint8_t cmd_hi)
 static void isr_timer0cmp(void *arg)
 {
 	ARG_UNUSED(arg);
-	printf("[ISR] Timer0Cmp\n");
+	unsigned int key = irq_lock();
+	uint32_t stat = motor_read_stat(I2C_M0_STAT_ADDR);
+	irq_unlock(key);
+
+	mbx_wr_stat(MBX_M0_STAT_ADDR, stat);
 }
 
 static void isr_timer1cmp(void *arg)
 {
 	ARG_UNUSED(arg);
-	printf("[ISR] Timer1Cmp\n");
+	unsigned int key = irq_lock();
+	uint32_t stat = motor_read_stat(I2C_M1_STAT_ADDR);
+	irq_unlock(key);
+
+	mbx_wr_stat(MBX_M1_STAT_ADDR, stat);
 }
 
 static void isr_timer2cmp(void *arg)
 {
 	ARG_UNUSED(arg);
-	printf("[ISR] Timer2Cmp\n");
+	unsigned int key = irq_lock();
+	uint32_t stat = motor_read_stat(I2C_M2_STAT_ADDR);
+	irq_unlock(key);
+
+	mbx_wr_stat(MBX_M2_STAT_ADDR, stat);
 }
 
 static void isr_timer3cmp(void *arg)
 {
 	ARG_UNUSED(arg);
-	printf("[ISR] Timer3Cmp\n");
+	unsigned int key = irq_lock();
+	uint32_t stat = motor_read_stat(I2C_M3_STAT_ADDR);
+	irq_unlock(key);
+
+	mbx_wr_stat(MBX_M3_STAT_ADDR, stat);
 }
 
 /* MBX ISR */
