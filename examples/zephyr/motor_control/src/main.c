@@ -75,8 +75,9 @@
 #define I2C_M3_TUNE_ADDR   12
 
 #define PRESCALER 4
+#define R_MOTOR 10000
 
-static volatile uint32_t target_voltage[4];
+static volatile uint32_t t_volt[4];
 static volatile uint32_t rep3_count;
 static volatile uint8_t sim_finished;
 static uint64_t sim_start_cycles;
@@ -89,19 +90,50 @@ static inline void mbx_wr_stat(uint32_t stat_addr, uint32_t stat)
 	sys_write32((uint32_t)(time_now >> 32), MBX_TIME_HI_ADDR);
 	sys_write32(stat, stat_addr);
 }
+static inline uint32_t newton_sqrt(uint32_t val)
+{
+	if (val < 2U)
+		return val;
+}
+static inline int16_t speed_correct(uint32_t voltage_setpoint, uint32_t speed_actual)
+{
+	uint32_t t_pow = (voltage_setpoint * voltage_setpoint) / (uint32_t)R_MOTOR;
+	int32_t delta = (int32_t)t_pow - (int32_t)speed_actual;
+	int32_t error_scaled = delta / R_MOTOR;
+	int16_t correction = (int16_t)newton_sqrt(abs(error_scaled));
 
+	if (delta < 0) {
+		correction = (int16_t)(-correction);
+	}
+
+	return correction;
+}
 static inline uint32_t motor_read_stat(uint8_t stat_addr)
 {
-	uint8_t rbuf[4] = {0};
-	i2c_read_tx(stat_addr, rbuf, 4);
+	uint8_t buf[4] = {0};
+	i2c_read_tx(stat_addr, buf, 4);
+	
+	//reconstruct the speed word
+	return ((uint32_t)buf[0]) |
+	       ((uint32_t)buf[1] << 8) |
+	       ((uint32_t)buf[2] << 16) |
+	       ((uint32_t)buf[3] << 24);
 }
-
 static inline void motor_write_ctrl(uint8_t ctrl_addr, uint8_t cmd_hi)
 {
 	uint8_t buf[2] = {0x00, cmd_hi};
 	i2c_write_tx(ctrl_addr, buf, 2);
 }
-
+static inline void motor_wr_tune(uint8_t tune_addr, int16_t tune)
+{
+	unsigned int key = irq_lock();
+		uint8_t buf[2] = {
+            (uint8_t)(tune & 0xff),
+            (uint8_t)(tune >> 8),
+	};
+	i2c_write_tx(tune_addr, buf, 2);
+	irq_unlock(key);
+}
 static void isr_timer0cmp(void *arg)
 {
 	ARG_UNUSED(arg);
@@ -141,7 +173,6 @@ static void isr_timer3cmp(void *arg)
 
 	mbx_wr_stat(MBX_M3_STAT_ADDR, stat);
 }
-
 /* MBX ISR */
 static void isr_mbx(void *arg)
 {
@@ -164,14 +195,13 @@ static void isr_mbx(void *arg)
 	irq_unlock(key);
 
 	//Save current voltages for later tune computation 
-	target_voltage[0] = ((uint32_t)bytes[0]) << 8;
-	target_voltage[1] = ((uint32_t)bytes[1]) << 8;
-	target_voltage[2] = ((uint32_t)bytes[2]) << 8;
-	target_voltage[3] = ((uint32_t)bytes[3]) << 8;
+	t_volt[0] = ((uint32_t)bytes[0]) << 8;
+	t_volt[1] = ((uint32_t)bytes[1]) << 8;
+	t_volt[2] = ((uint32_t)bytes[2]) << 8;
+	t_volt[3] = ((uint32_t)bytes[3]) << 8;
 
 	sys_write32(1, MBX_IRQ_ACK_ADDR);
 }
-
 /* WRN ISRs */
 static void isr_ext0(void *arg) 
 { 
@@ -179,6 +209,10 @@ static void isr_ext0(void *arg)
 	unsigned int key = irq_lock();
 	uint32_t speed_now = motor_read_stat(I2C_M0_STAT_ADDR);
 	irq_unlock(key);
+	//We might need 16bit precision but clearly not now!
+	int16_t tune = speed_correct(t_volt[0], speed_now);
+
+	motor_wr_tune(I2C_M0_TUNE_ADDR, tune);
 }
 static void isr_ext1(void *arg) 
 { 
@@ -186,6 +220,9 @@ static void isr_ext1(void *arg)
 	unsigned int key = irq_lock();
 	uint32_t speed_now = motor_read_stat(I2C_M1_STAT_ADDR);
 	irq_unlock(key);
+	int16_t tune = speed_correct(t_volt[1], speed_now);
+
+	motor_wr_tune(I2C_M1_TUNE_ADDR, tune);
 }
 static void isr_ext2(void *arg) 
 { 
@@ -193,25 +230,27 @@ static void isr_ext2(void *arg)
 	unsigned int key = irq_lock();
 	uint32_t speed_now = motor_read_stat(I2C_M2_STAT_ADDR);
 	irq_unlock(key);
+	int16_t tune = speed_correct(t_volt[2], speed_now);
+
+	motor_wr_tune(I2C_M2_TUNE_ADDR, tune);
 }
 static void isr_ext3(void *arg) 
 { 
   	ARG_UNUSED(arg); 
 	unsigned int key = irq_lock();
 	uint32_t speed_now = motor_read_stat(I2C_M3_STAT_ADDR);
-	irq_unlock(key); 
-}
+	irq_unlock(key);
+	int16_t tune = speed_correct(t_volt[3], speed_now);
 
+	motor_wr_tune(I2C_M3_TUNE_ADDR, tune);
+}
 
 int main(void)
 {
 	printf("Motor Control demo %s\n", CONFIG_BOARD_TARGET);
+	
 	i2c_init(PRESCALER);
-
-	memset((void*)target_voltage, 0, sizeof(target_voltage));
-	rep3_count = 0;
-	sim_finished = 0;
-
+	
 	/* Setup IRQs */
 	IRQ_CONNECT(IRQ_TIMER0CMP, PRIO_TIMER_CMP, isr_timer0cmp, NULL, 1);
 	IRQ_CONNECT(IRQ_TIMER1CMP, PRIO_TIMER_CMP, isr_timer1cmp, NULL, 1);
