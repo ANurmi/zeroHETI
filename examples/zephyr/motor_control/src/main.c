@@ -172,25 +172,34 @@ static void isr_mbx(void *arg)
 	sys_write32(1, MBX_IRQ_ACK_ADDR);
 }
 
+/* WRN ISRs */
 static void isr_ext0(void *arg) 
 { 
-  ARG_UNUSED(arg); 
-  printf("[ISR] Motor0 \n"); 
+  	ARG_UNUSED(arg); 
+	unsigned int key = irq_lock();
+	uint32_t speed_now = motor_read_stat(I2C_M0_STAT_ADDR);
+	irq_unlock(key);
 }
 static void isr_ext1(void *arg) 
 { 
-  ARG_UNUSED(arg); 
-  printf("[ISR] Motor1 \n"); 
+  	ARG_UNUSED(arg); 
+	unsigned int key = irq_lock();
+	uint32_t speed_now = motor_read_stat(I2C_M1_STAT_ADDR);
+	irq_unlock(key);
 }
 static void isr_ext2(void *arg) 
 { 
-  ARG_UNUSED(arg); 
-  printf("[ISR] Motor2 \n"); 
+  	ARG_UNUSED(arg); 
+	unsigned int key = irq_lock();
+	uint32_t speed_now = motor_read_stat(I2C_M2_STAT_ADDR);
+	irq_unlock(key);
 }
 static void isr_ext3(void *arg) 
 { 
-  ARG_UNUSED(arg); 
-  printf("[ISR] Motor3 \n"); 
+  	ARG_UNUSED(arg); 
+	unsigned int key = irq_lock();
+	uint32_t speed_now = motor_read_stat(I2C_M3_STAT_ADDR);
+	irq_unlock(key); 
 }
 
 
