@@ -94,6 +94,12 @@ static inline uint32_t newton_sqrt(uint32_t val)
 {
 	if (val < 2U)
 		return val;
+		
+	uint32_t x = val; //or maybe "val >> 1" if val is large
+    for (int i = 0; i < 4; i++) {
+        x = (x + val / x) >> 1; 
+    }
+    return x;
 }
 static inline int16_t speed_correct(uint32_t voltage_setpoint, uint32_t speed_actual)
 {
