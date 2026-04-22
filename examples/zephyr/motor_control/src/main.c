@@ -76,6 +76,16 @@
 
 #define PRESCALER 4
 #define R_MOTOR 10000
+#define READ_CSR64(hi_csr, lo_csr, out)                          \
+    do {                                                          \
+        uint32_t _lo, _hi, _hi2;                                 \
+        do {                                                      \
+            __asm__ volatile("csrr %0, " #hi_csr : "=r"(_hi));  \
+            __asm__ volatile("csrr %0, " #lo_csr : "=r"(_lo));  \
+            __asm__ volatile("csrr %0, " #hi_csr : "=r"(_hi2)); \
+        } while (_hi != _hi2);                                   \
+        (out) = ((uint64_t)_hi << 32) | _lo;                    \
+    } while (0)
 
 static volatile uint32_t t_volt[4];
 static volatile uint32_t rep3_count;
@@ -151,9 +161,34 @@ static void finish_sim(void)
 	}
 	sim_finished = 1;
 
+	/* Stop periodic timer sources */
+	sys_write32(0x0, TIMER_CTRL(TIMER0_BASE));
+	sys_write32(0x0, TIMER_CTRL(TIMER1_BASE));
+	sys_write32(0x0, TIMER_CTRL(TIMER2_BASE));
+	sys_write32(0x0, TIMER_CTRL(TIMER3_BASE));
+
 	/* Stop the simulation */
 	uint8_t sim_off = 0;
 	i2c_write_tx(I2C_SIM_CTRL_ADDR, &sim_off, 1);
+	
+	uint64_t instret = 0;
+	uint64_t active_cc = 0;
+	
+	READ_CSR64(minstreth, minstret, instret);
+	READ_CSR64(mcycleh,   mcycle,   active_cc);
+
+	uint64_t total_cc = k_cycle_get_64() - sim_start_cycles;
+
+	printf("Instructions retired: %llu, cycles: %llu\n",
+	       (unsigned long long)instret,
+	       (unsigned long long)active_cc);
+	printf("Total time (cc): %llu, active time (cc): %llu,\n",
+	       (unsigned long long)total_cc,
+	       (unsigned long long)active_cc);
+	if (total_cc != 0ULL) {
+		printf("CPU utilization: %llu%%\n",
+		       (unsigned long long)((active_cc * 100ULL) / total_cc));
+	}
 	
 	debug_signal_pass();
 	irq_unlock(key);
@@ -327,6 +362,12 @@ int main(void)
 	sys_write32(REP_OFS3_TICKS,   TIMER_CNT(TIMER3_BASE));
 
 	k_busy_wait(100);
+
+	//Clear performance counters
+	__asm__ volatile("csrwi minstret, 0");
+	__asm__ volatile("csrwi mcycle, 0");
+	__asm__ volatile("csrwi minstreth, 0");
+	__asm__ volatile("csrwi mcycleh, 0");
 
 	//Start all timers simultaneously
 	sys_write32(0x1, TIMER_CTRL(TIMER0_BASE));
