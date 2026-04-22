@@ -94,7 +94,7 @@ static inline uint32_t newton_sqrt(uint32_t val)
 {
 	if (val < 2U)
 		return val;
-		
+
 	uint32_t x = val; //or maybe "val >> 1" if val is large
     for (int i = 0; i < 4; i++) {
         x = (x + val / x) >> 1; 
@@ -140,6 +140,25 @@ static inline void motor_wr_tune(uint8_t tune_addr, int16_t tune)
 	i2c_write_tx(tune_addr, buf, 2);
 	irq_unlock(key);
 }
+static void finish_sim(void)
+{
+	unsigned int key = irq_lock();
+
+	//Guard against multiple calls 
+	if (sim_finished) {
+		irq_unlock(key);
+		return;
+	}
+	sim_finished = 1;
+
+	/* Stop the simulation */
+	uint8_t sim_off = 0;
+	i2c_write_tx(I2C_SIM_CTRL_ADDR, &sim_off, 1);
+	
+	debug_signal_pass();
+	irq_unlock(key);
+}
+
 static void isr_timer0cmp(void *arg)
 {
 	ARG_UNUSED(arg);
@@ -178,6 +197,12 @@ static void isr_timer3cmp(void *arg)
 	irq_unlock(key);
 
 	mbx_wr_stat(MBX_M3_STAT_ADDR, stat);
+
+	//Fifth REP of M3 signals sim termination  
+	rep3_count++;
+	if (rep3_count >= 5U) {
+		finish_sim();
+	}
 }
 /* MBX ISR */
 static void isr_mbx(void *arg)
