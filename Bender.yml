@@ -7,10 +7,10 @@ package:
     - "Antti Nurmi <antti.nurmi@tuni.fi>"
 
 dependencies:
-  rt-ibex: { git: "https://github.com/soc-hub-fi/rt-ibex.git", rev: "8763d58e15cf3f92c2fe6e8745631f6fdb04361f" }
+  rt-ibex: { git: "https://github.com/soc-hub-fi/rt-ibex.git", rev: "72dae8b3ccbc6299a94e10287a30576f7f633ad8" }
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", rev: "9afda9abb565971649c2aa0985639c096f351171" }
   riscv-dbg: { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.8.1 }
-  clic: { git: "https://github.com/pulp-platform/clic.git", version: 3.0.0 }
+  clic: { git: "https://github.com/pulp-platform/clic.git", version: 2.0.0 }
   apb_uart: { git: "https://github.com/pulp-platform/apb_uart.git", version: 0.2.1 }
   apb_timer: { git: "https://github.com/pulp-platform/apb_timer.git", rev: "03eba2e6965f5363df12621882bc70498c551a73" }
   obi: { git: "https://github.com/pulp-platform/obi.git", version: 0.1.7 }
@@ -25,12 +25,16 @@ sources:
       - rtl/i2c_master_bit_ctrl.sv
       - rtl/i2c_master_byte_ctrl.sv
       - rtl/apb_i2c.sv
+      - rtl/apb_cfg_regs.sv
       - rtl/apb_mtimer.sv
       - rtl/obi_hetic.sv
+      - rtl/mbx_axi_ctrl.sv
       - rtl/obi_mbx.sv
+      - rtl/zeroheti_xbar.sv
       - rtl/zeroheti_int_ctrl.sv
       - rtl/obi_sram_intf.sv
-      - rtl/obi_cut_intf.sv
+      - rtl/obi_mb_sram_intf.sv
+      - rtl/obi_connection.sv
       - rtl/obi_to_apb_intf.sv
       - rtl/irq_arbiter.sv
       - rtl/irq_gateway.sv
@@ -39,7 +43,6 @@ sources:
       - rtl/zeroheti_top.sv
   - target: verilator
     files:
-      - verilator/tb/vip/vip_mbx.sv
       - verilator/tb/vip/vip_motor_sim.sv
       - verilator/tb/vip/vip_ctrl_sim.sv
       - verilator/tb/vip/vip_i2c.sv

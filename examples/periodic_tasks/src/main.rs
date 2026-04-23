@@ -5,12 +5,11 @@
 
 use bsp::embedded_io::Write;
 use bsp::hetic::{Hetic, Pol, Trig};
-use bsp::interrupt::CoreInterrupt;
-use bsp::rt::{InterruptNumber, core_interrupt};
+use bsp::interrupt::Interrupt;
+use bsp::rt::{core_interrupt, InterruptNumber};
 use bsp::{
-    CPU_FREQ_HZ,
     apb_uart::*,
-    interrupt::ExternalInterrupt,
+    interrupt::Interrupt,
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mtimer::{self, MTimer},
     riscv::{self, asm::wfi},
@@ -18,6 +17,7 @@ use bsp::{
     sprintln,
     tb::signal_pass,
     timer_group::{Periodic, Timer},
+    CPU_FREQ_HZ,
 };
 use core::arch::asm;
 use fugit::ExtU32;
@@ -98,11 +98,11 @@ fn main() -> ! {
         TEST_DURATION.to_nanos()
     );
 
-    setup_irq(ExternalInterrupt::Timer0Cmp, TASK0.level);
-    setup_irq(ExternalInterrupt::Timer1Cmp, TASK1.level);
-    setup_irq(ExternalInterrupt::Timer2Cmp, TASK2.level);
-    setup_irq(ExternalInterrupt::Timer3Cmp, TASK3.level);
-    setup_irq(CoreInterrupt::MachineTimer, u8::MAX);
+    setup_irq(Interrupt::Timer0Cmp, TASK0.level);
+    setup_irq(Interrupt::Timer1Cmp, TASK1.level);
+    setup_irq(Interrupt::Timer2Cmp, TASK2.level);
+    setup_irq(Interrupt::Timer3Cmp, TASK3.level);
+    setup_irq(Interrupt::MachineTimer, u8::MAX);
 
     for run_idx in 0..RUN_COUNT {
         sprintln!("Run {}", run_idx);
@@ -209,11 +209,11 @@ fn main() -> ! {
     }
 
     // Clean up
-    tear_irq(ExternalInterrupt::Timer0Cmp);
-    tear_irq(ExternalInterrupt::Timer1Cmp);
-    tear_irq(ExternalInterrupt::Timer2Cmp);
-    tear_irq(ExternalInterrupt::Timer3Cmp);
-    tear_irq(CoreInterrupt::MachineTimer);
+    tear_irq(Interrupt::Timer0Cmp);
+    tear_irq(Interrupt::Timer1Cmp);
+    tear_irq(Interrupt::Timer2Cmp);
+    tear_irq(Interrupt::Timer3Cmp);
+    tear_irq(Interrupt::MachineTimer);
 
     signal_pass(Some(&mut serial));
     loop {
@@ -271,7 +271,7 @@ impl_inline_isr!("Timer2Cmp", TASK2_COUNT, TASK2);
 impl_inline_isr!("Timer3Cmp", TASK3_COUNT, TASK3);
 
 /// Timeout interrupt (per test-run)
-#[core_interrupt(bsp::interrupt::CoreInterrupt::MachineTimer)]
+#[core_interrupt(bsp::interrupt::Interrupt::MachineTimer)]
 unsafe fn MachineTimer() {
     unsafe { TIMEOUT = true };
     let mut timer = MTimer::instance();
@@ -288,11 +288,11 @@ unsafe fn MachineTimer() {
         Timer::instance::<TIMER2_ADDR>().disable();
         Timer::instance::<TIMER3_ADDR>().disable()
     };
-    Hetic::line(CoreInterrupt::MachineTimer.number()).unpend();
-    Hetic::line(ExternalInterrupt::Timer0Cmp.number()).unpend();
-    Hetic::line(ExternalInterrupt::Timer1Cmp.number()).unpend();
-    Hetic::line(ExternalInterrupt::Timer2Cmp.number()).unpend();
-    Hetic::line(ExternalInterrupt::Timer3Cmp.number()).unpend();
+    Hetic::line(Interrupt::MachineTimer.number()).unpend();
+    Hetic::line(Interrupt::Timer0Cmp.number()).unpend();
+    Hetic::line(Interrupt::Timer1Cmp.number()).unpend();
+    Hetic::line(Interrupt::Timer2Cmp.number()).unpend();
+    Hetic::line(Interrupt::Timer3Cmp.number()).unpend();
 }
 
 pub fn setup_irq(irq: impl InterruptNumber, level: u8) {

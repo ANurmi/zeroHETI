@@ -210,6 +210,22 @@ impl OneShot {
         self.0.set_cmp(u64::MAX);
     }
 
+    /// N.b., you may sometimes get a disjoint value if the function gets
+    /// interrupted in the middle of the read transaction
+    #[inline]
+    pub fn counter(&self) -> u64 {
+        let hi = read_u32(MTIMER_BASE + MTIME_HIGH_ADDR_OFS);
+        let lo = read_u32(MTIMER_BASE + MTIME_LOW_ADDR_OFS);
+
+        ((hi as u64) << 32) | lo as u64
+    }
+
+    /// Returns the current duration since zero as tracked by the timer
+    #[inline]
+    pub fn duration(&self) -> Duration {
+        Duration::from_ticks(self.0.counter())
+    }
+
     /// Gets the timer compare value
     ///
     /// # Safety

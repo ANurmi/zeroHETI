@@ -52,12 +52,6 @@ int main(int argc, char** argv) {
               << std::endl;
     std::exit(0);
   }
-    /*
-     * '--isa=rv32imc'
-     * '+signature=/<>/riscof_work/src/add-01.S/dut/DUT-zeroheti.signature'
-     * '+signature-granularity=4'
-     * 'my.elf'
-     */
 
     std::filesystem::path elfpath = tb->resolve_elf(elf_name);
 
@@ -76,8 +70,8 @@ int main(int argc, char** argv) {
                 << std::endl;
       tb->jtag_resume_hart_from(tb->get_entry(elfpath.string()));
     }
-    tb->jtag_wait_eoc();
+    uint32_t exit_code = tb->jtag_wait_eoc();
 
   delete tb;
-  return 0;
+  return exit_code;
 }

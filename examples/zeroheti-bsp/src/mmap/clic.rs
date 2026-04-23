@@ -24,6 +24,7 @@ pub const CLIC_CLICINFO_NUM_TRIGGER_MASK: usize = 0x3f;
 pub const CLIC_CLICINFO_NUM_TRIGGER_OFFSET: usize = 25;
 
 /* CLIC Interrupt Trigger */
+#[allow(non_snake_case)]
 pub const fn CLIC_INTTRIGG_REG_OFFSET(id: usize) -> usize {
     0x40 + 0x4 * id
 }
@@ -32,6 +33,7 @@ pub const CLIC_INTTRIGG_INT_NUMBER_OFFSET: usize = 0;
 pub const CLIC_INTTRIGG_INT_NUMBER_MASK: usize = 0xFFF;
 
 /* CLIC Interrupt registers (4-bytes) */
+#[allow(non_snake_case)]
 pub const fn CLIC_INTREG_OFFSET(id: u32) -> usize {
     0x1000 + 0x4 * id as usize
 }

@@ -4,7 +4,6 @@
 #![allow(non_snake_case)]
 
 use bsp::{
-    CPU_FREQ_HZ,
     apb_uart::*,
     hetic::Hetic,
     i2c::I2c,
@@ -15,10 +14,11 @@ use bsp::{
     sprintln,
     tb::signal_pass,
     timer_group::*,
+    CPU_FREQ_HZ,
 };
 use core::arch::asm;
 use fugit::{ExtU32, ExtU64};
-use riscv::{InterruptNumber, interrupt::Interrupt};
+use riscv::{interrupt::Interrupt, InterruptNumber};
 
 const WRITE: u8 = 1;
 const LAST: u8 = 1;
@@ -36,7 +36,7 @@ static mut I2C: Option<I2c<I2C_BASE>> = None;
 
 #[entry]
 fn main() -> ! {
-    let mut serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
+    let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
     let riscv_isa = core::env!("RISCV_ISA");
 
     sprintln!("[I2C Power control demo] ISA = {riscv_isa}");
@@ -88,7 +88,7 @@ fn main() -> ! {
     }
 }
 
-#[bsp::core_interrupt(bsp::interrupt::CoreInterrupt::MachineTimer)]
+#[bsp::core_interrupt(bsp::interrupt::Interrupt::MachineTimer)]
 unsafe fn MachineTimer() {
     let mut i2c = I2C.as_mut().unwrap();
 

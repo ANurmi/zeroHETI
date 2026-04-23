@@ -1,19 +1,100 @@
-name: Rust
+name: Rust regression tests
 
+# Triggers when there is any activity on a pull request, e.g. opened, updated.
 on:
-  push:
-    paths:
-    - examples/zeroheti-bsp/**
-
+  merge_group:
+    types:
+      - checks_requested
+  pull_request:
+    branches:
+      - "*"
+  workflow_dispatch:
+    inputs:
+      run_hetic_edfic:
+        description: "Run HETIC/EDFIC tests?"
+        type: boolean
+        default: false
 env:
   CARGO_TERM_COLOR: always
+  TEST_BUILD_RUSTFLAGS: "-Clinker=riscv32-unknown-elf-gcc -Clink-arg=-Wl,-Tmemory.x -Clink-arg=-Wl,-Tlink.x -Clink-arg=-nostartfiles -Clink-arg=-march=rv32ec -Clink-arg=-mabi=ilp32e"
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    container:
+      # Container sourced from https://github.com/soc-hub-fi/ci-images
+      # .../zeroheti/Dockerfile
+      image: ghcr.io/soc-hub-fi/zeroheti-ci:latest
+      options: --user 0
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cd examples/zeroheti-bsp && cargo check -Frtl-tb --lib --examples
+      - uses: actions/checkout@v4
+
+      - name: Fetch dependencies
+        run: bender update && bender vendor init
+
+      - name: Check BSP
+        run: |
+          cd examples/zeroheti-bsp
+          cargo check -Frtl-tb -Fintc-hetic --lib --examples
+          cargo check -Frtl-tb -Fintc-clic --lib --examples
+          cargo check -Frtl-tb -Fintc-edfic --lib --examples
+
+      - name: Build hardware (CLIC)
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          make verilate INTC=CLIC
+
+      - name: Build examples (CLIC)
+        run: |
+          cd examples/zeroheti-bsp
+          cargo build -Frtl-tb -Fintc-clic --lib --examples
+
+      - name: Test Hello
+        run: |
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb --example hello
+
+      - name: Test failure
+        run: |
+          cd examples/zeroheti-bsp
+          ! RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb --example fail
+
+      - name: Test periphs
+        run: |
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-clic --example mtimer
+
+      - name: Test all IRQs (CLIC)
+        run: |
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-clic --example all_irqs
+
+      - name: Test high-level IRQ blocks low-level IRQ (CLIC)
+        run: |
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-clic --example hi_blocks_lo
+
+      - name: Test all IRQs (HETIC)
+        # Run optionally, or if HETIC is mentioned in commit
+        if: >
+          ${{
+            inputs.run_hetic_edfic ||
+            contains(github.event.head_commit.message, 'HETIC')
+          }}
+        run: |
+          make verilate INTC=HETIC
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-hetic --example all_irqs
+
+      - name: Test all IRQs (EDFIC)
+        # Run optionally, or if EDFIC is mentioned in commit
+        if: >
+          ${{
+            inputs.run_hetic_edfic ||
+            contains(github.event.head_commit.message, 'EDFIC')
+          }}
+        run: |
+          make verilate INTC=EDFIC
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-edfic --example all_irqs

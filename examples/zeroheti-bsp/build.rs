@@ -1,3 +1,4 @@
+use riscv_target_parser::RiscvTarget;
 use std::{collections::HashSet, env, fs, path::PathBuf, process::Command};
 
 const VALID_RISCV_EXTENSIONS: &[char] = &['i', 'e', 'm', 'c', 'a', 'f', 'd'];
@@ -101,7 +102,14 @@ fn main() {
                 .fold(String::new(), |acc, x| acc + &x.to_string())
         );
     }
+    // set environment variable RISCV_RT_BASE_ISA to the base ISA of the target.
+    let target = RiscvTarget::build(&target, &cargo_flags).unwrap();
+    println!(
+        "cargo:rustc-env=RISCV_RT_BASE_ISA={}",
+        target.llvm_base_isa()
+    );
 
+    println!("cargo:rerun-if-env-changed=RISCV_RT_BASE_ISA");
     println!("cargo:rerun-if-changed=build.rs");
 }
 

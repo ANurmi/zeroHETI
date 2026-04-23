@@ -1,4 +1,5 @@
 #![no_std]
+#![cfg_attr(feature = "default-trap-print", feature(linkage))]
 
 pub mod apb_uart;
 #[cfg(feature = "intc-clic")]
@@ -16,6 +17,7 @@ pub mod mmio;
 pub mod mtimer;
 #[cfg(feature = "panic")]
 pub mod panic;
+mod peripherals;
 pub mod register;
 pub mod tb;
 pub mod timer_group;
@@ -26,10 +28,14 @@ mod ufmt_sprint;
 #[cfg(feature = "ufmt")]
 pub use ufmt;
 
+#[cfg(feature = "embedded-hal")]
+pub use embedded_hal;
 pub use embedded_io;
+pub use peripherals::Peripherals;
 pub use riscv;
 #[cfg(feature = "rt")]
-pub use riscv_rt::{self as rt, core_interrupt, external_interrupt};
+pub use riscv_rt::{self as rt, core_interrupt};
+pub use riscv_types;
 
 use core::arch::asm;
 
@@ -43,30 +49,30 @@ compile_error!("Select exactly one of -Ffpga -Frtl-tb");
 
 // Generate the `_continue_nested_trap` symbol
 #[cfg(all(feature = "nest-continue", llvm_abiname = "ilp32"))]
-atalanta_bsp_macros::generate_continue_nested_trap_ilp32!();
+zeroheti_bsp_macros::generate_continue_nested_trap_ilp32!();
 
 #[cfg(all(feature = "nest-continue", llvm_abiname = "ilp32e"))]
-atalanta_bsp_macros::generate_continue_nested_trap_ilp32e!();
+zeroheti_bsp_macros::generate_continue_nested_trap_ilp32e!();
 
 // Re-export macros for nested interrupts
-pub use atalanta_bsp_macros::generate_pcs_trap_entry;
+pub use zeroheti_bsp_macros::generate_pcs_trap_entry;
 #[cfg(llvm_abiname = "ilp32")]
-pub use atalanta_bsp_macros::{
+pub use zeroheti_bsp_macros::{
     generate_continue_nested_trap_ilp32 as generate_continue_nested_trap,
     generate_nested_trap_entry_ilp32 as generate_nested_trap_entry,
     nested_interrupt_ilp32 as nested_interrupt,
 };
 #[cfg(llvm_abiname = "ilp32e")]
-pub use atalanta_bsp_macros::{
+pub use zeroheti_bsp_macros::{
     generate_continue_nested_trap_ilp32e as generate_continue_nested_trap,
     generate_nested_trap_entry_ilp32e as generate_nested_trap_entry,
     nested_interrupt_ilp32e as nested_interrupt,
 };
 
-#[cfg_attr(feature = "rtl-tb", doc = "100 MHz")]
+#[cfg_attr(feature = "rtl-tb", doc = "10 MHz")]
 pub const CPU_FREQ_HZ: u32 = match () {
     #[cfg(feature = "rtl-tb")]
-    () => 100_000_000,
+    () => 10_000_000,
     #[cfg(feature = "fpga")]
     () => 25_000_000,
 };
@@ -86,4 +92,16 @@ pub fn asm_delay(t: u32) {
     for _ in 0..t {
         unsafe { asm!("nop") }
     }
+}
+
+// Weakly link in a minimal but informative default handler to make debugging
+// incorrect interrupt handling slightly more obvious.
+#[cfg(feature = "default-trap-print")]
+#[linkage = "weak"]
+#[unsafe(export_name = "DefaultHandler")]
+unsafe fn print_irq() {
+    sprintln!(
+        "call to DefaultHandler, mcause.code={:#x?}",
+        riscv::register::mcause::read().code() & 0xfff,
+    );
 }

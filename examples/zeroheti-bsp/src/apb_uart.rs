@@ -46,38 +46,37 @@ impl<const BASE_ADDR: usize> ApbUartHal<BASE_ADDR> {
     pub fn init(freq: u32, baud: u32) -> Self {
         // Safety: all UART registers are 4-byte aligned which makes the below writes
         // always valid
-        unsafe {
-            // Read current peripheral clock divider
-            let divisor: u32 = freq / (baud << 4);
 
-            // Disable all interrupts
-            write_u8(BASE_ADDR + UART_IER_DLM_OFS, 0x00);
+        // Read current peripheral clock divider
+        let divisor: u32 = freq / (baud << 4);
 
-            // Enable DLAB (set baud rate divisor)
-            mask_u8(BASE_ADDR + UART_LCR_OFS, 0x80);
-            // Divisor (lo byte)
-            write_u8(BASE_ADDR + UART_DLAB_LSB_OFS, divisor as u8);
-            // Divisor (hi byte)
-            write_u8(BASE_ADDR + UART_DLAB_MSB_OFS, (divisor >> 8) as u8);
-            // 8 bits, no parity, one stop bit
-            write_u8(BASE_ADDR + UART_LCR_OFS, UartLcrDataBits::Bits8 as u8);
-            // Restore DLAB state
-            unmask_u8(BASE_ADDR + UART_LCR_OFS, UART_LCR_DLAB_BIT);
+        // Disable all interrupts
+        write_u8(BASE_ADDR + UART_IER_DLM_OFS, 0x00);
 
-            write_u8(
-                BASE_ADDR + UART_IIR_FCR_OFS,
-                // Enable FIFO
-                UART_FCR_FIFO_EN_BIT
+        // Enable DLAB (set baud rate divisor)
+        mask_u8(BASE_ADDR + UART_LCR_OFS, 0x80);
+        // Divisor (lo byte)
+        write_u8(BASE_ADDR + UART_DLAB_LSB_OFS, divisor as u8);
+        // Divisor (hi byte)
+        write_u8(BASE_ADDR + UART_DLAB_MSB_OFS, (divisor >> 8) as u8);
+        // 8 bits, no parity, one stop bit
+        write_u8(BASE_ADDR + UART_LCR_OFS, UartLcrDataBits::Bits8 as u8);
+        // Restore DLAB state
+        unmask_u8(BASE_ADDR + UART_LCR_OFS, UART_LCR_DLAB_BIT);
+
+        write_u8(
+            BASE_ADDR + UART_IIR_FCR_OFS,
+            // Enable FIFO
+            UART_FCR_FIFO_EN_BIT
                     // Clear RX & TX
                     | UART_FCR_FIFO_RX_RESET_BIT
                     | UART_FCR_FIFO_TX_RESET_BIT
                     // 14-byte threshold
                     | UART_FCR_TRIG_RX_LSB
                     | UART_FCR_TRIG_RX_MSB,
-            );
-            // Autoflow mode
-            write_u8(BASE_ADDR + UART_MCR_OFS, 0x20);
-        }
+        );
+        // Autoflow mode
+        write_u8(BASE_ADDR + UART_MCR_OFS, 0x20);
 
         #[cfg(any(all(feature = "fpga", feature = "rt"), feature = "panic"))]
         unsafe {
@@ -110,42 +109,40 @@ impl<const BASE_ADDR: usize> ApbUartHal<BASE_ADDR> {
     fn putc(&mut self, c: u8) {
         while !self.is_transmit_empty() {}
         // Safety: UART_THR is 4-byte aligned
-        unsafe { write_u8(BASE_ADDR + UART_RBR_THR_DLL_OFS, c) };
+        write_u8(BASE_ADDR + UART_RBR_THR_DLL_OFS, c);
     }
 
     #[inline]
     pub fn getc(&mut self) -> u8 {
         // Wait for data to become ready
-        while unsafe { read_u8(BASE_ADDR + UART_LSR_OFS) } & UART_LSR_RX_FIFO_VALID_BIT == 0 {}
+        while read_u8(BASE_ADDR + UART_LSR_OFS) & UART_LSR_RX_FIFO_VALID_BIT == 0 {}
 
         // SAFETY: UART0_ADDR is 4-byte aligned
-        unsafe { read_u8(BASE_ADDR) }
+        read_u8(BASE_ADDR)
     }
 
     /// Assert bit to cause hardware to raise an interrupt on specified UART
     /// interrupt.
     #[inline]
     pub fn listen(&mut self, int: UartInterrupt) {
-        unsafe {
-            // Save LCR for restoration
-            let p_lcr = read_u8(BASE_ADDR + UART_LCR_OFS);
+        // Save LCR for restoration
+        let p_lcr = read_u8(BASE_ADDR + UART_LCR_OFS);
 
-            // Deassert `LCR[7]` => IER_DLM is IER
-            let lcr = p_lcr & (0b1 << 7);
-            write_u8(BASE_ADDR + UART_LCR_OFS, lcr);
+        // Deassert `LCR[7]` => IER_DLM is IER
+        let lcr = p_lcr & (0b1 << 7);
+        write_u8(BASE_ADDR + UART_LCR_OFS, lcr);
 
-            // Set IER
-            write_u8(BASE_ADDR + UART_IER_DLM_OFS, int as u8);
+        // Set IER
+        write_u8(BASE_ADDR + UART_IER_DLM_OFS, int as u8);
 
-            // Restore `LCR`
-            write_u8(BASE_ADDR + UART_LCR_OFS, p_lcr);
-        }
+        // Restore `LCR`
+        write_u8(BASE_ADDR + UART_LCR_OFS, p_lcr);
     }
 
     #[inline]
     fn is_transmit_empty(&self) -> bool {
         // Safety: UART_LINE_STATUS is 4-byte aligned
-        unsafe { (read_u8(BASE_ADDR + UART_LSR_OFS) & 0x20) != 0 }
+        (read_u8(BASE_ADDR + UART_LSR_OFS) & 0x20) != 0
     }
 }
 

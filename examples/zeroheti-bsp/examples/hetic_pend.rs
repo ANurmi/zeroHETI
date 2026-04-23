@@ -2,8 +2,11 @@
 #![no_main]
 #![no_std]
 
-use riscv::{InterruptNumber, asm::nop, interrupt::Interrupt};
-use zeroheti_bsp::{CPU_FREQ_HZ, apb_uart::ApbUart, asm_delay, hetic::Hetic, rt::entry, sprintln};
+use riscv::{InterruptNumber, asm::nop};
+use zeroheti_bsp::{
+    CPU_FREQ_HZ, apb_uart::ApbUart, asm_delay, hetic::Hetic, interrupt::Interrupt, rt::entry,
+    sprintln,
+};
 
 #[entry]
 fn main() -> ! {
@@ -11,13 +14,13 @@ fn main() -> ! {
 
     sprintln!("[{} ({})]", core::file!(), env!("RISCV_EXTS"));
 
-    Hetic::line(22).set_level(6);
+    Hetic::line(22).set_level_prio(6);
     Hetic::line(22).pend();
 
-    Hetic::line(17).set_level(1);
+    Hetic::line(17).set_level_prio(1);
     Hetic::line(17).pend();
 
-    Hetic::line(3).set_level(8);
+    Hetic::line(3).set_level_prio(8);
     Hetic::line(3).pend();
 
     Hetic::line(3).enable();
@@ -40,9 +43,10 @@ fn main() -> ! {
 
 #[unsafe(export_name = "DefaultHandler")]
 unsafe fn custom_interrupt_handler() {
+    let code = riscv::register::mcause::read().code() & 0xfff;
     sprintln!(
         "IRQ: {:#x?} = {:?}",
-        riscv::register::mcause::read().code() & 0xfff,
-        Interrupt::from_number(riscv::register::mcause::read().code() & 0xfff),
+        code,
+        Interrupt::from_number(riscv::register::mcause::read().code() & 0xfff)
     );
 }

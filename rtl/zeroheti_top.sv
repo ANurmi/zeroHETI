@@ -14,6 +14,25 @@ module zeroheti_top
     input  logic                  jtag_td_i,
     output logic                  jtag_td_o,
     input  logic [NumExtIrqs-1:0] ext_irq_i,
+    input  logic [          31:0] axil_aw_addr_i,
+    input  logic [           2:0] axil_aw_prot_i,
+    input  logic                  axil_aw_valid_i,
+    output logic                  axil_aw_ready_o,
+    input  logic [          31:0] axil_w_data_i,
+    input  logic [           3:0] axil_w_strb_i,
+    input  logic                  axil_w_valid_i,
+    output logic                  axil_w_ready_o,
+    output logic [           1:0] axil_b_resp_o,
+    output logic                  axil_b_valid_o,
+    input  logic                  axil_b_ready_i,
+    input  logic [          31:0] axil_ar_addr_i,
+    input  logic [           2:0] axil_ar_prot_i,
+    input  logic                  axil_ar_valid_i,
+    output logic                  axil_ar_ready_o,
+    output logic [          31:0] axil_r_data_o,
+    output logic [           1:0] axil_r_resp_o,
+    output logic                  axil_r_valid_o,
+    input  logic                  axil_r_ready_i,
     input  logic                  uart_rx_i,
     output logic                  uart_tx_o,
     input  logic                  i2c_scl_pad_i,
@@ -27,10 +46,16 @@ module zeroheti_top
   localparam int unsigned NrIrqs = CoreCfg.num_irqs;
   localparam int unsigned ApbWidth = 32;
   localparam int unsigned DataWidth = 32;
-  localparam int unsigned NrApbPerip = 4;
+  localparam int unsigned NrApbPerip = 5;
   localparam int unsigned SelWidth = $clog2(NrApbPerip);
 
   OBI_BUS mbx_obi ();
+
+  AXI_LITE #(
+      .AXI_ADDR_WIDTH(32'd32),
+      .AXI_DATA_WIDTH(DataWidth)
+  ) mbx_axi ();
+
   APB core_apb ();
   APB demux_apb[NrApbPerip] ();
 
@@ -75,18 +100,20 @@ module zeroheti_top
   );
 
   obi_mbx i_mbx (
-    .clk_i,
-    .rst_ni,
-    .irq_o   (mbx_irq),
-    .obi_sbr (mbx_obi)
+      .clk_i,
+      .rst_ni,
+      .irq_o(mbx_irq),
+      .obi_sbr(mbx_obi),
+      .axil_sbr(mbx_axi)
   );
 
   always_comb begin : apb_decode
     unique case (core_apb.paddr) inside
-      [AddrMap.tg.base : AddrMap.tg.last - 1]:         demux_sel = SelWidth'('d3);
+      [AddrMap.cfg.base : AddrMap.cfg.last - 1]:       demux_sel = SelWidth'('d0);
+      [AddrMap.tg.base : AddrMap.tg.last - 1]:         demux_sel = SelWidth'('d1);
       [AddrMap.uart.base : AddrMap.uart.last - 1]:     demux_sel = SelWidth'('d2);
-      [AddrMap.mtimer.base : AddrMap.mtimer.last - 1]: demux_sel = SelWidth'('d1);
-      [AddrMap.i2c.base : AddrMap.i2c.last - 1]:       demux_sel = SelWidth'('d0);
+      [AddrMap.mtimer.base : AddrMap.mtimer.last - 1]: demux_sel = SelWidth'('d3);
+      [AddrMap.i2c.base : AddrMap.i2c.last - 1]:       demux_sel = SelWidth'('d4);
       default: begin
         demux_sel = SelWidth'('d0);
         if (core_apb.psel & core_apb.penable) $display("Warning: APB access to unmapped region!");
@@ -109,30 +136,66 @@ module zeroheti_top
   mock_uart i_mock_uart (
       .clk_i,
       .rst_ni,
-      .penable_i(demux_apb[1].penable),
-      .pwrite_i (demux_apb[1].pwrite),
-      .paddr_i  (demux_apb[1].paddr),
-      .psel_i   (demux_apb[1].psel),
-      .pwdata_i (demux_apb[1].pwdata),
-      .pstrb_i  (demux_apb[1].pstrb),
-      .prdata_o (demux_apb[1].prdata),
-      .pready_o (demux_apb[1].pready),
-      .pslverr_o(demux_apb[1].pslverr)
+      .penable_i(demux_apb[2].penable),
+      .pwrite_i (demux_apb[2].pwrite),
+      .paddr_i  (demux_apb[2].paddr),
+      .psel_i   (demux_apb[2].psel),
+      .pwdata_i (demux_apb[2].pwdata),
+      .pstrb_i  (demux_apb[2].pstrb),
+      .prdata_o (demux_apb[2].prdata),
+      .pready_o (demux_apb[2].pready),
+      .pslverr_o(demux_apb[2].pslverr)
   );
-  assign uart_irq = 1'b0;
+  assign uart_irq  = 1'b0;
+  assign uart_tx_o = 1'b0;
 `else
-  /*
+  logic [31:0] rdata_local;
+  logic [31:0] wdata_local;
+  logic [ 2:0] addr_local;
+  logic [ 2:0] addr_offs;
+
+  assign addr_local = demux_apb[2].paddr[2:0] + addr_offs;
+
+  always_comb begin
+    addr_offs           = 0;
+    wdata_local         = 0;
+    demux_apb[2].prdata = 0;
+    unique case (demux_apb[2].pstrb)
+      4'b0001: begin
+        addr_offs = 0;
+        demux_apb[2].prdata = {24'h0, rdata_local[7:0]};
+        wdata_local = {24'h0, demux_apb[2].pwdata[7:0]};
+      end
+      4'b0010: begin
+        addr_offs = 1;
+        demux_apb[2].prdata = {16'h0, rdata_local[7:0], 8'h0};
+        wdata_local = {24'h0, demux_apb[2].pwdata[15:8]};
+      end
+      4'b0100: begin
+        addr_offs = 2;
+        demux_apb[2].prdata = {8'h0, rdata_local[7:0], 16'h0};
+        wdata_local = {24'h0, demux_apb[2].pwdata[23:16]};
+      end
+      4'b1000: begin
+        addr_offs = 3;
+        demux_apb[2].prdata = {rdata_local[7:0], 24'h0};
+        wdata_local = {24'h0, demux_apb[2].pwdata[31:24]};
+      end
+      default: ;
+    endcase
+  end
+
   apb_uart i_apb_uart (
       .CLK    (clk_i),
       .RSTN   (rst_ni),
-      .PSEL   (demux_apb[1].psel),
-      .PENABLE(demux_apb[1].penable),
-      .PWRITE (demux_apb[1].pwrite),
-      .PADDR  (demux_apb[1].paddr[4:2]),
-      .PWDATA (demux_apb[1].pwdata),
-      .PRDATA (demux_apb[1].prdata),
-      .PREADY (demux_apb[1].pready),
-      .PSLVERR(demux_apb[1].pslverr),
+      .PSEL   (demux_apb[2].psel),
+      .PENABLE(demux_apb[2].penable),
+      .PWRITE (demux_apb[2].pwrite),
+      .PADDR  (addr_local),
+      .PWDATA (wdata_local),
+      .PRDATA (rdata_local),
+      .PREADY (demux_apb[2].pready),
+      .PSLVERR(demux_apb[2].pslverr),
       .INT    (uart_irq),
       .CTSN   (1'b0),
       .DSRN   (1'b0),
@@ -144,22 +207,21 @@ module zeroheti_top
       .DTRN   (),
       .SIN    (uart_rx_i),
       .SOUT   (uart_tx_o)
-  );*/
-  $fatal(1, "TODO: remap full UART");
+  );
 
 `endif
 
   apb_mtimer i_mtimer (
       .clk_i,
       .rst_ni,
-      .penable_i  (demux_apb[2].penable),
-      .pwrite_i   (demux_apb[2].pwrite),
-      .paddr_i    (demux_apb[2].paddr),
-      .psel_i     (demux_apb[2].psel),
-      .pwdata_i   (demux_apb[2].pwdata),
-      .prdata_o   (demux_apb[2].prdata),
-      .pready_o   (demux_apb[2].pready),
-      .pslverr_o  (demux_apb[2].pslverr),
+      .penable_i  (demux_apb[1].penable),
+      .pwrite_i   (demux_apb[1].pwrite),
+      .paddr_i    (demux_apb[1].paddr),
+      .psel_i     (demux_apb[1].psel),
+      .pwdata_i   (demux_apb[1].pwdata),
+      .prdata_o   (demux_apb[1].prdata),
+      .pready_o   (demux_apb[1].pready),
+      .pslverr_o  (demux_apb[1].pslverr),
       .mtime_o    (mtime),
       .timer_irq_o(mtime_irq)
   );
@@ -170,14 +232,14 @@ module zeroheti_top
   ) i_apb_timer (
       .HCLK   (clk_i),
       .HRESETn(rst_ni),
-      .PENABLE(demux_apb[0].penable),
-      .PWRITE (demux_apb[0].pwrite),
-      .PADDR  (demux_apb[0].paddr),
-      .PSEL   (demux_apb[0].psel),
-      .PWDATA (demux_apb[0].pwdata),
-      .PRDATA (demux_apb[0].prdata),
-      .PREADY (demux_apb[0].pready),
-      .PSLVERR(demux_apb[0].pslverr),
+      .PENABLE(demux_apb[3].penable),
+      .PWRITE (demux_apb[3].pwrite),
+      .PADDR  (demux_apb[3].paddr),
+      .PSEL   (demux_apb[3].psel),
+      .PWDATA (demux_apb[3].pwdata),
+      .PRDATA (demux_apb[3].prdata),
+      .PREADY (demux_apb[3].pready),
+      .PSLVERR(demux_apb[3].pslverr),
       .irq_o  (apb_timer_irqs)
   );
 
@@ -186,14 +248,14 @@ module zeroheti_top
   ) i_i2c (
       .HCLK        (clk_i),
       .HRESETn     (rst_ni),
-      .PADDR       (demux_apb[3].paddr),
-      .PWDATA      (demux_apb[3].pwdata),
-      .PWRITE      (demux_apb[3].pwrite),
-      .PSEL        (demux_apb[3].psel),
-      .PENABLE     (demux_apb[3].penable),
-      .PRDATA      (demux_apb[3].prdata),
-      .PREADY      (demux_apb[3].pready),
-      .PSLVERR     (demux_apb[3].pslverr),
+      .PADDR       (demux_apb[0].paddr),
+      .PWDATA      (demux_apb[0].pwdata),
+      .PWRITE      (demux_apb[0].pwrite),
+      .PSEL        (demux_apb[0].psel),
+      .PENABLE     (demux_apb[0].penable),
+      .PRDATA      (demux_apb[0].prdata),
+      .PREADY      (demux_apb[0].pready),
+      .PSLVERR     (demux_apb[0].pslverr),
       .interrupt_o (i2c_irq),
       .scl_pad_i   (i2c_scl_pad_i),
       .scl_pad_o   (i2c_scl_pad_o),
@@ -202,6 +264,36 @@ module zeroheti_top
       .sda_pad_o   (i2c_sda_pad_o),
       .sda_padoen_o(i2c_sda_padoen_o)
   );
+
+  apb_cfg_regs #() i_cfg_regs (
+      .clk_i,
+      .rst_ni,
+      .apb_i(demux_apb[4])
+  );
+
+  assign mbx_axi.aw_valid = axil_aw_valid_i;
+  assign mbx_axi.aw_addr = axil_aw_addr_i;
+  assign mbx_axi.aw_prot = axil_aw_prot_i;
+  assign axil_aw_ready_o = mbx_axi.aw_ready;
+
+  assign mbx_axi.w_valid = axil_w_valid_i;
+  assign mbx_axi.w_data = axil_w_data_i;
+  assign mbx_axi.w_strb = axil_w_strb_i;
+  assign axil_w_ready_o = mbx_axi.w_ready;
+
+  assign axil_b_resp_o = mbx_axi.b_resp;
+  assign axil_b_valid_o = mbx_axi.b_valid;
+  assign mbx_axi.b_ready = axil_b_ready_i;
+
+  assign mbx_axi.ar_valid = axil_ar_valid_i;
+  assign mbx_axi.ar_addr = axil_ar_addr_i;
+  assign mbx_axi.ar_prot = axil_ar_prot_i;
+  assign axil_ar_ready_o = mbx_axi.ar_ready;
+
+  assign axil_r_data_o = mbx_axi.r_data;
+  assign axil_r_resp_o = mbx_axi.r_resp;
+  assign axil_r_valid_o = mbx_axi.r_valid;
+  assign mbx_axi.r_ready = axil_r_ready_i;
 
 `ifndef SYNTHESIS
 `ifndef TECH_MEMORY
@@ -223,8 +315,23 @@ module zeroheti_top
       @(posedge rst_ni);
       $display("[DUT:SimLoader] Initializing program with $readmemh");
       $display("[DUT:SimLoader] APPLICABLE TO SIMULATED DESIGNS ONLY");
-      $readmemh({zeroHetiRoot, "/build/verilator_build/imem_stim.hex"}, i_core.i_imem.i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/dmem_stim.hex"}, i_core.i_dmem.i_sram.sram);
+
+      // Preload 4 IMEM banks
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_0.hex"},
+                  i_core.i_imem.g_banks[0].i_sram.sram);
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_1.hex"},
+                  i_core.i_imem.g_banks[1].i_sram.sram);
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_2.hex"},
+                  i_core.i_imem.g_banks[2].i_sram.sram);
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_3.hex"},
+                  i_core.i_imem.g_banks[3].i_sram.sram);
+
+      // Preload 2 DMEM banks
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_0.hex"},
+                  i_core.i_dmem.g_banks[0].i_sram.sram);
+      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_1.hex"},
+                  i_core.i_dmem.g_banks[1].i_sram.sram);
+
     end
   end
 

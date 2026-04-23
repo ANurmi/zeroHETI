@@ -18,16 +18,20 @@ mkdir -p ${SW_BUILD_DIR}
 cp $1 ${SW_BUILD_DIR}/$(basename $1).elf
 
 # Make hex
-TOOLCHAIN=riscv32-unknown-elf-
+XLEN=32
+TOOLCHAIN=riscv${XLEN}-unknown-elf-
 ${TOOLCHAIN}objcopy ${SW_BUILD_DIR}/$(basename $1).elf -O binary ${SW_BUILD_DIR}/tmp.bin
-xxd -R never -e ${SW_BUILD_DIR}/tmp.bin ${SW_BUILD_DIR}/tmp.hex
-cut -c 11-45 ${SW_BUILD_DIR}/tmp.hex > ${SW_BUILD_DIR}/tmp_pruned.hex
-sed -E 's/ /\n/g' ${SW_BUILD_DIR}/tmp_pruned.hex > ${SW_BUILD_DIR}/tmp_align.hex
+
+xxd -ps ${SW_BUILD_DIR}/tmp.bin ${SW_BUILD_DIR}/tmp.hex
+tr -d '\n' < ${SW_BUILD_DIR}/tmp.hex > ${SW_BUILD_DIR}/tmp_nl.hex
+sed -r 's/(.{8})/\1\n/g' < ${SW_BUILD_DIR}/tmp_nl.hex > ${SW_BUILD_DIR}/tmp_be.hex
+sed ':a; /^.\{8\}$$/!s/$$/0/; ta' < ${SW_BUILD_DIR}/tmp_be.hex > ${SW_BUILD_DIR}/tmp_be_pad.hex
+sed -E 's/(..)(..)(..)(..)/\4\3\2\1/' < ${SW_BUILD_DIR}/tmp_be_pad.hex > ${SW_BUILD_DIR}/tmp_le.hex
 
 # "trim" hex
-head -$(wc -w < ${SW_BUILD_DIR}/tmp_align.hex) ${SW_BUILD_DIR}/tmp_align.hex > ${SW_BUILD_DIR}/$(basename $1).hex
+head -$(wc -w < ${SW_BUILD_DIR}/tmp_le.hex) ${SW_BUILD_DIR}/tmp_le.hex > ${SW_BUILD_DIR}/$(basename $1).hex
 rm ${SW_BUILD_DIR}/tmp*
 
 # Run verilator simulation with ELF
 cd ${PROJECT_ROOT}
-make simv TEST=$(basename $1)
+make simv TEST=$(basename $1) XLEN=${XLEN}

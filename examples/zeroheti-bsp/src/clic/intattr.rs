@@ -1,5 +1,5 @@
 //! CLIC interrupt attribute register.
-use riscv_peripheral::common::{Reg, RW};
+use riscv_peripheral::common::{RW, Reg};
 
 /// Privilege Mode
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]

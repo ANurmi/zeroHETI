@@ -44,7 +44,11 @@ module vip_i2c #(
       .irq_o
   );
 
-  task handle_tx();
+  task automatic test_vip();
+    $display("Testing vip call [OK]");
+  endtask
+
+  task automatic handle_tx();
     automatic bit we;
     automatic logic [6:0] addr;
     automatic logic [7:0] data;
@@ -87,7 +91,7 @@ module vip_i2c #(
 
   endtask
 
-  task receive_address(output logic [6:0] addr, output bit we);
+  task automatic receive_address(output logic [6:0] addr, output bit we);
     automatic logic [7:0] rbyte;
 
     receive_byte(rbyte);
@@ -96,12 +100,12 @@ module vip_i2c #(
     send_ack();
   endtask
 
-  task receive_data(output logic [7:0] data);
+  task automatic receive_data(output logic [7:0] data);
     receive_byte(data);
     send_ack();
   endtask
 
-  task send_data(input logic [7:0] data);
+  task automatic send_data(input logic [7:0] data);
     sda_o = data[7];
     for (int unsigned i = 0; i < 8; i++) begin
       @(negedge scl_i);
@@ -112,7 +116,7 @@ module vip_i2c #(
     receive_ack();
   endtask
 
-  task send_ack();
+  task automatic send_ack();
     @(negedge scl_i);
     @(g_counter == InternalPrescaler / 2);
     sda_o = 0;
@@ -121,12 +125,12 @@ module vip_i2c #(
     sda_o = 1;
   endtask
 
-  task receive_ack();
+  task automatic receive_ack();
     @(negedge sda_i);
     @(negedge scl_i);
   endtask
 
-  task receive_byte(output logic [7:0] data);
+  task automatic receive_byte(output logic [7:0] data);
     g_counter = 0;
     for (int unsigned i = 0; i < 8; i++) begin
       @(posedge scl_i);
@@ -135,7 +139,7 @@ module vip_i2c #(
     end
   endtask
 
-  task delay_half(input int count);
+  task automatic delay_half(input int count);
     for (int i = 0; i < count; i++) begin
       g_counter = 0;
       @(g_counter == InternalPrescaler / 2);

@@ -3,7 +3,7 @@ BUILD_DIR       ?= $(ZH_ROOT)/build
 SW_BUILD_DIR    ?= $(ZH_ROOT)/build/sw
 VERIL_DIR       ?= $(ZH_ROOT)/verilator
 
-XLEN             = 64
+XLEN             = 32
 TOOLCHAIN        = riscv$(XLEN)-unknown-elf-
 
 TOP_MODULE       = zeroheti_top_wrapper
@@ -38,10 +38,11 @@ MULT             = M
 COMP             = C
 ISA              = RV32$(BASE)$(MULT)$(COMP)
 
+GIT_HASH = $(shell git rev-parse --short HEAD)
+
 VDEFS ?= \
   +define+VERILATOR=1 \
-  +define+MOCK_UART \
-  +define+MBX_SIM \
+	+define+GIT_HASH=$(GIT_HASH) \
 	+define+ZH_ROOT=$(ZH_ROOT) \
 	+define+IMEM_BYTES=$(IMEM_BYTES) \
 	+define+DMEM_BYTES=$(DMEM_BYTES) \
@@ -49,6 +50,10 @@ VDEFS ?= \
 	+define+LOAD=$(LOAD) \
   +define+COMMON_CELLS_ASSERTS_OFF \
 	+define+CORE_CFG=$(ISA)Cfg \
+
+ifdef FULL_UART
+VDEFS += +define+FULL_UART
+endif
 
 VFLAGS           = \
   $(VDEFS) \
@@ -94,25 +99,9 @@ lint:
 	$(VDEFS) $(INCLUDES) $(WAIVER) $(SOURCES)
 	@echo "Verilator lint [OK]"
 
-.PHONY: hex
-hex:
-	$(TOOLCHAIN)objcopy $(SW_BUILD_DIR)/$(TEST).elf -O binary $(SW_BUILD_DIR)/tmp.bin
-	@xxd -ps $(SW_BUILD_DIR)/tmp.bin $(SW_BUILD_DIR)/tmp.hex
-	@tr -d '\n' < $(SW_BUILD_DIR)/tmp.hex > $(SW_BUILD_DIR)/tmp_nl.hex
-	@sed -r 's/(.{8})/\1\n/g' < $(SW_BUILD_DIR)/tmp_nl.hex > $(SW_BUILD_DIR)/tmp_be.hex
-	@sed ':a; /^.\{8\}$$/!s/$$/0/; ta' < $(SW_BUILD_DIR)/tmp_be.hex > $(SW_BUILD_DIR)/tmp_be_pad.hex
-	@sed -E 's/(..)(..)(..)(..)/\4\3\2\1/' < $(SW_BUILD_DIR)/tmp_be_pad.hex > $(SW_BUILD_DIR)/tmp_le.hex
-
-.PHONY: trim
-trim:
-	@head -$(shell wc -w < $(SW_BUILD_DIR)/tmp_le.hex) $(SW_BUILD_DIR)/tmp_le.hex > $(SW_BUILD_DIR)/$(TEST).hex
-	@rm $(SW_BUILD_DIR)/tmp*
-
 .PHONY: $(TEST)
-$(TEST): hex trim
-	@cp $(BUILD_DIR)/sw/$(TEST).hex $(VERIL_BUILD_DIR)/verilator_stim.hex
-	@head -$(IMEM_WORDS)    $(VERIL_BUILD_DIR)/verilator_stim.hex > $(VERIL_BUILD_DIR)/imem_stim.hex
-	@tail -n +$(DMEM_START) $(VERIL_BUILD_DIR)/verilator_stim.hex > $(VERIL_BUILD_DIR)/dmem_stim.hex
+$(TEST): 
+	./format_elf.sh $(SW_BUILD_DIR)/$(TEST).elf $(VERIL_BUILD_DIR) $(IMEM_BYTES) 4 $(DMEM_BYTES) 2
 
 .PHONY: verilate
 verilate: init

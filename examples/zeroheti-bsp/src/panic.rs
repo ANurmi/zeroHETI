@@ -11,10 +11,10 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     #[cfg(feature = "core-fmt")]
     {
         use embedded_io::Write;
-        unsafe { write!(uart, "{}", info).unwrap_unchecked() };
+        unsafe { writeln!(uart, "{}", info).unwrap_unchecked() };
     }
     #[cfg(feature = "ufmt")]
-    write!(uart, "panic occurred");
+    writeln!(uart, "panic occurred");
 
     match () {
         #[cfg(feature = "rtl-tb")]

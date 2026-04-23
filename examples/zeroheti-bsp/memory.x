@@ -26,13 +26,15 @@ REGION_ALIAS("REGION_DATA", DMEM);
 PROVIDE(_start_DefaultHandler_trap = _start_trap);
 */
 
-PROVIDE(_start_SupervisorSoft_trap = _start_DefaultHandler_trap);
-PROVIDE(_start_Uart_trap = _start_DefaultHandler_trap);
-PROVIDE(_start_SupervisorTimer_trap = _start_DefaultHandler_trap);
+/* Core interrupts */
+/* NC: PROVIDE(_start_SupervisorSoft_trap = _start_DefaultHandler_trap); */
+PROVIDE(_start_MachineSoft_trap = _start_DefaultHandler_trap);
+/* NC: PROVIDE(_start_SupervisorTimer_trap = _start_DefaultHandler_trap); */
 PROVIDE(_start_MachineTimer_trap = _start_DefaultHandler_trap);
-PROVIDE(_start_SupervisorExternal_trap = _start_DefaultHandler_trap);
+/* NC: PROVIDE(_start_SupervisorExternal_trap = _start_DefaultHandler_trap); */
 PROVIDE(_start_MachineExternal_trap = _start_DefaultHandler_trap);
-PROVIDE(_start_I2c_trap = _start_DefaultHandler_trap);
+
+/* The following are specific to zeroHETI */
 PROVIDE(_start_Timer0Ovf_trap = _start_DefaultHandler_trap);
 PROVIDE(_start_Timer0Cmp_trap = _start_DefaultHandler_trap);
 PROVIDE(_start_Timer1Ovf_trap = _start_DefaultHandler_trap);
@@ -41,11 +43,11 @@ PROVIDE(_start_Timer2Ovf_trap = _start_DefaultHandler_trap);
 PROVIDE(_start_Timer2Cmp_trap = _start_DefaultHandler_trap);
 PROVIDE(_start_Timer3Ovf_trap = _start_DefaultHandler_trap);
 PROVIDE(_start_Timer3Cmp_trap = _start_DefaultHandler_trap);
-
-
-
-
-
-
-
-
+PROVIDE(_start_Uart_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_I2c_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Mbx_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Ext0_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Ext1_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Ext2_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Ext3_trap = _start_DefaultHandler_trap);
+PROVIDE(_start_Nmi_trap = _start_DefaultHandler_trap);

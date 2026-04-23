@@ -2,7 +2,7 @@ package zeroheti_pkg;
 
   localparam logic [31:0] BootAddr = 32'h0800;
 
-  typedef enum  integer {
+  typedef enum integer {
     HETIC = 0,
     CLIC  = 1,
     EDFIC = 2
@@ -38,7 +38,7 @@ package zeroheti_pkg;
   localparam core_cfg_t RV32EMCCfg = '{
       rve       : 1,
       bt_alu    : 1,
-      wb_stage  : 1,
+      wb_stage  : 0,
       mul       : ibex_pkg::RV32MSingleCycle,
       ic        : IntController,
       num_irqs  : 32,
@@ -82,10 +82,11 @@ package zeroheti_pkg;
     addr_rule_t dbg;
     addr_rule_t imem;
     addr_rule_t dmem;
-    addr_rule_t hetic;
+    addr_rule_t intc;
     addr_rule_t uart;
     addr_rule_t i2c;
     addr_rule_t tg;
+    addr_rule_t cfg;
     addr_rule_t mtimer;
     addr_rule_t ext;
   } addr_map_t;
@@ -103,10 +104,11 @@ package zeroheti_pkg;
       last : 32'h0000_3300 + (16 * TGSize)
   };
   localparam addr_rule_t I2cAddr = '{base : 32'h0000_3200, last : 32'h0000_3218};
+  localparam addr_rule_t CfgAddr = '{base : 32'h0000_3500, last : 32'h0000_3600};
   localparam addr_rule_t ImemAddr = '{base : 32'h0001_0000, last : (32'h0001_0000 + ImemSize)};
   localparam addr_rule_t DmemAddr = '{base : 32'h0002_0000, last : (32'h0002_0000 + DmemSize)};
   localparam addr_rule_t ExtAddr = '{base : 32'h0003_0000, last : 32'h0010_0000};
-  localparam addr_rule_t HetIcAddr = '{base : 32'h0010_0000, last : 32'h0010_2000};
+  localparam addr_rule_t IntcAddr = '{base : 32'h0010_0000, last : 32'h0010_2000};
 
   // imem size in words
   localparam int unsigned ImemWSize = ImemSize / 4;
@@ -117,9 +119,10 @@ package zeroheti_pkg;
       dbg    : DbgAddr,
       imem   : ImemAddr,
       dmem   : DmemAddr,
-      hetic  : HetIcAddr,
+      intc   : IntcAddr,
       uart   : UartAddr,
       i2c    : I2cAddr,
+      cfg    : CfgAddr,
       tg     : TimerGroupAddr,
       mtimer : MtimerAddr,
       ext    : ExtAddr
