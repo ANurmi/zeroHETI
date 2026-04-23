@@ -6,75 +6,23 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/sys_io.h>
 #include <debug/debug.h>
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 #include <i2c/i2c.h>
+#include "board.h"
+#include "mailbox.h"
+#include "motor.h"
 
-/* IRQ lines */
-#define IRQ_TIMER0CMP  17
-#define IRQ_TIMER1CMP  19
-#define IRQ_TIMER2CMP  21
-#define IRQ_TIMER3CMP  23
-#define IRQ_MBX        26
-#define IRQ_EXT0       27
-#define IRQ_EXT1       28
-#define IRQ_EXT2       29
-#define IRQ_EXT3       30
-
-/* Interrupt priorities */
-#define PRIO_TIMER_CMP 0x88
-#define PRIO_EXT       0x10
-#define PRIO_MBX       0x03
-
-/* Mailbox addresses */
-#define MBX_INBOX_ADDR   0x30000
-#define MBX_IRQ_ACK_ADDR 0x30004
-#define MBX_TIME_LO_ADDR 0x30008
-#define MBX_TIME_HI_ADDR 0x3000C
-#define MBX_M0_STAT_ADDR 0x30010
-#define MBX_M1_STAT_ADDR 0x30014
-#define MBX_M2_STAT_ADDR 0x30018
-#define MBX_M3_STAT_ADDR 0x3001C
-
-/* APB timer registers */
-#define TIMER0_BASE  0x3300
-#define TIMER1_BASE  0x3310
-#define TIMER2_BASE  0x3320
-#define TIMER3_BASE  0x3330
-
-#define TIMER_CNT(base)   ((base) + 0x0)
-#define TIMER_CTRL(base)  ((base) + 0x4)
-#define TIMER_CMP(base)   ((base) + 0x8)
-
-/* Time to cpu ticks */
-#define US_TO_TICKS(us)  ((us) * 10U)
-
+/*Timers OFS*/
 #define REP_PERIOD_TICKS  US_TO_TICKS(4000U)
 #define REP_OFS0_TICKS    US_TO_TICKS(3900U)
 #define REP_OFS1_TICKS    US_TO_TICKS(2900U)
 #define REP_OFS2_TICKS    US_TO_TICKS(1900U)
 #define REP_OFS3_TICKS    US_TO_TICKS( 900U)
 
-/* I2C slave addresses */
-#define I2C_SIM_CTRL_ADDR  0
-#define I2C_M0_STAT_ADDR   1
-#define I2C_M0_CTRL_ADDR   2
-#define I2C_M0_TUNE_ADDR   3
-#define I2C_M1_STAT_ADDR   4
-#define I2C_M1_CTRL_ADDR   5
-#define I2C_M1_TUNE_ADDR   6
-#define I2C_M2_STAT_ADDR   7
-#define I2C_M2_CTRL_ADDR   8
-#define I2C_M2_TUNE_ADDR   9
-#define I2C_M3_STAT_ADDR   10
-#define I2C_M3_CTRL_ADDR   11
-#define I2C_M3_TUNE_ADDR   12
-
-#define PRESCALER 4
 #define R_MOTOR 10000
 #define READ_CSR64(hi_csr, lo_csr, out)                          \
     do {                                                          \
@@ -87,19 +35,20 @@
         (out) = ((uint64_t)_hi << 32) | _lo;                    \
     } while (0)
 
+/* Shared state */
 static volatile uint32_t t_volt[4];
 static volatile uint32_t rep3_count;
 static volatile uint8_t sim_finished;
 static uint64_t sim_start_cycles;
 
-static inline void mbx_wr_stat(uint32_t stat_addr, uint32_t stat)
+void mbx_report_speed(uint8_t idx, uint32_t speed)
 {
-	uint64_t time_now = k_cycle_get_64();
-
-	sys_write32((uint32_t)(time_now & 0xffffffffULL), MBX_TIME_LO_ADDR);
-	sys_write32((uint32_t)(time_now >> 32), MBX_TIME_HI_ADDR);
-	sys_write32(stat, stat_addr);
+    uint64_t t = k_cycle_get_64();
+    sys_write32((uint32_t)(t & 0xffffffff), MBX_TIME_LO_ADDR);
+    sys_write32((uint32_t)(t >> 32),        MBX_TIME_HI_ADDR);
+    sys_write32(speed, mbx_stat_addr[idx]);
 }
+
 static inline uint32_t newton_sqrt(uint32_t val)
 {
 	if (val < 2U)
@@ -124,32 +73,42 @@ static inline int16_t speed_correct(uint32_t voltage_setpoint, uint32_t speed_ac
 
 	return correction;
 }
-static inline uint32_t motor_read_stat(uint8_t stat_addr)
+
+uint32_t motor_read_speed(uint8_t idx)
 {
-	uint8_t buf[4] = {0};
-	i2c_read_tx(stat_addr, buf, 4);
-	
-	//reconstruct the speed word
-	return ((uint32_t)buf[0]) |
-	       ((uint32_t)buf[1] << 8) |
-	       ((uint32_t)buf[2] << 16) |
-	       ((uint32_t)buf[3] << 24);
+    uint8_t buf[4] = {0};
+    unsigned int key = irq_lock();
+    i2c_read_tx(stat_m[idx], buf, 4);
+    irq_unlock(key);
+    
+    //Reconstruct the speed word
+    return ((uint32_t)buf[0])       |
+           ((uint32_t)buf[1] << 8)  |
+           ((uint32_t)buf[2] << 16) |
+           ((uint32_t)buf[3] << 24);
 }
-static inline void motor_write_ctrl(uint8_t ctrl_addr, uint8_t cmd_hi)
+
+void motor_write_ctrl(uint8_t idx, uint8_t voltage)
 {
-	uint8_t buf[2] = {0x00, cmd_hi};
-	i2c_write_tx(ctrl_addr, buf, 2);
+    uint8_t buf[2] = {0x00, voltage};
+
+    //Hold the lock for any I2C transaction 
+    unsigned int key = irq_lock();
+    i2c_write_tx(ctrl_m[idx], buf, 2);
+    irq_unlock(key);
 }
-static inline void motor_wr_tune(uint8_t tune_addr, int16_t tune)
+
+void motor_write_tune(uint8_t idx, int16_t tune)
 {
-	unsigned int key = irq_lock();
-		uint8_t buf[2] = {
-            (uint8_t)(tune & 0xff),
-            (uint8_t)(tune >> 8),
-	};
-	i2c_write_tx(tune_addr, buf, 2);
-	irq_unlock(key);
+    uint8_t buf[2] = {
+        (uint8_t)(tune & 0xff),
+        (uint8_t)(tune >> 8)
+    };
+    unsigned int key = irq_lock();
+    i2c_write_tx(tune_m[idx], buf, 2);
+    irq_unlock(key);
 }
+
 static void finish_sim(void)
 {
 	unsigned int key = irq_lock();
@@ -167,9 +126,9 @@ static void finish_sim(void)
 	sys_write32(0x0, TIMER_CTRL(TIMER2_BASE));
 	sys_write32(0x0, TIMER_CTRL(TIMER3_BASE));
 
-	/* Stop the simulation */
-	uint8_t sim_off = 0;
-	i2c_write_tx(I2C_SIM_CTRL_ADDR, &sim_off, 1);
+	/* Stop simulation */
+    uint8_t sim_off = 0;
+    i2c_write_tx(I2C_SIM_CTRL_ADDR, &sim_off, 1);
 	
 	uint64_t instret = 0;
 	uint64_t active_cc = 0;
@@ -197,41 +156,33 @@ static void finish_sim(void)
 static void isr_timer0cmp(void *arg)
 {
 	ARG_UNUSED(arg);
-	unsigned int key = irq_lock();
-	uint32_t stat = motor_read_stat(I2C_M0_STAT_ADDR);
-	irq_unlock(key);
+	uint32_t speed = motor_read_speed(0);
 
-	mbx_wr_stat(MBX_M0_STAT_ADDR, stat);
+	mbx_report_speed(0, speed);
 }
 
 static void isr_timer1cmp(void *arg)
 {
 	ARG_UNUSED(arg);
-	unsigned int key = irq_lock();
-	uint32_t stat = motor_read_stat(I2C_M1_STAT_ADDR);
-	irq_unlock(key);
+	uint32_t speed = motor_read_speed(1);
 
-	mbx_wr_stat(MBX_M1_STAT_ADDR, stat);
+	mbx_report_speed(1, speed);
 }
 
 static void isr_timer2cmp(void *arg)
 {
 	ARG_UNUSED(arg);
-	unsigned int key = irq_lock();
-	uint32_t stat = motor_read_stat(I2C_M2_STAT_ADDR);
-	irq_unlock(key);
+	uint32_t speed = motor_read_speed(2);
 
-	mbx_wr_stat(MBX_M2_STAT_ADDR, stat);
+	mbx_report_speed(2, speed);
 }
 
 static void isr_timer3cmp(void *arg)
 {
 	ARG_UNUSED(arg);
-	unsigned int key = irq_lock();
-	uint32_t stat = motor_read_stat(I2C_M3_STAT_ADDR);
-	irq_unlock(key);
+	uint32_t speed = motor_read_speed(3);
 
-	mbx_wr_stat(MBX_M3_STAT_ADDR, stat);
+	mbx_report_speed(3, speed);
 
 	//Fifth REP of M3 signals sim termination  
 	rep3_count++;
@@ -253,18 +204,12 @@ static void isr_mbx(void *arg)
 	};
 
 	//All I2C transactions should be locked
-	unsigned int key = irq_lock();
-	motor_write_ctrl(I2C_M0_CTRL_ADDR, bytes[0]);
-	motor_write_ctrl(I2C_M1_CTRL_ADDR, bytes[1]);
-	motor_write_ctrl(I2C_M2_CTRL_ADDR, bytes[2]);
-	motor_write_ctrl(I2C_M3_CTRL_ADDR, bytes[3]);
-	irq_unlock(key);
+    for (int i = 0; i < NUM_MOTORS; i++) {
+        motor_write_ctrl(i, bytes[i]);
 
-	//Save current voltages for later tune computation 
-	t_volt[0] = ((uint32_t)bytes[0]) << 8;
-	t_volt[1] = ((uint32_t)bytes[1]) << 8;
-	t_volt[2] = ((uint32_t)bytes[2]) << 8;
-	t_volt[3] = ((uint32_t)bytes[3]) << 8;
+		//Save current voltages for later tune computation 
+        t_volt[i] = (uint32_t)bytes[i] << 8;
+    }
 
 	sys_write32(1, MBX_IRQ_ACK_ADDR);
 }
@@ -272,50 +217,43 @@ static void isr_mbx(void *arg)
 static void isr_ext0(void *arg) 
 { 
   	ARG_UNUSED(arg); 
-	unsigned int key = irq_lock();
-	uint32_t speed_now = motor_read_stat(I2C_M0_STAT_ADDR);
-	irq_unlock(key);
+	uint32_t speed_now = motor_read_speed(0);
+
 	//We might need 16bit precision but clearly not now!
 	int16_t tune = speed_correct(t_volt[0], speed_now);
 
-	motor_wr_tune(I2C_M0_TUNE_ADDR, tune);
+	motor_write_tune(0, tune);
 }
 static void isr_ext1(void *arg) 
 { 
   	ARG_UNUSED(arg); 
-	unsigned int key = irq_lock();
-	uint32_t speed_now = motor_read_stat(I2C_M1_STAT_ADDR);
-	irq_unlock(key);
+	uint32_t speed_now = motor_read_speed(1);
 	int16_t tune = speed_correct(t_volt[1], speed_now);
 
-	motor_wr_tune(I2C_M1_TUNE_ADDR, tune);
+	motor_write_tune(1, tune);
 }
 static void isr_ext2(void *arg) 
 { 
   	ARG_UNUSED(arg); 
-	unsigned int key = irq_lock();
-	uint32_t speed_now = motor_read_stat(I2C_M2_STAT_ADDR);
-	irq_unlock(key);
+	uint32_t speed_now = motor_read_speed(2);
 	int16_t tune = speed_correct(t_volt[2], speed_now);
 
-	motor_wr_tune(I2C_M2_TUNE_ADDR, tune);
+	motor_write_tune(2, tune);
 }
 static void isr_ext3(void *arg) 
 { 
   	ARG_UNUSED(arg); 
-	unsigned int key = irq_lock();
-	uint32_t speed_now = motor_read_stat(I2C_M3_STAT_ADDR);
-	irq_unlock(key);
+	uint32_t speed_now = motor_read_speed(3);
 	int16_t tune = speed_correct(t_volt[3], speed_now);
 
-	motor_wr_tune(I2C_M3_TUNE_ADDR, tune);
+	motor_write_tune(3, tune);
 }
 
 int main(void)
 {
 	printf("Motor Control demo %s\n", CONFIG_BOARD_TARGET);
 	
-	i2c_init(PRESCALER);
+	i2c_init(I2C_PRESCALER);
 	
 	/* Setup IRQs */
 	IRQ_CONNECT(IRQ_TIMER0CMP, PRIO_TIMER_CMP, isr_timer0cmp, NULL, 1);
@@ -379,8 +317,8 @@ int main(void)
 	sim_start_cycles = k_cycle_get_64();
 
 	//Kickstart the simulation
-	uint8_t sim_on = 1;
-	i2c_write_tx(I2C_SIM_CTRL_ADDR, &sim_on, 1);
+    uint8_t sim_on = 1;
+    i2c_write_tx(I2C_SIM_CTRL_ADDR, &sim_on, 1);
 
 	// Release interrupts
 	__asm__ volatile ("csrw 0x347, %0" :: "r"(0x00));
