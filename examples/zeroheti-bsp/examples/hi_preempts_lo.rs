@@ -31,20 +31,19 @@ fn main() -> ! {
 
     // Check results after timeout
     let mut mtimer = MTimer::instance().into_oneshot();
-    let timeout = 10u64.micros();
+    let timeout = 1000u64.micros();
     mtimer.start(timeout);
 
     unsafe { riscv::interrupt::enable() };
 
-    // Dispatch both high-level and low-level interrupt in that order.
-    // After mtimer timeout, the mtimer handler ensures that only the
-    // high-level interrupt was acknowledged, but the low-level interrupt was
-    // not since it was blocked by the high-level interrupt.
-    pend_irq(Interrupt::Ext0);
+    // Dispatch both low-level and high-level interrupt in that order.
+    // After mtimer timeout, the mtimer handler ensures that both interrupts
+    // were acknowledged indicating that high preempted low.
     pend_irq(Interrupt::Ext1);
+    pend_irq(Interrupt::Ext0);
 
     // It is considered a failure, if execution falls through the interrupt
-    // handlers (high should block until mtimer triggers).
+    // handlers (low should block until preempted by high).
     zeroheti_bsp::tb::signal_fail(Some(&mut serial));
 
     loop {}
@@ -56,19 +55,20 @@ fn main() -> ! {
 fn Ext0() {
     unsafe { HI_VISITED = true };
     sprintln!("hi enter");
-    // Block and preempt at high level, ensuring that low interrupt-level
-    // interrupt never gets acknowledged.
-    loop {}
 }
 
 /// A.k.a., 'low_level'
-#[zeroheti_bsp::nested_interrupt]
+#[zeroheti_bsp::core_interrupt(Interrupt::Ext1)]
 #[allow(non_snake_case)]
-fn Ext1() {
+fn low_level() {
     unsafe { LO_VISITED = true };
-    // This should never happen, since high_level should block low_level
-    assert!(false, "low-level interrupt should have been blocked");
     sprintln!("lo enter");
+
+    // Enable preemption
+    unsafe { core::arch::asm!("csrsi mstatus, 8") };
+
+    // Block, allowing high-level interrupt to preempt this before test timeout
+    loop {}
 }
 
 #[zeroheti_bsp::core_interrupt(Interrupt::MachineTimer)]
@@ -78,8 +78,8 @@ fn timeout() {
         "high-level interrupt should have been visited"
     );
     assert!(
-        unsafe { !LO_VISITED },
-        "low-level interrupt should have been blocked"
+        unsafe { LO_VISITED },
+        "low-level interrupt should have been visited"
     );
 
     // If all assertions are true, signal pass
