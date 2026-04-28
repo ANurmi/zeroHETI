@@ -8,5 +8,22 @@ on:
 jobs:
   build-zephyr:
     runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci:v0.29.2
+    
+    steps:
+      - name: Fetch zephyr dependencies
+        run: |
+          west init -l    
+          west update 
 
+      - name: build motor-control app
+        run: | 
+          west build -b hetiboard zeroheti/examples/zephyr/motor_control -p always
+      
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: zephyr-motor-elf
+          path: zeroheti/build/sw/zephyr.elf
   
