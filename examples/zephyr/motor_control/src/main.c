@@ -41,7 +41,7 @@ static volatile uint32_t rep3_count;
 static volatile uint8_t sim_finished;
 static uint64_t sim_start_cycles;
 
-void mbx_report_speed(uint8_t idx, uint32_t speed)
+static inline void mbx_report_speed(uint8_t idx, uint32_t speed)
 {
     uint64_t t = k_cycle_get_64();
     sys_write32((uint32_t)(t & 0xffffffff), MBX_TIME_LO_ADDR);
@@ -74,7 +74,7 @@ static inline int16_t speed_correct(uint32_t voltage_setpoint, uint32_t speed_ac
 	return correction;
 }
 
-uint32_t motor_read_speed(uint8_t idx)
+static inline uint32_t motor_read_speed(uint8_t idx)
 {
     uint8_t buf[4] = {0};
     unsigned int key = irq_lock();
@@ -88,7 +88,7 @@ uint32_t motor_read_speed(uint8_t idx)
            ((uint32_t)buf[3] << 24);
 }
 
-void motor_write_ctrl(uint8_t idx, uint8_t voltage)
+static inline void motor_write_ctrl(uint8_t idx, uint8_t voltage)
 {
     uint8_t buf[2] = {0x00, voltage};
 
@@ -98,7 +98,7 @@ void motor_write_ctrl(uint8_t idx, uint8_t voltage)
     irq_unlock(key);
 }
 
-void motor_write_tune(uint8_t idx, int16_t tune)
+static inline void motor_write_tune(uint8_t idx, int16_t tune)
 {
     uint8_t buf[2] = {
         (uint8_t)(tune & 0xff),
