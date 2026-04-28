@@ -12,9 +12,13 @@ jobs:
       image: ghcr.io/zephyrproject-rtos/ci:v0.29.2
     
     steps:
+      - uses: actions/checkout@v4
+        with:
+          path: zeroheti
+
       - name: Fetch zephyr dependencies
         run: |
-          west init -l $GITHUB_WORKSPACE/zeroheti    
+          west init -l zeroheti    
           west update 
 
       - name: build motor-control app
