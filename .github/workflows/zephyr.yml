@@ -1,0 +1,12 @@
+name: zephyr motor_control specific workflow
+
+on:
+  push:
+    branches:
+      - zephyr/motor_control
+
+jobs:
+  build-zephyr:
+    runs-on: ubuntu-24.04
+
+  
