@@ -26,4 +26,20 @@ jobs:
         with:
           name: zephyr-motor-elf
           path: zeroheti/build/sw/zephyr.elf
-  
+
+  build-hw:
+    needs: build-zephyr
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/soc-hub-fi/zeroheti-ci:latest
+      options: --user 0
+
+    steps:    
+      - uses: actions/checkout@v4
+        with:
+          path: zeroheti
+      
+      - name: Build hardware
+        run: |
+          cd zeroheti/
+          make verilate INTC=CLIC
