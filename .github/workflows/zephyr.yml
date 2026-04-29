@@ -29,7 +29,7 @@ jobs:
       - name: build motor-control app
         run: | 
           cd zephyr/
-          west build -b hetiboard zeroheti/examples/zephyr/motor_control -p always
+          west build -b hetiboard $GITHUB_WORKSPACE/zeroheti/examples/zephyr/motor_control -p always
       
       - name: Upload firmware
         uses: actions/upload-artifact@v4
