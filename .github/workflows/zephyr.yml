@@ -56,7 +56,7 @@ jobs:
       
       - name: Build hardware
         run: |
-          mkdir zeroheti/build/sw
+          mkdir zeroheti/build && zeroheti/build/sw 
           cd zeroheti/
           make verilate INTC=CLIC
 
