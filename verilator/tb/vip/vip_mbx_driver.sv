@@ -12,18 +12,19 @@ module vip_mbx_driver #(
   localparam logic [31:0] IboxDataAddr = 32'h0003_0010;
   localparam logic [31:0] OboxAddrAddr = 32'h0003_0014;
   localparam logic [31:0] OboxDataAddr = 32'h0003_0018;
-
+/*
   localparam logic [31:0] SimParam0 = 32'h0100_0000;
   localparam logic [31:0] SimParam1 = 32'h0200_0000;
   localparam logic [31:0] SimParam2 = 32'h0300_0000;
   localparam logic [31:0] SimParam3 = 32'h0400_0000;
-
+*/
   typedef struct packed {
     logic [31:0] addr;
     logic [31:0] data;
   } letter_t;
 
-  int unsigned ps = 'd600;
+  // Polls every 10 us @ 10 MHz
+  int unsigned ps = 'd100;
   int unsigned cnt = 0;
 
   always @(posedge clk_i) begin
