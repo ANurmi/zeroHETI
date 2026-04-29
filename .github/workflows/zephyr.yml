@@ -35,7 +35,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zephyr-motor-elf
-          path: zeroheti/build/sw/zephyr.elf
+          path: build/zephyr/zephyr.elf
 
   build-hw:
     needs: build-zephyr
@@ -48,9 +48,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: zeroheti
+
+      - name: Fetch dependencies
+        run: bender update && bender vendor init
       
       - name: Build hardware
         run: |
+          mkdir zeroheti/build/sw
           cd zeroheti/
           make verilate INTC=CLIC
 
