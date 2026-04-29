@@ -12,15 +12,16 @@ module vip_sim_env #(
 
   localparam logic [31:0] SimStartAddr = 32'h0100_0000;
   localparam logic [31:0] SimEndAddr = 32'h0100_0001;
+  localparam logic [31:0] SimPsAddr = 32'h0100_0002;
   localparam logic [31:0] DlMbxAddr = 32'h0200_0000;
   localparam logic [31:0] DlWrnAddr = 32'h0200_0001;
   localparam logic [31:0] DlRepAddr = 32'h0200_0002;
 
   logic            [3:0] motor_irqs;
   logic                  motor_enable;
-
   int unsigned           motor_prescaler;
 
+  int unsigned           scb_prescaler;
   logic                  scb_enable;
 
   longint unsigned       dl_mbx_us;
@@ -87,7 +88,8 @@ module vip_sim_env #(
 
   vip_task_scoreboard i_scoreboard (
       .clk_i,
-      .enable_i(scb_enable),
+      .enable_i   (scb_enable),
+      .prescaler_i(scb_prescaler),
       .mbx_dl_us_i(dl_mbx_us),
       .wrn_dl_us_i(dl_wrn_us),
       .rep_dl_us_i(dl_rep_us)
@@ -96,14 +98,17 @@ module vip_sim_env #(
   task automatic recv_letter(input logic [31:0] addr, input logic [31:0] data);
     unique case (addr)
       SimStartAddr: begin
-        $display("Start trig");
+        $display("[SCB] Simulation start");
         motor_enable = 1'b1;
         scb_enable   = 1'b1;
       end
       SimEndAddr: begin
-        $display("End trig");
+        $display("[SCB] Simulation end");
         motor_enable = 1'b0;
         scb_enable   = 1'b0;
+      end
+      SimPsAddr: begin
+        scb_prescaler = data;
       end
       DlMbxAddr: dl_mbx_us = 64'(data);
       DlWrnAddr: dl_wrn_us = 64'(data);
@@ -111,13 +116,6 @@ module vip_sim_env #(
       default:
       $display("[VIP_SIM_ENV]: Warning! Received letter with unknown address: 0x%8h", addr);
     endcase
-    /*
-    $display("Dingdong: %h, %h", addr, data);
-    if (addr == 32'h0400_0000) begin
-      i_mbx_drv.send_letter(32'h1234_0000, 32'h0000_2222);
-      i_mbx_drv.send_letter(32'h6767_6767, 32'h1234_1234);
-      i_mbx_drv.raise_irq();
-    end*/
   endtask
 
 endmodule : vip_sim_env
