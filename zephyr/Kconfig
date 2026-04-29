@@ -1,1 +1,1 @@
-source "$(ZEPHYR_MODULE_DIR,zeroheti)/zephyr/drivers/interrupt_controller/Kconfig"
+source "$(ZEPHYR_ZEROHETI_MODULE_DIR)/zephyr/drivers/interrupt_controller/Kconfig"
