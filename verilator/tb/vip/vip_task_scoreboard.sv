@@ -2,6 +2,7 @@ module vip_task_scoreboard #(
 ) (
     input logic            clk_i,
     input logic            enable_i,
+    input int unsigned     prescaler_i,
     input longint unsigned mbx_dl_us_i,
     input longint unsigned wrn_dl_us_i,
     input longint unsigned rep_dl_us_i
@@ -23,6 +24,20 @@ module vip_task_scoreboard #(
   } task_t;
 
   task_t [TaskSetSize-1:0] task_set;
+
+  longint unsigned counter_us = 0;
+  int unsigned pre_counter = 0;
+
+  always @(posedge clk_i) begin
+    if (enable_i) begin
+      if (pre_counter == prescaler_i - 1) begin
+        pre_counter = 0;
+        counter_us++;
+      end else begin
+        pre_counter++;
+      end
+    end
+  end
 
   initial begin
 

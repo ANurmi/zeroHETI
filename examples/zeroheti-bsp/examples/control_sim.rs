@@ -24,6 +24,7 @@ const MBX_ODAT_ADDR: u32 = 0x0003_0018;
 
 const SIM_START_ADDR: u32 = 0x0100_0000;
 const SIM_END_ADDR: u32 = 0x0100_0001;
+const SIM_PRESCALER_ADDR: u32 = 0x0100_0002;
 
 const DL_MBX_ADDR: u32 = 0x0200_0000;
 const DL_WRN_ADDR: u32 = 0x0200_0001;
@@ -78,9 +79,10 @@ fn main() -> ! {
     send_letter(DL_WRN_ADDR, 0x200);
     send_letter(DL_REP_ADDR, 0x300);
 
-    send_letter(SIM_PARAM_2_ADDR, 0xBBBB_BBBB);
-    send_letter(SIM_PARAM_3_ADDR, 0xCCCC_CCCC);
+    //  send_letter(SIM_PARAM_2_ADDR, 0xBBBB_BBBB);
+    //  send_letter(SIM_PARAM_3_ADDR, 0xCCCC_CCCC);
 
+    send_letter(SIM_PRESCALER_ADDR, 10);
     send_letter(SIM_START_ADDR, 0x0);
     //i2c.read(0x68, &mut rbuf_4);
 
