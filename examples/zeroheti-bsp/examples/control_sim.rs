@@ -25,13 +25,15 @@ const MBX_ODAT_ADDR: u32 = 0x0003_0018;
 const SIM_START_ADDR: u32 = 0x0100_0000;
 const SIM_END_ADDR: u32 = 0x0100_0001;
 const SIM_PRESCALER_ADDR: u32 = 0x0100_0002;
+const SIM_LOADFACTOR_ADDR: u32 = 0x0100_0003;
+const SIM_SEED_ADDR: u32 = 0x0100_0004;
 
 const DL_MBX_ADDR: u32 = 0x0200_0000;
 const DL_WRN_ADDR: u32 = 0x0200_0001;
 const DL_REP_ADDR: u32 = 0x0200_0002;
 
-const SIM_PARAM_2_ADDR: u32 = 0x0300_0000;
-const SIM_PARAM_3_ADDR: u32 = 0x0400_0000;
+const TASK_MBX_ACK_ADDR: u32 = 0x0300_0000;
+//const SIM_PARAM_3_ADDR: u32 = 0x0400_0000;
 
 const fn parse_u32(s: &str) -> u32 {
     let mut out: u32 = 0;
@@ -46,6 +48,7 @@ const fn parse_u32(s: &str) -> u32 {
 
 const LF: u32 = parse_u32(env!("LOAD_FACTOR"));
 const PS: u32 = 10;
+const SEED: u32 = 0xB0110c55;
 const RUNTIME_MS: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
 
 struct SimParams {
@@ -68,23 +71,26 @@ fn main() -> ! {
     setup_irq(Interrupt::MachineTimer);
 
     let mut mtimer = MTimer::instance().into_oneshot();
-    mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
     sprintln!("Simulation configuration and parameters:");
-    sprintln!(" - Simulation runtime (ms) : {}", SIM_PARAMS.hyperperiod_ms);
-    sprintln!(" - Simulation prescaler    : {}", PS);
-    sprintln!(" - Load factor     (0-100) : {}", LF);
+    sprintln!(" - Runtime (ms)        : {}", SIM_PARAMS.hyperperiod_ms);
+    sprintln!(" - Prescaler           : {}", PS);
+    sprintln!(" - Seed                : 0x{:X}", SEED);
+    sprintln!(" - Load factor [0-100] : {}", LF);
 
     send_letter(DL_MBX_ADDR, 0x100);
     send_letter(DL_WRN_ADDR, 0x200);
     send_letter(DL_REP_ADDR, 0x300);
 
-    //  send_letter(SIM_PARAM_2_ADDR, 0xBBBB_BBBB);
-    //  send_letter(SIM_PARAM_3_ADDR, 0xCCCC_CCCC);
+    wait_outbox_empty();
 
-    send_letter(SIM_PRESCALER_ADDR, 10);
+    send_letter(SIM_SEED_ADDR, SEED);
+    send_letter(SIM_LOADFACTOR_ADDR, LF);
+    send_letter(SIM_PRESCALER_ADDR, PS);
     send_letter(SIM_START_ADDR, 0x0);
     //i2c.read(0x68, &mut rbuf_4);
+
+    mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
     unsafe { riscv::interrupt::enable() };
     i2c.irq_enable();
@@ -95,6 +101,11 @@ fn main() -> ! {
     loop {
         wfi();
     }
+}
+
+#[inline]
+fn wait_outbox_empty() {
+    while ((mmio::read_u32(MBX_STAT_ADDR as usize) & (1 << 2)) == 0) {}
 }
 
 #[inline]
@@ -116,10 +127,17 @@ fn MachineTimer() {
 #[nested_interrupt]
 fn Mbx() {
     unsafe { riscv::interrupt::disable() };
+    // Read inbox
     let addr = mmio::read_u32(MBX_IADD_ADDR as usize);
     let data = mmio::read_u32(MBX_IDAT_ADDR as usize);
+    // Inbox read ack
     mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0100_0000);
     sprintln!("[ISR] read {:x} from {:x}", data, addr);
+
+    // Ack MBX task
+    send_letter(TASK_MBX_ACK_ADDR, 0x0);
+
+    // IRQ clear
     mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0002_0000);
     unsafe { riscv::interrupt::enable() };
 }

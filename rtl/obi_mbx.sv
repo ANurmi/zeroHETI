@@ -15,8 +15,9 @@ module obi_mbx #(
   localparam logic [31:0] OboxAddrAddr = 32'h0003_0014;
   localparam logic [31:0] OboxDataAddr = 32'h0003_0018;
 
-  localparam int unsigned InboxDepth = 5;
-  localparam int unsigned OutboxDepth = 5;
+  localparam int unsigned MbxDepth = 8;
+  localparam int unsigned InboxDepth = MbxDepth;
+  localparam int unsigned OutboxDepth = MbxDepth;
 
   typedef struct packed {
     logic [31:0] addr;
@@ -222,8 +223,8 @@ module obi_mbx #(
   );
 
   // qverify tieoffs
-  assign axil_sbr.b_resp   = 'b0;
-  assign axil_sbr.r_resp   = 'b0;
+  assign axil_sbr.b_resp = 'b0;
+  assign axil_sbr.r_resp = 'b0;
 
 endmodule : obi_mbx
 

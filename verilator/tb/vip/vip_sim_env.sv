@@ -13,15 +13,20 @@ module vip_sim_env #(
   localparam logic [31:0] SimStartAddr = 32'h0100_0000;
   localparam logic [31:0] SimEndAddr = 32'h0100_0001;
   localparam logic [31:0] SimPsAddr = 32'h0100_0002;
+  localparam logic [31:0] SimLfAddr = 32'h0100_0003;
+  localparam logic [31:0] SimSeedAddr = 32'h0100_0004;
   localparam logic [31:0] DlMbxAddr = 32'h0200_0000;
   localparam logic [31:0] DlWrnAddr = 32'h0200_0001;
   localparam logic [31:0] DlRepAddr = 32'h0200_0002;
+  localparam logic [31:0] MbxAckAddr = 32'h0300_0000;
 
   logic            [3:0] motor_irqs;
   logic                  motor_enable;
   int unsigned           motor_prescaler;
 
+  int unsigned           scb_loadfactor;
   int unsigned           scb_prescaler;
+  int unsigned           scb_seed;
   logic                  scb_enable;
 
   longint unsigned       dl_mbx_us;
@@ -88,11 +93,13 @@ module vip_sim_env #(
 
   vip_task_scoreboard i_scoreboard (
       .clk_i,
-      .enable_i   (scb_enable),
-      .prescaler_i(scb_prescaler),
-      .mbx_dl_us_i(dl_mbx_us),
-      .wrn_dl_us_i(dl_wrn_us),
-      .rep_dl_us_i(dl_rep_us)
+      .enable_i    (scb_enable),
+      .prescaler_i (scb_prescaler),
+      .loadfactor_i(scb_loadfactor),
+      .seed_i      (scb_seed),
+      .mbx_dl_us_i (dl_mbx_us),
+      .wrn_dl_us_i (dl_wrn_us),
+      .rep_dl_us_i (dl_rep_us)
   );
 
   task automatic recv_letter(input logic [31:0] addr, input logic [31:0] data);
@@ -107,12 +114,13 @@ module vip_sim_env #(
         motor_enable = 1'b0;
         scb_enable   = 1'b0;
       end
-      SimPsAddr: begin
-        scb_prescaler = data;
-      end
+      SimLfAddr: scb_loadfactor = data;
+      SimPsAddr: scb_prescaler = data;
+      SimSeedAddr: scb_seed = data;
       DlMbxAddr: dl_mbx_us = 64'(data);
       DlWrnAddr: dl_wrn_us = 64'(data);
       DlRepAddr: dl_rep_us = 64'(data);
+      MbxAckAddr: i_sim_env.i_scoreboard.retire_task(0);
       default:
       $display("[VIP_SIM_ENV]: Warning! Received letter with unknown address: 0x%8h", addr);
     endcase

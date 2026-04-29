@@ -3,6 +3,8 @@ module vip_task_scoreboard #(
     input logic            clk_i,
     input logic            enable_i,
     input int unsigned     prescaler_i,
+    input int unsigned     loadfactor_i,
+    input int unsigned     seed_i,
     input longint unsigned mbx_dl_us_i,
     input longint unsigned wrn_dl_us_i,
     input longint unsigned rep_dl_us_i
@@ -28,20 +30,50 @@ module vip_task_scoreboard #(
   longint unsigned counter_us = 0;
   int unsigned pre_counter = 0;
 
-  always @(posedge clk_i) begin
+  always @(posedge clk_i) begin : us_counter
     if (enable_i) begin
       if (pre_counter == prescaler_i - 1) begin
         pre_counter = 0;
         counter_us++;
-      end else begin
-        pre_counter++;
+      end else pre_counter++;
+    end
+  end : us_counter
+
+  always @(counter_us) begin : scb_main_proc
+
+    // Check for deadline misses
+    for (int i = 0; i < TaskSetSize; i++) begin
+      if (task_set[i].active & task_set[i].dl_us == 0) begin
+        $fatal(1, "Deadline miss for task %0d!", i);
       end
     end
-  end
+
+    // Decrement DL of active tasks
+    for (int i = 0; i < TaskSetSize; i++) begin
+      if (task_set[i].active) task_set[i].dl_us--;
+    end
+
+    // Produce randomized asynchronous events
+    // - Load factor   0: ~1 / 1000 us
+    // - Load factor 100: ~1 / 10 us
+    if ($urandom_range(0, 999) < loadfactor_i + 1) begin
+      // Issue mailbox task with 10 % probability
+      if ($urandom_range(0, 9) < 1) begin
+        // TODO:send letter
+        //i_vip_zeroheti_top.i_mbx_drv.raise_irq();
+        i_mbx_drv.raise_irq();
+        activate_task(0);
+      end
+    end
+  end : scb_main_proc
 
   initial begin
 
     @(posedge enable_i);
+
+    // Seed random generator
+    $urandom(seed_i);
+    $urandom_range(seed_i);
 
     for (int i = 0; i < TaskSetSize; i++) begin
       task_set[i].active = 1'b0;
@@ -62,6 +94,15 @@ module vip_task_scoreboard #(
     end
 
   end
+
+  task automatic activate_task(input int idx);
+    if (!task_set[idx].active) task_set[idx].active = 1;
+  endtask
+
+  task automatic retire_task(input int idx);
+    if (task_set[idx].active) task_set[idx].active = 0;
+    // TODO: log slack
+  endtask
 
 endmodule : vip_task_scoreboard
 
