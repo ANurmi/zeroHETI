@@ -58,6 +58,7 @@ jobs:
         run: |
           mkdir zeroheti/build && mkdir zeroheti/build/sw 
           cd zeroheti/
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           make verilate INTC=CLIC
 
       - name: Download firmware
