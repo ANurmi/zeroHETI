@@ -1,6 +1,7 @@
 use crate::{
     mmap::i2c::*,
-    mmio::{mask_u8, read_u8, unmask_u8, write_u8, write_u16},
+    mmio::{mask_u8, read_u8, unmask_u8, write_u16, write_u8},
+    riscv::asm::wfi,
 };
 
 pub struct I2cHal<const BASE_ADDR: usize>;
@@ -71,6 +72,10 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
         unmask_u8(BASE_ADDR + I2C_CTRL_OFS, 1 << 6);
     }
 
+    pub fn irq_ack(&mut self) {
+        self.set_cmd(Cmd::IA);
+    }
+
     #[inline]
     fn get_tip(&self) -> u8 {
         read_u8(BASE_ADDR + I2C_STATUS_OFS) & (1 << 1)
@@ -86,33 +91,35 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
         let addr: u8 = addr << 1 | we.bits();
         write_u8(BASE_ADDR + I2C_TX_OFS, addr);
         self.set_cmd(Cmd::STA | Cmd::WR);
-        while self.get_tip() != 0 {}
+        wfi();
     }
 
     fn send_data_frames(&mut self, buf: &[u8]) {
         for byte in &buf[0..buf.len() - 1] {
             write_u8(BASE_ADDR + I2C_TX_OFS, *byte);
             self.set_cmd(Cmd::WR);
-            while self.get_tip() != 0 {}
+            wfi();
         }
 
         // Send last byte with stop condition
         write_u8(BASE_ADDR + I2C_TX_OFS, buf[buf.len() - 1]);
         self.set_cmd(Cmd::WR | Cmd::STO);
-        while self.get_tip() != 0 {}
+        wfi();
     }
 
     fn recv_data_frames(&mut self, buf: &mut [u8]) {
         let last_idx = buf.len() - 1;
         for byte in &mut buf[0..last_idx] {
             self.set_cmd(Cmd::RD);
-            while self.get_tip() != 0 {}
+            wfi();
+
             *byte = read_u8(BASE_ADDR + I2C_RX_OFS);
         }
 
         // Read last byte with stop condition
         self.set_cmd(Cmd::RD | Cmd::STO);
-        while self.get_tip() != 0 {}
+        wfi();
+
         // Safety: aligned on zeroHETI
         buf[last_idx] = read_u8(BASE_ADDR + I2C_RX_OFS);
     }

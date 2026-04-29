@@ -28,7 +28,6 @@ sources:
       - rtl/apb_cfg_regs.sv
       - rtl/apb_mtimer.sv
       - rtl/obi_hetic.sv
-      - rtl/mbx_axi_ctrl.sv
       - rtl/obi_mbx.sv
       - rtl/zeroheti_xbar.sv
       - rtl/zeroheti_int_ctrl.sv
@@ -44,8 +43,11 @@ sources:
   - target: verilator
     files:
       - verilator/tb/vip/vip_motor_sim.sv
-      - verilator/tb/vip/vip_ctrl_sim.sv
+      - verilator/tb/vip/vip_task_scoreboard.sv
+      - verilator/tb/vip/vip_sim_env.sv
       - verilator/tb/vip/vip_i2c.sv
+      - verilator/tb/vip/vip_mbx_driver.sv
+      - verilator/tb/vip/vip_zeroheti_top.sv
       - verilator/tb/zeroheti_top_wrapper.sv
   - target: fpga
     files:
