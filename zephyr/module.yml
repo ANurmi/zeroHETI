@@ -1,5 +1,5 @@
 name: zeroheti
-  build:
+build:
     settings:
       board_root: zephyr
       dts_root: zephyr
