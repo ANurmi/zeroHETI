@@ -20,9 +20,15 @@ jobs:
         run: |
           west init -l zeroheti    
           west update 
+      
+      - name: Install zephyr SDK
+        run: |
+          cd zephyr/    
+          west sdk install           
 
       - name: build motor-control app
         run: | 
+          cd zephyr/
           west build -b hetiboard zeroheti/examples/zephyr/motor_control -p always
       
       - name: Upload firmware
