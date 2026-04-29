@@ -1,5 +1,6 @@
-build:
-  settings:
-    board_root: zephyr
-    dts_root: zephyr
-    soc_root: zephyr
+name: zeroheti
+  build:
+    settings:
+      board_root: zephyr
+      dts_root: zephyr
+      soc_root: zephyr
