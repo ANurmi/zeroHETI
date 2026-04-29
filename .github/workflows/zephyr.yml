@@ -50,7 +50,9 @@ jobs:
           path: zeroheti
 
       - name: Fetch dependencies
-        run: bender update && bender vendor init
+        run: |
+          cd zeroheti/
+          bender update && bender vendor init
       
       - name: Build hardware
         run: |
