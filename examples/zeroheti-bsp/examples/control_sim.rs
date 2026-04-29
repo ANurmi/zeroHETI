@@ -132,7 +132,7 @@ fn Mbx() {
     let data = mmio::read_u32(MBX_IDAT_ADDR as usize);
     // Inbox read ack
     mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0100_0000);
-    sprintln!("[ISR] read {:x} from {:x}", data, addr);
+    sprintln!("[MBX]");
 
     // Ack MBX task
     send_letter(TASK_MBX_ACK_ADDR, 0x0);

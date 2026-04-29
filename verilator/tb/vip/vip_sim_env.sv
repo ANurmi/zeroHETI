@@ -20,18 +20,18 @@ module vip_sim_env #(
   localparam logic [31:0] DlRepAddr = 32'h0200_0002;
   localparam logic [31:0] MbxAckAddr = 32'h0300_0000;
 
-  logic            [3:0] motor_irqs;
-  logic                  motor_enable;
-  int unsigned           motor_prescaler;
+  logic        [3:0] motor_irqs;
+  logic              motor_enable;
+  int unsigned       motor_prescaler;
 
-  int unsigned           scb_loadfactor;
-  int unsigned           scb_prescaler;
-  int unsigned           scb_seed;
-  logic                  scb_enable;
+  int unsigned       scb_loadfactor;
+  int unsigned       scb_prescaler;
+  int unsigned       scb_seed;
+  logic              scb_enable;
 
-  longint unsigned       dl_mbx_us;
-  longint unsigned       dl_wrn_us;
-  longint unsigned       dl_rep_us;
+  int unsigned       dl_mbx_us;
+  int unsigned       dl_wrn_us;
+  int unsigned       dl_rep_us;
 
   typedef logic [31:0] dtype;
   typedef logic [6:0] atype;
@@ -117,9 +117,9 @@ module vip_sim_env #(
       SimLfAddr: scb_loadfactor = data;
       SimPsAddr: scb_prescaler = data;
       SimSeedAddr: scb_seed = data;
-      DlMbxAddr: dl_mbx_us = 64'(data);
-      DlWrnAddr: dl_wrn_us = 64'(data);
-      DlRepAddr: dl_rep_us = 64'(data);
+      DlMbxAddr: dl_mbx_us = data;
+      DlWrnAddr: dl_wrn_us = data;
+      DlRepAddr: dl_rep_us = data;
       MbxAckAddr: i_sim_env.i_scoreboard.retire_task(0);
       default:
       $display("[VIP_SIM_ENV]: Warning! Received letter with unknown address: 0x%8h", addr);

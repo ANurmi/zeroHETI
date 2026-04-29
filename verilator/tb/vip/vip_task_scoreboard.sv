@@ -1,13 +1,13 @@
 module vip_task_scoreboard #(
 ) (
-    input logic            clk_i,
-    input logic            enable_i,
-    input int unsigned     prescaler_i,
-    input int unsigned     loadfactor_i,
-    input int unsigned     seed_i,
-    input longint unsigned mbx_dl_us_i,
-    input longint unsigned wrn_dl_us_i,
-    input longint unsigned rep_dl_us_i
+    input logic        clk_i,
+    input logic        enable_i,
+    input int unsigned prescaler_i,
+    input int unsigned loadfactor_i,
+    input int unsigned seed_i,
+    input int unsigned mbx_dl_us_i,
+    input int unsigned wrn_dl_us_i,
+    input int unsigned rep_dl_us_i
 );
 
   localparam int unsigned TaskSetSize = 9;
@@ -21,11 +21,20 @@ module vip_task_scoreboard #(
 
   typedef struct packed {
     bit          active;
-    logic [63:0] dl_us;
+    logic [31:0] dl_us;
     name_e       name;
   } task_t;
 
+
+  typedef struct packed {
+    int unsigned count;
+    int unsigned slack_worst;
+    int unsigned slack_avg;
+  } task_ret_t;
+
+
   task_t [TaskSetSize-1:0] task_set;
+  task_ret_t [TaskSetSize-1:0] task_set_ret;
 
   longint unsigned counter_us = 0;
   int unsigned pre_counter = 0;
@@ -77,6 +86,7 @@ module vip_task_scoreboard #(
 
     for (int i = 0; i < TaskSetSize; i++) begin
       task_set[i].active = 1'b0;
+      task_set_ret[i] = '{default: 0};
       unique case (i) inside
         0: begin
           task_set[i].name  = MBX;
@@ -93,6 +103,12 @@ module vip_task_scoreboard #(
       endcase
     end
 
+    @(negedge enable_i);
+    for (int i = 0; i < TaskSetSize; i++) begin
+      $display("Task %0d - count: %3d, avg. slack: %4d us, worst slack: %4d us", i,
+               task_set_ret[i].count, task_set_ret[i].slack_avg, task_set_ret[i].slack_worst);
+    end
+
   end
 
   task automatic activate_task(input int idx);
@@ -100,9 +116,37 @@ module vip_task_scoreboard #(
   endtask
 
   task automatic retire_task(input int idx);
+
     if (task_set[idx].active) task_set[idx].active = 0;
-    // TODO: log slack
+
+    log_slack(idx);
+
+    unique case (idx) inside
+      0: task_set[idx].dl_us = mbx_dl_us_i;
+      [1 : 4]: task_set[idx].dl_us = wrn_dl_us_i;
+      [5 : 8]: task_set[idx].dl_us = rep_dl_us_i;
+    endcase
+
   endtask
+
+  task automatic log_slack(input int unsigned i);
+    if (task_set_ret[i].count == 0) begin  // initial state
+      task_set_ret[i].slack_worst = task_set[i].dl_us;
+      task_set_ret[i].slack_avg   = task_set[i].dl_us;
+    end else begin
+      // update worst slack
+      if (task_set_ret[i].slack_worst > task_set[i].dl_us) begin
+        task_set_ret[i].slack_worst = task_set[i].dl_us;
+      end
+
+      // update average slack
+      task_set_ret[i].slack_avg = ((task_set_ret[i].slack_avg * task_set_ret[i].count)
+            + task_set[i].dl_us) / (task_set_ret[i].count + 32'd1);
+    end
+
+    task_set_ret[i].count += 1;
+  endtask
+
 
 endmodule : vip_task_scoreboard
 
