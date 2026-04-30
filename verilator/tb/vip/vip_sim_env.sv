@@ -15,6 +15,7 @@ module vip_sim_env #(
   localparam logic [31:0] SimPsAddr = 32'h0100_0002;
   localparam logic [31:0] SimLfAddr = 32'h0100_0003;
   localparam logic [31:0] SimSeedAddr = 32'h0100_0004;
+  localparam logic [31:0] SimPerAddr = 32'h0100_0005;
 
   localparam logic [31:0] DlMbxAddr = 32'h0200_0000;
   localparam logic [31:0] DlWrnAddr = 32'h0200_0001;
@@ -39,6 +40,7 @@ module vip_sim_env #(
   int unsigned       dl_mbx_us;
   int unsigned       dl_wrn_us;
   int unsigned       dl_rep_us;
+  int unsigned       per_rep_us;
 
   typedef logic [31:0] dtype;
   typedef logic [6:0] atype;
@@ -124,6 +126,7 @@ module vip_sim_env #(
       SimLfAddr: scb_loadfactor = data;
       SimPsAddr: scb_prescaler = data;
       SimSeedAddr: scb_seed = data;
+      SimPerAddr: per_rep_us = data;
       DlMbxAddr: dl_mbx_us = data;
       DlWrnAddr: dl_wrn_us = data;
       DlRepAddr: dl_rep_us = data;

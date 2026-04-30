@@ -38,12 +38,13 @@ const SIM_END_ADDR: u32 = 0x0100_0001;
 const SIM_PRESCALER_ADDR: u32 = 0x0100_0002;
 const SIM_LOADFACTOR_ADDR: u32 = 0x0100_0003;
 const SIM_SEED_ADDR: u32 = 0x0100_0004;
+const SIM_TASK_PER_ADDR: u32 = 0x0100_0005;
 
 const DL_MBX_ADDR: u32 = 0x0200_0000;
 const DL_WRN_ADDR: u32 = 0x0200_0001;
 const DL_REP_ADDR: u32 = 0x0200_0002;
 
-const REP_TASK_PER_US: u32 = 500;
+const REP_TASK_PER_US: u32 = 600;
 
 const TASK_MBX_ACK_ADDR: u32 = 0x0300_0000;
 const TASK_REP_0_ADDR: u32 = 0x0301_0000;
@@ -109,13 +110,14 @@ fn main() -> ! {
     let mut mtimer = MTimer::instance().into_oneshot();
 
     sprintln!("Simulation configuration and parameters:");
-    sprintln!(" - Runtime (ms)         : {}", SIM_PARAMS.hyperperiod_ms);
-    sprintln!(" - Prescaler            : {}", PS);
-    sprintln!(" - Seed                 : 0x{:X}", SEED);
-    sprintln!(" - Load factor  [0-100] : {}", LF);
-    sprintln!(" - Mailbox task DL (us) : {}", DL_MBX);
-    sprintln!(" - Warning task DL (us) : {}", DL_WRN);
-    sprintln!(" - Report  task DL (us) : {}", DL_REP);
+    sprintln!(" - Runtime (ms)          : {}", SIM_PARAMS.hyperperiod_ms);
+    sprintln!(" - Prescaler             : {}", PS);
+    sprintln!(" - Seed                  : 0x{:X}", SEED);
+    sprintln!(" - Load factor  [0-100]  : {}", LF);
+    sprintln!(" - Mailbox task DL (us)  : {}", DL_MBX);
+    sprintln!(" - Warning task DL (us)  : {}", DL_WRN);
+    sprintln!(" - Report  task DL (us)  : {}", DL_REP);
+    sprintln!(" - Report task  per (us) : {}", REP_TASK_PER_US);
 
     send_letter(DL_MBX_ADDR, DL_MBX);
     send_letter(DL_WRN_ADDR, DL_WRN);
@@ -126,11 +128,14 @@ fn main() -> ! {
     send_letter(SIM_SEED_ADDR, SEED);
     send_letter(SIM_LOADFACTOR_ADDR, LF);
     send_letter(SIM_PRESCALER_ADDR, PS);
+
+    wait_outbox_empty();
+
+    send_letter(SIM_TASK_PER_ADDR, REP_TASK_PER_US);
     send_letter(SIM_START_ADDR, 0x0);
     //i2c.read(0x68, &mut rbuf_4);
 
     timers.iter_mut().for_each(Periodic::start);
-
     mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
     unsafe { riscv::interrupt::enable() };
@@ -160,7 +165,7 @@ fn send_letter(addr: u32, data: u32) {
 #[nested_interrupt]
 fn MachineTimer() {
     unsafe { riscv::interrupt::disable() };
-    send_letter(SIM_END_ADDR, 0x0);
+    send_letter(SIM_END_ADDR, 0x1);
     #[cfg(feature = "rtl-tb")]
     zeroheti_bsp::tb::rtl_tb_signal_ok();
 }
