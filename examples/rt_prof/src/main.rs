@@ -6,7 +6,6 @@ mod common;
 use fugit::{ExtU32, ExtU64};
 
 use zeroheti_bsp::{
-    CPU_FREQ_HZ, NOPS_PER_SEC,
     apb_uart::ApbUart,
     asm_delay,
     i2c::I2c,
@@ -19,11 +18,12 @@ use zeroheti_bsp::{
     rt::entry,
     sprintln,
     timer_group::{Periodic, Timer},
+    CPU_FREQ_HZ, NOPS_PER_SEC,
 };
 
 use riscv::asm::wfi;
 
-use crate::common::{UART_BAUD, init_intc, pend_irq, setup_irq};
+use crate::common::{init_intc, pend_irq, setup_irq, UART_BAUD};
 
 const MBX_STAT_ADDR: u32 = 0x0003_0000;
 const MBX_OBI_CTRL_ADDR: u32 = 0x0003_0004;
