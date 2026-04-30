@@ -35,7 +35,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zephyr-motor-elf
-          path: build/zephyr/zephyr.elf
+          path: zephyr/build/zephyr/zephyr.elf
 
   build-hw:
     needs: build-zephyr
