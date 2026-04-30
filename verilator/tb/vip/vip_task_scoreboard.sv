@@ -38,6 +38,7 @@ module vip_task_scoreboard #(
 
   longint unsigned counter_us = 0;
   int unsigned pre_counter = 0;
+  int unsigned task_period = 'd500;
 
   always @(posedge clk_i) begin : us_counter
     if (enable_i) begin
@@ -62,6 +63,11 @@ module vip_task_scoreboard #(
       if (task_set[i].active) task_set[i].dl_us--;
     end
 
+    // Activate periodic events
+    if (counter_us % 64'(task_period) == 0) begin
+      activate_task(5);
+    end
+
     // Produce randomized asynchronous events
     // - Load factor   0: ~1 / 1000 us
     // - Load factor 100: ~1 / 10 us
@@ -74,6 +80,7 @@ module vip_task_scoreboard #(
         activate_task(0);
       end
     end
+
   end : scb_main_proc
 
   initial begin

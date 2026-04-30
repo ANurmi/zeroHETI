@@ -51,6 +51,10 @@ const PS: u32 = 10;
 const SEED: u32 = 0xB0110c55;
 const RUNTIME_MS: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
 
+const DL_MBX: u32 = 0x200;
+const DL_WRN: u32 = 0x80;
+const DL_REP: u32 = 0x100;
+
 struct SimParams {
     hyperperiod_ms: u64,
 }
@@ -73,14 +77,17 @@ fn main() -> ! {
     let mut mtimer = MTimer::instance().into_oneshot();
 
     sprintln!("Simulation configuration and parameters:");
-    sprintln!(" - Runtime (ms)        : {}", SIM_PARAMS.hyperperiod_ms);
-    sprintln!(" - Prescaler           : {}", PS);
-    sprintln!(" - Seed                : 0x{:X}", SEED);
-    sprintln!(" - Load factor [0-100] : {}", LF);
+    sprintln!(" - Runtime (ms)         : {}", SIM_PARAMS.hyperperiod_ms);
+    sprintln!(" - Prescaler            : {}", PS);
+    sprintln!(" - Seed                 : 0x{:X}", SEED);
+    sprintln!(" - Load factor  [0-100] : {}", LF);
+    sprintln!(" - Mailbox task DL (us) : {}", DL_MBX);
+    sprintln!(" - Warning task DL (us) : {}", DL_WRN);
+    sprintln!(" - Report  task DL (us) : {}", DL_REP);
 
-    send_letter(DL_MBX_ADDR, 0x100);
-    send_letter(DL_WRN_ADDR, 0x200);
-    send_letter(DL_REP_ADDR, 0x300);
+    send_letter(DL_MBX_ADDR, DL_MBX);
+    send_letter(DL_WRN_ADDR, DL_WRN);
+    send_letter(DL_REP_ADDR, DL_REP);
 
     wait_outbox_empty();
 
