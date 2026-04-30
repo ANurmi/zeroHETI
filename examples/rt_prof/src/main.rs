@@ -1,35 +1,29 @@
 //! Test accesses to mailbox interface
 #![no_main]
 #![no_std]
-mod common;
-
 use fugit::{ExtU32, ExtU64};
 
-use zeroheti_bsp::{
+use bsp::{
+    CPU_FREQ_HZ,
     apb_uart::ApbUart,
-    asm_delay,
     i2c::I2c,
     interrupt::Interrupt,
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
-    mmap::edfic::IE_BIT,
     mmio,
     mtimer::MTimer,
     nested_interrupt,
+    riscv::{self, asm::wfi},
     rt::entry,
     sprintln,
     timer_group::{Periodic, Timer},
-    CPU_FREQ_HZ, NOPS_PER_SEC,
 };
-
-use riscv::asm::wfi;
-
-use crate::common::{init_intc, pend_irq, setup_irq, UART_BAUD};
+use riscv_rt::InterruptNumber;
 
 const MBX_STAT_ADDR: u32 = 0x0003_0000;
 const MBX_OBI_CTRL_ADDR: u32 = 0x0003_0004;
-//let MBX_AXI_CTRL_ADDR = 0x0003_0008;
-const MBX_IADD_ADDR: u32 = 0x0003_000C;
-const MBX_IDAT_ADDR: u32 = 0x0003_0010;
+//const MBX_AXI_CTRL_ADDR: u32 = 0x0003_0008;
+const _MBX_IADD_ADDR: u32 = 0x0003_000C;
+const _MBX_IDAT_ADDR: u32 = 0x0003_0010;
 const MBX_OADD_ADDR: u32 = 0x0003_0014;
 const MBX_ODAT_ADDR: u32 = 0x0003_0018;
 
@@ -82,18 +76,18 @@ const SIM_PARAMS: SimParams = SimParams {
 
 #[entry]
 fn main() -> ! {
-    let mut serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
+    let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
     sprintln!("zeroHETI control sim demonstrator");
     let mut i2c = I2c::init(4);
 
     init_intc();
-    setup_irq(Interrupt::I2c);
-    setup_irq(Interrupt::Mbx);
-    setup_irq(Interrupt::MachineTimer);
-    setup_irq(Interrupt::Timer0Cmp);
-    setup_irq(Interrupt::Timer1Cmp);
-    setup_irq(Interrupt::Timer2Cmp);
-    setup_irq(Interrupt::Timer3Cmp);
+    setup_irq(Interrupt::I2c, 1);
+    setup_irq(Interrupt::Mbx, 1);
+    setup_irq(Interrupt::MachineTimer, u8::MAX);
+    setup_irq(Interrupt::Timer0Cmp, 1);
+    setup_irq(Interrupt::Timer1Cmp, 1);
+    setup_irq(Interrupt::Timer2Cmp, 1);
+    setup_irq(Interrupt::Timer3Cmp, 1);
 
     let timers = &mut [
         Timer::init::<TIMER0_ADDR>().into_periodic(),
@@ -151,7 +145,7 @@ fn main() -> ! {
 
 #[inline]
 fn wait_outbox_empty() {
-    while ((mmio::read_u32(MBX_STAT_ADDR as usize) & (1 << 2)) == 0) {}
+    while (mmio::read_u32(MBX_STAT_ADDR as usize) & (1 << 2)) == 0 {}
 }
 
 #[inline]
@@ -163,43 +157,51 @@ fn send_letter(addr: u32, data: u32) {
 }
 
 #[nested_interrupt]
+#[allow(non_snake_case)]
 fn MachineTimer() {
-    unsafe { riscv::interrupt::disable() };
+    riscv::interrupt::disable();
     send_letter(SIM_END_ADDR, 0x1);
     #[cfg(feature = "rtl-tb")]
-    zeroheti_bsp::tb::rtl_tb_signal_ok();
+    bsp::tb::rtl_tb_signal_ok();
 }
 
 #[nested_interrupt]
+#[allow(non_snake_case)]
 fn Timer0Cmp() {
     sprintln!("y0");
     send_letter(TASK_REP_0_ADDR, 0x0);
 }
 
 #[nested_interrupt]
+#[allow(non_snake_case)]
 fn Timer1Cmp() {
     sprintln!("y1");
     send_letter(TASK_REP_1_ADDR, 0x0);
 }
 
 #[nested_interrupt]
+#[allow(non_snake_case)]
 fn Timer2Cmp() {
     sprintln!("y2");
     send_letter(TASK_REP_2_ADDR, 0x0);
 }
 
 #[nested_interrupt]
+#[allow(non_snake_case)]
 fn Timer3Cmp() {
     sprintln!("y3");
     send_letter(TASK_REP_3_ADDR, 0x0);
 }
 
 #[nested_interrupt]
+#[allow(non_snake_case)]
 fn Mbx() {
-    unsafe { riscv::interrupt::disable() };
+     riscv::interrupt::disable() ;
     // Read inbox
+    /*
     let addr = mmio::read_u32(MBX_IADD_ADDR as usize);
     let data = mmio::read_u32(MBX_IDAT_ADDR as usize);
+    */
     // Inbox read ack
     mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0100_0000);
     sprintln!("[MBX]");
@@ -213,6 +215,7 @@ fn Mbx() {
 }
 
 #[nested_interrupt]
+#[allow(non_snake_case)]
 fn I2c() {
     unsafe { I2c::instance() }.irq_ack();
 }
@@ -220,5 +223,43 @@ fn I2c() {
 #[unsafe(export_name = "DefaultHandler")]
 fn default_handler() {
     sprintln!("Hit default handler (unmapped interrupt)!");
-    zeroheti_bsp::tb::rtl_tb_signal_fail();
+    bsp::tb::rtl_tb_signal_fail();
+}
+
+pub fn init_intc() {
+    // HACK: clear mintstatus, required for zeroHETI
+    unsafe { bsp::register::mintstatus::write(0.into()) };
+
+    #[cfg(feature = "intc-clic")]
+    {
+        use bsp::clic::Clic;
+        // Set level bits to 8
+        Clic::smclicconfig().set_mnlbits(8);
+    }
+}
+
+/// Setup `irq` for use with some basic defaults
+///
+/// Copy and customize this function if you need more involved configurations.
+pub fn setup_irq(irq: impl InterruptNumber, _level: u8) {
+    log::debug!("Set up IRQ (id = {})", irq.number());
+    #[cfg(feature = "intc-clic")]
+    {
+        use bsp::clic::{Clic, Polarity, Trig};
+
+        Clic::attr(irq).set_trig(Trig::Edge);
+        Clic::attr(irq).set_polarity(Polarity::Pos);
+        Clic::attr(irq).set_shv(true);
+        Clic::ctl(irq).set_level(_level);
+        unsafe { Clic::ie(irq).enable() };
+    }
+    #[cfg(feature = "intc-edfic")]
+    {
+        use bsp::edfic::{Edfic, Pol, Trig};
+
+        Edfic::line(irq.number()).set_pol(Pol::Pos);
+        Edfic::line(irq.number()).set_trig(Trig::Edge);
+        Edfic::line(irq.number()).enable();
+        Edfic::line(irq.number()).set_dl(0xffff_ffff);
+    }
 }
