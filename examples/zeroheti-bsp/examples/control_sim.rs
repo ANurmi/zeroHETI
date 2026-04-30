@@ -3,11 +3,22 @@
 #![no_std]
 mod common;
 
-use fugit::ExtU64;
+use fugit::{ExtU32, ExtU64};
 
 use zeroheti_bsp::{
-    CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, i2c::I2c, interrupt::Interrupt,
-    mmap::edfic::IE_BIT, mmio, mtimer::MTimer, nested_interrupt, rt::entry, sprintln,
+    CPU_FREQ_HZ, NOPS_PER_SEC,
+    apb_uart::ApbUart,
+    asm_delay,
+    i2c::I2c,
+    interrupt::Interrupt,
+    mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
+    mmap::edfic::IE_BIT,
+    mmio,
+    mtimer::MTimer,
+    nested_interrupt,
+    rt::entry,
+    sprintln,
+    timer_group::{Periodic, Timer},
 };
 
 use riscv::asm::wfi;
@@ -32,8 +43,13 @@ const DL_MBX_ADDR: u32 = 0x0200_0000;
 const DL_WRN_ADDR: u32 = 0x0200_0001;
 const DL_REP_ADDR: u32 = 0x0200_0002;
 
+const REP_TASK_PER_US: u32 = 500;
+
 const TASK_MBX_ACK_ADDR: u32 = 0x0300_0000;
-//const SIM_PARAM_3_ADDR: u32 = 0x0400_0000;
+const TASK_REP_0_ADDR: u32 = 0x0301_0000;
+const TASK_REP_1_ADDR: u32 = 0x0301_0001;
+const TASK_REP_2_ADDR: u32 = 0x0301_0002;
+const TASK_REP_3_ADDR: u32 = 0x0301_0003;
 
 const fn parse_u32(s: &str) -> u32 {
     let mut out: u32 = 0;
@@ -73,6 +89,22 @@ fn main() -> ! {
     setup_irq(Interrupt::I2c);
     setup_irq(Interrupt::Mbx);
     setup_irq(Interrupt::MachineTimer);
+    setup_irq(Interrupt::Timer0Cmp);
+    setup_irq(Interrupt::Timer1Cmp);
+    setup_irq(Interrupt::Timer2Cmp);
+    setup_irq(Interrupt::Timer3Cmp);
+
+    let timers = &mut [
+        Timer::init::<TIMER0_ADDR>().into_periodic(),
+        Timer::init::<TIMER1_ADDR>().into_periodic(),
+        Timer::init::<TIMER2_ADDR>().into_periodic(),
+        Timer::init::<TIMER3_ADDR>().into_periodic(),
+    ];
+
+    timers[0].set_period(REP_TASK_PER_US.micros());
+    timers[1].set_period(REP_TASK_PER_US.micros());
+    timers[2].set_period(REP_TASK_PER_US.micros());
+    timers[3].set_period(REP_TASK_PER_US.micros());
 
     let mut mtimer = MTimer::instance().into_oneshot();
 
@@ -96,6 +128,8 @@ fn main() -> ! {
     send_letter(SIM_PRESCALER_ADDR, PS);
     send_letter(SIM_START_ADDR, 0x0);
     //i2c.read(0x68, &mut rbuf_4);
+
+    timers.iter_mut().for_each(Periodic::start);
 
     mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
@@ -125,10 +159,34 @@ fn send_letter(addr: u32, data: u32) {
 
 #[nested_interrupt]
 fn MachineTimer() {
-    sprintln!("Mtimeirq");
+    unsafe { riscv::interrupt::disable() };
     send_letter(SIM_END_ADDR, 0x0);
     #[cfg(feature = "rtl-tb")]
     zeroheti_bsp::tb::rtl_tb_signal_ok();
+}
+
+#[nested_interrupt]
+fn Timer0Cmp() {
+    sprintln!("y0");
+    send_letter(TASK_REP_0_ADDR, 0x0);
+}
+
+#[nested_interrupt]
+fn Timer1Cmp() {
+    sprintln!("y1");
+    send_letter(TASK_REP_1_ADDR, 0x0);
+}
+
+#[nested_interrupt]
+fn Timer2Cmp() {
+    sprintln!("y2");
+    send_letter(TASK_REP_2_ADDR, 0x0);
+}
+
+#[nested_interrupt]
+fn Timer3Cmp() {
+    sprintln!("y3");
+    send_letter(TASK_REP_3_ADDR, 0x0);
 }
 
 #[nested_interrupt]

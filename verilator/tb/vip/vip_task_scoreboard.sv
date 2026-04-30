@@ -66,6 +66,9 @@ module vip_task_scoreboard #(
     // Activate periodic events
     if (counter_us % 64'(task_period) == 0) begin
       activate_task(5);
+      activate_task(6);
+      activate_task(7);
+      activate_task(8);
     end
 
     // Produce randomized asynchronous events

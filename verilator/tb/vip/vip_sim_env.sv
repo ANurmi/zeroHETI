@@ -15,10 +15,17 @@ module vip_sim_env #(
   localparam logic [31:0] SimPsAddr = 32'h0100_0002;
   localparam logic [31:0] SimLfAddr = 32'h0100_0003;
   localparam logic [31:0] SimSeedAddr = 32'h0100_0004;
+
   localparam logic [31:0] DlMbxAddr = 32'h0200_0000;
   localparam logic [31:0] DlWrnAddr = 32'h0200_0001;
   localparam logic [31:0] DlRepAddr = 32'h0200_0002;
+
   localparam logic [31:0] MbxAckAddr = 32'h0300_0000;
+
+  localparam logic [31:0] Rep0AckAddr = 32'h0301_0000;
+  localparam logic [31:0] Rep1AckAddr = 32'h0301_0001;
+  localparam logic [31:0] Rep2AckAddr = 32'h0301_0002;
+  localparam logic [31:0] Rep3AckAddr = 32'h0301_0003;
 
   logic        [3:0] motor_irqs;
   logic              motor_enable;
@@ -121,6 +128,10 @@ module vip_sim_env #(
       DlWrnAddr: dl_wrn_us = data;
       DlRepAddr: dl_rep_us = data;
       MbxAckAddr: i_sim_env.i_scoreboard.retire_task(0);
+      Rep0AckAddr: i_sim_env.i_scoreboard.retire_task(5);
+      Rep1AckAddr: i_sim_env.i_scoreboard.retire_task(6);
+      Rep2AckAddr: i_sim_env.i_scoreboard.retire_task(7);
+      Rep3AckAddr: i_sim_env.i_scoreboard.retire_task(8);
       default:
       $display("[VIP_SIM_ENV]: Warning! Received letter with unknown address: 0x%8h", addr);
     endcase
