@@ -30,8 +30,8 @@
 #define IRQ_EXT3          30
 
 /* IRQ priorities */
-#define PRIO_TIMER_CMP    0x88
-#define PRIO_EXT          0x10
+#define PRIO_TIMER_CMP    0x10
+#define PRIO_EXT          0x88
 #define PRIO_MBX          0x03
 
 #endif
