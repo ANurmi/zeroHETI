@@ -7,11 +7,11 @@ const INBOX_OFS: usize = 0x00;
 const IRQ_ACK_OFS: usize = 0x04;
 const TIME_LO_OFS: usize = 0x08;
 const TIME_HI_OFS: usize = 0x0C;
-const M0_STAT_OFS: usize = 0x10;
+const STAT_M0_OFS: usize = 0x10;
 /*
-const M1_STAT_OFS: usize = 0x14;
-const M2_STAT_OFS: usize = 0x18;
-const M3_STAT_OFS: usize = 0x1C;
+const STAT_M1_OFS: usize = 0x14;
+const STAT_M2_OFS: usize = 0x18;
+const STAT_M3_OFS: usize = 0x1C;
 */
 
 #[repr(usize)]
@@ -53,6 +53,6 @@ impl<const BASE_ADDR: usize> MailboxHal<BASE_ADDR> {
         write_u32(BASE_ADDR + TIME_HI_OFS, time_hi);
 
         // Write stat
-        write_u32(BASE_ADDR + M0_STAT_OFS + 0x4 * motor as usize, stat);
+        write_u32(BASE_ADDR + STAT_M0_OFS + 0x4 * motor as usize, stat);
     }
 }
