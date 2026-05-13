@@ -9,6 +9,7 @@ compile_error!(
 );
 
 use bsp::{
+    CPU_FREQ_HZ,
     apb_uart::*,
     i2c::I2c,
     interrupt::Interrupt,
@@ -19,14 +20,14 @@ use bsp::{
     rt::entry,
     sprintln,
     tb::signal_pass,
-    timer_group::{Periodic, Timer},
-    CPU_FREQ_HZ,
+    timer_group::Timer,
 };
-use core::i16;
+use core::{i16, mem::MaybeUninit};
 use fugit::{ExtU32, ExtU64};
 use motor_control::{
-    mailbox::{Mailbox, Motor::*},
-    I2C_ADDRS, *,
+    I2C_ADDRS,
+    mailbox::{Inbox, Mailbox, MotorIdx::*, Outbox},
+    *,
 };
 
 struct SimParams {
@@ -46,7 +47,8 @@ const WRN_DL_US: u32 = 4000;
 const REP_DL_US: u32 = 3000;
 
 // Global variables
-static mut MBX: Mailbox = unsafe { Mailbox::instance() };
+static mut MBX_RECV: MaybeUninit<Inbox> = MaybeUninit::uninit();
+static mut MBX_SEND: MaybeUninit<Outbox> = MaybeUninit::uninit();
 
 static mut SPEED_REAL: [u32; 4] = [0, 0, 0, 0];
 static mut VOLTAGE_TARGET: [u32; 4] = [0, 0, 0, 0];
@@ -59,6 +61,11 @@ fn main() -> ! {
     let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
     let riscv_isa = core::env!("RISCV_ISA");
     sprintln!("[Motor control demo] ISA = {riscv_isa}");
+
+    // Split the mailbox
+    let (mbx_recv, mbx_send) = unsafe { Mailbox::instance() }.split();
+    unsafe { MBX_RECV = MaybeUninit::new(mbx_recv) };
+    unsafe { MBX_SEND = MaybeUninit::new(mbx_send) };
 
     let mut i2c = I2c::init(4);
 
@@ -196,7 +203,7 @@ unsafe fn Timer0Cmp() {
         unsafe { SPEED_REAL[0] = m0_speed };
         lock(||
                 // SAFETY: other users of MBX are excluded
-                unsafe { MBX.write_time_and_stat(time, m0_speed as u32, M0) });
+                unsafe { MBX_SEND.assume_init_mut().write_time_and_stat(time, m0_speed as u32, M0) });
     });
 }
 
@@ -215,7 +222,7 @@ unsafe fn Timer1Cmp() {
         unsafe { SPEED_REAL[1] = m1_speed };
         lock(||
                 // SAFETY: other users of MBX are excluded
-                unsafe { MBX.write_time_and_stat(time, m1_speed as u32, M1) });
+                unsafe { MBX_SEND.assume_init_mut().write_time_and_stat(time, m1_speed as u32, M1) });
     });
 }
 
@@ -234,7 +241,7 @@ unsafe fn Timer2Cmp() {
         unsafe { SPEED_REAL[2] = m2_speed };
         lock(||
                 // SAFETY: other users of MBX are excluded
-                unsafe { MBX.write_time_and_stat(time, m2_speed as u32, M2)});
+                unsafe { MBX_SEND.assume_init_mut().write_time_and_stat(time, m2_speed as u32, M2)});
     });
 }
 
@@ -253,7 +260,7 @@ unsafe fn Timer3Cmp() {
         unsafe { SPEED_REAL[3] = m3_speed };
         lock(||
                 // SAFETY: other users of MBX are excluded
-                unsafe { MBX.write_time_and_stat(time, m3_speed as u32, M3)});
+                unsafe { MBX_SEND.assume_init_mut().write_time_and_stat(time, m3_speed as u32, M3)});
     });
 }
 
@@ -261,7 +268,7 @@ unsafe fn Timer3Cmp() {
 unsafe fn Mbx() {
     with_dl_mintthresh(Interrupt::Mbx, || {
         // SAFETY: the inbox is not read by any other context
-        let mail = unsafe { MBX.read_inbox() };
+        let mail = unsafe { MBX_RECV.assume_init_mut().read_inbox() };
         let bytes: [u8; 4] = mail.to_be_bytes();
 
         for i in 0usize..4 {
@@ -275,7 +282,7 @@ unsafe fn Mbx() {
             });
         }
 
-        unsafe { MBX.ack_irq() };
+        unsafe { MBX_RECV.assume_init_mut().ack_irq() };
     });
 }
 

@@ -13,7 +13,7 @@ fn setup_interrupt_vector() {
         }
 
         // Set all the trap vectors for good measure
-        let bits = _vector_table as usize;
+        let bits = _vector_table as *const () as usize;
         mtvec::write(mtvec::Mtvec::from_bits(
             bits | mtvt::TrapMode::Clic as usize,
         ));

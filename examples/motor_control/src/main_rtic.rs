@@ -25,7 +25,7 @@ mod app {
     use fugit::{ExtU32, ExtU64};
     use motor_control::{
         I2C_ADDRS,
-        mailbox::{Mailbox, Motor::*},
+        mailbox::{Inbox, Mailbox, MotorIdx::*, Outbox},
     };
 
     struct SimParams {
@@ -55,7 +55,8 @@ mod app {
     #[shared]
     struct Shared {
         i2c: i2c::I2c,
-        mbx: Mailbox,
+        mbx_recv: Inbox,
+        mbx_send: Outbox,
         /// Voltage target for motor 0
         v_tgt0: u32,
         /// Voltage target for motor 1
@@ -73,7 +74,7 @@ mod app {
         sprintln!("[Motor control demo] ISA = {riscv_isa}");
 
         let i2c = I2c::init(4);
-        let mbx = unsafe { Mailbox::instance() };
+        let (mbx_recv, mbx_send) = unsafe { Mailbox::instance() }.split();
 
         // HACK: use mtimer to start the sim, CLIC cannot enable IRQ after pend,
         // see: https://github.com/ANurmi/zeroHETI/issues/42
@@ -87,7 +88,8 @@ mod app {
 
         Shared {
             i2c,
-            mbx,
+            mbx_recv,
+            mbx_send,
             v_tgt0: 0,
             v_tgt1: 0,
             v_tgt2: 0,
@@ -201,7 +203,7 @@ mod app {
         }
     }
 
-    #[task(binds = Timer0Cmp, priority = 0x88, shared = [i2c, mbx])]
+    #[task(binds = Timer0Cmp, priority = 0x88, shared = [i2c, mbx_send])]
     struct ReadM0 {
         speed_real: u32,
     }
@@ -222,12 +224,12 @@ mod app {
 
             let time = MTimer::instance().counter();
             self.shared()
-                .mbx
+                .mbx_send
                 .lock(|mbx| mbx.write_time_and_stat(time, m0_speed as u32, M0));
         }
     }
 
-    #[task(binds = Timer1Cmp, priority = 0x88, shared = [i2c, mbx])]
+    #[task(binds = Timer1Cmp, priority = 0x88, shared = [i2c, mbx_send])]
     struct ReadM1 {
         speed_real: u32,
     }
@@ -247,12 +249,12 @@ mod app {
 
             let time = MTimer::instance().counter();
             self.shared()
-                .mbx
+                .mbx_send
                 .lock(|mbx| mbx.write_time_and_stat(time, m1_speed as u32, M1));
         }
     }
 
-    #[task(binds = Timer2Cmp, priority = 0x88, shared = [i2c, mbx])]
+    #[task(binds = Timer2Cmp, priority = 0x88, shared = [i2c, mbx_send])]
     struct ReadM2 {
         speed_real: u32,
     }
@@ -271,12 +273,12 @@ mod app {
 
             let time = MTimer::instance().counter();
             self.shared()
-                .mbx
+                .mbx_send
                 .lock(|mbx| mbx.write_time_and_stat(time, m2_speed as u32, M2));
         }
     }
 
-    #[task(binds = Timer3Cmp, priority = 0x88, shared = [i2c, mbx])]
+    #[task(binds = Timer3Cmp, priority = 0x88, shared = [i2c, mbx_send])]
     struct ReadM3 {
         speed_real: u32,
     }
@@ -295,21 +297,24 @@ mod app {
 
             let time = MTimer::instance().counter();
             self.shared()
-                .mbx
+                .mbx_send
                 .lock(|mbx| mbx.write_time_and_stat(time, m3_speed as u32, M3));
         }
     }
 
-    #[task(binds = Mbx, priority = 3, shared = [i2c, v_tgt0, v_tgt1, v_tgt2, v_tgt3])]
+    #[task(binds = Mbx, priority = 3, shared = [i2c, v_tgt0, v_tgt1, v_tgt2, v_tgt3, mbx_recv])]
     struct GetMail;
     impl RticTask for GetMail {
         fn init() -> Self {
-            Self
+            Self {}
         }
         fn exec(&mut self) {
             // SAFETY: the inbox is not read by any other context
-            let mail = unsafe { Mailbox::instance() }.read_inbox();
-            let bytes: [u8; 4] = mail.to_be_bytes();
+            let mut mail_raw: u32 = 0;
+            self.shared().mbx_recv.lock(|mbx| {
+                mail_raw = mbx.read_inbox();
+            });
+            let bytes: [u8; 4] = mail_raw.to_be_bytes();
 
             self.shared().i2c.lock(|i2c| {
                 i2c.write(I2C_ADDRS.motors[0].ctrl, &[0u8, bytes[0]]);
@@ -335,7 +340,7 @@ mod app {
             // SAFETY: the mailbox ACK_IRQ is not interacted with by any other
             // part of the code, and it does not interfere with other Mailbox
             // hardware operations.
-            unsafe { Mailbox::instance() }.ack_irq();
+            self.shared().mbx_recv.lock(|mbx| mbx.ack_irq());
         }
     }
 

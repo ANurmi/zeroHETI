@@ -15,17 +15,16 @@ mod app {
         i2c::{self, I2c},
         mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mtimer::{self, *},
-        register::{self, mintthresh::Mintthresh},
-        riscv::{self, csr, write_csr_as_rv32},
+        riscv,
         sprintln,
         tb::signal_pass,
         timer_group::{Periodic, Timer},
     };
-    use core::i16;
+    use core::{i16, mem::MaybeUninit};
     use fugit::{ExtU32, ExtU64};
     use motor_control::{
         I2C_ADDRS,
-        mailbox::{Mailbox, Motor::*},
+        mailbox::{Inbox, Mailbox, MotorIdx::*, Outbox},
     };
 
     struct SimParams {
@@ -56,10 +55,12 @@ mod app {
     const REL_PRIO_WRN: usize = (255 - (SIM_PARAMS.wrn_dl_us >> 6)) as usize;
     const REL_PRIO_REP: usize = (255 - (SIM_PARAMS.rep_dl_us >> 6)) as usize;
 
+    static mut MBX_RECV: MaybeUninit<Inbox> = MaybeUninit::uninit();
+    static mut MBX_SEND: MaybeUninit<Outbox> = MaybeUninit::uninit();
+
     #[shared]
     struct Shared {
         i2c: i2c::I2c,
-        mbx: Mailbox,
         /// Voltage target for motor 0
         v_tgt0: u32,
         /// Voltage target for motor 1
@@ -77,7 +78,11 @@ mod app {
         sprintln!("[Motor control demo] ISA = {riscv_isa}");
 
         let i2c = I2c::init(4);
-        let mbx = unsafe { Mailbox::instance() };
+
+        // Split the mailbox
+        let (mbx_recv, mbx_send) = unsafe { Mailbox::instance() }.split();
+        unsafe { MBX_RECV = MaybeUninit::new(mbx_recv) };
+        unsafe { MBX_SEND = MaybeUninit::new(mbx_send) };
 
         sprintln!(
             "Setup IRQ deadlines (us): MBX = {}, WRN = {}, REP = {}",
@@ -101,7 +106,6 @@ mod app {
 
         Shared {
             i2c,
-            mbx,
             v_tgt0: 0,
             v_tgt1: 0,
             v_tgt2: 0,
@@ -129,6 +133,7 @@ mod app {
 
         fn exec(&mut self /* , _: () */) {
             match self.start_time.as_mut() {
+                // 1st trigger, timer is not started => setup the simulation
                 None => {
                     let timers = &mut [
                         Timer::init::<TIMER0_ADDR>().into_periodic(),
@@ -137,22 +142,13 @@ mod app {
                         Timer::init::<TIMER3_ADDR>().into_periodic(),
                     ];
 
-                    timers[0].set_period_offset(
-                        SIM_PARAMS.rep_task_per_us.micros(),
-                        SIM_PARAMS.rep_task_ofs_us.micros(),
-                    );
-                    timers[1].set_period_offset(
-                        SIM_PARAMS.rep_task_per_us.micros(),
-                        SIM_PARAMS.rep_task_ofs_us.micros() - (1 * 1000u32).micros(),
-                    );
-                    timers[2].set_period_offset(
-                        SIM_PARAMS.rep_task_per_us.micros(),
-                        SIM_PARAMS.rep_task_ofs_us.micros() - (2 * 1000u32).micros(),
-                    );
-                    timers[3].set_period_offset(
-                        SIM_PARAMS.rep_task_per_us.micros(),
-                        SIM_PARAMS.rep_task_ofs_us.micros() - (3 * 1000u32).micros(),
-                    );
+                    // Setup periodic timers without starting
+                    for (idx, timer) in timers.iter_mut().enumerate() {
+                        timer.set_period_offset(
+                            SIM_PARAMS.rep_task_per_us.micros(),
+                            SIM_PARAMS.rep_task_ofs_us.micros() - (idx as u32 * 1000u32).micros(),
+                        );
+                    }
 
                     unsafe {
                         // Clear instruction & cycle counters
@@ -172,6 +168,7 @@ mod app {
                     // Start sim
                     unsafe { I2c::instance() }.write(0x0, &[1]);
                 }
+                // 2nd trigger, timer is started => end the simulation
                 Some(start_time) => {
                     riscv::interrupt::disable();
 
@@ -216,7 +213,7 @@ mod app {
     }
 
     // 255 - (REL_PRIO_REP >> 6) = 0xe8
-    #[task(binds = Timer0Cmp, priority = 0xe8, shared = [i2c, mbx])]
+    #[task(binds = Timer0Cmp, priority = 0xe8, shared = [i2c])]
     struct ReadM0 {
         speed_real: u32,
     }
@@ -243,7 +240,9 @@ mod app {
 
             unsafe {
                 riscv::interrupt::disable();
-                Mailbox::instance().write_time_and_stat(time, m0_speed as u32, M0);
+                MBX_SEND
+                    .assume_init_mut()
+                    .write_time_and_stat(time, m0_speed as u32, M0);
                 riscv::interrupt::enable();
             };
             bsp::register::mintthresh::write(last_mintthresh.into());
@@ -251,7 +250,7 @@ mod app {
     }
 
     // 255 - (REL_PRIO_REP >> 6) = 0xe8
-    #[task(binds = Timer1Cmp, priority = 0xe8, shared = [i2c, mbx])]
+    #[task(binds = Timer1Cmp, priority = 0xe8, shared = [i2c])]
     struct ReadM1 {
         speed_real: u32,
     }
@@ -276,7 +275,9 @@ mod app {
 
             unsafe {
                 riscv::interrupt::disable();
-                Mailbox::instance().write_time_and_stat(time, m1_speed as u32, M1);
+                MBX_SEND
+                    .assume_init_mut()
+                    .write_time_and_stat(time, m1_speed as u32, M1);
                 riscv::interrupt::enable();
             };
             bsp::register::mintthresh::write(last_mintthresh.into());
@@ -284,7 +285,7 @@ mod app {
     }
 
     // 255 - (REL_PRIO_REP >> 6) = 0xe8
-    #[task(binds = Timer2Cmp, priority = 0xe8, shared = [i2c, mbx])]
+    #[task(binds = Timer2Cmp, priority = 0xe8, shared = [i2c])]
     struct ReadM2 {
         speed_real: u32,
     }
@@ -309,7 +310,9 @@ mod app {
 
             unsafe {
                 riscv::interrupt::disable();
-                Mailbox::instance().write_time_and_stat(time, m2_speed as u32, M2);
+                MBX_SEND
+                    .assume_init_mut()
+                    .write_time_and_stat(time, m2_speed as u32, M2);
                 riscv::interrupt::enable();
             };
             bsp::register::mintthresh::write(last_mintthresh.into());
@@ -317,7 +320,7 @@ mod app {
     }
 
     // 255 - (REL_PRIO_REP >> 6) = 0xe8
-    #[task(binds = Timer3Cmp, priority = 0xe8, shared = [i2c, mbx])]
+    #[task(binds = Timer3Cmp, priority = 0xe8, shared = [i2c])]
     struct ReadM3 {
         speed_real: u32,
     }
@@ -342,7 +345,9 @@ mod app {
 
             unsafe {
                 riscv::interrupt::disable();
-                Mailbox::instance().write_time_and_stat(time, m3_speed as u32, M3);
+                MBX_SEND
+                    .assume_init_mut()
+                    .write_time_and_stat(time, m3_speed as u32, M3);
                 riscv::interrupt::enable();
             };
             bsp::register::mintthresh::write(last_mintthresh.into());
@@ -359,7 +364,7 @@ mod app {
         fn exec(&mut self) {
             let last_mintthresh = bsp::register::mintthresh::write(REL_PRIO_MBX.into());
             // SAFETY: the inbox is not read by any other context
-            let mail = unsafe { Mailbox::instance() }.read_inbox();
+            let mail = unsafe { MBX_RECV.assume_init_mut() }.read_inbox();
             let bytes: [u8; 4] = mail.to_be_bytes();
 
             unsafe {
@@ -394,7 +399,7 @@ mod app {
             // SAFETY: the mailbox ACK_IRQ is not interacted with by any other
             // part of the code, and it does not interfere with other Mailbox
             // hardware operations.
-            unsafe { Mailbox::instance() }.ack_irq();
+            unsafe { MBX_RECV.assume_init_mut() }.ack_irq();
             bsp::register::mintthresh::write(last_mintthresh.into());
         }
     }
@@ -422,9 +427,7 @@ mod app {
             // line of init here.
             let mut v_tgt: u32 = 0;
 
-            unsafe {
-                riscv::interrupt::disable();
-            };
+            riscv::interrupt::disable();
             self.shared().v_tgt0.lock(|v| v_tgt = *v);
             unsafe {
                 riscv::interrupt::enable();
@@ -465,9 +468,7 @@ mod app {
             // line of init here.
             let mut v_tgt: u32 = 0;
 
-            unsafe {
-                riscv::interrupt::disable();
-            };
+            riscv::interrupt::disable();
             self.shared().v_tgt1.lock(|v| v_tgt = *v);
             unsafe {
                 riscv::interrupt::enable();
@@ -508,9 +509,7 @@ mod app {
             // line of init here.
             let mut v_tgt: u32 = 0;
 
-            unsafe {
-                riscv::interrupt::disable();
-            };
+            riscv::interrupt::disable();
             self.shared().v_tgt2.lock(|v| v_tgt = *v);
             unsafe {
                 riscv::interrupt::enable();
@@ -551,9 +550,7 @@ mod app {
             // line of init here.
             let mut v_tgt: u32 = 0;
 
-            unsafe {
-                riscv::interrupt::disable();
-            };
+            riscv::interrupt::disable();
             self.shared().v_tgt3.lock(|v| v_tgt = *v);
             unsafe {
                 riscv::interrupt::enable();

@@ -12,8 +12,8 @@ fn main() -> ! {
 
     let MBX_STAT_ADDR = 0x0003_0000;
     let MBX_CTRL_ADDR = 0x0003_0004;
-    let MBX_IADD_ADDR = 0x0003_0008;
-    let MBX_IDAT_ADDR = 0x0003_000C;
+    let _MBX_IADD_ADDR = 0x0003_0008;
+    let _MBX_IDAT_ADDR = 0x0003_000C;
     let MBX_OADD_ADDR = 0x0003_0010;
     let MBX_ODAT_ADDR = 0x0003_0014;
 
