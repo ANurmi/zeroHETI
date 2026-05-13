@@ -15,20 +15,51 @@ const STAT_M3_OFS: usize = 0x1C;
 */
 
 #[repr(usize)]
-pub enum Motor {
+pub enum MotorIdx {
     M0 = 0,
     M1 = 1,
     M2 = 2,
     M3 = 3,
 }
 
-pub struct MailboxHal<const BASE_ADDR: usize>;
-
 pub type Mailbox = MailboxHal<MBX_ADDR>;
 
+pub struct MailboxHal<const BASE_ADDR: usize> {
+    inbox: InboxHal<BASE_ADDR>,
+    outbox: OutboxHal<BASE_ADDR>,
+}
+
 impl<const BASE_ADDR: usize> MailboxHal<BASE_ADDR> {
+    /// Retrieve an instance of the mailbox, comprising both halves: inbox and
+    /// outbox. Call `split` to obtain the functional halves.
     #[inline]
     pub const unsafe fn instance() -> Self {
+        Self {
+            inbox: InboxHal::<BASE_ADDR>::instance(),
+            outbox: OutboxHal::<BASE_ADDR>::instance(),
+        }
+    }
+
+    #[inline]
+    pub fn split(self) -> (InboxHal<BASE_ADDR>, OutboxHal<BASE_ADDR>) {
+        (self.inbox, self.outbox)
+    }
+
+    #[inline]
+    pub fn merge(
+        inbox: InboxHal<BASE_ADDR>,
+        outbox: OutboxHal<BASE_ADDR>,
+    ) -> MailboxHal<BASE_ADDR> {
+        Self { inbox, outbox }
+    }
+}
+
+pub type Inbox = InboxHal<MBX_ADDR>;
+pub struct InboxHal<const BASE_ADDR: usize>;
+impl<const BASE_ADDR: usize> InboxHal<BASE_ADDR> {
+    /// Use [MailboxHal::instance]
+    #[inline]
+    const fn instance() -> Self {
         Self {}
     }
 
@@ -43,9 +74,19 @@ impl<const BASE_ADDR: usize> MailboxHal<BASE_ADDR> {
     pub fn ack_irq(&mut self) {
         write_u32(BASE_ADDR + IRQ_ACK_OFS, 1)
     }
+}
+
+pub type Outbox = OutboxHal<MBX_ADDR>;
+pub struct OutboxHal<const BASE_ADDR: usize>;
+impl<const BASE_ADDR: usize> OutboxHal<BASE_ADDR> {
+    /// Use [MailboxHal::instance]
+    #[inline]
+    const fn instance() -> Self {
+        Self {}
+    }
 
     /// Write time stamp, then a single motor status
-    pub fn write_time_and_stat(&mut self, time: u64, stat: u32, motor: Motor) {
+    pub fn write_time_and_stat(&mut self, time: u64, stat: u32, motor: MotorIdx) {
         // Write time
         let time_lo = (time & 0xFFFF_FFFF) as u32;
         let time_hi = (time >> 32) as u32;
