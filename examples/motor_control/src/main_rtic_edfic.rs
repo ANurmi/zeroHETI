@@ -133,6 +133,7 @@ mod app {
 
         fn exec(&mut self /* , _: () */) {
             match self.start_time.as_mut() {
+                // 1st trigger, timer is not started => setup the simulation
                 None => {
                     let timers = &mut [
                         Timer::init::<TIMER0_ADDR>().into_periodic(),
@@ -141,22 +142,13 @@ mod app {
                         Timer::init::<TIMER3_ADDR>().into_periodic(),
                     ];
 
-                    timers[0].set_period_offset(
-                        SIM_PARAMS.rep_task_per_us.micros(),
-                        SIM_PARAMS.rep_task_ofs_us.micros(),
-                    );
-                    timers[1].set_period_offset(
-                        SIM_PARAMS.rep_task_per_us.micros(),
-                        SIM_PARAMS.rep_task_ofs_us.micros() - (1 * 1000u32).micros(),
-                    );
-                    timers[2].set_period_offset(
-                        SIM_PARAMS.rep_task_per_us.micros(),
-                        SIM_PARAMS.rep_task_ofs_us.micros() - (2 * 1000u32).micros(),
-                    );
-                    timers[3].set_period_offset(
-                        SIM_PARAMS.rep_task_per_us.micros(),
-                        SIM_PARAMS.rep_task_ofs_us.micros() - (3 * 1000u32).micros(),
-                    );
+                    // Setup periodic timers without starting
+                    for (idx, timer) in timers.iter_mut().enumerate() {
+                        timer.set_period_offset(
+                            SIM_PARAMS.rep_task_per_us.micros(),
+                            SIM_PARAMS.rep_task_ofs_us.micros() - (idx as u32 * 1000u32).micros(),
+                        );
+                    }
 
                     unsafe {
                         // Clear instruction & cycle counters
@@ -176,6 +168,7 @@ mod app {
                     // Start sim
                     unsafe { I2c::instance() }.write(0x0, &[1]);
                 }
+                // 2nd trigger, timer is started => end the simulation
                 Some(start_time) => {
                     riscv::interrupt::disable();
 
@@ -434,9 +427,7 @@ mod app {
             // line of init here.
             let mut v_tgt: u32 = 0;
 
-            unsafe {
-                riscv::interrupt::disable();
-            };
+            riscv::interrupt::disable();
             self.shared().v_tgt0.lock(|v| v_tgt = *v);
             unsafe {
                 riscv::interrupt::enable();
@@ -477,9 +468,7 @@ mod app {
             // line of init here.
             let mut v_tgt: u32 = 0;
 
-            unsafe {
-                riscv::interrupt::disable();
-            };
+            riscv::interrupt::disable();
             self.shared().v_tgt1.lock(|v| v_tgt = *v);
             unsafe {
                 riscv::interrupt::enable();
@@ -520,9 +509,7 @@ mod app {
             // line of init here.
             let mut v_tgt: u32 = 0;
 
-            unsafe {
-                riscv::interrupt::disable();
-            };
+            riscv::interrupt::disable();
             self.shared().v_tgt2.lock(|v| v_tgt = *v);
             unsafe {
                 riscv::interrupt::enable();
@@ -563,9 +550,7 @@ mod app {
             // line of init here.
             let mut v_tgt: u32 = 0;
 
-            unsafe {
-                riscv::interrupt::disable();
-            };
+            riscv::interrupt::disable();
             self.shared().v_tgt3.lock(|v| v_tgt = *v);
             unsafe {
                 riscv::interrupt::enable();
