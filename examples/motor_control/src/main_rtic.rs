@@ -15,6 +15,7 @@ mod app {
         CPU_FREQ_HZ,
         apb_uart::*,
         i2c::{self, I2c},
+        mailbox::{Inbox, Mailbox, MotorIdx::*, Outbox},
         mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mtimer::{self, *},
         riscv, sprintln,

@@ -13,19 +13,16 @@ mod app {
         CPU_FREQ_HZ,
         apb_uart::*,
         i2c::{self, I2c},
+        mailbox::{Inbox, Mailbox, MotorIdx::*, Outbox},
         mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mtimer::{self, *},
-        riscv,
-        sprintln,
+        riscv, sprintln,
         tb::signal_pass,
         timer_group::{Periodic, Timer},
     };
     use core::{i16, mem::MaybeUninit};
     use fugit::{ExtU32, ExtU64};
-    use motor_control::{
-        I2C_ADDRS,
-        mailbox::{Inbox, Mailbox, MotorIdx::*, Outbox},
-    };
+    use motor_control::I2C_ADDRS;
 
     struct SimParams {
         hyperperiod_ms: u64,

@@ -12,6 +12,7 @@ pub mod edfic;
 pub mod hetic;
 pub mod i2c;
 pub mod interrupt;
+pub mod mailbox;
 pub mod mmap;
 pub mod mmio;
 pub mod mtimer;

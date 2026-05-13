@@ -1,18 +1,5 @@
-use bsp::mmio::{read_u32, write_u32};
-
-const MBX_ADDR: usize = 0x3_0000;
-
-const INBOX_OFS: usize = 0x00;
-/// HW raises mailbox IRQ, when there is mail
-const IRQ_ACK_OFS: usize = 0x04;
-const TIME_LO_OFS: usize = 0x08;
-const TIME_HI_OFS: usize = 0x0C;
-const STAT_M0_OFS: usize = 0x10;
-/*
-const STAT_M1_OFS: usize = 0x14;
-const STAT_M2_OFS: usize = 0x18;
-const STAT_M3_OFS: usize = 0x1C;
-*/
+use crate::mmap::mailbox::*;
+use crate::mmio::{read_u32, write_u32};
 
 #[repr(usize)]
 pub enum MotorIdx {

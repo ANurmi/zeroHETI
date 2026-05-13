@@ -13,6 +13,7 @@ use bsp::{
     apb_uart::*,
     i2c::I2c,
     interrupt::Interrupt,
+    mailbox::{Inbox, Mailbox, Outbox, MotorIdx},
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mtimer::*,
     nested_interrupt,
@@ -24,11 +25,7 @@ use bsp::{
 };
 use core::{i16, mem::MaybeUninit};
 use fugit::{ExtU32, ExtU64};
-use motor_control::{
-    I2C_ADDRS,
-    mailbox::{Inbox, Mailbox, MotorIdx::*, Outbox},
-    *,
-};
+use motor_control::{I2C_ADDRS, *};
 
 struct SimParams {
     hyperperiod_ms: u64,
@@ -203,7 +200,7 @@ unsafe fn Timer0Cmp() {
         unsafe { SPEED_REAL[0] = m0_speed };
         lock(||
                 // SAFETY: other users of MBX are excluded
-                unsafe { MBX_SEND.assume_init_mut().write_time_and_stat(time, m0_speed as u32, M0) });
+                unsafe { MBX_SEND.assume_init_mut().write_time_and_stat(time, m0_speed as u32, MotorIdx::M0) });
     });
 }
 
@@ -222,7 +219,7 @@ unsafe fn Timer1Cmp() {
         unsafe { SPEED_REAL[1] = m1_speed };
         lock(||
                 // SAFETY: other users of MBX are excluded
-                unsafe { MBX_SEND.assume_init_mut().write_time_and_stat(time, m1_speed as u32, M1) });
+                unsafe { MBX_SEND.assume_init_mut().write_time_and_stat(time, m1_speed as u32, MotorIdx::M1) });
     });
 }
 
@@ -241,7 +238,7 @@ unsafe fn Timer2Cmp() {
         unsafe { SPEED_REAL[2] = m2_speed };
         lock(||
                 // SAFETY: other users of MBX are excluded
-                unsafe { MBX_SEND.assume_init_mut().write_time_and_stat(time, m2_speed as u32, M2)});
+                unsafe { MBX_SEND.assume_init_mut().write_time_and_stat(time, m2_speed as u32, MotorIdx::M2)});
     });
 }
 
@@ -260,7 +257,7 @@ unsafe fn Timer3Cmp() {
         unsafe { SPEED_REAL[3] = m3_speed };
         lock(||
                 // SAFETY: other users of MBX are excluded
-                unsafe { MBX_SEND.assume_init_mut().write_time_and_stat(time, m3_speed as u32, M3)});
+                unsafe { MBX_SEND.assume_init_mut().write_time_and_stat(time, m3_speed as u32, MotorIdx::M3)});
     });
 }
 
