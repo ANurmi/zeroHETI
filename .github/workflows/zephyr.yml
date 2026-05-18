@@ -41,7 +41,7 @@ jobs:
     needs: build-zephyr
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/abdelkadirchantar/zeroheti-ci:test
+      image: ghcr.io/soc-hub-fi/zeroheti-ci:latest
       options: --user 0
 
     steps:    
