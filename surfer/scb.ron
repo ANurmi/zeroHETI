@@ -21,54 +21,64 @@
                 "i_vip_zeroheti_top",
                 "i_sim_env",
                 "i_scoreboard",
-                "task_set[8]",
+                "task_set[12]",
             ],
         ))),
         displayed_items_order: [
-            (1),
-            (2),
-            (3),
-            (4),
-            (5),
-            (9),
-            (6),
-            (7),
-            (8),
-            (10),
-            (11),
-            (12),
-            (13),
-            (14),
-            (15),
-            (16),
-            (17),
-            (21),
-            (18),
-            (19),
-            (20),
-            (25),
-            (26),
-            (27),
-            (28),
-            (29),
-            (30),
-            (31),
-            (32),
-            (33),
-            (34),
-            (35),
-            (36),
-            (37),
-            (38),
-            (39),
-            (40),
-            (41),
-            (42),
-            (43),
-            (44),
+            (47),
+            (48),
+            (49),
+            (90),
+            (50),
+            (51),
+            (52),
+            (86),
+            (53),
+            (54),
+            (55),
+            (87),
+            (56),
+            (57),
+            (58),
+            (88),
+            (59),
+            (60),
+            (61),
+            (89),
+            (62),
+            (63),
+            (64),
+            (91),
+            (65),
+            (66),
+            (67),
+            (92),
+            (68),
+            (69),
+            (70),
+            (93),
+            (71),
+            (72),
+            (73),
+            (94),
+            (74),
+            (75),
+            (76),
+            (95),
+            (77),
+            (78),
+            (79),
+            (96),
+            (80),
+            (81),
+            (82),
+            (97),
+            (83),
+            (84),
+            (85),
         ],
         displayed_items: {
-            (6): Variable((
+            (81): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -77,20 +87,172 @@
                             "i_vip_zeroheti_top",
                             "i_sim_env",
                             "i_scoreboard",
-                            "task_set[0]",
+                            "task_set[11]",
                         ],
                     ),
-                    name: "active",
+                    name: "dl_us",
                 ),
                 color: None,
                 background_color: None,
-                display_name: "…task_set[0].active",
+                display_name: "…task_set[11].dl_us [31:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
                 field_formats: [],
             )),
-            (38): Variable((
+            (95): Divider((
+                color: None,
+                background_color: None,
+                name: None,
+            )),
+            (55): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[2]",
+                        ],
+                    ),
+                    name: "name",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[2].name [2:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (82): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[11]",
+                        ],
+                    ),
+                    name: "name",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[11].name [2:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (94): Divider((
+                color: None,
+                background_color: None,
+                name: None,
+            )),
+            (64): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[5]",
+                        ],
+                    ),
+                    name: "name",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[5].name [2:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (87): Divider((
+                color: None,
+                background_color: None,
+                name: None,
+            )),
+            (70): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[7]",
+                        ],
+                    ),
+                    name: "name",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[7].name [2:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (63): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[5]",
+                        ],
+                    ),
+                    name: "dl_us",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[5].dl_us [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (72): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[8]",
+                        ],
+                    ),
+                    name: "dl_us",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[8].dl_us [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (93): Divider((
+                color: None,
+                background_color: None,
+                name: None,
+            )),
+            (68): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -112,262 +274,7 @@
                 format: None,
                 field_formats: [],
             )),
-            (16): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[2]",
-                        ],
-                    ),
-                    name: "dl_us",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…task_set[2].dl_us [63:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (19): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[3]",
-                        ],
-                    ),
-                    name: "dl_us",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…task_set[3].dl_us [63:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (29): Divider((
-                color: None,
-                background_color: None,
-                name: None,
-            )),
-            (3): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                        ],
-                    ),
-                    name: "mbx_dl_us_i",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "mbx_dl_us_i [63:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (31): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[5]",
-                        ],
-                    ),
-                    name: "dl_us",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…task_set[5].dl_us [63:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (40): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[7]",
-                        ],
-                    ),
-                    name: "name",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…task_set[7].name [1:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (25): Divider((
-                color: None,
-                background_color: None,
-                name: None,
-            )),
-            (39): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[7]",
-                        ],
-                    ),
-                    name: "dl_us",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…task_set[7].dl_us [63:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (17): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[2]",
-                        ],
-                    ),
-                    name: "name",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…task_set[2].name [1:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (10): Divider((
-                color: None,
-                background_color: None,
-                name: None,
-            )),
-            (4): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                        ],
-                    ),
-                    name: "rep_dl_us_i",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "rep_dl_us_i [63:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (20): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[3]",
-                        ],
-                    ),
-                    name: "name",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…task_set[3].name [1:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (8): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[0]",
-                        ],
-                    ),
-                    name: "name",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…task_set[0].name [1:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (18): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[3]",
-                        ],
-                    ),
-                    name: "active",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…task_set[3].active",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (11): Variable((
+            (50): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -389,7 +296,7 @@
                 format: None,
                 field_formats: [],
             )),
-            (26): Variable((
+            (54): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -398,68 +305,20 @@
                             "i_vip_zeroheti_top",
                             "i_sim_env",
                             "i_scoreboard",
-                            "task_set[4]",
-                        ],
-                    ),
-                    name: "active",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…task_set[4].active",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (33): Divider((
-                color: None,
-                background_color: None,
-                name: None,
-            )),
-            (2): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                        ],
-                    ),
-                    name: "enable_i",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "enable_i",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (35): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[6]",
+                            "task_set[2]",
                         ],
                     ),
                     name: "dl_us",
                 ),
                 color: None,
                 background_color: None,
-                display_name: "…task_set[6].dl_us [63:0]",
+                display_name: "…task_set[2].dl_us [31:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
                 field_formats: [],
             )),
-            (1): Variable((
+            (47): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -468,112 +327,20 @@
                             "i_vip_zeroheti_top",
                             "i_sim_env",
                             "i_scoreboard",
-                        ],
-                    ),
-                    name: "clk_i",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "clk_i",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (27): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[4]",
-                        ],
-                    ),
-                    name: "dl_us",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…task_set[4].dl_us [63:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (9): Divider((
-                color: None,
-                background_color: None,
-                name: None,
-            )),
-            (42): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[8]",
+                            "task_set[0]",
                         ],
                     ),
                     name: "active",
                 ),
                 color: None,
                 background_color: None,
-                display_name: "…task_set[8].active",
+                display_name: "…task_set[0].active",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
                 field_formats: [],
             )),
-            (32): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[5]",
-                        ],
-                    ),
-                    name: "name",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…task_set[5].name [1:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (28): Variable((
-                variable_ref: (
-                    path: (
-                        strs: [
-                            "TOP",
-                            "zeroheti_top_wrapper",
-                            "i_vip_zeroheti_top",
-                            "i_sim_env",
-                            "i_scoreboard",
-                            "task_set[4]",
-                        ],
-                    ),
-                    name: "name",
-                ),
-                color: None,
-                background_color: None,
-                display_name: "…task_set[4].name [1:0]",
-                display_name_type: Unique,
-                manual_name: None,
-                format: None,
-                field_formats: [],
-            )),
-            (12): Variable((
+            (51): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -589,18 +356,13 @@
                 ),
                 color: None,
                 background_color: None,
-                display_name: "…task_set[1].dl_us [63:0]",
+                display_name: "…task_set[1].dl_us [31:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
                 field_formats: [],
             )),
-            (37): Divider((
-                color: None,
-                background_color: None,
-                name: None,
-            )),
-            (43): Variable((
+            (67): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -609,20 +371,20 @@
                             "i_vip_zeroheti_top",
                             "i_sim_env",
                             "i_scoreboard",
-                            "task_set[8]",
+                            "task_set[6]",
                         ],
                     ),
-                    name: "dl_us",
+                    name: "name",
                 ),
                 color: None,
                 background_color: None,
-                display_name: "…task_set[8].dl_us [63:0]",
+                display_name: "…task_set[6].name [2:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
                 field_formats: [],
             )),
-            (7): Variable((
+            (48): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -638,13 +400,13 @@
                 ),
                 color: None,
                 background_color: None,
-                display_name: "…task_set[0].dl_us [63:0]",
+                display_name: "…task_set[0].dl_us [31:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
                 field_formats: [],
             )),
-            (5): Variable((
+            (52): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -653,24 +415,86 @@
                             "i_vip_zeroheti_top",
                             "i_sim_env",
                             "i_scoreboard",
+                            "task_set[1]",
                         ],
                     ),
-                    name: "wrn_dl_us_i",
+                    name: "name",
                 ),
                 color: None,
                 background_color: None,
-                display_name: "wrn_dl_us_i [63:0]",
+                display_name: "…task_set[1].name [2:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
                 field_formats: [],
             )),
-            (21): Divider((
+            (74): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[9]",
+                        ],
+                    ),
+                    name: "active",
+                ),
                 color: None,
                 background_color: None,
-                name: None,
+                display_name: "…task_set[9].active",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
             )),
-            (34): Variable((
+            (85): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[12]",
+                        ],
+                    ),
+                    name: "name",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[12].name [2:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (60): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[4]",
+                        ],
+                    ),
+                    name: "dl_us",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[4].dl_us [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (65): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -692,7 +516,51 @@
                 format: None,
                 field_formats: [],
             )),
-            (44): Variable((
+            (57): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[3]",
+                        ],
+                    ),
+                    name: "dl_us",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[3].dl_us [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (58): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[3]",
+                        ],
+                    ),
+                    name: "name",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[3].name [2:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (73): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -708,13 +576,13 @@
                 ),
                 color: None,
                 background_color: None,
-                display_name: "…task_set[8].name [1:0]",
+                display_name: "…task_set[8].name [2:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
                 field_formats: [],
             )),
-            (13): Variable((
+            (75): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -723,25 +591,221 @@
                             "i_vip_zeroheti_top",
                             "i_sim_env",
                             "i_scoreboard",
-                            "task_set[1]",
+                            "task_set[9]",
+                        ],
+                    ),
+                    name: "dl_us",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[9].dl_us [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (79): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[10]",
                         ],
                     ),
                     name: "name",
                 ),
                 color: None,
                 background_color: None,
-                display_name: "…task_set[1].name [1:0]",
+                display_name: "…task_set[10].name [2:0]",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
                 field_formats: [],
             )),
-            (41): Divider((
+            (71): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[8]",
+                        ],
+                    ),
+                    name: "active",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[8].active",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (80): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[11]",
+                        ],
+                    ),
+                    name: "active",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[11].active",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (84): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[12]",
+                        ],
+                    ),
+                    name: "dl_us",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[12].dl_us [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (59): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[4]",
+                        ],
+                    ),
+                    name: "active",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[4].active",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (56): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[3]",
+                        ],
+                    ),
+                    name: "active",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[3].active",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (61): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[4]",
+                        ],
+                    ),
+                    name: "name",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[4].name [2:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (86): Divider((
                 color: None,
                 background_color: None,
                 name: None,
             )),
-            (30): Variable((
+            (88): Divider((
+                color: None,
+                background_color: None,
+                name: None,
+            )),
+            (90): Divider((
+                color: None,
+                background_color: None,
+                name: None,
+            )),
+            (92): Divider((
+                color: None,
+                background_color: None,
+                name: None,
+            )),
+            (96): Divider((
+                color: None,
+                background_color: None,
+                name: None,
+            )),
+            (69): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[7]",
+                        ],
+                    ),
+                    name: "dl_us",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[7].dl_us [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (62): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -763,12 +827,78 @@
                 format: None,
                 field_formats: [],
             )),
-            (14): Divider((
+            (66): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[6]",
+                        ],
+                    ),
+                    name: "dl_us",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[6].dl_us [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (83): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[12]",
+                        ],
+                    ),
+                    name: "active",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[12].active",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (78): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[10]",
+                        ],
+                    ),
+                    name: "dl_us",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[10].dl_us [31:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (91): Divider((
                 color: None,
                 background_color: None,
                 name: None,
             )),
-            (15): Variable((
+            (53): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -790,7 +920,7 @@
                 format: None,
                 field_formats: [],
             )),
-            (36): Variable((
+            (49): Variable((
                 variable_ref: (
                     path: (
                         strs: [
@@ -799,38 +929,92 @@
                             "i_vip_zeroheti_top",
                             "i_sim_env",
                             "i_scoreboard",
-                            "task_set[6]",
+                            "task_set[0]",
                         ],
                     ),
                     name: "name",
                 ),
                 color: None,
                 background_color: None,
-                display_name: "…task_set[6].name [1:0]",
+                display_name: "…task_set[0].name [2:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (76): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[9]",
+                        ],
+                    ),
+                    name: "name",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[9].name [2:0]",
+                display_name_type: Unique,
+                manual_name: None,
+                format: None,
+                field_formats: [],
+            )),
+            (89): Divider((
+                color: None,
+                background_color: None,
+                name: None,
+            )),
+            (97): Divider((
+                color: None,
+                background_color: None,
+                name: None,
+            )),
+            (77): Variable((
+                variable_ref: (
+                    path: (
+                        strs: [
+                            "TOP",
+                            "zeroheti_top_wrapper",
+                            "i_vip_zeroheti_top",
+                            "i_sim_env",
+                            "i_scoreboard",
+                            "task_set[10]",
+                        ],
+                    ),
+                    name: "active",
+                ),
+                color: None,
+                background_color: None,
+                display_name: "…task_set[10].active",
                 display_name_type: Unique,
                 manual_name: None,
                 format: None,
                 field_formats: [],
             )),
         },
-        display_item_ref_counter: 44,
+        display_item_ref_counter: 97,
         viewports: [
             (
-                curr_left: (-0.03917748035389909),
-                curr_right: (1.1070451996305088),
-                target_left: (0.0),
-                target_right: (1.0),
-                move_start_left: (0.0),
-                move_start_right: (1.0),
+                curr_left: (-0.17335406051874147),
+                curr_right: (1.2266459394812579),
+                target_left: (-0.2),
+                target_right: (1.2),
+                move_start_left: (-0.2),
+                move_start_right: (1.2),
                 move_duration: None,
                 move_strategy: Instant,
             ),
         ],
         cursor: Some((1, [
-            609816079,
+            1032254164,
         ])),
         markers: {},
-        focused_item: Some((40)),
+        focused_item: Some((47)),
         focused_transaction: (None, None),
         selected_items: [],
         default_variable_name_type: Unique,

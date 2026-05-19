@@ -19,6 +19,7 @@ use bsp::{
 };
 use riscv_rt::InterruptNumber;
 
+// Mailbox addresses
 const MBX_STAT_ADDR: u32 = 0x0003_0000;
 const MBX_OBI_CTRL_ADDR: u32 = 0x0003_0004;
 //const MBX_AXI_CTRL_ADDR: u32 = 0x0003_0008;
@@ -27,25 +28,28 @@ const _MBX_IDAT_ADDR: u32 = 0x0003_0010;
 const MBX_OADD_ADDR: u32 = 0x0003_0014;
 const MBX_ODAT_ADDR: u32 = 0x0003_0018;
 
+// Simulation configurations
 const SIM_START_ADDR: u32 = 0x0100_0000;
 const SIM_END_ADDR: u32 = 0x0100_0001;
 const SIM_PRESCALER_ADDR: u32 = 0x0100_0002;
 const SIM_LOADFACTOR_ADDR: u32 = 0x0100_0003;
 const SIM_SEED_ADDR: u32 = 0x0100_0004;
-const SIM_TASK_PER_ADDR: u32 = 0x0100_0005;
+//const SIM_TASK_PER_ADDR: u32 = 0x0100_0005;
 
+/*
 const DL_MBX_ADDR: u32 = 0x0200_0000;
 const DL_WRN_ADDR: u32 = 0x0200_0001;
 const DL_REP_ADDR: u32 = 0x0200_0002;
 
 const REP_TASK_PER_US: u32 = 600;
-
+*/
 const TASK_MBX_ACK_ADDR: u32 = 0x0300_0000;
+/*
 const TASK_REP_0_ADDR: u32 = 0x0301_0000;
 const TASK_REP_1_ADDR: u32 = 0x0301_0001;
 const TASK_REP_2_ADDR: u32 = 0x0301_0002;
 const TASK_REP_3_ADDR: u32 = 0x0301_0003;
-
+*/
 const fn parse_u32(s: &str) -> u32 {
     let mut out: u32 = 0;
     let mut i: usize = 0;
@@ -77,7 +81,7 @@ const SIM_PARAMS: SimParams = SimParams {
 #[entry]
 fn main() -> ! {
     let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
-    sprintln!("zeroHETI control sim demonstrator");
+    sprintln!("\n\r### Starting rt_prof (bare-metal) benchmark ###\n\r");
     let mut i2c = I2c::init(4);
 
     init_intc();
@@ -95,41 +99,43 @@ fn main() -> ! {
         Timer::init::<TIMER2_ADDR>().into_periodic(),
         Timer::init::<TIMER3_ADDR>().into_periodic(),
     ];
-
-    timers[0].set_period(REP_TASK_PER_US.micros());
-    timers[1].set_period(REP_TASK_PER_US.micros());
-    timers[2].set_period(REP_TASK_PER_US.micros());
-    timers[3].set_period(REP_TASK_PER_US.micros());
-
+    /*
+        timers[0].set_period(REP_TASK_PER_US.micros());
+        timers[1].set_period(REP_TASK_PER_US.micros());
+        timers[2].set_period(REP_TASK_PER_US.micros());
+        timers[3].set_period(REP_TASK_PER_US.micros());
+    */
     let mut mtimer = MTimer::instance().into_oneshot();
 
-    sprintln!("Simulation configuration and parameters:");
+    sprintln!("Configuration and parameters:");
     sprintln!(" - Runtime (ms)          : {}", SIM_PARAMS.hyperperiod_ms);
-    sprintln!(" - Prescaler             : {}", PS);
-    sprintln!(" - Seed                  : 0x{:X}", SEED);
+    sprintln!(" - Sim env prescaler     : {}", PS);
+    sprintln!(" - Randomization seed    : 0x{:X}", SEED);
     sprintln!(" - Load factor  [0-100]  : {}", LF);
     sprintln!(" - Mailbox task DL  (us) : {}", DL_MBX);
     sprintln!(" - Warning task DL  (us) : {}", DL_WRN);
     sprintln!(" - Report  task DL  (us) : {}", DL_REP);
-    sprintln!(" - Report  task per (us) : {}", REP_TASK_PER_US);
+    sprintln!("");
+    //sprintln!(" - Report  task per (us) : {}", REP_TASK_PER_US);
 
-    send_letter(DL_MBX_ADDR, DL_MBX);
-    send_letter(DL_WRN_ADDR, DL_WRN);
-    send_letter(DL_REP_ADDR, DL_REP);
-
+    /*
+        send_letter(DL_MBX_ADDR, DL_MBX);
+        send_letter(DL_WRN_ADDR, DL_WRN);
+        send_letter(DL_REP_ADDR, DL_REP);
+    */
+    wait_outbox_empty();
+    /*
+        send_letter(SIM_SEED_ADDR, SEED);
+        send_letter(SIM_LOADFACTOR_ADDR, LF);
+    */
+        send_letter(SIM_PRESCALER_ADDR, PS);
     wait_outbox_empty();
 
-    send_letter(SIM_SEED_ADDR, SEED);
-    send_letter(SIM_LOADFACTOR_ADDR, LF);
-    send_letter(SIM_PRESCALER_ADDR, PS);
-
-    wait_outbox_empty();
-
-    send_letter(SIM_TASK_PER_ADDR, REP_TASK_PER_US);
+    //  send_letter(SIM_TASK_PER_ADDR, REP_TASK_PER_US);
     send_letter(SIM_START_ADDR, 0x0);
     //i2c.read(0x68, &mut rbuf_4);
 
-    timers.iter_mut().for_each(Periodic::start);
+    //timers.iter_mut().for_each(Periodic::start);
     mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
     unsafe { riscv::interrupt::enable() };
@@ -169,28 +175,28 @@ fn MachineTimer() {
 #[allow(non_snake_case)]
 fn Timer0Cmp() {
     sprintln!("y0");
-    send_letter(TASK_REP_0_ADDR, 0x0);
+    //send_letter(TASK_REP_0_ADDR, 0x0);
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer1Cmp() {
     sprintln!("y1");
-    send_letter(TASK_REP_1_ADDR, 0x0);
+    //send_letter(TASK_REP_1_ADDR, 0x0);
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer2Cmp() {
     sprintln!("y2");
-    send_letter(TASK_REP_2_ADDR, 0x0);
+    //send_letter(TASK_REP_2_ADDR, 0x0);
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer3Cmp() {
     sprintln!("y3");
-    send_letter(TASK_REP_3_ADDR, 0x0);
+    //send_letter(TASK_REP_3_ADDR, 0x0);
 }
 
 #[nested_interrupt]

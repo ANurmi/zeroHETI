@@ -18,8 +18,9 @@ module vip_sim_env #(
   localparam logic [31:0] SimPerAddr = 32'h0100_0005;
 
   localparam logic [31:0] DlMbxAddr = 32'h0200_0000;
-  localparam logic [31:0] DlWrnAddr = 32'h0200_0001;
-  localparam logic [31:0] DlRepAddr = 32'h0200_0002;
+  localparam logic [31:0] DlUpdAddr = 32'h0200_0001;
+  localparam logic [31:0] DlCtrlAddr = 32'h0200_0002;
+  localparam logic [31:0] DlRepAddr = 32'h0200_0003;
 
   localparam logic [31:0] MbxAckAddr = 32'h0300_0000;
 
@@ -38,9 +39,9 @@ module vip_sim_env #(
   logic              scb_enable;
 
   int unsigned       dl_mbx_us;
-  int unsigned       dl_wrn_us;
+  int unsigned       dl_upd_us;
+  int unsigned       dl_ctrl_us;
   int unsigned       dl_rep_us;
-  int unsigned       per_rep_us;
 
   typedef logic [31:0] dtype;
   typedef logic [6:0] atype;
@@ -54,7 +55,8 @@ module vip_sim_env #(
     scb_enable = 0;
 
     dl_mbx_us = 0;
-    dl_wrn_us = 0;
+    dl_upd_us = 0;
+    dl_ctrl_us = 0;
     dl_rep_us = 0;
 
     array = '{
@@ -107,34 +109,39 @@ module vip_sim_env #(
       .loadfactor_i(scb_loadfactor),
       .seed_i      (scb_seed),
       .mbx_dl_us_i (dl_mbx_us),
-      .wrn_dl_us_i (dl_wrn_us),
+      .upd_dl_us_i (dl_upd_us),
+      .ctrl_dl_us_i(dl_ctrl_us),
       .rep_dl_us_i (dl_rep_us)
   );
 
   task automatic recv_letter(input logic [31:0] addr, input logic [31:0] data);
     unique case (addr)
       SimStartAddr: begin
-        $display("[SCB] Simulation start");
+        $display("[SCB] Simulation scoreboard active");
         motor_enable = 1'b1;
         scb_enable   = 1'b1;
       end
       SimEndAddr: begin
-        $display("[SCB] Simulation end");
+        $display("[SCB] Simulation complete");
+        $display(" - Scoreboard task log: \n");
         motor_enable = 1'b0;
         scb_enable   = 1'b0;
       end
       SimLfAddr: scb_loadfactor = data;
       SimPsAddr: scb_prescaler = data;
       SimSeedAddr: scb_seed = data;
-      SimPerAddr: per_rep_us = data;
+      //SimPerAddr: per_rep_us = data;
       DlMbxAddr: dl_mbx_us = data;
-      DlWrnAddr: dl_wrn_us = data;
+      DlUpdAddr: dl_upd_us = data;
+      DlCtrlAddr: dl_ctrl_us = data;
       DlRepAddr: dl_rep_us = data;
+      /*
       MbxAckAddr: i_sim_env.i_scoreboard.retire_task(0);
       Rep0AckAddr: i_sim_env.i_scoreboard.retire_task(5);
       Rep1AckAddr: i_sim_env.i_scoreboard.retire_task(6);
       Rep2AckAddr: i_sim_env.i_scoreboard.retire_task(7);
       Rep3AckAddr: i_sim_env.i_scoreboard.retire_task(8);
+      */
       default:
       $display("[VIP_SIM_ENV]: Warning! Received letter with unknown address: 0x%8h", addr);
     endcase

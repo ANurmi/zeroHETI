@@ -6,17 +6,19 @@ module vip_task_scoreboard #(
     input int unsigned loadfactor_i,
     input int unsigned seed_i,
     input int unsigned mbx_dl_us_i,
-    input int unsigned wrn_dl_us_i,
+    input int unsigned upd_dl_us_i,
+    input int unsigned ctrl_dl_us_i,
     input int unsigned rep_dl_us_i
 );
 
-  localparam int unsigned TaskSetSize = 9;
+  localparam int unsigned PerTaskSetSize = 13;
 
-  typedef enum logic [1:0] {
+  typedef enum logic [2:0] {
     NONE = 0,
-    MBX  = 1,
-    WRN  = 2,
-    REP  = 3
+    MAIL = 1,
+    UPDATE = 2,
+    CONTROL = 3,
+    REPORT = 4
   } name_e;
 
   typedef struct packed {
@@ -33,8 +35,8 @@ module vip_task_scoreboard #(
   } task_ret_t;
 
 
-  task_t [TaskSetSize-1:0] task_set;
-  task_ret_t [TaskSetSize-1:0] task_set_ret;
+  task_t [PerTaskSetSize-1:0] task_set;
+  task_ret_t [PerTaskSetSize-1:0] task_set_ret;
 
   longint unsigned counter_us = 0;
   int unsigned pre_counter = 0;
@@ -52,28 +54,29 @@ module vip_task_scoreboard #(
   always @(counter_us) begin : scb_main_proc
 
     // Check for deadline misses
-    for (int i = 0; i < TaskSetSize; i++) begin
+    for (int i = 0; i < PerTaskSetSize; i++) begin
       if (task_set[i].active & task_set[i].dl_us == 0) begin
         $fatal(1, "Deadline miss for task %0d!", i);
       end
     end
 
     // Decrement DL of active tasks
-    for (int i = 0; i < TaskSetSize; i++) begin
+    for (int i = 0; i < PerTaskSetSize; i++) begin
       if (task_set[i].active) task_set[i].dl_us--;
     end
 
     // Activate periodic events
     if (counter_us % 64'(task_period) == 0) begin
-      activate_task(5);
-      activate_task(6);
-      activate_task(7);
-      activate_task(8);
+      //activate_task(5);
+      //activate_task(6);
+      //activate_task(7);
+      //activate_task(8);
     end
 
     // Produce randomized asynchronous events
     // - Load factor   0: ~1 / 1000 us
     // - Load factor 100: ~1 / 10 us
+    /*
     if ($urandom_range(0, 999) < loadfactor_i + 1) begin
       // Issue mailbox task with 10 % probability
       if ($urandom_range(0, 9) < 1) begin
@@ -83,7 +86,7 @@ module vip_task_scoreboard #(
         activate_task(0);
       end
     end
-
+*/
   end : scb_main_proc
 
   initial begin
@@ -94,30 +97,43 @@ module vip_task_scoreboard #(
     $urandom(seed_i);
     $urandom_range(seed_i);
 
-    for (int i = 0; i < TaskSetSize; i++) begin
+    for (int i = 0; i < PerTaskSetSize; i++) begin
       task_set[i].active = 1'b0;
       task_set_ret[i] = '{default: 0};
       unique case (i) inside
         0: begin
-          task_set[i].name  = MBX;
+          task_set[i].name  = MAIL;
           task_set[i].dl_us = mbx_dl_us_i;
         end
+        default: ;
         [1 : 4]: begin
-          task_set[i].name  = WRN;
-          task_set[i].dl_us = wrn_dl_us_i;
+          task_set[i].name  = UPDATE;
+          task_set[i].dl_us = upd_dl_us_i;
         end
         [5 : 8]: begin
-          task_set[i].name  = REP;
+          task_set[i].name  = CONTROL;
+          task_set[i].dl_us = ctrl_dl_us_i;
+        end
+        [9 : 12]: begin
+          task_set[i].name  = REPORT;
           task_set[i].dl_us = rep_dl_us_i;
         end
       endcase
     end
 
     @(negedge enable_i);
-    for (int i = 0; i < TaskSetSize; i++) begin
-      $display("Task %0d - count: %3d, avg. slack: %4d us, worst slack: %4d us", i,
+    for (int i = 0; i < PerTaskSetSize; i++) begin
+      automatic string TaskName;
+      unique case (i) inside
+        0: TaskName = "GetMail";
+        [1 : 4]: TaskName = {"UpdateCtrl", string'(i - 1 + 48)};
+        [5 : 8]: TaskName = {"I2cCtrl", string'(i - 5 + 48)};
+        [9 : 12]: TaskName = {"I2cReport", string'(i - 9 + 48)};
+      endcase
+      $display("T%02d ( %11s ) - count: %3d, avg. slack: %4d us, worst slack: %4d us", i, TaskName,
                task_set_ret[i].count, task_set_ret[i].slack_avg, task_set_ret[i].slack_worst);
     end
+    $display("");
 
   end
 
@@ -133,8 +149,9 @@ module vip_task_scoreboard #(
 
     unique case (idx) inside
       0: task_set[idx].dl_us = mbx_dl_us_i;
-      [1 : 4]: task_set[idx].dl_us = wrn_dl_us_i;
-      [5 : 8]: task_set[idx].dl_us = rep_dl_us_i;
+      [1 : 4]: task_set[idx].dl_us = upd_dl_us_i;
+      [5 : 8]: task_set[idx].dl_us = ctrl_dl_us_i;
+      [9 : 12]: task_set[idx].dl_us = rep_dl_us_i;
     endcase
 
   endtask
