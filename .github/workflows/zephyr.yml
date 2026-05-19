@@ -1,4 +1,4 @@
-name: zephyr motor_control specific workflow
+name: zephyr workflow
 
 on:
   push:
