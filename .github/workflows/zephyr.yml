@@ -1,0 +1,77 @@
+name: zephyr workflow
+
+on:
+  push:
+    branches:
+      - zephyr/motor_control
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-zephyr:
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci:v0.29.2
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+          path: zeroheti
+
+      - name: Fetch zephyr dependencies
+        run: |
+          west init -l zeroheti    
+          west update 
+      
+      - name: Install zephyr SDK
+        run: |
+          cd zephyr/    
+          west sdk install           
+
+      - name: build motor-control app
+        run: | 
+          cd zephyr/
+          west build -b hetiboard $GITHUB_WORKSPACE/zeroheti/examples/zephyr/motor_control -p always
+      
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: zephyr-motor-elf
+          path: zephyr/build/zephyr/zephyr.elf
+
+  build-hw:
+    needs: build-zephyr
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/soc-hub-fi/zeroheti-ci:latest
+      options: --user 0
+
+    steps:    
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+          path: zeroheti
+
+      - name: Fetch dependencies
+        run: |
+          cd zeroheti/
+          bender update && bender vendor init
+      
+      - name: Build hardware
+        run: |
+          mkdir zeroheti/build && mkdir zeroheti/build/sw 
+          cd zeroheti/
+          make verilate INTC=CLIC
+
+      - name: Download firmware
+        uses: actions/download-artifact@v4
+        with:
+          name: zephyr-motor-elf
+          path: zeroheti/build/sw/
+      
+      - name: Run zephyr-motor ELF 
+        run: |
+          cd zeroheti/
+          make simv TEST=zephyr
