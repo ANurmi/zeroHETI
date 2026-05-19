@@ -6,7 +6,7 @@ on:
       - zephyr/motor_control
   pull_request:
     branches:
-      - main
+      - "*"
 
 jobs:
   build-zephyr:
@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref || github.ref }}
+          ref: zephyr/motor_control
           path: zeroheti
 
       - name: Fetch zephyr dependencies
@@ -51,7 +51,7 @@ jobs:
     steps:    
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref || github.ref }}
+          ref: zephyr/motor_control
           path: zeroheti
 
       - name: Fetch dependencies
