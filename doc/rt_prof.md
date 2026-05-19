@@ -1,8 +1,8 @@
-# zeroHETI Control Simulation Demonstrator
+# `rt_prof` Control Simulation Demonstrator
 
 ## Abstract
 
-This demonstrator simulates the operation of zeroHETI in cyber-physical control system with hard real-time constraints and as part of a larger System-on-Chip (SoC). The demonstrator is created primarily as a testbed for evaluation and comparison of the [`edfic`](https://github.com/ANurmi/edfic/tree/main) against the PULP Platform core-local interrupt controller ([`pulp-clic`](https://github.com/pulp-platform/clic/releases/tag/v2.0.0)) in a representative in-system simulation.
+`rt_prof` simulates the operation of `zeroHETI` in a cyber-physical control system with hard real-time constraints and as part of a larger System-on-Chip (SoC). The demonstrator is created primarily as a testbed for evaluation and comparison of the [`edfic`](https://github.com/ANurmi/edfic/tree/main) against the PULP Platform core-local interrupt controller ([`pulp-clic`](https://github.com/pulp-platform/clic/releases/tag/v2.0.0)) in a representative in-system simulation.
 
 ## Prerequisites
 
@@ -13,6 +13,46 @@ This demonstrator simulates the operation of zeroHETI in cyber-physical control 
 - [Cargo](https://doc.rust-lang.org/cargo/) – Rust build system.
 - [RISC-V GNU Toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain) – `riscv32-unknown-elf-gcc` binary required for linking object files.
 
+## Periodic Task Set Description
+
+### `task_get_mail`
+- Priority: ??
+- Receive high-level control directives
+    - Read & clear inbox queue
+    - Update values to global variables
+    - Pend `task_update_control_freq_[0..3]` to apply updates
+- Pended by: Mailbox IRQ (external periodic event)
+- Retired by: Mailbox IRQ ack (sw-written)
+
+### `task_update_control_freq_[0..3]`
+- Priority: ??
+- Update frequency of `task_control_motor_[0..3]` based on high-level directives
+- Pended by: `task_get_mail`
+- Retired by: Mailbox letter
+
+### `task_control_motor_[0..3]`
+- Priority: ??
+- Compute control loop for stabilizing motor speeds.
+- Pended by: Timer group IRQ [0..3]
+- Retired by: Mailbox letter
+
+### `task_report_motor_[0..3]`
+- Priority: ??
+- Report motor values to mailbox after control loop iteration.
+- Pended by: `task_control_motor_[0..3]`
+- Retired by: Mailbox letter
+
+## Aperiodic Tasks
+
+### `MachineTimer`
+- Priority: Max
+- Raised once to terminate test case
+
+### `MotorFatalIrq[0...3]`
+- Priority: Max
+- Raised if motor speed exceeds acceptable bound
+- Runtime error, terminate program
+
 ## System Description
 
 The simulation environment models a system where the zeroHETI Design Under Test (DUT) communicates with on-chip entities (e.g., application processors, accelerators) and applies high-level control directives to four peripheral-controlled motor models. This setup can be scaled in complexity and aims to be representative of a medium-complexity cyber-physical hard real-time system.
@@ -20,8 +60,8 @@ The simulation environment models a system where the zeroHETI Design Under Test 
 
 The simulated system is illustrated in the following figure. Specifically, the DUT interfaces with the simulation environment via
 - A bi-directional hardware mailbox, accessible externally through an AXI Lite Subordinate interface.
-- An I²C controller peripheral driving a common bus.
-- A set of interrupt inputs (irq).
+- An I²C controller peripheral driving a shared peripheral bus.
+- A set of interrupt inputs (`irq`).
 
 <img src="sim_env.png" width="500">
 
@@ -70,8 +110,6 @@ The mailbox implements an inbox and and outbox queue for messages (letters). Let
     - `[2]`: Interrupt set
     - `[1]`: Inbox letter send
     - `[0]`: Outbox read acknowledge
-
-### TODO: Task Set Description
 
 ### Parameters
 

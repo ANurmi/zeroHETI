@@ -63,8 +63,8 @@ const SEED: u32 = 0xB0110c55;
 const RUNTIME_MS: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
 
 const DL_MBX: u32 = 0x200;
-const DL_WRN: u32 = 0x80;
-const DL_REP: u32 = 0x100;
+const DL_WRN: u32 = 0x100;
+const DL_REP: u32 = 0x200;
 
 struct SimParams {
     hyperperiod_ms: u64,
@@ -108,10 +108,10 @@ fn main() -> ! {
     sprintln!(" - Prescaler             : {}", PS);
     sprintln!(" - Seed                  : 0x{:X}", SEED);
     sprintln!(" - Load factor  [0-100]  : {}", LF);
-    sprintln!(" - Mailbox task DL (us)  : {}", DL_MBX);
-    sprintln!(" - Warning task DL (us)  : {}", DL_WRN);
-    sprintln!(" - Report  task DL (us)  : {}", DL_REP);
-    sprintln!(" - Report task  per (us) : {}", REP_TASK_PER_US);
+    sprintln!(" - Mailbox task DL  (us) : {}", DL_MBX);
+    sprintln!(" - Warning task DL  (us) : {}", DL_WRN);
+    sprintln!(" - Report  task DL  (us) : {}", DL_REP);
+    sprintln!(" - Report  task per (us) : {}", REP_TASK_PER_US);
 
     send_letter(DL_MBX_ADDR, DL_MBX);
     send_letter(DL_WRN_ADDR, DL_WRN);
@@ -196,7 +196,7 @@ fn Timer3Cmp() {
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Mbx() {
-     riscv::interrupt::disable() ;
+    riscv::interrupt::disable();
     // Read inbox
     /*
     let addr = mmio::read_u32(MBX_IADD_ADDR as usize);
