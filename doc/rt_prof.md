@@ -22,24 +22,28 @@
     - Update values to global variables
     - Pend `task_update_control_freq_[0..3]` to apply updates
 - Pended by: Mailbox IRQ (external periodic event)
+- Bound to HW interrupt: `Interrupt::Mbx` 
 - Retired by: Mailbox IRQ ack (sw-written)
 
 ### `task_update_control_freq_[0..3]`
 - Priority: ??
 - Update frequency of `task_control_motor_[0..3]` based on high-level directives
 - Pended by: `task_get_mail`
+- Bound to HW interrupt: `Interrupt::Timer[0..3]Ovf,`
 - Retired by: Mailbox letter
 
 ### `task_control_motor_[0..3]`
 - Priority: ??
 - Compute control loop for stabilizing motor speeds.
 - Pended by: Timer group IRQ [0..3]
+- Bound to HW interrupt: `Interrupt::Timer[0..3]Cmp,`
 - Retired by: Mailbox letter
 
 ### `task_report_motor_[0..3]`
 - Priority: ??
 - Report motor values to mailbox after control loop iteration.
 - Pended by: `task_control_motor_[0..3]`
+- Bound to HW interrupt: `Interrupt::Ext[0..3]`
 - Retired by: Mailbox letter
 
 ## Aperiodic Tasks
@@ -47,11 +51,13 @@
 ### `MachineTimer`
 - Priority: Max
 - Raised once to terminate test case
+- Bound to HW interrupt: `MachineTimer`
 
 ### `MotorFatalIrq[0...3]`
 - Priority: Max
-- Raised if motor speed exceeds acceptable bound
+- Raised if any motor speed exceeds acceptable bound
 - Runtime error, terminate program
+- Bound to HW interrupt: `MachineExternal`
 
 ## System Description
 

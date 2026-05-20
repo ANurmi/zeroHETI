@@ -51,6 +51,13 @@ module vip_task_scoreboard #(
     end
   end : us_counter
 
+  always @(i_zeroheti.i_apb_timer.irq_o) begin
+    if (i_zeroheti.i_apb_timer.irq_o[1]) activate_task(5);
+    if (i_zeroheti.i_apb_timer.irq_o[3]) activate_task(6);
+    if (i_zeroheti.i_apb_timer.irq_o[5]) activate_task(7);
+    if (i_zeroheti.i_apb_timer.irq_o[7]) activate_task(8);
+  end
+
   always @(counter_us) begin : scb_main_proc
 
     // Check for deadline misses
@@ -67,6 +74,8 @@ module vip_task_scoreboard #(
 
     // Activate periodic events
     if (counter_us % 64'(task_period) == 0) begin
+      activate_task(0);
+      i_mbx_drv.raise_irq();
       //activate_task(5);
       //activate_task(6);
       //activate_task(7);

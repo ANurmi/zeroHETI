@@ -24,10 +24,20 @@ module vip_sim_env #(
 
   localparam logic [31:0] MbxAckAddr = 32'h0300_0000;
 
-  localparam logic [31:0] Rep0AckAddr = 32'h0301_0000;
-  localparam logic [31:0] Rep1AckAddr = 32'h0301_0001;
-  localparam logic [31:0] Rep2AckAddr = 32'h0301_0002;
-  localparam logic [31:0] Rep3AckAddr = 32'h0301_0003;
+  localparam logic [31:0] Ctrl0AckAddr = 32'h0301_0000;
+  localparam logic [31:0] Ctrl1AckAddr = 32'h0301_0001;
+  localparam logic [31:0] Ctrl2AckAddr = 32'h0301_0002;
+  localparam logic [31:0] Ctrl3AckAddr = 32'h0301_0003;
+
+  localparam logic [31:0] Rep0AckAddr = 32'h0401_0000;
+  localparam logic [31:0] Rep1AckAddr = 32'h0401_0001;
+  localparam logic [31:0] Rep2AckAddr = 32'h0401_0002;
+  localparam logic [31:0] Rep3AckAddr = 32'h0401_0003;
+
+  localparam logic [31:0] Upd0AckAddr = 32'h0501_0000;
+  localparam logic [31:0] Upd1AckAddr = 32'h0501_0001;
+  localparam logic [31:0] Upd2AckAddr = 32'h0501_0002;
+  localparam logic [31:0] Upd3AckAddr = 32'h0501_0003;
 
   logic        [3:0] motor_irqs;
   logic              motor_enable;
@@ -127,21 +137,58 @@ module vip_sim_env #(
         motor_enable = 1'b0;
         scb_enable   = 1'b0;
       end
-      SimLfAddr: scb_loadfactor = data;
-      SimPsAddr: scb_prescaler = data;
+      SimLfAddr:   scb_loadfactor = data;
+      SimPsAddr:   scb_prescaler = data;
       SimSeedAddr: scb_seed = data;
       //SimPerAddr: per_rep_us = data;
-      DlMbxAddr: dl_mbx_us = data;
-      DlUpdAddr: dl_upd_us = data;
-      DlCtrlAddr: dl_ctrl_us = data;
-      DlRepAddr: dl_rep_us = data;
-      /*
-      MbxAckAddr: i_sim_env.i_scoreboard.retire_task(0);
-      Rep0AckAddr: i_sim_env.i_scoreboard.retire_task(5);
-      Rep1AckAddr: i_sim_env.i_scoreboard.retire_task(6);
-      Rep2AckAddr: i_sim_env.i_scoreboard.retire_task(7);
-      Rep3AckAddr: i_sim_env.i_scoreboard.retire_task(8);
-      */
+      DlMbxAddr:   dl_mbx_us = data;
+      DlUpdAddr:   dl_upd_us = data;
+      DlCtrlAddr:  dl_ctrl_us = data;
+      DlRepAddr:   dl_rep_us = data;
+      MbxAckAddr:  i_sim_env.i_scoreboard.retire_task(0);
+
+      Ctrl0AckAddr: i_sim_env.i_scoreboard.retire_task(5);
+      Ctrl1AckAddr: i_sim_env.i_scoreboard.retire_task(6);
+      Ctrl2AckAddr: i_sim_env.i_scoreboard.retire_task(7);
+      Ctrl3AckAddr: i_sim_env.i_scoreboard.retire_task(8);
+
+      Upd0AckAddr: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(1);
+        else i_sim_env.i_scoreboard.activate_task(1);
+      end
+
+      Upd1AckAddr: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(2);
+        else i_sim_env.i_scoreboard.activate_task(2);
+      end
+
+      Upd2AckAddr: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(3);
+        else i_sim_env.i_scoreboard.activate_task(3);
+      end
+
+      Upd3AckAddr: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(4);
+        else i_sim_env.i_scoreboard.activate_task(4);
+      end
+
+      Rep0AckAddr: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(9);
+        else i_sim_env.i_scoreboard.activate_task(9);
+      end
+      Rep1AckAddr: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(10);
+        else i_sim_env.i_scoreboard.activate_task(10);
+      end
+      Rep2AckAddr: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(11);
+        else i_sim_env.i_scoreboard.activate_task(11);
+      end
+      Rep3AckAddr: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(12);
+        else i_sim_env.i_scoreboard.activate_task(12);
+      end
+
       default:
       $display("[VIP_SIM_ENV]: Warning! Received letter with unknown address: 0x%8h", addr);
     endcase

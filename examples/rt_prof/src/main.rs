@@ -1,6 +1,7 @@
 //! Test accesses to mailbox interface
 #![no_main]
 #![no_std]
+
 use fugit::{ExtU32, ExtU64};
 
 use bsp::{
@@ -12,11 +13,12 @@ use bsp::{
     mmio,
     mtimer::MTimer,
     nested_interrupt,
-    riscv::{self, asm::wfi},
+    riscv::{self, asm::nop, asm::wfi},
     rt::entry,
     sprintln,
     timer_group::{Periodic, Timer},
 };
+
 use riscv_rt::InterruptNumber;
 
 // Mailbox addresses
@@ -36,20 +38,29 @@ const SIM_LOADFACTOR_ADDR: u32 = 0x0100_0003;
 const SIM_SEED_ADDR: u32 = 0x0100_0004;
 //const SIM_TASK_PER_ADDR: u32 = 0x0100_0005;
 
-/*
 const DL_MBX_ADDR: u32 = 0x0200_0000;
-const DL_WRN_ADDR: u32 = 0x0200_0001;
-const DL_REP_ADDR: u32 = 0x0200_0002;
+const DL_UPD_ADDR: u32 = 0x0200_0001;
+const DL_CTRL_ADDR: u32 = 0x0200_0002;
+const DL_REP_ADDR: u32 = 0x0200_0003;
 
-const REP_TASK_PER_US: u32 = 600;
-*/
+const REP_TASK_PER_US: u32 = 700;
 const TASK_MBX_ACK_ADDR: u32 = 0x0300_0000;
-/*
-const TASK_REP_0_ADDR: u32 = 0x0301_0000;
-const TASK_REP_1_ADDR: u32 = 0x0301_0001;
-const TASK_REP_2_ADDR: u32 = 0x0301_0002;
-const TASK_REP_3_ADDR: u32 = 0x0301_0003;
-*/
+
+const TASK_CTRL_0_ADDR: u32 = 0x0301_0000;
+const TASK_CTRL_1_ADDR: u32 = 0x0301_0001;
+const TASK_CTRL_2_ADDR: u32 = 0x0301_0002;
+const TASK_CTRL_3_ADDR: u32 = 0x0301_0003;
+
+const TASK_REP_0_ADDR: u32 = 0x0401_0000;
+const TASK_REP_1_ADDR: u32 = 0x0401_0001;
+const TASK_REP_2_ADDR: u32 = 0x0401_0002;
+const TASK_REP_3_ADDR: u32 = 0x0401_0003;
+
+const TASK_UPD_0_ADDR: u32 = 0x0501_0000;
+const TASK_UPD_1_ADDR: u32 = 0x0501_0001;
+const TASK_UPD_2_ADDR: u32 = 0x0501_0002;
+const TASK_UPD_3_ADDR: u32 = 0x0501_0003;
+
 const fn parse_u32(s: &str) -> u32 {
     let mut out: u32 = 0;
     let mut i: usize = 0;
@@ -67,9 +78,10 @@ const SEED: u32 = 0xB0110c55;
 const RUNTIME_MS: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
 
 const DL_MBX: u32 = 0x200;
-const DL_WRN: u32 = 0x100;
-const DL_REP: u32 = 0x200;
-
+/*
+ *const DL_WRN: u32 = 0x100;
+ *const DL_REP: u32 = 0x200;
+ */
 struct SimParams {
     hyperperiod_ms: u64,
 }
@@ -85,13 +97,25 @@ fn main() -> ! {
     let mut i2c = I2c::init(4);
 
     init_intc();
-    setup_irq(Interrupt::I2c, 1);
-    setup_irq(Interrupt::Mbx, 1);
+    setup_irq(Interrupt::I2c, 3);
+    setup_irq(Interrupt::Mbx, 3);
     setup_irq(Interrupt::MachineTimer, u8::MAX);
-    setup_irq(Interrupt::Timer0Cmp, 1);
-    setup_irq(Interrupt::Timer1Cmp, 1);
-    setup_irq(Interrupt::Timer2Cmp, 1);
-    setup_irq(Interrupt::Timer3Cmp, 1);
+    setup_irq(Interrupt::MachineExternal, u8::MAX);
+
+    setup_irq(Interrupt::Timer0Ovf, 1);
+    setup_irq(Interrupt::Timer1Ovf, 1);
+    setup_irq(Interrupt::Timer2Ovf, 1);
+    setup_irq(Interrupt::Timer3Ovf, 1);
+
+    setup_irq(Interrupt::Timer0Cmp, 2);
+    setup_irq(Interrupt::Timer1Cmp, 2);
+    setup_irq(Interrupt::Timer2Cmp, 2);
+    setup_irq(Interrupt::Timer3Cmp, 2);
+
+    setup_irq(Interrupt::Ext0, 1);
+    setup_irq(Interrupt::Ext1, 1);
+    setup_irq(Interrupt::Ext2, 1);
+    setup_irq(Interrupt::Ext3, 1);
 
     let timers = &mut [
         Timer::init::<TIMER0_ADDR>().into_periodic(),
@@ -99,12 +123,12 @@ fn main() -> ! {
         Timer::init::<TIMER2_ADDR>().into_periodic(),
         Timer::init::<TIMER3_ADDR>().into_periodic(),
     ];
-    /*
-        timers[0].set_period(REP_TASK_PER_US.micros());
-        timers[1].set_period(REP_TASK_PER_US.micros());
-        timers[2].set_period(REP_TASK_PER_US.micros());
-        timers[3].set_period(REP_TASK_PER_US.micros());
-    */
+
+    timers[0].set_period(REP_TASK_PER_US.micros());
+    timers[1].set_period(REP_TASK_PER_US.micros());
+    timers[2].set_period(REP_TASK_PER_US.micros());
+    timers[3].set_period(REP_TASK_PER_US.micros());
+
     let mut mtimer = MTimer::instance().into_oneshot();
 
     sprintln!("Configuration and parameters:");
@@ -113,13 +137,16 @@ fn main() -> ! {
     sprintln!(" - Randomization seed    : 0x{:X}", SEED);
     sprintln!(" - Load factor  [0-100]  : {}", LF);
     sprintln!(" - Mailbox task DL  (us) : {}", DL_MBX);
-    sprintln!(" - Warning task DL  (us) : {}", DL_WRN);
-    sprintln!(" - Report  task DL  (us) : {}", DL_REP);
+    //sprintln!(" - Warning task DL  (us) : {}", DL_WRN);
+    //sprintln!(" - Report  task DL  (us) : {}", DL_REP);
     sprintln!("");
     //sprintln!(" - Report  task per (us) : {}", REP_TASK_PER_US);
 
+    send_letter(DL_MBX_ADDR, DL_MBX);
+    send_letter(DL_UPD_ADDR, DL_MBX);
+    send_letter(DL_CTRL_ADDR, DL_MBX);
+    send_letter(DL_REP_ADDR, DL_MBX);
     /*
-        send_letter(DL_MBX_ADDR, DL_MBX);
         send_letter(DL_WRN_ADDR, DL_WRN);
         send_letter(DL_REP_ADDR, DL_REP);
     */
@@ -128,14 +155,14 @@ fn main() -> ! {
         send_letter(SIM_SEED_ADDR, SEED);
         send_letter(SIM_LOADFACTOR_ADDR, LF);
     */
-        send_letter(SIM_PRESCALER_ADDR, PS);
+    send_letter(SIM_PRESCALER_ADDR, PS);
     wait_outbox_empty();
 
     //  send_letter(SIM_TASK_PER_ADDR, REP_TASK_PER_US);
     send_letter(SIM_START_ADDR, 0x0);
     //i2c.read(0x68, &mut rbuf_4);
 
-    //timers.iter_mut().for_each(Periodic::start);
+    timers.iter_mut().for_each(Periodic::start);
     mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
     unsafe { riscv::interrupt::enable() };
@@ -166,7 +193,32 @@ fn send_letter(addr: u32, data: u32) {
 #[allow(non_snake_case)]
 fn MachineTimer() {
     riscv::interrupt::disable();
+
     send_letter(SIM_END_ADDR, 0x1);
+
+    // Delay to let outbox clear
+    for _ in 1..101 {
+        nop();
+    }
+
+    let instret = riscv::register::minstret::read64();
+    let active_time_cc = riscv::register::mcycle::read64();
+
+    sprintln!("Instructions retired: {instret}, cycles: {active_time_cc}");
+
+    // TODO: make neater
+    let total_time_cc = RUNTIME_MS * 1000 * 100;
+
+    sprintln!(
+        "Total time (cc): {}, active time (cc): {},",
+        total_time_cc,
+        active_time_cc
+    );
+    sprintln!(
+        "CPU utilization: {}%",
+        (active_time_cc * 100) / total_time_cc
+    );
+
     #[cfg(feature = "rtl-tb")]
     bsp::tb::rtl_tb_signal_ok();
 }
@@ -174,29 +226,96 @@ fn MachineTimer() {
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer0Cmp() {
-    sprintln!("y0");
-    //send_letter(TASK_REP_0_ADDR, 0x0);
+    // TODO: less ham-fisted locking
+    unsafe { riscv::interrupt::disable() };
+    send_letter(TASK_CTRL_0_ADDR, 0x0);
+    pend_irq(Interrupt::Ext0);
+    send_letter(TASK_REP_0_ADDR, 0x1);
+    unsafe { riscv::interrupt::enable() };
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer1Cmp() {
-    sprintln!("y1");
-    //send_letter(TASK_REP_1_ADDR, 0x0);
+    unsafe { riscv::interrupt::disable() };
+    send_letter(TASK_CTRL_1_ADDR, 0x0);
+    pend_irq(Interrupt::Ext1);
+    send_letter(TASK_REP_1_ADDR, 0x1);
+    unsafe { riscv::interrupt::enable() };
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer2Cmp() {
-    sprintln!("y2");
-    //send_letter(TASK_REP_2_ADDR, 0x0);
+    unsafe { riscv::interrupt::disable() };
+    send_letter(TASK_CTRL_2_ADDR, 0x0);
+    pend_irq(Interrupt::Ext2);
+    send_letter(TASK_REP_2_ADDR, 0x1);
+    unsafe { riscv::interrupt::enable() };
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer3Cmp() {
-    sprintln!("y3");
-    //send_letter(TASK_REP_3_ADDR, 0x0);
+    unsafe { riscv::interrupt::disable() };
+    send_letter(TASK_CTRL_3_ADDR, 0x0);
+    pend_irq(Interrupt::Ext3);
+    send_letter(TASK_REP_3_ADDR, 0x1);
+    unsafe { riscv::interrupt::enable() };
+}
+
+#[nested_interrupt]
+#[allow(non_snake_case)]
+fn Timer0Ovf() {
+    send_letter(TASK_UPD_0_ADDR, 0x0);
+}
+
+#[nested_interrupt]
+#[allow(non_snake_case)]
+fn Timer1Ovf() {
+    send_letter(TASK_UPD_1_ADDR, 0x0);
+}
+
+#[nested_interrupt]
+#[allow(non_snake_case)]
+fn Timer2Ovf() {
+    send_letter(TASK_UPD_2_ADDR, 0x0);
+}
+
+#[nested_interrupt]
+#[allow(non_snake_case)]
+fn Timer3Ovf() {
+    send_letter(TASK_UPD_3_ADDR, 0x0);
+}
+
+#[nested_interrupt]
+#[allow(non_snake_case)]
+fn Ext0() {
+    send_letter(TASK_REP_0_ADDR, 0x0);
+}
+
+#[nested_interrupt]
+#[allow(non_snake_case)]
+fn Ext1() {
+    send_letter(TASK_REP_1_ADDR, 0x0);
+}
+#[nested_interrupt]
+#[allow(non_snake_case)]
+fn Ext2() {
+    //sprintln!("e2");
+    send_letter(TASK_REP_2_ADDR, 0x0);
+}
+#[nested_interrupt]
+#[allow(non_snake_case)]
+fn Ext3() {
+    //sprintln!("e3");
+    send_letter(TASK_REP_3_ADDR, 0x0);
+}
+
+#[nested_interrupt]
+#[allow(non_snake_case)]
+fn MachineExternal() {
+    sprintln!("error!");
 }
 
 #[nested_interrupt]
@@ -210,13 +329,23 @@ fn Mbx() {
     */
     // Inbox read ack
     mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0100_0000);
-    sprintln!("[MBX]");
 
     // Ack MBX task
     send_letter(TASK_MBX_ACK_ADDR, 0x0);
 
     // IRQ clear
     mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0002_0000);
+
+    send_letter(TASK_UPD_0_ADDR, 0x1);
+    send_letter(TASK_UPD_1_ADDR, 0x1);
+    send_letter(TASK_UPD_2_ADDR, 0x1);
+    send_letter(TASK_UPD_3_ADDR, 0x1);
+
+    pend_irq(Interrupt::Timer0Ovf);
+    pend_irq(Interrupt::Timer1Ovf);
+    pend_irq(Interrupt::Timer2Ovf);
+    pend_irq(Interrupt::Timer3Ovf);
+
     unsafe { riscv::interrupt::enable() };
 }
 
@@ -267,5 +396,18 @@ pub fn setup_irq(irq: impl InterruptNumber, _level: u8) {
         Edfic::line(irq.number()).set_trig(Trig::Edge);
         Edfic::line(irq.number()).enable();
         Edfic::line(irq.number()).set_dl(0xffff_ffff);
+    }
+}
+
+pub fn pend_irq(irq: impl InterruptNumber) {
+    #[cfg(feature = "intc-clic")]
+    {
+        use bsp::clic::CLIC;
+        unsafe { CLIC::ip(irq).pend() }
+    }
+    #[cfg(feature = "intc-edfic")]
+    {
+        use zeroheti_bsp::edfic::Edfic;
+        Edfic::line(irq.number()).pend();
     }
 }
