@@ -1,4 +1,3 @@
-//! Test accesses to mailbox interface
 #![no_main]
 #![no_std]
 
@@ -36,7 +35,6 @@ const SIM_END_ADDR: u32 = 0x0100_0001;
 const SIM_PRESCALER_ADDR: u32 = 0x0100_0002;
 const SIM_LOADFACTOR_ADDR: u32 = 0x0100_0003;
 const SIM_SEED_ADDR: u32 = 0x0100_0004;
-//const SIM_TASK_PER_ADDR: u32 = 0x0100_0005;
 
 const DL_MBX_ADDR: u32 = 0x0200_0000;
 const DL_UPD_ADDR: u32 = 0x0200_0001;
@@ -78,10 +76,7 @@ const SEED: u32 = 0xB0110c55;
 const RUNTIME_MS: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
 
 const DL_MBX: u32 = 0x200;
-/*
- *const DL_WRN: u32 = 0x100;
- *const DL_REP: u32 = 0x200;
- */
+
 struct SimParams {
     hyperperiod_ms: u64,
 }
@@ -97,6 +92,7 @@ fn main() -> ! {
     let mut i2c = I2c::init(4);
 
     init_intc();
+
     setup_irq(Interrupt::I2c, 3);
     setup_irq(Interrupt::Mbx, 3);
     setup_irq(Interrupt::MachineTimer, u8::MAX);
@@ -137,28 +133,17 @@ fn main() -> ! {
     sprintln!(" - Randomization seed    : 0x{:X}", SEED);
     sprintln!(" - Load factor  [0-100]  : {}", LF);
     sprintln!(" - Mailbox task DL  (us) : {}", DL_MBX);
-    //sprintln!(" - Warning task DL  (us) : {}", DL_WRN);
-    //sprintln!(" - Report  task DL  (us) : {}", DL_REP);
     sprintln!("");
-    //sprintln!(" - Report  task per (us) : {}", REP_TASK_PER_US);
 
     send_letter(DL_MBX_ADDR, DL_MBX);
     send_letter(DL_UPD_ADDR, DL_MBX);
     send_letter(DL_CTRL_ADDR, DL_MBX);
     send_letter(DL_REP_ADDR, DL_MBX);
-    /*
-        send_letter(DL_WRN_ADDR, DL_WRN);
-        send_letter(DL_REP_ADDR, DL_REP);
-    */
     wait_outbox_empty();
-    /*
-        send_letter(SIM_SEED_ADDR, SEED);
-        send_letter(SIM_LOADFACTOR_ADDR, LF);
-    */
+
     send_letter(SIM_PRESCALER_ADDR, PS);
     wait_outbox_empty();
 
-    //  send_letter(SIM_TASK_PER_ADDR, REP_TASK_PER_US);
     send_letter(SIM_START_ADDR, 0x0);
     //i2c.read(0x68, &mut rbuf_4);
 
@@ -189,11 +174,22 @@ fn send_letter(addr: u32, data: u32) {
     mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x1);
 }
 
+#[inline]
+fn pend_task(addr: u32) {
+    send_letter(addr, 0x1);
+}
+
+#[inline]
+fn ack_task(addr: u32) {
+    send_letter(addr, 0x0);
+}
+
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn MachineTimer() {
     riscv::interrupt::disable();
 
+    // Terminate scoreboard
     send_letter(SIM_END_ADDR, 0x1);
 
     // Delay to let outbox clear
@@ -228,9 +224,9 @@ fn MachineTimer() {
 fn Timer0Cmp() {
     // TODO: less ham-fisted locking
     unsafe { riscv::interrupt::disable() };
-    send_letter(TASK_CTRL_0_ADDR, 0x0);
+    ack_task(TASK_CTRL_0_ADDR);
     pend_irq(Interrupt::Ext0);
-    send_letter(TASK_REP_0_ADDR, 0x1);
+    pend_task(TASK_REP_0_ADDR);
     unsafe { riscv::interrupt::enable() };
 }
 
@@ -238,9 +234,9 @@ fn Timer0Cmp() {
 #[allow(non_snake_case)]
 fn Timer1Cmp() {
     unsafe { riscv::interrupt::disable() };
-    send_letter(TASK_CTRL_1_ADDR, 0x0);
+    ack_task(TASK_CTRL_1_ADDR);
     pend_irq(Interrupt::Ext1);
-    send_letter(TASK_REP_1_ADDR, 0x1);
+    pend_task(TASK_REP_1_ADDR);
     unsafe { riscv::interrupt::enable() };
 }
 
@@ -248,9 +244,9 @@ fn Timer1Cmp() {
 #[allow(non_snake_case)]
 fn Timer2Cmp() {
     unsafe { riscv::interrupt::disable() };
-    send_letter(TASK_CTRL_2_ADDR, 0x0);
+    ack_task(TASK_CTRL_2_ADDR);
     pend_irq(Interrupt::Ext2);
-    send_letter(TASK_REP_2_ADDR, 0x1);
+    pend_task(TASK_REP_2_ADDR);
     unsafe { riscv::interrupt::enable() };
 }
 
@@ -258,58 +254,56 @@ fn Timer2Cmp() {
 #[allow(non_snake_case)]
 fn Timer3Cmp() {
     unsafe { riscv::interrupt::disable() };
-    send_letter(TASK_CTRL_3_ADDR, 0x0);
+    ack_task(TASK_CTRL_3_ADDR);
     pend_irq(Interrupt::Ext3);
-    send_letter(TASK_REP_3_ADDR, 0x1);
+    pend_task(TASK_REP_3_ADDR);
     unsafe { riscv::interrupt::enable() };
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer0Ovf() {
-    send_letter(TASK_UPD_0_ADDR, 0x0);
+    ack_task(TASK_UPD_0_ADDR);
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer1Ovf() {
-    send_letter(TASK_UPD_1_ADDR, 0x0);
+    ack_task(TASK_UPD_1_ADDR);
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer2Ovf() {
-    send_letter(TASK_UPD_2_ADDR, 0x0);
+    ack_task(TASK_UPD_2_ADDR);
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer3Ovf() {
-    send_letter(TASK_UPD_3_ADDR, 0x0);
+    ack_task(TASK_UPD_3_ADDR);
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Ext0() {
-    send_letter(TASK_REP_0_ADDR, 0x0);
+    ack_task(TASK_REP_0_ADDR);
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Ext1() {
-    send_letter(TASK_REP_1_ADDR, 0x0);
+    ack_task(TASK_REP_1_ADDR);
 }
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Ext2() {
-    //sprintln!("e2");
-    send_letter(TASK_REP_2_ADDR, 0x0);
+    ack_task(TASK_REP_2_ADDR);
 }
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Ext3() {
-    //sprintln!("e3");
-    send_letter(TASK_REP_3_ADDR, 0x0);
+    ack_task(TASK_REP_3_ADDR);
 }
 
 #[nested_interrupt]
@@ -336,10 +330,10 @@ fn Mbx() {
     // IRQ clear
     mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0002_0000);
 
-    send_letter(TASK_UPD_0_ADDR, 0x1);
-    send_letter(TASK_UPD_1_ADDR, 0x1);
-    send_letter(TASK_UPD_2_ADDR, 0x1);
-    send_letter(TASK_UPD_3_ADDR, 0x1);
+    pend_task(TASK_UPD_0_ADDR);
+    pend_task(TASK_UPD_1_ADDR);
+    pend_task(TASK_UPD_2_ADDR);
+    pend_task(TASK_UPD_3_ADDR);
 
     pend_irq(Interrupt::Timer0Ovf);
     pend_irq(Interrupt::Timer1Ovf);

@@ -72,30 +72,12 @@ module vip_task_scoreboard #(
       if (task_set[i].active) task_set[i].dl_us--;
     end
 
-    // Activate periodic events
+    // Activate mailbox task externally periodically
     if (counter_us % 64'(task_period) == 0) begin
       activate_task(0);
       i_mbx_drv.raise_irq();
-      //activate_task(5);
-      //activate_task(6);
-      //activate_task(7);
-      //activate_task(8);
     end
 
-    // Produce randomized asynchronous events
-    // - Load factor   0: ~1 / 1000 us
-    // - Load factor 100: ~1 / 10 us
-    /*
-    if ($urandom_range(0, 999) < loadfactor_i + 1) begin
-      // Issue mailbox task with 10 % probability
-      if ($urandom_range(0, 9) < 1) begin
-        // TODO:send letter
-        //i_vip_zeroheti_top.i_mbx_drv.raise_irq();
-        i_mbx_drv.raise_irq();
-        activate_task(0);
-      end
-    end
-*/
   end : scb_main_proc
 
   initial begin

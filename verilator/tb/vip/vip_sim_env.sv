@@ -152,6 +152,7 @@ module vip_sim_env #(
       Ctrl2AckAddr: i_sim_env.i_scoreboard.retire_task(7);
       Ctrl3AckAddr: i_sim_env.i_scoreboard.retire_task(8);
 
+      // SW triggered tasks
       Upd0AckAddr: begin
         if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(1);
         else i_sim_env.i_scoreboard.activate_task(1);
