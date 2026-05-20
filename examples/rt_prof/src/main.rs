@@ -142,6 +142,7 @@ fn main() -> ! {
     wait_outbox_empty();
 
     send_letter(SIM_PRESCALER_ADDR, PS);
+    send_letter(SIM_LOADFACTOR_ADDR, LF);
     wait_outbox_empty();
 
     send_letter(SIM_START_ADDR, 0x0);

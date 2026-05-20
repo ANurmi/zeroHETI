@@ -40,7 +40,9 @@ module vip_task_scoreboard #(
 
   longint unsigned counter_us = 0;
   int unsigned pre_counter = 0;
-  int unsigned task_period = 'd500;
+  int unsigned mbx_task_per;
+
+  assign mbx_task_per = 'd500 - (loadfactor_i * 4);
 
   always @(posedge clk_i) begin : us_counter
     if (enable_i) begin
@@ -73,7 +75,7 @@ module vip_task_scoreboard #(
     end
 
     // Activate mailbox task externally periodically
-    if (counter_us % 64'(task_period) == 0) begin
+    if (counter_us % 64'(mbx_task_per) == 0) begin
       activate_task(0);
       i_mbx_drv.raise_irq();
     end
