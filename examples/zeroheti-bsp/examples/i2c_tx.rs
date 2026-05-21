@@ -19,7 +19,7 @@ fn main() -> ! {
 
     init_intc();
 
-    setup_irq(ExternalInterrupt::I2c);
+    setup_irq(Interrupt::I2c);
 
     // 0xDEADBEEF
     let wbuf_0 = [0xEF, 0xBE, 0xAD, 0xDE];
