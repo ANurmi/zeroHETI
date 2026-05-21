@@ -1,5 +1,5 @@
 [package]
-name = "i2c_power"
+name = "rt_prof"
 version = "0.1.0"
 edition = "2024"
 
@@ -11,11 +11,15 @@ fugit = "0.3.7"
 ufmt = "0.2.0"
 more-asserts = "0.3.1"
 # It is strange that this is needed as a direct dependency; build breaks otherwise
-riscv-rt = { version = "0.16.0", features = ["single-hart", "v-trap", "no-interrupts"] }
+riscv-rt = { version = "0.17.1", features = ["single-hart", "v-trap", "no-interrupts"] }
+log = { version = "0.4.29", default-features = false }
 
 [features]
 default = []
 ufmt = ["bsp/ufmt"]
+
+intc-clic = ["bsp/intc-clic"]
+intc-edfic = ["bsp/intc-edfic"]
 
 # Use this feature when using cosimulators such as QuestaSim
 rtl-tb = ["bsp/rtl-tb"]

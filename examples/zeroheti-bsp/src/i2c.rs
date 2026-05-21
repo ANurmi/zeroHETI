@@ -71,6 +71,10 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
         unmask_u8(BASE_ADDR + I2C_CTRL_OFS, 1 << 6);
     }
 
+    pub fn irq_ack(&mut self) {
+        self.set_cmd(Cmd::IA);
+    }
+
     #[inline]
     fn get_tip(&self) -> u8 {
         read_u8(BASE_ADDR + I2C_STATUS_OFS) & (1 << 1)
@@ -107,12 +111,14 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
         for byte in &mut buf[0..last_idx] {
             self.set_cmd(Cmd::RD);
             while self.get_tip() != 0 {}
+
             *byte = read_u8(BASE_ADDR + I2C_RX_OFS);
         }
 
         // Read last byte with stop condition
         self.set_cmd(Cmd::RD | Cmd::STO);
         while self.get_tip() != 0 {}
+
         // Safety: aligned on zeroHETI
         buf[last_idx] = read_u8(BASE_ADDR + I2C_RX_OFS);
     }
