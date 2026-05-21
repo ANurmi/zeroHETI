@@ -4,15 +4,8 @@
 mod common;
 
 use zeroheti_bsp::{
-    CPU_FREQ_HZ, NOPS_PER_SEC,
-    apb_uart::ApbUart,
-    asm_delay,
-    i2c::I2c,
-    interrupt::{CoreInterrupt, ExternalInterrupt},
-    mmap::edfic::IE_BIT,
-    mmio, nested_interrupt,
-    rt::entry,
-    sprintln,
+    CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, i2c::I2c, interrupt::Interrupt,
+    mmap::edfic::IE_BIT, mmio, nested_interrupt, rt::entry, sprintln,
 };
 
 use crate::common::{UART_BAUD, init_intc, pend_irq, setup_irq};
