@@ -16,7 +16,7 @@
 ## Periodic Task Set Description
 
 ### `task_get_mail`
-- Priority: ??
+- Priority: Highest?
 - Receive high-level control directives
     - Read & clear inbox queue
     - Update values to global variables
@@ -58,6 +58,25 @@
 - Raised if any motor speed exceeds acceptable bound
 - Runtime error, terminate program
 - Bound to HW interrupt: `MachineExternal`
+
+
+### Parameters
+
+For Rust-based builds parameters can be passed to the simulation by prefixing the appropriate environment variables to the Cargo-call, e.g.:
+```
+RUNTIME_MS=2 LOAD_FACTOR=20 cargo run --release -Frtl-tb -Fintc-clic --example rt_prof
+```
+NOTE/TODO: add separate `sim-params.env` or equivalent to make this more scalable if necessary. 
+
+Parameters passable through environment variables are:
+- `RUNTIME_MS`: The runtime of the measured part of the application in milliseconds.
+- `LOAD_FACTOR`: Scalar value of in range [0..100] that controls dispatch period of `task_get_mail` and timing constraints of `task_control_motor_[0..3]`.
+
+The period of `task_get_mail` is computed implicitly as $$ PER_{MBX} = 2 * DL_{MBX} + 4 * (100 - LF),$$
+which yields $$PER_{MBX} = (2 * DL_{MBX}) us $$ when `LOAD_FACTOR=100` and $$ PER_{MBX} = (2 * DL_{MBX} + 400) us $$
+when `LOAD_FACTOR=0`.
+
+TODO: Zephyr
 
 ## System Description
 
@@ -117,20 +136,6 @@ The mailbox implements an inbox and and outbox queue for messages (letters). Let
     - `[1]`: Inbox letter send
     - `[0]`: Outbox read acknowledge
 
-### Parameters
-
-For Rust-based builds parameters can be passed to the simulation by prefixing the appropriate environment variables to the Cargo-call, e.g.:
-```
-RUNTIME_MS=2 cargo run --release -Frtl-tb -Fintc-clic --example control_sim
-```
-NOTE/TODO: add separate `sim-params.env` or equivalent to make this more scalable. 
-
-Parameters passable through environment variables are:
-- `RUNTIME_MS`: The runtime of the measured part of the application in milliseconds.
-- ``
-
-
-TODO: Zephyr
 
 ## Experimental Workflow
 

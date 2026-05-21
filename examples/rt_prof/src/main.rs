@@ -75,7 +75,7 @@ const PS: u32 = 10;
 const SEED: u32 = 0xB0110c55;
 const RUNTIME_MS: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
 
-const DL_MBX: u32 = 0x200;
+const DL_MBX: u32 = 400;
 
 struct SimParams {
     hyperperiod_ms: u64,
@@ -85,18 +85,24 @@ const SIM_PARAMS: SimParams = SimParams {
     hyperperiod_ms: RUNTIME_MS,
 };
 
+// Infer task period from DL and LF
+const MBX_PER: u32 = 2 * DL_MBX + (4 * (100 - LF));
+
 #[entry]
 fn main() -> ! {
     let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
     sprintln!("\n\r### Starting rt_prof (bare-metal) benchmark ###\n\r");
     let mut i2c = I2c::init(4);
 
+    //assert!(MBX_PER > DL_MBX, "Mailbox task period too short!\n\r");
+
     init_intc();
 
-    setup_irq(Interrupt::I2c, 3);
-    setup_irq(Interrupt::Mbx, 3);
+    //setup_irq(Interrupt::I2c, 3);
     setup_irq(Interrupt::MachineTimer, u8::MAX);
     setup_irq(Interrupt::MachineExternal, u8::MAX);
+    
+    setup_irq(Interrupt::Mbx, 3);
 
     setup_irq(Interrupt::Timer0Ovf, 1);
     setup_irq(Interrupt::Timer1Ovf, 1);
@@ -133,6 +139,7 @@ fn main() -> ! {
     sprintln!(" - Randomization seed    : 0x{:X}", SEED);
     sprintln!(" - Load factor  [0-100]  : {}", LF);
     sprintln!(" - Mailbox task DL  (us) : {}", DL_MBX);
+    sprintln!(" - Mailbox period   (us) : {}", MBX_PER);
     sprintln!("");
 
     send_letter(DL_MBX_ADDR, DL_MBX);
@@ -152,10 +159,10 @@ fn main() -> ! {
     mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
 
     unsafe { riscv::interrupt::enable() };
-    i2c.irq_enable();
+    //i2c.irq_enable();
 
     // can't use global critical section if i2c driver requires
-    i2c.write(0x60, &[0x67]);
+    //i2c.write(0x60, &[0x67]);
 
     loop {
         wfi();
@@ -226,6 +233,7 @@ fn Timer0Cmp() {
     // TODO: less ham-fisted locking
     unsafe { riscv::interrupt::disable() };
     ack_task(TASK_CTRL_0_ADDR);
+    unsafe { I2c::instance() }.write(0x60, &[0x10]);
     pend_irq(Interrupt::Ext0);
     pend_task(TASK_REP_0_ADDR);
     unsafe { riscv::interrupt::enable() };
@@ -236,6 +244,7 @@ fn Timer0Cmp() {
 fn Timer1Cmp() {
     unsafe { riscv::interrupt::disable() };
     ack_task(TASK_CTRL_1_ADDR);
+    unsafe { I2c::instance() }.write(0x61, &[0x11]);
     pend_irq(Interrupt::Ext1);
     pend_task(TASK_REP_1_ADDR);
     unsafe { riscv::interrupt::enable() };
@@ -246,6 +255,7 @@ fn Timer1Cmp() {
 fn Timer2Cmp() {
     unsafe { riscv::interrupt::disable() };
     ack_task(TASK_CTRL_2_ADDR);
+    unsafe { I2c::instance() }.write(0x62, &[0x12]);
     pend_irq(Interrupt::Ext2);
     pend_task(TASK_REP_2_ADDR);
     unsafe { riscv::interrupt::enable() };
@@ -256,6 +266,7 @@ fn Timer2Cmp() {
 fn Timer3Cmp() {
     unsafe { riscv::interrupt::disable() };
     ack_task(TASK_CTRL_3_ADDR);
+    unsafe { I2c::instance() }.write(0x63, &[0x13]);
     pend_irq(Interrupt::Ext3);
     pend_task(TASK_REP_3_ADDR);
     unsafe { riscv::interrupt::enable() };
@@ -264,47 +275,63 @@ fn Timer3Cmp() {
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer0Ovf() {
+    unsafe { riscv::interrupt::disable() };
     ack_task(TASK_UPD_0_ADDR);
+    unsafe { riscv::interrupt::enable() };
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer1Ovf() {
+    unsafe { riscv::interrupt::disable() };
     ack_task(TASK_UPD_1_ADDR);
+    unsafe { riscv::interrupt::enable() };
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer2Ovf() {
+    unsafe { riscv::interrupt::disable() };
     ack_task(TASK_UPD_2_ADDR);
+    unsafe { riscv::interrupt::enable() };
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Timer3Ovf() {
+    unsafe { riscv::interrupt::disable() };
     ack_task(TASK_UPD_3_ADDR);
+    unsafe { riscv::interrupt::enable() };
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Ext0() {
+    unsafe { riscv::interrupt::disable() };
     ack_task(TASK_REP_0_ADDR);
+    unsafe { riscv::interrupt::enable() };
 }
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Ext1() {
+    unsafe { riscv::interrupt::disable() };
     ack_task(TASK_REP_1_ADDR);
+    unsafe { riscv::interrupt::enable() };
 }
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Ext2() {
+    unsafe { riscv::interrupt::disable() };
     ack_task(TASK_REP_2_ADDR);
+    unsafe { riscv::interrupt::enable() };
 }
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Ext3() {
+    unsafe { riscv::interrupt::disable() };
     ack_task(TASK_REP_3_ADDR);
+    unsafe { riscv::interrupt::enable() };
 }
 
 #[nested_interrupt]
@@ -342,12 +369,6 @@ fn Mbx() {
     pend_irq(Interrupt::Timer3Ovf);
 
     unsafe { riscv::interrupt::enable() };
-}
-
-#[nested_interrupt]
-#[allow(non_snake_case)]
-fn I2c() {
-    unsafe { I2c::instance() }.irq_ack();
 }
 
 #[unsafe(export_name = "DefaultHandler")]

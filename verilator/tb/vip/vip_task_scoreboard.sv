@@ -42,7 +42,7 @@ module vip_task_scoreboard #(
   int unsigned pre_counter = 0;
   int unsigned mbx_task_per;
 
-  assign mbx_task_per = 'd500 - (loadfactor_i * 4);
+  assign mbx_task_per = 2 * mbx_dl_us_i + (4 * (100 - loadfactor_i));
 
   always @(posedge clk_i) begin : us_counter
     if (enable_i) begin
