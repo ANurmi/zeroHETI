@@ -91,6 +91,10 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
         write_u8(BASE_ADDR + I2C_TX_OFS, addr);
         self.set_cmd(Cmd::STA | Cmd::WR);
         while self.get_tip() != 0 {}
+        // Trailing delay
+        for _ in 0..3 {
+            riscv::asm::nop();
+        }
     }
 
     fn send_data_frames(&mut self, buf: &[u8]) {

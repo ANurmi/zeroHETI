@@ -42,7 +42,7 @@ module vip_task_scoreboard #(
   int unsigned pre_counter = 0;
   int unsigned mbx_task_per;
 
-  assign mbx_task_per = 2 * mbx_dl_us_i + (4 * (100 - loadfactor_i));
+  assign mbx_task_per = 3 * mbx_dl_us_i + (4 * (100 - loadfactor_i));
 
   always @(posedge clk_i) begin : us_counter
     if (enable_i) begin
@@ -54,10 +54,12 @@ module vip_task_scoreboard #(
   end : us_counter
 
   always @(i_zeroheti.i_apb_timer.irq_o) begin
-    if (i_zeroheti.i_apb_timer.irq_o[1]) activate_task(5);
-    if (i_zeroheti.i_apb_timer.irq_o[3]) activate_task(6);
-    if (i_zeroheti.i_apb_timer.irq_o[5]) activate_task(7);
-    if (i_zeroheti.i_apb_timer.irq_o[7]) activate_task(8);
+    if (enable_i) begin
+      if (i_zeroheti.i_apb_timer.irq_o[1]) activate_task(5);
+      if (i_zeroheti.i_apb_timer.irq_o[3]) activate_task(6);
+      if (i_zeroheti.i_apb_timer.irq_o[5]) activate_task(7);
+      if (i_zeroheti.i_apb_timer.irq_o[7]) activate_task(8);
+    end
   end
 
   always @(counter_us) begin : scb_main_proc
@@ -74,13 +76,20 @@ module vip_task_scoreboard #(
       if (task_set[i].active) task_set[i].dl_us--;
     end
 
+  end : scb_main_proc
+
+  always @(counter_us) begin : scb_mbx_proc
     // Activate mailbox task externally periodically
     if (counter_us % 64'(mbx_task_per) == 0) begin
       activate_task(0);
+      i_mbx_drv.send_letter(32'h100, generate_directive());
+      i_mbx_drv.send_letter(32'h101, generate_directive());
+      i_mbx_drv.send_letter(32'h102, generate_directive());
+      i_mbx_drv.send_letter(32'h103, generate_directive());
       i_mbx_drv.raise_irq();
     end
+  end : scb_mbx_proc
 
-  end : scb_main_proc
 
   initial begin
 
@@ -131,7 +140,11 @@ module vip_task_scoreboard #(
   end
 
   task automatic activate_task(input int idx);
-    if (!task_set[idx].active) task_set[idx].active = 1;
+    if (!task_set[idx].active) begin
+      task_set[idx].active = 1;
+    end else begin
+      $display("[Warning] re-pended active task");
+    end
   endtask
 
   task automatic retire_task(input int idx);
@@ -166,6 +179,10 @@ module vip_task_scoreboard #(
 
     task_set_ret[i].count += 1;
   endtask
+
+  function automatic logic [31:0] generate_directive();
+    return 32'hDEADBEEF;
+  endfunction
 
 
 endmodule : vip_task_scoreboard

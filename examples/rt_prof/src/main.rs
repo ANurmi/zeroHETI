@@ -24,8 +24,8 @@ use riscv_rt::InterruptNumber;
 const MBX_STAT_ADDR: u32 = 0x0003_0000;
 const MBX_OBI_CTRL_ADDR: u32 = 0x0003_0004;
 //const MBX_AXI_CTRL_ADDR: u32 = 0x0003_0008;
-const _MBX_IADD_ADDR: u32 = 0x0003_000C;
-const _MBX_IDAT_ADDR: u32 = 0x0003_0010;
+const MBX_IADD_ADDR: u32 = 0x0003_000C;
+const MBX_IDAT_ADDR: u32 = 0x0003_0010;
 const MBX_OADD_ADDR: u32 = 0x0003_0014;
 const MBX_ODAT_ADDR: u32 = 0x0003_0018;
 
@@ -40,6 +40,11 @@ const DL_MBX_ADDR: u32 = 0x0200_0000;
 const DL_UPD_ADDR: u32 = 0x0200_0001;
 const DL_CTRL_ADDR: u32 = 0x0200_0002;
 const DL_REP_ADDR: u32 = 0x0200_0003;
+
+const I2C_M0_ADDR: u8 = 0x10;
+const I2C_M1_ADDR: u8 = 0x11;
+const I2C_M2_ADDR: u8 = 0x12;
+const I2C_M3_ADDR: u8 = 0x13;
 
 const REP_TASK_PER_US: u32 = 700;
 const TASK_MBX_ACK_ADDR: u32 = 0x0300_0000;
@@ -75,7 +80,7 @@ const PS: u32 = 10;
 const SEED: u32 = 0xB0110c55;
 const RUNTIME_MS: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
 
-const DL_MBX: u32 = 400;
+const DL_MBX: u32 = 1000;
 
 struct SimParams {
     hyperperiod_ms: u64,
@@ -86,7 +91,12 @@ const SIM_PARAMS: SimParams = SimParams {
 };
 
 // Infer task period from DL and LF
-const MBX_PER: u32 = 2 * DL_MBX + (4 * (100 - LF));
+const MBX_PER: u32 = 3 * DL_MBX + (4 * (100 - LF));
+
+const PRIO_CTRL: u8 = 4;
+const PRIO_MAIL: u8 = 5;
+const PRIO_UPD: u8 = 3;
+const PRIO_REP: u8 = 1;
 
 #[entry]
 fn main() -> ! {
@@ -98,26 +108,25 @@ fn main() -> ! {
 
     init_intc();
 
-    //setup_irq(Interrupt::I2c, 3);
     setup_irq(Interrupt::MachineTimer, u8::MAX);
     setup_irq(Interrupt::MachineExternal, u8::MAX);
-    
-    setup_irq(Interrupt::Mbx, 3);
 
-    setup_irq(Interrupt::Timer0Ovf, 1);
-    setup_irq(Interrupt::Timer1Ovf, 1);
-    setup_irq(Interrupt::Timer2Ovf, 1);
-    setup_irq(Interrupt::Timer3Ovf, 1);
+    setup_irq(Interrupt::Mbx, PRIO_MAIL);
 
-    setup_irq(Interrupt::Timer0Cmp, 2);
-    setup_irq(Interrupt::Timer1Cmp, 2);
-    setup_irq(Interrupt::Timer2Cmp, 2);
-    setup_irq(Interrupt::Timer3Cmp, 2);
+    setup_irq(Interrupt::Timer0Ovf, PRIO_UPD);
+    setup_irq(Interrupt::Timer1Ovf, PRIO_UPD);
+    setup_irq(Interrupt::Timer2Ovf, PRIO_UPD);
+    setup_irq(Interrupt::Timer3Ovf, PRIO_UPD);
 
-    setup_irq(Interrupt::Ext0, 1);
-    setup_irq(Interrupt::Ext1, 1);
-    setup_irq(Interrupt::Ext2, 1);
-    setup_irq(Interrupt::Ext3, 1);
+    setup_irq(Interrupt::Timer0Cmp, PRIO_CTRL);
+    setup_irq(Interrupt::Timer1Cmp, PRIO_CTRL);
+    setup_irq(Interrupt::Timer2Cmp, PRIO_CTRL);
+    setup_irq(Interrupt::Timer3Cmp, PRIO_CTRL);
+
+    setup_irq(Interrupt::Ext0, PRIO_REP);
+    setup_irq(Interrupt::Ext1, PRIO_REP);
+    setup_irq(Interrupt::Ext2, PRIO_REP);
+    setup_irq(Interrupt::Ext3, PRIO_REP);
 
     let timers = &mut [
         Timer::init::<TIMER0_ADDR>().into_periodic(),
@@ -232,10 +241,19 @@ fn MachineTimer() {
 fn Timer0Cmp() {
     // TODO: less ham-fisted locking
     unsafe { riscv::interrupt::disable() };
-    ack_task(TASK_CTRL_0_ADDR);
-    unsafe { I2c::instance() }.write(0x60, &[0x10]);
-    pend_irq(Interrupt::Ext0);
-    pend_task(TASK_REP_0_ADDR);
+    // raise mintthresh
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_CTRL as usize).into());
+
+    let mut rbuf = [0];
+    unsafe { I2c::instance() }.read(I2C_M0_ADDR, &mut rbuf); // Read motor status
+    let rdata = u8::from_le_bytes(rbuf);
+    unsafe { I2c::instance() }.write(I2C_M0_ADDR, &[0x10]); // Write to motor
+    ack_task(TASK_CTRL_0_ADDR); // acknowledge this task
+    pend_irq(Interrupt::Ext0); // Pend report task (HW)
+    pend_task(TASK_REP_0_ADDR); // Pend report task (TB)
+
+    // restore mintthresh
+    bsp::register::mintthresh::write(last_mintthresh.into());
     unsafe { riscv::interrupt::enable() };
 }
 
@@ -243,10 +261,17 @@ fn Timer0Cmp() {
 #[allow(non_snake_case)]
 fn Timer1Cmp() {
     unsafe { riscv::interrupt::disable() };
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_CTRL as usize).into());
+
+    let mut rbuf = [0];
+    unsafe { I2c::instance() }.read(I2C_M1_ADDR, &mut rbuf);
+    let rdata = u8::from_le_bytes(rbuf);
+    unsafe { I2c::instance() }.write(I2C_M1_ADDR, &[0x11]);
     ack_task(TASK_CTRL_1_ADDR);
-    unsafe { I2c::instance() }.write(0x61, &[0x11]);
     pend_irq(Interrupt::Ext1);
     pend_task(TASK_REP_1_ADDR);
+
+    bsp::register::mintthresh::write(last_mintthresh.into());
     unsafe { riscv::interrupt::enable() };
 }
 
@@ -254,10 +279,17 @@ fn Timer1Cmp() {
 #[allow(non_snake_case)]
 fn Timer2Cmp() {
     unsafe { riscv::interrupt::disable() };
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_CTRL as usize).into());
+
+    let mut rbuf = [0];
+    unsafe { I2c::instance() }.read(I2C_M2_ADDR, &mut rbuf);
+    let rdata = u8::from_le_bytes(rbuf);
+    unsafe { I2c::instance() }.write(I2C_M2_ADDR, &[0x12]);
     ack_task(TASK_CTRL_2_ADDR);
-    unsafe { I2c::instance() }.write(0x62, &[0x12]);
     pend_irq(Interrupt::Ext2);
     pend_task(TASK_REP_2_ADDR);
+
+    bsp::register::mintthresh::write(last_mintthresh.into());
     unsafe { riscv::interrupt::enable() };
 }
 
@@ -265,10 +297,17 @@ fn Timer2Cmp() {
 #[allow(non_snake_case)]
 fn Timer3Cmp() {
     unsafe { riscv::interrupt::disable() };
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_CTRL as usize).into());
+
+    let mut rbuf = [0];
+    unsafe { I2c::instance() }.read(I2C_M3_ADDR, &mut rbuf);
+    let rdata = u8::from_le_bytes(rbuf);
+    unsafe { I2c::instance() }.write(I2C_M3_ADDR, &[0x13]);
     ack_task(TASK_CTRL_3_ADDR);
-    unsafe { I2c::instance() }.write(0x63, &[0x13]);
     pend_irq(Interrupt::Ext3);
     pend_task(TASK_REP_3_ADDR);
+
+    bsp::register::mintthresh::write(last_mintthresh.into());
     unsafe { riscv::interrupt::enable() };
 }
 
@@ -276,7 +315,11 @@ fn Timer3Cmp() {
 #[allow(non_snake_case)]
 fn Timer0Ovf() {
     unsafe { riscv::interrupt::disable() };
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_UPD as usize).into());
+
     ack_task(TASK_UPD_0_ADDR);
+
+    bsp::register::mintthresh::write(last_mintthresh.into());
     unsafe { riscv::interrupt::enable() };
 }
 
@@ -284,7 +327,11 @@ fn Timer0Ovf() {
 #[allow(non_snake_case)]
 fn Timer1Ovf() {
     unsafe { riscv::interrupt::disable() };
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_UPD as usize).into());
+
     ack_task(TASK_UPD_1_ADDR);
+
+    bsp::register::mintthresh::write(last_mintthresh.into());
     unsafe { riscv::interrupt::enable() };
 }
 
@@ -292,7 +339,11 @@ fn Timer1Ovf() {
 #[allow(non_snake_case)]
 fn Timer2Ovf() {
     unsafe { riscv::interrupt::disable() };
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_UPD as usize).into());
+
     ack_task(TASK_UPD_2_ADDR);
+
+    bsp::register::mintthresh::write(last_mintthresh.into());
     unsafe { riscv::interrupt::enable() };
 }
 
@@ -300,7 +351,11 @@ fn Timer2Ovf() {
 #[allow(non_snake_case)]
 fn Timer3Ovf() {
     unsafe { riscv::interrupt::disable() };
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_UPD as usize).into());
+
     ack_task(TASK_UPD_3_ADDR);
+
+    bsp::register::mintthresh::write(last_mintthresh.into());
     unsafe { riscv::interrupt::enable() };
 }
 
@@ -308,7 +363,11 @@ fn Timer3Ovf() {
 #[allow(non_snake_case)]
 fn Ext0() {
     unsafe { riscv::interrupt::disable() };
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
+
     ack_task(TASK_REP_0_ADDR);
+
+    bsp::register::mintthresh::write(last_mintthresh.into());
     unsafe { riscv::interrupt::enable() };
 }
 
@@ -316,44 +375,62 @@ fn Ext0() {
 #[allow(non_snake_case)]
 fn Ext1() {
     unsafe { riscv::interrupt::disable() };
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
+
     ack_task(TASK_REP_1_ADDR);
+
+    bsp::register::mintthresh::write(last_mintthresh.into());
     unsafe { riscv::interrupt::enable() };
 }
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Ext2() {
     unsafe { riscv::interrupt::disable() };
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
+
     ack_task(TASK_REP_2_ADDR);
+
+    bsp::register::mintthresh::write(last_mintthresh.into());
     unsafe { riscv::interrupt::enable() };
 }
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Ext3() {
     unsafe { riscv::interrupt::disable() };
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
+
     ack_task(TASK_REP_3_ADDR);
+
+    bsp::register::mintthresh::write(last_mintthresh.into());
     unsafe { riscv::interrupt::enable() };
 }
 
+/* Not used
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn MachineExternal() {
     sprintln!("error!");
-}
+}*/
 
 #[nested_interrupt]
 #[allow(non_snake_case)]
 fn Mbx() {
     riscv::interrupt::disable();
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_MAIL as usize).into());
+
     // Read inbox
     /*
     let addr = mmio::read_u32(MBX_IADD_ADDR as usize);
     let data = mmio::read_u32(MBX_IDAT_ADDR as usize);
     */
-    // Inbox read ack
-    mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0100_0000);
 
-    // Ack MBX task
-    send_letter(TASK_MBX_ACK_ADDR, 0x0);
+    for i in 0..4 {
+        let addr = mmio::read_u32(MBX_IADD_ADDR as usize);
+        let data = mmio::read_u32(MBX_IDAT_ADDR as usize);
+        //sprintln!("A: {:X}, D: {:X}", addr, data);
+        // Inbox read ack
+        mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0100_0000);
+    }
 
     // IRQ clear
     mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0002_0000);
@@ -368,6 +445,10 @@ fn Mbx() {
     pend_irq(Interrupt::Timer2Ovf);
     pend_irq(Interrupt::Timer3Ovf);
 
+    // Ack MBX task
+    ack_task(TASK_MBX_ACK_ADDR);
+
+    let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
 }
 

@@ -39,19 +39,21 @@ module vip_sim_env #(
   localparam logic [31:0] Upd2AckAddr = 32'h0501_0002;
   localparam logic [31:0] Upd3AckAddr = 32'h0501_0003;
 
-  logic        [3:0] motor_irqs;
-  logic              motor_enable;
-  int unsigned       motor_prescaler;
+  logic                   motor_enable;
+  int unsigned            motor_prescaler;
+  logic        [3:0]      motor_control_valid;
+  logic        [3:0][7:0] motor_control_wdata;
+  logic        [3:0][7:0] motor_control_rdata;
 
-  int unsigned       scb_loadfactor;
-  int unsigned       scb_prescaler;
-  int unsigned       scb_seed;
-  logic              scb_enable;
+  int unsigned            scb_loadfactor;
+  int unsigned            scb_prescaler;
+  int unsigned            scb_seed;
+  logic                   scb_enable;
 
-  int unsigned       dl_mbx_us;
-  int unsigned       dl_upd_us;
-  int unsigned       dl_ctrl_us;
-  int unsigned       dl_rep_us;
+  int unsigned            dl_mbx_us;
+  int unsigned            dl_upd_us;
+  int unsigned            dl_ctrl_us;
+  int unsigned            dl_rep_us;
 
   typedef logic [31:0] dtype;
   typedef logic [6:0] atype;
@@ -83,13 +85,20 @@ module vip_sim_env #(
                          & i_zeroheti.i_core.dbg_bus.wdata[31]
                          & (i_zeroheti.i_core.dbg_bus.addr == 32'h0380);
 
-  assign i2c_rsp_o.rdata = array[i2c_req_i.addr];
+  assign i2c_rsp_o.rdata = (i2c_req_i.addr inside {[7'h10 : 7'h13]}) ?
+      {24'h0, motor_control_rdata[i2c_req_i.addr[1:0]]} : 0;
 
   always @(posedge i2c_req_i.valid) begin
     if (i2c_req_i.write) begin
       $display("[VIP_I2C] write - addr: %h, data: %h", i2c_req_i.addr, i2c_req_i.wdata);
+      unique case (i2c_req_i.addr)
+        7'h10:   motor_control_wdata[0] = i2c_req_i.wdata[7:0];
+        7'h11:   motor_control_wdata[1] = i2c_req_i.wdata[7:0];
+        7'h12:   motor_control_wdata[2] = i2c_req_i.wdata[7:0];
+        7'h13:   motor_control_wdata[3] = i2c_req_i.wdata[7:0];
+        default: $display("[VIP_I2C] warning! unknown i2c address");
+      endcase
     end else begin
-      $display("[VIP_I2C] read  - addr: %h, data: %h", i2c_req_i.addr, array[i2c_req_i.addr]);
     end
   end
 
@@ -103,12 +112,11 @@ module vip_sim_env #(
         .Idx(i)
     ) i_motor (
         .clk_i,
-        .prescaler_i   (motor_prescaler),
-        .enable_i      (motor_enable),
-        .speed_target_i(),
-        .speed_tune_i  (),
-        .speed_real_o  (),
-        .irq_o         (motor_irqs[i])
+        .prescaler_i    (motor_prescaler),
+        .enable_i       (motor_enable),
+        .control_valid_i(motor_control_valid[i]),
+        .control_wdata_i(motor_control_wdata[i]),
+        .control_rdata_o(motor_control_rdata[i])
     );
   end
 

@@ -73,6 +73,7 @@ module vip_i2c #(
     end else begin
 
       vip_req_o.valid = 1;
+      delay_half(2);
 
       for (int i = 0; !stop_cond; i++) begin
         delay_half(2);
