@@ -42,7 +42,7 @@ module vip_task_scoreboard #(
   int unsigned pre_counter = 0;
   int unsigned mbx_task_per;
 
-  assign mbx_task_per = 3 * mbx_dl_us_i + (4 * (100 - loadfactor_i));
+  assign mbx_task_per = 5 * mbx_dl_us_i + (4 * (100 - loadfactor_i));
 
   always @(posedge clk_i) begin : us_counter
     if (enable_i) begin
@@ -143,7 +143,7 @@ module vip_task_scoreboard #(
     if (!task_set[idx].active) begin
       task_set[idx].active = 1;
     end else begin
-      $display("[Warning] re-pended active task");
+      $display("[Warning] re-pended active task [%2d]", idx);
     end
   endtask
 

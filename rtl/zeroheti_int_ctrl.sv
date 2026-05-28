@@ -96,7 +96,8 @@ module zeroheti_int_ctrl #(
   end else if (CoreCfg.ic == CLIC) begin : g_clic
 
     logic [7:0] irq_level;
-    assign irq_level_o = irq_level; /*irq_level[IrqWidth-1:0];*/
+    logic kill;
+    assign irq_level_o = irq_level;  /*irq_level[IrqWidth-1:0];*/
 
     APB ic_apb ();
 
@@ -127,8 +128,8 @@ module zeroheti_int_ctrl #(
         .irq_valid_o,
         .irq_ready_i   (irq_ack_i),
         .irq_level_o   (irq_level),
-        .irq_kill_ack_i(1'b0),
-        .irq_kill_req_o()
+        .irq_kill_ack_i(kill),
+        .irq_kill_req_o(kill)
     );
 
   end else $fatal(1, "INTC not defined!");
