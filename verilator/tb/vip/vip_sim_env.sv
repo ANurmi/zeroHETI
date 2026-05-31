@@ -92,14 +92,28 @@ module vip_sim_env #(
     if (i2c_req_i.write) begin
       $display("[VIP_I2C] write - addr: %h, data: %h", i2c_req_i.addr, i2c_req_i.wdata);
       unique case (i2c_req_i.addr)
-        7'h10:   motor_control_wdata[0] = i2c_req_i.wdata[7:0];
-        7'h11:   motor_control_wdata[1] = i2c_req_i.wdata[7:0];
-        7'h12:   motor_control_wdata[2] = i2c_req_i.wdata[7:0];
-        7'h13:   motor_control_wdata[3] = i2c_req_i.wdata[7:0];
+        7'h10: begin
+          motor_control_wdata[0] = i2c_req_i.wdata[7:0];
+          motor_control_valid[0] = 1'b1;
+        end
+        7'h11: begin
+          motor_control_wdata[1] = i2c_req_i.wdata[7:0];
+          motor_control_valid[1] = 1'b1;
+        end
+        7'h12: begin
+          motor_control_wdata[2] = i2c_req_i.wdata[7:0];
+          motor_control_valid[2] = 1'b1;
+        end
+        7'h13: begin
+          motor_control_wdata[3] = i2c_req_i.wdata[7:0];
+          motor_control_valid[3] = 1'b1;
+        end
         default: $display("[VIP_I2C] warning! unknown i2c address");
       endcase
-    end else begin
+      @(posedge clk_i);
+      motor_control_valid = 4'b0;
     end
+    //else begin end
   end
 
   always @(posedge sim_term_signal) begin

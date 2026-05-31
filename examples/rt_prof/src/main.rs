@@ -97,6 +97,9 @@ const SIM_PARAMS: SimParams = SimParams {
 // Infer task period from DL and LF
 const MBX_PER: u32 = 5 * DL_MBX + (4 * (100 - LF));
 
+// NOTE: 1 x i2c 8-bit read-write (1 addr+1 read+1 addr+1 write)
+// blocks for around 140 us (measured from wave)
+
 const PRIO_CTRL: u8 = 4;
 const PRIO_MAIL: u8 = 5;
 const PRIO_UPD: u8 = 3;
