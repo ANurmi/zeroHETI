@@ -93,9 +93,9 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
         self.set_cmd(Cmd::STA | Cmd::WR);
         // NOTE: This trailing delay is precisely tuned
         // for the i2c Verilator driver in this repository.
-        for _ in 0..54 {
+      /*  for _ in 0..54 {
             riscv::asm::nop();
-        }
+        }*/
     }
 
     fn send_data_frames(&mut self, buf: &[u8]) {

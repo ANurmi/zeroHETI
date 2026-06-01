@@ -3,7 +3,8 @@
 ## Prerequisites
 
 - [Bender](https://github.com/pulp-platform/bender) for dependency management.
-- [Verilator](https://github.com/verilator/verilator) for RTL simulation (5.042 prefered).
+- [Verilator](https://github.com/verilator/verilator) for RTL simulation (5.048).
+- [Surfer](https://gitlab.com/surfer-project/surfer), v0.7.0
 - [RISC-V GNU Toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain) for software compilation. Precompiled packages should suffice for now.
 
 ## Quickstart

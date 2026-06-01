@@ -4,7 +4,7 @@
 package:
   name: zeroHETI
   authors:
-    - "Antti Nurmi <antti.nurmi@tuni.fi>"
+  - "Antti Nurmi <antti.nurmi@tuni.fi>"
 
 dependencies:
   rt-ibex: { git: "https://github.com/soc-hub-fi/rt-ibex.git", rev: "a69722e664922c65d745baf1ee592c7a104c5532" }
@@ -18,39 +18,39 @@ dependencies:
   vbench: { git: "https://github.com/ANurmi/vbench", rev: "main" }
 
 sources:
-  - target: rtl
-    files:
-      - rtl/zeroheti_pkg.sv
-      - rtl/mock_uart.sv
-      - rtl/i2c_master_bit_ctrl.sv
-      - rtl/i2c_master_byte_ctrl.sv
-      - rtl/apb_i2c.sv
-      - rtl/apb_cfg_regs.sv
-      - rtl/apb_mtimer.sv
-      - rtl/obi_hetic.sv
-      - rtl/obi_mbx.sv
-      - rtl/zeroheti_xbar.sv
-      - rtl/zeroheti_int_ctrl.sv
-      - rtl/obi_sram_intf.sv
-      - rtl/obi_mb_sram_intf.sv
-      - rtl/obi_connection.sv
-      - rtl/obi_to_apb_intf.sv
-      - rtl/irq_arbiter.sv
-      - rtl/irq_gateway.sv
-      - rtl/zeroheti_dbg_wrapper.sv
-      - rtl/zeroheti_core.sv
-      - rtl/zeroheti_top.sv
-  - target: verilator
-    files:
-      - verilator/tb/vip/vip_motor_sim.sv
-      - verilator/tb/vip/vip_task_scoreboard.sv
-      - verilator/tb/vip/vip_sim_env.sv
-      - verilator/tb/vip/vip_i2c.sv
-      - verilator/tb/vip/vip_mbx_driver.sv
-      - verilator/tb/vip/vip_zeroheti_top.sv
-      - verilator/tb/zeroheti_top_wrapper.sv
-  - target: fpga
-    files:
-      - fpga/rtl/prim_clock_gating.sv
-      - fpga/rtl/zeroheti_pynq.sv
-
+- target: rtl
+  files:
+  - rtl/zeroheti_pkg.sv
+  - rtl/mock_uart.sv
+  - rtl/i2c_master_bit_ctrl.sv
+  - rtl/i2c_master_byte_ctrl.sv
+  - rtl/apb_i2c.sv
+  - rtl/apb_cfg_regs.sv
+  - rtl/apb_mtimer.sv
+  - rtl/obi_hetic.sv
+  - rtl/obi_mbx.sv
+  - rtl/zeroheti_xbar.sv
+  - rtl/zeroheti_int_ctrl.sv
+  - rtl/obi_sram_intf.sv
+  - rtl/obi_mb_sram_intf.sv
+  - rtl/obi_connection.sv
+  - rtl/obi_to_apb_intf.sv
+  - rtl/irq_arbiter.sv
+  - rtl/irq_gateway.sv
+  - rtl/zeroheti_dbg_wrapper.sv
+  - rtl/zeroheti_core.sv
+  - rtl/zeroheti_top.sv
+- target: verilator
+  files:
+  - verilator/tb/vip/rt_prof_pkg.sv
+  - verilator/tb/vip/vip_motor_sim.sv
+  - verilator/tb/vip/vip_task_scoreboard.sv
+  - verilator/tb/vip/vip_sim_env.sv
+  - verilator/tb/vip/vip_i2c.sv
+  - verilator/tb/vip/vip_mbx_driver.sv
+  - verilator/tb/vip/vip_zeroheti_top.sv
+  - verilator/tb/zeroheti_top_wrapper.sv
+- target: fpga
+  files:
+  - fpga/rtl/prim_clock_gating.sv
+  - fpga/rtl/zeroheti_pynq.sv

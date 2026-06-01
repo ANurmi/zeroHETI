@@ -12,7 +12,6 @@ use bsp::{
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mmio,
     mtimer::MTimer,
-    nested_interrupt,
     riscv::{self, asm::nop, asm::wfi},
     rt::entry,
     sprintln,
@@ -21,26 +20,94 @@ use bsp::{
 
 use riscv_rt::InterruptNumber;
 
-// Mailbox addresses
-const MBX_STAT_ADDR: u32 = 0x0003_0000;
-const MBX_OBI_CTRL_ADDR: u32 = 0x0003_0004;
-//const MBX_AXI_CTRL_ADDR: u32 = 0x0003_0008;
-const MBX_IADD_ADDR: u32 = 0x0003_000C;
-const MBX_IDAT_ADDR: u32 = 0x0003_0010;
-const MBX_OADD_ADDR: u32 = 0x0003_0014;
-const MBX_ODAT_ADDR: u32 = 0x0003_0018;
+struct IObox {
+    addr: u32,
+    data: u32,
+}
 
-// Simulation configurations
-const SIM_START_ADDR: u32 = 0x0100_0000;
-const SIM_END_ADDR: u32 = 0x0100_0001;
-const SIM_PRESCALER_ADDR: u32 = 0x0100_0002;
-const SIM_LOADFACTOR_ADDR: u32 = 0x0100_0003;
-const SIM_SEED_ADDR: u32 = 0x0100_0004;
+struct AddrMbx {
+    stat: u32,
+    ctrl: u32,
+    ib: IObox,
+    ob: IObox,
+}
 
-const DL_MBX_ADDR: u32 = 0x0200_0000;
-const DL_UPD_ADDR: u32 = 0x0200_0001;
-const DL_CTRL_ADDR: u32 = 0x0200_0002;
-const DL_REP_ADDR: u32 = 0x0200_0003;
+struct AddrSim {
+    start: u32,
+    stop: u32,
+    prescaler: u32,
+    loadfactor: u32,
+    seed: u32,
+}
+
+struct AddrTask {
+    period: u32,
+    deadline: u32,
+    ack: u32,
+}
+
+struct AddrTaskSet {
+    mbx: AddrTask,
+    update: [AddrTask; 4],
+    control: [AddrTask; 4],
+    report: [AddrTask; 4],
+}
+
+const SIM: AddrSim = AddrSim {
+    start: 0x0100_0000,
+    stop: 0x0100_0001,
+    prescaler: 0x0100_0002,
+    loadfactor: 0x0100_0003,
+    seed: 0x0100_0004,
+};
+
+const MAILBOX: AddrMbx = AddrMbx {
+    stat: 0x0003_0000,
+    ctrl: 0x0003_0004,
+    ib: IObox {
+        addr: 0x0003_000C,
+        data: 0x0003_0010,
+    },
+    ob: IObox {
+        addr: 0x0003_0014,
+        data: 0x0003_0018,
+    },
+};
+
+const fn get_task_addr(idx: u32) -> AddrTask {
+    let base = 0x0200_0000 + idx * 0x1_0000;
+    let per_offs = 0x0;
+    let dl_offs = 0x1;
+    let ack_offs = 0x2;
+
+    AddrTask {
+        period: base + per_offs,
+        deadline: base + dl_offs,
+        ack: base + ack_offs,
+    }
+}
+
+const TASKS: AddrTaskSet = AddrTaskSet {
+    mbx: get_task_addr(0),
+    update: [
+        get_task_addr(1),
+        get_task_addr(2),
+        get_task_addr(3),
+        get_task_addr(4),
+    ],
+    control: [
+        get_task_addr(5),
+        get_task_addr(6),
+        get_task_addr(7),
+        get_task_addr(8),
+    ],
+    report: [
+        get_task_addr(9),
+        get_task_addr(10),
+        get_task_addr(11),
+        get_task_addr(12),
+    ],
+};
 
 const I2C_M0_ADDR: u8 = 0x10;
 const I2C_M1_ADDR: u8 = 0x11;
@@ -48,22 +115,6 @@ const I2C_M2_ADDR: u8 = 0x12;
 const I2C_M3_ADDR: u8 = 0x13;
 
 const CTRL_TASK_PER_US: u32 = 2000;
-const TASK_MBX_ACK_ADDR: u32 = 0x0300_0000;
-
-const TASK_CTRL_0_ADDR: u32 = 0x0301_0000;
-const TASK_CTRL_1_ADDR: u32 = 0x0301_0001;
-const TASK_CTRL_2_ADDR: u32 = 0x0301_0002;
-const TASK_CTRL_3_ADDR: u32 = 0x0301_0003;
-
-const TASK_REP_0_ADDR: u32 = 0x0401_0000;
-const TASK_REP_1_ADDR: u32 = 0x0401_0001;
-const TASK_REP_2_ADDR: u32 = 0x0401_0002;
-const TASK_REP_3_ADDR: u32 = 0x0401_0003;
-
-const TASK_UPD_0_ADDR: u32 = 0x0501_0000;
-const TASK_UPD_1_ADDR: u32 = 0x0501_0001;
-const TASK_UPD_2_ADDR: u32 = 0x0501_0002;
-const TASK_UPD_3_ADDR: u32 = 0x0501_0003;
 
 const fn parse_u32(s: &str) -> u32 {
     let mut out: u32 = 0;
@@ -111,10 +162,13 @@ static mut MAIL: [u32; 4] = [0, 0, 0, 0];
 fn main() -> ! {
     let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
     sprintln!("\n\r### Starting rt_prof (bare-metal) benchmark ###\n\r");
-    let mut i2c = I2c::init(4);
+    let _i2c = I2c::init(4);
 
     assert!(MBX_PER > DL_MBX, "Mailbox task period too short!\n\r");
-    assert!(CTRL_TASK_PER_US > DL_CTRL, "Control task period too short!\n\r");
+    assert!(
+        CTRL_TASK_PER_US > DL_CTRL,
+        "Control task period too short!\n\r"
+    );
 
     init_intc();
 
@@ -165,17 +219,28 @@ fn main() -> ! {
     sprintln!(" - Mailbox period   (us) : {}", MBX_PER);
     sprintln!("");
 
-    send_letter(DL_MBX_ADDR, DL_MBX);
-    send_letter(DL_UPD_ADDR, DL_UPD);
-    send_letter(DL_CTRL_ADDR, DL_CTRL);
-    send_letter(DL_REP_ADDR, DL_REP);
+    send_letter(TASKS.mbx.deadline, DL_MBX);
+    send_letter(TASKS.update[0].deadline, DL_UPD);
+    send_letter(TASKS.update[1].deadline, DL_UPD);
+    send_letter(TASKS.update[2].deadline, DL_UPD);
+    send_letter(TASKS.update[3].deadline, DL_UPD);
+    wait_outbox_empty();
+    send_letter(TASKS.control[0].deadline, DL_CTRL);
+    send_letter(TASKS.control[1].deadline, DL_CTRL);
+    send_letter(TASKS.control[2].deadline, DL_CTRL);
+    send_letter(TASKS.control[3].deadline, DL_CTRL);
+    wait_outbox_empty();
+    send_letter(TASKS.report[0].deadline, DL_REP);
+    send_letter(TASKS.report[1].deadline, DL_REP);
+    send_letter(TASKS.report[2].deadline, DL_REP);
+    send_letter(TASKS.report[3].deadline, DL_REP);
     wait_outbox_empty();
 
-    send_letter(SIM_PRESCALER_ADDR, PS);
-    send_letter(SIM_LOADFACTOR_ADDR, LF);
+    send_letter(SIM.prescaler, PS);
+    send_letter(SIM.loadfactor, LF);
     wait_outbox_empty();
 
-    send_letter(SIM_START_ADDR, 0x0);
+    send_letter(SIM.start, 0x0);
 
     timers.iter_mut().for_each(Periodic::start);
     mtimer.start(SIM_PARAMS.hyperperiod_ms.millis());
@@ -189,15 +254,15 @@ fn main() -> ! {
 
 #[inline]
 fn wait_outbox_empty() {
-    while (mmio::read_u32(MBX_STAT_ADDR as usize) & (1 << 2)) == 0 {}
+    while (mmio::read_u32(MAILBOX.stat as usize) & (1 << 2)) == 0 {}
 }
 
 #[inline]
 fn send_letter(addr: u32, data: u32) {
-    mmio::write_u32(MBX_OADD_ADDR as usize, addr);
-    mmio::write_u32(MBX_ODAT_ADDR as usize, data);
+    mmio::write_u32(MAILBOX.ob.addr as usize, addr);
+    mmio::write_u32(MAILBOX.ob.data as usize, data);
     // send letter
-    mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x1);
+    mmio::write_u32(MAILBOX.ctrl as usize, 0x1);
 }
 
 #[inline]
@@ -216,7 +281,7 @@ fn MachineTimer() {
     riscv::interrupt::disable();
 
     // Terminate scoreboard
-    send_letter(SIM_END_ADDR, 0x1);
+    send_letter(SIM.stop, 0x1);
 
     // Delay to let outbox clear
     for _ in 1..101 {
@@ -226,7 +291,7 @@ fn MachineTimer() {
     let instret = riscv::register::minstret::read64();
     let active_time_cc = riscv::register::mcycle::read64();
 
-    sprintln!("Instructions retired: {instret}, cycles: {active_time_cc}");
+    sprintln!("\n\rInstructions retired: {instret}, cycles: {active_time_cc}");
 
     // TODO: make neater
     let total_time_cc = RUNTIME_MS * 1000 * 100;
@@ -253,21 +318,24 @@ fn Timer0Cmp() {
     // enable nesting manually
     unsafe { riscv::interrupt::enable() };
 
-    let mut rbuf = [0];
+    let mut rbuf = [0, 0];
 
-    unsafe { riscv::interrupt::disable() };
+    riscv::interrupt::disable();
     unsafe { I2c::instance() }.read(I2C_M0_ADDR, &mut rbuf); // Read motor status
     unsafe { riscv::interrupt::enable() };
 
-    let rdata = u8::from_le_bytes(rbuf);
+    let _rdata = u16::from_le_bytes(rbuf);
 
-    unsafe { riscv::interrupt::disable() };
-    unsafe { I2c::instance() }.write(I2C_M0_ADDR, &[0x10]); // Write to motor
+    riscv::interrupt::disable();
+    unsafe { I2c::instance() }.write(I2C_M0_ADDR, &[0x10, 0x67]); // Write to motor
     unsafe { riscv::interrupt::enable() };
 
-    ack_task(TASK_CTRL_0_ADDR); // acknowledge this task
-    pend_irq(Interrupt::Ext0); // Pend report task (HW)
-    pend_task(TASK_REP_0_ADDR); // Pend report task (TB)
+    // acknowledge this task
+    ack_task(TASKS.control[0].ack);
+    // Pend report task (HW)
+    pend_irq(Interrupt::Ext0);
+    // Pend report task (TB)
+    pend_task(TASKS.report[0].ack);
 
     // restore mintthresh
     bsp::register::mintthresh::write(last_mintthresh.into());
@@ -283,19 +351,19 @@ fn Timer1Cmp() {
 
     let mut rbuf = [0];
 
-    unsafe { riscv::interrupt::disable() };
+    riscv::interrupt::disable();
     unsafe { I2c::instance() }.read(I2C_M1_ADDR, &mut rbuf);
     unsafe { riscv::interrupt::enable() };
 
-    let rdata = u8::from_le_bytes(rbuf);
+    let _rdata = u8::from_le_bytes(rbuf);
 
-    unsafe { riscv::interrupt::disable() };
+    riscv::interrupt::disable();
     unsafe { I2c::instance() }.write(I2C_M1_ADDR, &[0x11]);
     unsafe { riscv::interrupt::enable() };
 
-    ack_task(TASK_CTRL_1_ADDR);
+    ack_task(TASKS.control[1].ack);
     pend_irq(Interrupt::Ext1);
-    pend_task(TASK_REP_1_ADDR);
+    pend_task(TASKS.report[1].ack);
 
     // restore mintthresh
     bsp::register::mintthresh::write(last_mintthresh.into());
@@ -310,19 +378,19 @@ fn Timer2Cmp() {
     unsafe { riscv::interrupt::enable() };
 
     let mut rbuf = [0];
-    unsafe { riscv::interrupt::disable() };
+    riscv::interrupt::disable();
     unsafe { I2c::instance() }.read(I2C_M2_ADDR, &mut rbuf);
     unsafe { riscv::interrupt::enable() };
 
-    let rdata = u8::from_le_bytes(rbuf);
+    let _rdata = u8::from_le_bytes(rbuf);
 
-    unsafe { riscv::interrupt::disable() };
+    riscv::interrupt::disable();
     unsafe { I2c::instance() }.write(I2C_M2_ADDR, &[0x12]);
     unsafe { riscv::interrupt::enable() };
 
-    ack_task(TASK_CTRL_2_ADDR);
+    ack_task(TASKS.control[2].ack);
     pend_irq(Interrupt::Ext2);
-    pend_task(TASK_REP_2_ADDR);
+    pend_task(TASKS.report[2].ack);
 
     // restore mintthresh
     bsp::register::mintthresh::write(last_mintthresh.into());
@@ -338,19 +406,19 @@ fn Timer3Cmp() {
 
     let mut rbuf = [0];
 
-    unsafe { riscv::interrupt::disable() };
+    riscv::interrupt::disable();
     unsafe { I2c::instance() }.read(I2C_M3_ADDR, &mut rbuf);
     unsafe { riscv::interrupt::enable() };
 
-    let rdata = u8::from_le_bytes(rbuf);
+    let _rdata = u8::from_le_bytes(rbuf);
 
-    unsafe { riscv::interrupt::disable() };
+    riscv::interrupt::disable();
     unsafe { I2c::instance() }.write(I2C_M3_ADDR, &[0x13]);
     unsafe { riscv::interrupt::enable() };
 
-    ack_task(TASK_CTRL_3_ADDR);
+    ack_task(TASKS.control[3].ack);
     pend_irq(Interrupt::Ext3);
-    pend_task(TASK_REP_3_ADDR);
+    pend_task(TASKS.report[3].ack);
 
     // restore mintthresh
     bsp::register::mintthresh::write(last_mintthresh.into());
@@ -362,9 +430,9 @@ fn Timer0Ovf() {
     // raise mintthresh to task level
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_UPD as usize).into());
     // enable nesting manually
-    //unsafe { riscv::interrupt::enable() };
+    unsafe { riscv::interrupt::enable() };
 
-    ack_task(TASK_UPD_0_ADDR);
+    ack_task(TASKS.update[0].ack);
 
     // restore mintthresh
     bsp::register::mintthresh::write(last_mintthresh.into());
@@ -378,8 +446,8 @@ fn Timer1Ovf() {
     // enable nesting manually
     unsafe { riscv::interrupt::enable() };
 
-    ack_task(TASK_UPD_1_ADDR);
-    
+    ack_task(TASKS.update[1].ack);
+
     // restore mintthresh
     bsp::register::mintthresh::write(last_mintthresh.into());
 }
@@ -392,7 +460,7 @@ fn Timer2Ovf() {
     // enable nesting manually
     unsafe { riscv::interrupt::enable() };
 
-    ack_task(TASK_UPD_2_ADDR);
+    ack_task(TASKS.update[2].ack);
 
     // restore mintthresh
     bsp::register::mintthresh::write(last_mintthresh.into());
@@ -406,7 +474,7 @@ fn Timer3Ovf() {
     // enable nesting manually
     unsafe { riscv::interrupt::enable() };
 
-    ack_task(TASK_UPD_3_ADDR);
+    ack_task(TASKS.update[3].ack);
 
     // restore mintthresh
     bsp::register::mintthresh::write(last_mintthresh.into());
@@ -418,8 +486,7 @@ fn Ext0() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
 
-    ack_task(TASK_REP_0_ADDR);
-
+    ack_task(TASKS.report[0].ack);
 
     bsp::register::mintthresh::write(last_mintthresh.into());
 }
@@ -430,8 +497,7 @@ fn Ext1() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
 
-    ack_task(TASK_REP_1_ADDR);
-
+    ack_task(TASKS.report[1].ack);
 
     bsp::register::mintthresh::write(last_mintthresh.into());
 }
@@ -442,8 +508,7 @@ fn Ext2() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
 
-    ack_task(TASK_REP_2_ADDR);
-
+    ack_task(TASKS.report[2].ack);
 
     bsp::register::mintthresh::write(last_mintthresh.into());
 }
@@ -454,8 +519,7 @@ fn Ext3() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
 
-    ack_task(TASK_REP_3_ADDR);
-
+    ack_task(TASKS.report[3].ack);
 
     bsp::register::mintthresh::write(last_mintthresh.into());
 }
@@ -466,10 +530,10 @@ fn Mbx() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_MAIL as usize).into());
     unsafe { riscv::interrupt::enable() };
 
-    for i in 0..4 {
+    for _ in 0..4 {
         // Read inbox
-        let addr = mmio::read_u32(MBX_IADD_ADDR as usize);
-        let data = mmio::read_u32(MBX_IDAT_ADDR as usize);
+        let addr = mmio::read_u32(MAILBOX.ib.addr as usize);
+        let data = mmio::read_u32(MAILBOX.ib.data as usize);
 
         unsafe {
             match addr {
@@ -481,28 +545,27 @@ fn Mbx() {
             }
         }
 
-        mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0100_0000);
+        mmio::write_u32(MAILBOX.ctrl as usize, 0x0100_0000);
     }
 
     // IRQ clear
-    mmio::write_u32(MBX_OBI_CTRL_ADDR as usize, 0x0002_0000);
+    mmio::write_u32(MAILBOX.ctrl as usize, 0x0002_0000);
 
-    pend_task(TASK_UPD_0_ADDR);
+    pend_task(TASKS.update[0].ack);
     pend_irq(Interrupt::Timer0Ovf);
 
-    pend_task(TASK_UPD_1_ADDR);
+    pend_task(TASKS.update[1].ack);
     pend_irq(Interrupt::Timer1Ovf);
 
-    pend_task(TASK_UPD_2_ADDR);
+    pend_task(TASKS.update[2].ack);
     pend_irq(Interrupt::Timer2Ovf);
 
-    pend_task(TASK_UPD_3_ADDR);
+    pend_task(TASKS.update[3].ack);
     pend_irq(Interrupt::Timer3Ovf);
 
     // Ack MBX task
-    ack_task(TASK_MBX_ACK_ADDR);
+    ack_task(TASKS.mbx.ack);
 
-    //riscv::interrupt::disable();
     bsp::register::mintthresh::write(last_mintthresh.into());
 }
 

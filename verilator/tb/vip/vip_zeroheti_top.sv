@@ -39,11 +39,11 @@ module vip_zeroheti_top #(
     bit          valid;
     bit          write;
     logic [6:0]  addr;
-    logic [31:0] wdata;
+    logic [7:0] wdata;
   } i2c_req_t;
 
   typedef struct packed {
-    logic [31:0] rdata;
+    logic [7:0] rdata;
   } gen_rsp_t;
 
   i2c_req_t i2c_req;
