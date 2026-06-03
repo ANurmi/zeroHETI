@@ -13,24 +13,6 @@ module vip_task_scoreboard
     input logic        [3:0][31:0] rep_dl_us_i
 );
 
-  /*
-  localparam int unsigned PerTaskSetSize = 13;
-
-  typedef enum logic [2:0] {
-    NONE = 0,
-    MAIL = 1,
-    UPDATE = 2,
-    CONTROL = 3,
-    REPORT = 4
-  } name_e;
-
-  typedef struct packed {
-    int unsigned count;
-    int unsigned slack_worst;
-    int unsigned slack_avg;
-  } task_ret_t;
-
-*/
   task_t           [TaskSetSize-1:0] task_set;
   task_ret_t       [TaskSetSize-1:0] task_set_ret;
 
@@ -39,7 +21,6 @@ module vip_task_scoreboard
   int unsigned                       mbx_task_per;
 
   assign mbx_task_per = infer_mbx_per(mbx_dl_us_i, loadfactor_i);
-  //assign mbx_task_per = 5 * mbx_dl_us_i + (4 * (100 - loadfactor_i));
 
   always @(posedge clk_i) begin : us_counter
     if (enable_i) begin
@@ -107,47 +88,17 @@ module vip_task_scoreboard
           task_set[i].dl_us = mbx_dl_us_i;
         end
         [TASK_UPD_0 : TASK_UPD_3]: begin
-          task_set[i].name  = task_num_e'(i - 1);
+          task_set[i].name  = task_num_e'(i);
           task_set[i].dl_us = upd_dl_us_i[i-1];
         end
         [TASK_CTRL_0 : TASK_CTRL_3]: begin
-          task_set[i].name  = task_num_e'(i - 5);
+          task_set[i].name  = task_num_e'(i);
           task_set[i].dl_us = ctrl_dl_us_i[i-5];
         end
         [TASK_REP_0 : TASK_REP_3]: begin
-          task_set[i].name  = task_num_e'(i - 9);
+          task_set[i].name  = task_num_e'(i);
           task_set[i].dl_us = rep_dl_us_i[i-9];
         end
-        /*TASK_UPD_1: begin
-          task_set[i].name  = TASK_UPD_1;
-          task_set[i].dl_us = upd_dl_us_i[1];
-        end
-        TASK_UPD_2: begin
-          task_set[i].name  = TASK_UPD_2;
-          task_set[i].dl_us = upd_dl_us_i[2];
-        end
-        TASK_UPD_3: begin
-          task_set[i].name  = TASK_UPD_3;
-          task_set[i].dl_us = upd_dl_us_i[3];
-        end*/
-        /*
-        0: begin
-          task_set[i].name  = MAIL;
-          task_set[i].dl_us = mbx_dl_us_i;
-        end
-        default: ;
-        [1 : 4]: begin
-          task_set[i].name  = UPDATE;
-          task_set[i].dl_us = upd_dl_us_i;
-        end
-        [5 : 8]: begin
-          task_set[i].name  = CONTROL;
-          task_set[i].dl_us = ctrl_dl_us_i;
-        end
-        [9 : 12]: begin
-          task_set[i].name  = REPORT;
-          task_set[i].dl_us = rep_dl_us_i;
-        end*/
       endcase
     end
 

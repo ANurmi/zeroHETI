@@ -16,6 +16,15 @@ package rt_prof_pkg;
     logic [31:0] ack;
   } task_addr_t;
 
+  typedef struct packed {
+    bit         active;
+    bit frame_active;
+    bit addr_valid;
+    bit is_write;
+    logic [7:0] data;
+    int unsigned bitcount;
+  } i2c_transaction_t;
+
   localparam sim_addr_t SimMap = '{
       base      : 32'h0100_0000,
       start     : 32'h0100_0000 + 0,
