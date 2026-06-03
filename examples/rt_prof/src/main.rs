@@ -204,11 +204,16 @@ fn main() -> ! {
     timers[2].set_period(CTRL_TASK_PER_US.micros());
     timers[3].set_period(CTRL_TASK_PER_US.micros());
 
+    send_letter(TASKS.control[0].period, CTRL_TASK_PER_US);
+    send_letter(TASKS.control[1].period, CTRL_TASK_PER_US);
+    send_letter(TASKS.control[2].period, CTRL_TASK_PER_US);
+    send_letter(TASKS.control[3].period, CTRL_TASK_PER_US);
+    wait_outbox_empty();
     let mut mtimer = MTimer::instance().into_oneshot();
 
     sprintln!("Configuration and parameters:");
     sprintln!(" - Runtime (ms)          : {}", SIM_PARAMS.hyperperiod_ms);
-    sprintln!(" - Sim env prescaler     : {}", PS);
+    sprintln!(" - Microsecond prescaler : {}", PS);
     sprintln!(" - Randomization seed    : 0x{:X}", SEED);
     sprintln!(" - Load factor  [0-100]  : {}", LF);
     sprintln!(" - Update task DL   (us) : {}", DL_UPD);

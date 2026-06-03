@@ -1,13 +1,13 @@
 module vip_motor_sim #(
     parameter int unsigned Idx = 0
 ) (
-    input int unsigned prescaler_i,
-    input logic        clk_i,
-    input logic        enable_i,
-
-    input  logic       control_valid_i,
-    input  logic [7:0] control_wdata_i,
-    output logic [7:0] control_rdata_o
+    input  int unsigned        prescaler_i,
+    input  logic               clk_i,
+    input  logic               enable_i,
+    input  logic        [31:0] period_target_i,
+    input  logic               control_valid_i,
+    input  logic        [ 7:0] control_wdata_i,
+    output logic        [ 7:0] control_rdata_o
 
 );
 
@@ -15,47 +15,48 @@ module vip_motor_sim #(
 
   assign control_rdata_o = 8'h67 + 8'(Idx);
 
-  longint unsigned cnt = 0;
+  longint unsigned time_us = 0;
+  longint unsigned time_last_us = 0;
+  longint unsigned period_last_us = 0;
+  longint unsigned period_long_us = 0;
+  longint unsigned period_short_us = 0;
+  longint unsigned jitter_worst_us = 0;
+
   int unsigned     ps = 0;
 
-  longint unsigned time_last = 0;
-  longint unsigned period_last = 0;
-  longint unsigned period_short = 0;
-  longint unsigned period_long = 0;
-  longint unsigned jitter_worst = 0;
-
-  assign jitter_worst = period_long - period_short;
+  assign jitter_worst_us = period_long_us - period_short_us;
 
   always @(posedge clk_i) begin : prescaler
-    if (ps >= prescaler_i) begin
-      cnt++;
-      ps = 0;
-    end else ps++;
+    if (enable_i) begin
+      if (ps >= prescaler_i) begin
+        time_us++;
+        ps = 0;
+      end else ps++;
+    end
   end
 
-  /*
-  always @(cnt) begin : counter
-  end
-  */
+  // Reset counter whenever target period is adjusted
+  always @(period_target_i) if (enable_i) time_last_us = 0;
 
   always @(posedge control_valid_i) begin
 
-    if (time_last != 0) begin
-      period_last = cnt - time_last;
-
-      if (period_short == 0) begin
-        period_short = period_last;
-        period_long  = period_last;
-      end else if (period_last < period_short) period_short = period_last;
-      else if (period_last > period_long) period_long = period_last;
-
+    if (time_last_us != 0) begin
+      period_last_us = time_us - time_last_us;
     end
 
-    time_last = cnt;
+    if (period_short_us == 0) begin
+      period_long_us  = period_last_us;
+      period_short_us = period_last_us;
+    end else begin
+      if (period_last_us < period_short_us) period_short_us = period_last_us;
+      if (period_last_us > period_long_us) period_long_us = period_last_us;
+    end
+
+    time_last_us = time_us;
   end
 
   always @(negedge enable_i) begin
-    $display("[M%0d] worst jitter (cc): %0d", Idx, jitter_worst);
+    $display("[M%0d] worst jitter (us): %0d", Idx, jitter_worst_us);
   end
 
 endmodule : vip_motor_sim

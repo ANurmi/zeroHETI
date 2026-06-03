@@ -89,6 +89,7 @@ module vip_sim_env
         .clk_i,
         .prescaler_i    (global_prescaler),
         .enable_i       (motor_enable),
+        .period_target_i(per_ctrl_us[i]),
         .control_valid_i(motor_control_valid[i]),
         .control_wdata_i(motor_control_wdata[i]),
         .control_rdata_o(motor_control_rdata[i])
