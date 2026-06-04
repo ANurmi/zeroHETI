@@ -1,6 +1,8 @@
 #![no_main]
 #![no_std]
 
+mod ring_buffer;
+
 use bsp::{
     CPU_FREQ_HZ,
     apb_uart::ApbUart,
