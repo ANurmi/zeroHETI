@@ -228,16 +228,16 @@ fn main() -> ! {
         Timer::init::<TIMER3_ADDR>().into_periodic(),
     ];
 
-    timers[0].set_period(CTRL_TASK_PER_US.micros());
-    timers[1].set_period(CTRL_TASK_PER_US.micros());
-    timers[2].set_period(CTRL_TASK_PER_US.micros());
-    timers[3].set_period(CTRL_TASK_PER_US.micros());
+    timers
+        .iter_mut()
+        .for_each(|t| t.set_period(CTRL_TASK_PER_US.micros()));
 
-    send_letter(TASKS.control[0].period, CTRL_TASK_PER_US);
-    send_letter(TASKS.control[1].period, CTRL_TASK_PER_US);
-    send_letter(TASKS.control[2].period, CTRL_TASK_PER_US);
-    send_letter(TASKS.control[3].period, CTRL_TASK_PER_US);
+    TASKS
+        .control
+        .iter()
+        .for_each(|c| send_letter(c.period, CTRL_TASK_PER_US));
     wait_outbox_empty();
+
     let mut mtimer = MTimer::instance().into_oneshot();
 
     sprintln!("Configuration and parameters:");
@@ -254,20 +254,20 @@ fn main() -> ! {
     sprintln!("");
 
     send_letter(TASKS.mbx.deadline, DL_MBX);
-    send_letter(TASKS.update[0].deadline, DL_UPD);
-    send_letter(TASKS.update[1].deadline, DL_UPD);
-    send_letter(TASKS.update[2].deadline, DL_UPD);
-    send_letter(TASKS.update[3].deadline, DL_UPD);
+    TASKS
+        .update
+        .iter()
+        .for_each(|upd| send_letter(upd.deadline, DL_UPD));
     wait_outbox_empty();
-    send_letter(TASKS.control[0].deadline, DL_CTRL);
-    send_letter(TASKS.control[1].deadline, DL_CTRL);
-    send_letter(TASKS.control[2].deadline, DL_CTRL);
-    send_letter(TASKS.control[3].deadline, DL_CTRL);
+    TASKS
+        .control
+        .iter()
+        .for_each(|ctl| send_letter(ctl.deadline, DL_CTRL));
     wait_outbox_empty();
-    send_letter(TASKS.report[0].deadline, DL_REP);
-    send_letter(TASKS.report[1].deadline, DL_REP);
-    send_letter(TASKS.report[2].deadline, DL_REP);
-    send_letter(TASKS.report[3].deadline, DL_REP);
+    TASKS
+        .report
+        .iter()
+        .for_each(|rpt| send_letter(rpt.deadline, DL_REP));
     wait_outbox_empty();
 
     send_letter(SIM.prescaler, PS);
@@ -288,7 +288,7 @@ fn main() -> ! {
 
 #[inline]
 fn wait_outbox_empty() {
-    while (mmio::read_u32(MAILBOX.stat as usize) & (1 << 2)) == 0 {}
+    while (mmio::read_u32(MAILBOX.stat as usize) & (0b1 << 2)) == 0 {}
 }
 
 #[inline]
@@ -311,7 +311,7 @@ fn ack_task(addr: u32) {
 
 #[core_interrupt(bsp::interrupt::Interrupt::MachineTimer)]
 #[allow(non_snake_case)]
-fn MachineTimer() {
+fn finish_sim() {
     riscv::interrupt::disable();
 
     let duration_real_cc =  MTimer::instance().into_oneshot().duration().ticks();
@@ -320,7 +320,7 @@ fn MachineTimer() {
     send_letter(SIM.stop, 0x1);
 
     // Delay to let outbox clear
-    for _ in 1..101 {
+    for _ in 0..100 {
         nop();
     }
 
