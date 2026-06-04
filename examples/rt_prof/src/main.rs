@@ -506,6 +506,14 @@ fn control_3() {
     bsp::register::mintthresh::write(last_mintthresh.into());
 }
 
+fn restart_timer_with_period(idx: MotorIdx, nperiod: timer_group::Duration) {
+    let timer_addr = TIMER0_ADDR + (idx as usize) * TIMER_SEP;
+    let mut timer = unsafe { Timer::instance_dyn(timer_addr) }.into_periodic();
+    timer.cancel();
+    timer.set_period(nperiod);
+    timer.start();
+}
+
 #[core_interrupt(bsp::interrupt::Interrupt::Timer0Ovf)]
 #[allow(non_snake_case)]
 fn update_0() {
@@ -513,6 +521,12 @@ fn update_0() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_UPD as usize).into());
     // enable nesting manually
     unsafe { riscv::interrupt::enable() };
+
+    let nperiod_us = 500u32;
+    restart_timer_with_period(MotorIdx::M0, nperiod_us.micros());
+
+    send_letter(TASKS.control[0].period, nperiod_us);
+    send_letter(TASKS.control[0].deadline, nperiod_us);
 
     ack_task(TASKS.update[0].ack_pend);
 
