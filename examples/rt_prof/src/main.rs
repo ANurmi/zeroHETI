@@ -2,6 +2,7 @@
 #![no_std]
 #![allow(static_mut_refs)]
 
+mod mailbox;
 mod ring_buffer;
 
 use bsp::{
@@ -25,21 +26,7 @@ use bsp::{
 use fugit::{ExtU32, ExtU64};
 use riscv_rt::InterruptNumber;
 
-/// Inbox/outbox address layout
-struct IoBox {
-    addr: u32,
-    data: u32,
-}
-
-/// Mailbox address layout
-struct AddrMbx {
-    stat: u32,
-    ctrl: u32,
-    /// Inbox
-    ib: IoBox,
-    /// Outbox
-    ob: IoBox,
-}
+use crate::mailbox::MAILBOX;
 
 /// Simulator environment address layout
 struct AddrSim {
@@ -78,18 +65,6 @@ const SIM: AddrSim = AddrSim {
     seed: 0x0100_0004,
 };
 
-const MAILBOX: AddrMbx = AddrMbx {
-    stat: 0x0003_0000,
-    ctrl: 0x0003_0004,
-    ib: IoBox {
-        addr: 0x0003_000C,
-        data: 0x0003_0010,
-    },
-    ob: IoBox {
-        addr: 0x0003_0014,
-        data: 0x0003_0018,
-    },
-};
 
 const fn get_task_addr(idx: u32) -> AddrTask {
     let base = 0x0200_0000 + idx * 0x1_0000;
