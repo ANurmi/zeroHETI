@@ -1,21 +1,24 @@
 #![no_main]
 #![no_std]
 
-use fugit::{ExtU32, ExtU64};
 use bsp::{
     CPU_FREQ_HZ,
     apb_uart::ApbUart,
     core_interrupt,
     i2c::I2c,
-    interrupt::Interrupt,
+    interrupt::Interrupt::{self},
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mmio,
     mtimer::MTimer,
-    riscv::{self, asm::nop, asm::wfi},
+    riscv::{
+        self,
+        asm::{nop, wfi},
+    },
     rt::entry,
     sprintln,
     timer_group::{Periodic, Timer},
 };
+use fugit::{ExtU32, ExtU64};
 use riscv_rt::InterruptNumber;
 
 /// Inbox/outbox address layout
@@ -311,6 +314,8 @@ fn ack_task(addr: u32) {
 fn MachineTimer() {
     riscv::interrupt::disable();
 
+    let duration_real_cc =  MTimer::instance().into_oneshot().duration().ticks();
+
     // Terminate scoreboard
     send_letter(SIM.stop, 0x1);
 
@@ -324,17 +329,14 @@ fn MachineTimer() {
 
     sprintln!("\n\rInstructions retired: {instret}, cycles: {active_time_cc}");
 
-    // TODO: make neater
-    let total_time_cc = RUNTIME_MS * 1000 * 100;
-
     sprintln!(
         "Total time (cc): {}, active time (cc): {},",
-        total_time_cc,
+        duration_real_cc,
         active_time_cc
     );
     sprintln!(
         "CPU utilization: {}%",
-        (active_time_cc * 100) / total_time_cc
+        (active_time_cc * 100) / duration_real_cc
     );
 
     #[cfg(feature = "rtl-tb")]
