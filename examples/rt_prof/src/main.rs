@@ -312,7 +312,7 @@ fn ack_task(addr: u32) {
 fn finish_sim() {
     riscv::interrupt::disable();
 
-    let duration_real_cc =  MTimer::instance().into_oneshot().duration().ticks();
+    let duration_real_cc = MTimer::instance().into_oneshot().duration().ticks();
 
     // Terminate scoreboard
     send_letter(SIM.stop, 0x1);
@@ -343,7 +343,7 @@ fn finish_sim() {
 
 #[core_interrupt(bsp::interrupt::Interrupt::Timer0Cmp)]
 #[allow(non_snake_case)]
-fn Timer0Cmp() {
+fn control_0() {
     // raise mintthresh to task level
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_CTRL as usize).into());
     // enable nesting manually
@@ -351,15 +351,15 @@ fn Timer0Cmp() {
 
     let mut rbuf = [0, 0]; // TEST
 
-    riscv::interrupt::disable();
-    unsafe { I2c::instance() }.read(I2C_M0_ADDR, &mut rbuf); // Read motor status
-    unsafe { riscv::interrupt::enable() };
+    riscv::interrupt::free(|| {
+        unsafe { I2c::instance() }.read(I2C_M0_ADDR, &mut rbuf); // Read motor status
+    });
 
     let _rdata = u16::from_le_bytes(rbuf);
 
-    riscv::interrupt::disable();
-    unsafe { I2c::instance() }.write(I2C_M0_ADDR, &[0x10, 0x67]); // Write to motor
-    unsafe { riscv::interrupt::enable() };
+    riscv::interrupt::free(|| {
+        unsafe { I2c::instance() }.write(I2C_M0_ADDR, &[0x10, 0x67]); // Write to motor
+    });
 
     // acknowledge this task
     ack_task(TASKS.control[0].ack_pend);
@@ -374,7 +374,7 @@ fn Timer0Cmp() {
 
 #[core_interrupt(bsp::interrupt::Interrupt::Timer1Cmp)]
 #[allow(non_snake_case)]
-fn Timer1Cmp() {
+fn control_1() {
     // raise mintthresh to task level
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_CTRL as usize).into());
     // enable nesting manually
@@ -382,17 +382,18 @@ fn Timer1Cmp() {
 
     let mut rbuf = [0];
 
-    riscv::interrupt::disable();
-    unsafe { I2c::instance() }.read(I2C_M1_ADDR, &mut rbuf);
-    unsafe { riscv::interrupt::enable() };
+    riscv::interrupt::free(|| {
+        unsafe { I2c::instance() }.read(I2C_M1_ADDR, &mut rbuf);
+    });
 
     let _rdata = u8::from_le_bytes(rbuf);
 
-    riscv::interrupt::disable();
-    unsafe { I2c::instance() }.write(I2C_M1_ADDR, &[0x11]);
-    unsafe { riscv::interrupt::enable() };
+    riscv::interrupt::free(|| {
+        unsafe { I2c::instance() }.write(I2C_M1_ADDR, &[0x11]);
+    });
 
     ack_task(TASKS.control[1].ack_pend);
+    // Pend report
     pend_irq(Interrupt::Ext1);
     pend_task(TASKS.report[1].ack_pend);
 
@@ -402,24 +403,25 @@ fn Timer1Cmp() {
 
 #[core_interrupt(bsp::interrupt::Interrupt::Timer2Cmp)]
 #[allow(non_snake_case)]
-fn Timer2Cmp() {
+fn control_2() {
     // raise mintthresh to task level
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_CTRL as usize).into());
     // enable nesting manually
     unsafe { riscv::interrupt::enable() };
 
     let mut rbuf = [0];
-    riscv::interrupt::disable();
-    unsafe { I2c::instance() }.read(I2C_M2_ADDR, &mut rbuf);
-    unsafe { riscv::interrupt::enable() };
+    riscv::interrupt::free(|| {
+        unsafe { I2c::instance() }.read(I2C_M2_ADDR, &mut rbuf);
+    });
 
     let _rdata = u8::from_le_bytes(rbuf);
 
-    riscv::interrupt::disable();
-    unsafe { I2c::instance() }.write(I2C_M2_ADDR, &[0x12]);
-    unsafe { riscv::interrupt::enable() };
+    riscv::interrupt::free(|| {
+        unsafe { I2c::instance() }.write(I2C_M2_ADDR, &[0x12]);
+    });
 
     ack_task(TASKS.control[2].ack_pend);
+    // Pend report
     pend_irq(Interrupt::Ext2);
     pend_task(TASKS.report[2].ack_pend);
 
@@ -429,25 +431,26 @@ fn Timer2Cmp() {
 
 #[core_interrupt(bsp::interrupt::Interrupt::Timer3Cmp)]
 #[allow(non_snake_case)]
-fn Timer3Cmp() {
+fn control_3() {
     // raise mintthresh to task level
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_CTRL as usize).into());
     // enable nesting manually
     unsafe { riscv::interrupt::enable() };
 
-    let mut rbuf = [0];
+    let mut rbuf: [u8; 1] = [0];
 
-    riscv::interrupt::disable();
-    unsafe { I2c::instance() }.read(I2C_M3_ADDR, &mut rbuf);
-    unsafe { riscv::interrupt::enable() };
+    riscv::interrupt::free(|| {
+        unsafe { I2c::instance() }.read(I2C_M3_ADDR, &mut rbuf);
+    });
 
     let _rdata = u8::from_le_bytes(rbuf);
 
-    riscv::interrupt::disable();
-    unsafe { I2c::instance() }.write(I2C_M3_ADDR, &[0x13]);
-    unsafe { riscv::interrupt::enable() };
+    riscv::interrupt::free(|| {
+        unsafe { I2c::instance() }.write(I2C_M3_ADDR, &[0x13]);
+    });
 
     ack_task(TASKS.control[3].ack_pend);
+    // Pend report
     pend_irq(Interrupt::Ext3);
     pend_task(TASKS.report[3].ack_pend);
 
@@ -457,7 +460,7 @@ fn Timer3Cmp() {
 
 #[core_interrupt(bsp::interrupt::Interrupt::Timer0Ovf)]
 #[allow(non_snake_case)]
-fn Timer0Ovf() {
+fn update_0() {
     // raise mintthresh to task level
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_UPD as usize).into());
     // enable nesting manually
@@ -471,7 +474,7 @@ fn Timer0Ovf() {
 
 #[core_interrupt(bsp::interrupt::Interrupt::Timer1Ovf)]
 #[allow(non_snake_case)]
-fn Timer1Ovf() {
+fn update_1() {
     // raise mintthresh to task level
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_UPD as usize).into());
     // enable nesting manually
@@ -485,7 +488,7 @@ fn Timer1Ovf() {
 
 #[core_interrupt(bsp::interrupt::Interrupt::Timer2Ovf)]
 #[allow(non_snake_case)]
-fn Timer2Ovf() {
+fn update_2() {
     // raise mintthresh to task level
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_UPD as usize).into());
     // enable nesting manually
@@ -499,7 +502,7 @@ fn Timer2Ovf() {
 
 #[core_interrupt(bsp::interrupt::Interrupt::Timer3Ovf)]
 #[allow(non_snake_case)]
-fn Timer3Ovf() {
+fn update_3() {
     // raise mintthresh to task level
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_UPD as usize).into());
     // enable nesting manually
@@ -513,7 +516,7 @@ fn Timer3Ovf() {
 
 #[core_interrupt(bsp::interrupt::Interrupt::Ext0)]
 #[allow(non_snake_case)]
-fn Ext0() {
+fn report_0() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
 
@@ -524,7 +527,7 @@ fn Ext0() {
 
 #[core_interrupt(bsp::interrupt::Interrupt::Ext1)]
 #[allow(non_snake_case)]
-fn Ext1() {
+fn report_1() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
 
@@ -535,7 +538,7 @@ fn Ext1() {
 
 #[core_interrupt(bsp::interrupt::Interrupt::Ext2)]
 #[allow(non_snake_case)]
-fn Ext2() {
+fn report_2() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
 
@@ -546,7 +549,7 @@ fn Ext2() {
 
 #[core_interrupt(bsp::interrupt::Interrupt::Ext3)]
 #[allow(non_snake_case)]
-fn Ext3() {
+fn report_3() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
 
@@ -583,6 +586,7 @@ fn Mbx() {
     mmio::write_u32(MAILBOX.ctrl as usize, 0x0002_0000);
 
     pend_task(TASKS.update[0].ack_pend);
+    // Pend update
     pend_irq(Interrupt::Timer0Ovf);
 
     pend_task(TASKS.update[1].ack_pend);
