@@ -1,5 +1,6 @@
 #![no_main]
 #![no_std]
+#![allow(static_mut_refs)]
 
 mod ring_buffer;
 
@@ -9,7 +10,8 @@ use bsp::{
     core_interrupt,
     i2c::I2c,
     interrupt::Interrupt::{self},
-    mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
+    mailbox::MotorIdx,
+    mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mmio,
     mtimer::MTimer,
     riscv::{
@@ -18,7 +20,7 @@ use bsp::{
     },
     rt::entry,
     sprintln,
-    timer_group::{Periodic, Timer},
+    timer_group::{self, Periodic, Timer},
 };
 use fugit::{ExtU32, ExtU64};
 use riscv_rt::InterruptNumber;
@@ -343,6 +345,44 @@ fn finish_sim() {
     bsp::tb::rtl_tb_signal_ok();
 }
 
+fn compute_voltage(motor_speed: u8, idx: usize) -> u8 {
+    // Discrete-time PID controller (per-call integral/derivative coefficients)
+    const SETPOINT: i16 = 127;
+    const KP: i32 = 3; // proportional gain
+    const KI: i32 = 1; // integral gain (per step)
+    const KD: i32 = 1; // derivative gain (per step)
+    const INTEGRAL_MAX: i32 = 10_000;
+
+    let err: i16 = SETPOINT - motor_speed as i16;
+
+    unsafe {
+        // Accumulate integral (anti-windup via clamping)
+        INTEGRAL[idx] = (INTEGRAL[idx] + err as i32).clamp(-INTEGRAL_MAX, INTEGRAL_MAX);
+
+        let deriv: i32 = (err - PREV_ERR[idx]) as i32;
+
+        let p_term: i32 = KP * (err as i32);
+        let i_term: i32 = KI * INTEGRAL[idx];
+        let d_term: i32 = KD * deriv;
+
+        PREV_ERR[idx] = err;
+
+        let mut out: i32 = SETPOINT as i32 + (p_term + i_term + d_term);
+        if out < 0 {
+            out = 0;
+        }
+        if out > 255 {
+            out = 255;
+        }
+
+        out as u8
+    }
+}
+
+// PID state per motor
+static mut INTEGRAL: [i32; 4] = [0; 4];
+static mut PREV_ERR: [i16; 4] = [0; 4];
+
 #[core_interrupt(bsp::interrupt::Interrupt::Timer0Cmp)]
 #[allow(non_snake_case)]
 fn control_0() {
@@ -351,16 +391,17 @@ fn control_0() {
     // enable nesting manually
     unsafe { riscv::interrupt::enable() };
 
-    let mut rbuf = [0, 0]; // TEST
+    let mut rbuf = [0];
 
     riscv::interrupt::free(|| {
         unsafe { I2c::instance() }.read(I2C_M0_ADDR, &mut rbuf); // Read motor status
     });
 
-    let _rdata = u16::from_le_bytes(rbuf);
+    let motor_speed = u8::from_le_bytes(rbuf);
+    let out_v: u8 = compute_voltage(motor_speed, 0);
 
     riscv::interrupt::free(|| {
-        unsafe { I2c::instance() }.write(I2C_M0_ADDR, &[0x10, 0x67]); // Write to motor
+        unsafe { I2c::instance() }.write(I2C_M0_ADDR, &[out_v]); // Write to motor
     });
 
     // acknowledge this task
@@ -389,9 +430,10 @@ fn control_1() {
     });
 
     let _rdata = u8::from_le_bytes(rbuf);
+    let out_v: u8 = compute_voltage(_rdata, 1);
 
     riscv::interrupt::free(|| {
-        unsafe { I2c::instance() }.write(I2C_M1_ADDR, &[0x11]);
+        unsafe { I2c::instance() }.write(I2C_M1_ADDR, &[out_v]);
     });
 
     ack_task(TASKS.control[1].ack_pend);
@@ -418,8 +460,10 @@ fn control_2() {
 
     let _rdata = u8::from_le_bytes(rbuf);
 
+    let out_v: u8 = compute_voltage(_rdata, 2);
+
     riscv::interrupt::free(|| {
-        unsafe { I2c::instance() }.write(I2C_M2_ADDR, &[0x12]);
+        unsafe { I2c::instance() }.write(I2C_M2_ADDR, &[out_v]);
     });
 
     ack_task(TASKS.control[2].ack_pend);
@@ -447,8 +491,10 @@ fn control_3() {
 
     let _rdata = u8::from_le_bytes(rbuf);
 
+    let out_v: u8 = compute_voltage(_rdata, 3);
+
     riscv::interrupt::free(|| {
-        unsafe { I2c::instance() }.write(I2C_M3_ADDR, &[0x13]);
+        unsafe { I2c::instance() }.write(I2C_M3_ADDR, &[out_v]);
     });
 
     ack_task(TASKS.control[3].ack_pend);
