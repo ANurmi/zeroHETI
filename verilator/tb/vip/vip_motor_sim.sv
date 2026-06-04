@@ -11,10 +11,6 @@ module vip_motor_sim #(
 
 );
 
-  localparam int unsigned RndSeed = (721 * Idx + 1) % 100;
-
-  assign control_rdata_o = 8'h67 + 8'(Idx);
-
   longint unsigned time_us = 0;
   longint unsigned time_last_us = 0;
   longint unsigned period_last_us = 0;
@@ -35,10 +31,19 @@ module vip_motor_sim #(
     end
   end
 
+  // Drive control_rdata_o with randomized data
+  initial begin
+    control_rdata_o = 8'($urandom());
+  end
+
+  always @(negedge control_valid_i) control_rdata_o = 8'($urandom());
+
+
   // Reset counter whenever target period is adjusted
   always @(period_target_i) if (enable_i) time_last_us = 0;
 
-  always @(posedge control_valid_i) begin
+  // Measure jitter from clock pulse when motor is serviced by write.
+  always @(posedge control_valid_i) begin : jitter_update
 
     if (time_last_us != 0) begin
       period_last_us = time_us - time_last_us;
@@ -53,7 +58,8 @@ module vip_motor_sim #(
     end
 
     time_last_us = time_us;
-  end
+
+  end : jitter_update
 
   always @(negedge enable_i) begin
     $display("[M%0d] worst jitter (us): %0d", Idx, jitter_worst_us);

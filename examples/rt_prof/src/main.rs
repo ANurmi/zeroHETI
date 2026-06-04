@@ -158,6 +158,8 @@ const PRIO_REP: u8 = 1;
 
 static mut MAIL: [u32; 4] = [0, 0, 0, 0];
 
+static mut TEST_BIT: bool = false;
+
 #[entry]
 fn main() -> ! {
     let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
@@ -323,13 +325,23 @@ fn Timer0Cmp() {
     // enable nesting manually
     unsafe { riscv::interrupt::enable() };
 
-    let mut rbuf = [0, 0];
+    let mut rbuf = [0, 0]; // TEST
 
     riscv::interrupt::disable();
     unsafe { I2c::instance() }.read(I2C_M0_ADDR, &mut rbuf); // Read motor status
     unsafe { riscv::interrupt::enable() };
 
     let _rdata = u16::from_le_bytes(rbuf);
+
+    unsafe {
+        if TEST_BIT {
+            send_letter(TASKS.control[1].period, CTRL_TASK_PER_US / 1); // TEST
+            TEST_BIT = false;
+        } else {
+            send_letter(TASKS.control[1].period, CTRL_TASK_PER_US / 2); // TEST
+            TEST_BIT = true;
+        }
+    }
 
     riscv::interrupt::disable();
     unsafe { I2c::instance() }.write(I2C_M0_ADDR, &[0x10, 0x67]); // Write to motor

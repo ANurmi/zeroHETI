@@ -91,11 +91,6 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
         let addr: u8 = addr << 1 | we.bits();
         write_u8(BASE_ADDR + I2C_TX_OFS, addr);
         self.set_cmd(Cmd::STA | Cmd::WR);
-        // NOTE: This trailing delay is precisely tuned
-        // for the i2c Verilator driver in this repository.
-      /*  for _ in 0..54 {
-            riscv::asm::nop();
-        }*/
     }
 
     fn send_data_frames(&mut self, buf: &[u8]) {
