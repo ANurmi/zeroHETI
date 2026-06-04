@@ -2,5 +2,5 @@
 
 ```sh
 # Run sim with CLIC
-cargo run --release -Frtl-tb -Fintc-clic
+LOAD_FACTOR=0 RUNTIME_MS=10 cargo run --release -Frtl-tb -Fintc-clic
 ```
