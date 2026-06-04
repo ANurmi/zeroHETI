@@ -5,10 +5,10 @@ mod common;
 
 use zeroheti_bsp::{
     CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, i2c::I2c, interrupt::Interrupt,
-    mmap::edfic::IE_BIT, mmio, nested_interrupt, rt::entry, sprintln,
+    nested_interrupt, rt::entry, sprintln,
 };
 
-use crate::common::{UART_BAUD, init_intc, pend_irq, setup_irq};
+use crate::common::{init_intc, setup_irq};
 
 #[entry]
 fn main() -> ! {
@@ -48,6 +48,7 @@ fn main() -> ! {
     }
 }
 
+#[allow(non_snake_case)]
 #[nested_interrupt]
 fn I2c() {
     unsafe { I2c::instance() }.irq_ack();
