@@ -27,6 +27,14 @@ impl Timer {
         Self(BASE_ADDR as *mut _)
     }
 
+    /// # Safety
+    ///
+    /// Returns a potentially uninitialized instance of APB Timer
+    #[inline]
+    pub unsafe fn instance_dyn(base_addr: usize) -> Self {
+        Self(base_addr as *mut _)
+    }
+
     /// Starts the count
     #[inline]
     pub fn enable(&mut self) {
