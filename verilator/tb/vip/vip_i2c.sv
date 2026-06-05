@@ -47,6 +47,7 @@ module vip_i2c #(
         tx_state.is_write     = tx_state.data[0];
         vip_req_o.write       = tx_state.data[0];
         vip_req_o.addr        = tx_state.data[7:1];
+        @(posedge clk_i);
         if (!tx_state.is_write) begin
           sda_o = vip_rsp_i.rdata[7];
         end

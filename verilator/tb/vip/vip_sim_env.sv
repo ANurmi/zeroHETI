@@ -52,7 +52,9 @@ module vip_sim_env
 
   always @(posedge i2c_req_i.valid) begin
     if (i2c_req_i.write) begin
-      $display("[VIP_I2C] write - addr: %h, data: %h", i2c_req_i.addr, i2c_req_i.wdata);
+      if (motor_enable) begin
+        $display("[VIP_I2C] write - addr: %h, data: %h", i2c_req_i.addr, i2c_req_i.wdata);
+      end
       unique case (i2c_req_i.addr)
         7'h10: begin
           motor_control_wdata[0] = i2c_req_i.wdata[7:0];

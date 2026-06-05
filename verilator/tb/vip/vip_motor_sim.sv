@@ -33,14 +33,22 @@ module vip_motor_sim #(
 
   // Drive control_rdata_o with randomized data
   initial begin
-    control_rdata_o = 8'($urandom());
+    // Define 127 as target setpoint for motor control
+    control_rdata_o = 137;
   end
 
-  always @(negedge control_valid_i) control_rdata_o = 8'($urandom());
+  always @(negedge control_valid_i) control_rdata_o = 8'($urandom_range(192, 64));
 
 
   // Reset counter whenever target period is adjusted
-  always @(period_target_i) if (enable_i) time_last_us = 0;
+  always @(period_target_i) begin
+    if (enable_i) begin
+      time_last_us    = 0;
+      period_last_us  = 0;
+      period_long_us  = 0;
+      period_short_us = 0;
+    end
+  end
 
   // Measure jitter from clock pulse when motor is serviced by write.
   always @(posedge control_valid_i) begin : jitter_update
