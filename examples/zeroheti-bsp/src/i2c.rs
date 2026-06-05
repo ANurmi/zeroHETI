@@ -107,15 +107,15 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
 
     fn recv_data_frames(&mut self, buf: &mut [u8]) {
         let last_idx = buf.len() - 1;
+        while self.get_tip() != 0 {}
         for byte in &mut buf[0..last_idx] {
-            while self.get_tip() != 0 {}
             self.set_cmd(Cmd::RD);
+            while self.get_tip() != 0 {}
             *byte = read_u8(BASE_ADDR + I2C_RX_OFS);
         }
-
-        while self.get_tip() != 0 {}
         // Read last byte with stop condition
         self.set_cmd(Cmd::RD | Cmd::STO);
+        while self.get_tip() != 0 {}
 
         // Safety: aligned on zeroHETI
         buf[last_idx] = read_u8(BASE_ADDR + I2C_RX_OFS);

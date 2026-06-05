@@ -65,7 +65,6 @@ const SIM: AddrSim = AddrSim {
     seed: 0x0100_0004,
 };
 
-
 const fn get_task_addr(idx: u32) -> AddrTask {
     let base = 0x0200_0000 + idx * 0x1_0000;
     let per_offs = 0x0;
@@ -320,7 +319,7 @@ fn finish_sim() {
     bsp::tb::rtl_tb_signal_ok();
 }
 
-fn compute_voltage(motor_speed: u8, idx: usize) -> u8 {
+fn compute_pid(input: u8, idx: usize) -> u8 {
     // Discrete-time PID controller (per-call integral/derivative coefficients)
     const SETPOINT: i16 = 127;
     const KP: i32 = 3; // proportional gain
@@ -328,7 +327,7 @@ fn compute_voltage(motor_speed: u8, idx: usize) -> u8 {
     const KD: i32 = 1; // derivative gain (per step)
     const INTEGRAL_MAX: i32 = 10_000;
 
-    let err: i16 = SETPOINT - motor_speed as i16;
+    let err: i16 = SETPOINT - input as i16;
 
     unsafe {
         // Accumulate integral (anti-windup via clamping)
@@ -342,6 +341,7 @@ fn compute_voltage(motor_speed: u8, idx: usize) -> u8 {
 
         PREV_ERR[idx] = err;
 
+        //let mut out: i32 = SETPOINT as i32 + (p_term + i_term + d_term);
         let mut out: i32 = SETPOINT as i32 + (p_term + i_term + d_term);
         if out < 0 {
             out = 0;
@@ -372,8 +372,10 @@ fn control_0() {
         unsafe { I2c::instance() }.read(I2C_M0_ADDR, &mut rbuf); // Read motor status
     });
 
-    let motor_speed = u8::from_le_bytes(rbuf);
-    let out_v: u8 = compute_voltage(motor_speed, 0);
+    let measured_v = u8::from_le_bytes(rbuf);
+    sprintln!("{}", measured_v);
+    let out_v: u8 = compute_pid(measured_v, 0);
+    //let out_v: u8 = compute_pid(137, 0);
 
     riscv::interrupt::free(|| {
         unsafe { I2c::instance() }.write(I2C_M0_ADDR, &[out_v]); // Write to motor
@@ -405,7 +407,7 @@ fn control_1() {
     });
 
     let _rdata = u8::from_le_bytes(rbuf);
-    let out_v: u8 = compute_voltage(_rdata, 1);
+    let out_v: u8 = compute_pid(_rdata, 1);
 
     riscv::interrupt::free(|| {
         unsafe { I2c::instance() }.write(I2C_M1_ADDR, &[out_v]);
@@ -435,7 +437,7 @@ fn control_2() {
 
     let _rdata = u8::from_le_bytes(rbuf);
 
-    let out_v: u8 = compute_voltage(_rdata, 2);
+    let out_v: u8 = compute_pid(_rdata, 2);
 
     riscv::interrupt::free(|| {
         unsafe { I2c::instance() }.write(I2C_M2_ADDR, &[out_v]);
@@ -466,7 +468,7 @@ fn control_3() {
 
     let _rdata = u8::from_le_bytes(rbuf);
 
-    let out_v: u8 = compute_voltage(_rdata, 3);
+    let out_v: u8 = compute_pid(_rdata, 3);
 
     riscv::interrupt::free(|| {
         unsafe { I2c::instance() }.write(I2C_M3_ADDR, &[out_v]);
