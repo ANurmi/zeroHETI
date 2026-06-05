@@ -12,12 +12,7 @@ module vip_mbx_driver #(
   localparam logic [31:0] IboxDataAddr = 32'h0003_0010;
   localparam logic [31:0] OboxAddrAddr = 32'h0003_0014;
   localparam logic [31:0] OboxDataAddr = 32'h0003_0018;
-/*
-  localparam logic [31:0] SimParam0 = 32'h0100_0000;
-  localparam logic [31:0] SimParam1 = 32'h0200_0000;
-  localparam logic [31:0] SimParam2 = 32'h0300_0000;
-  localparam logic [31:0] SimParam3 = 32'h0400_0000;
-*/
+
   typedef struct packed {
     logic [31:0] addr;
     logic [31:0] data;
@@ -91,14 +86,20 @@ module vip_mbx_driver #(
   task automatic get_mail();
 
     automatic letter_t letter;
-    axi_read(OboxAddrAddr, letter.addr);
-    axi_read(OboxDataAddr, letter.data);
+    automatic logic [31:0] status;
+    
+    axi_read(StatAddr, status);
 
-    // Ack letter after read
-    axi_write(AxiCtrlAddr, 32'h1);
+    if (~status[2]) begin
+      axi_read(OboxAddrAddr, letter.addr);
+      axi_read(OboxDataAddr, letter.data);
 
-    // pass letter to sim env
-    i_sim_env.recv_letter(letter.addr, letter.data);
+      // Ack letter after read
+      axi_write(AxiCtrlAddr, 32'h1);
+
+      // pass letter to sim env
+      i_sim_env.recv_letter(letter.addr, letter.data);
+    end
 
   endtask
 

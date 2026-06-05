@@ -373,7 +373,6 @@ fn control_0() {
     });
 
     let measured_v = u8::from_le_bytes(rbuf);
-    sprintln!("{}", measured_v);
     let out_v: u8 = compute_pid(measured_v, 0);
     //let out_v: u8 = compute_pid(137, 0);
 
@@ -499,7 +498,11 @@ fn update_0() {
     // enable nesting manually
     unsafe { riscv::interrupt::enable() };
 
-    let nperiod_us = 500u32;
+    // invalidate these if currently active
+    ack_task(TASKS.control[0].ack_pend);
+    ack_task(TASKS.report[0].ack_pend);
+
+    let nperiod_us = 800u32;
     restart_timer_with_period(MotorIdx::M0, nperiod_us.micros());
 
     send_letter(TASKS.control[0].period, nperiod_us);
