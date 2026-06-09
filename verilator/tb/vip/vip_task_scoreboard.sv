@@ -162,7 +162,17 @@ module vip_task_scoreboard
   endtask
 
   function automatic logic [31:0] generate_directive();
-    return 32'hDEADBEEF;
+    localparam logic [31:0] MinPeriod = 'd500;
+    automatic logic [31:0] directive;
+    automatic int unsigned key = $urandom();
+    unique case (key % 4)
+      32'h0:   directive = MinPeriod * 1;
+      32'h1:   directive = MinPeriod * 2;
+      32'h2:   directive = MinPeriod * 3;
+      32'h3:   directive = MinPeriod * 4;
+      default: ;
+    endcase
+    return directive;
   endfunction
 
 

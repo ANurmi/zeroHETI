@@ -216,6 +216,12 @@ module vip_sim_env
         if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(TASK_REP_3);
         else i_sim_env.i_scoreboard.activate_task(TASK_REP_3);
       end
+
+      PrintAddr: begin
+        $write("[REPORT] Motor #X value ZZ timestamp YYYY");
+        $write("\n");
+      end
+
       default:
       $display("[VIP_SIM_ENV]: Warning! Received letter with unknown address: 0x%8h", addr);
     endcase

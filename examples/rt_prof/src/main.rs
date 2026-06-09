@@ -112,6 +112,8 @@ const I2C_M3_ADDR: u8 = 0x13;
 /// Control task period
 const CTRL_TASK_PER_US: u32 = 2000;
 
+const MBX_PRINT_ADDR: u32 = 0x0300_0000;
+
 const fn parse_u32(s: &str) -> u32 {
     let mut out: u32 = 0;
     let mut i: usize = 0;
@@ -561,6 +563,8 @@ fn update_3() {
 fn report_0() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
+
+    send_letter(MBX_PRINT_ADDR, 0xDEADBEEF);
 
     ack_task(TASKS.report[0].ack_pend);
 

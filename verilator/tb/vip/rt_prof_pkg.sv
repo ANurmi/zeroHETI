@@ -17,11 +17,11 @@ package rt_prof_pkg;
   } task_addr_t;
 
   typedef struct packed {
-    bit         active;
-    bit frame_active;
-    bit addr_valid;
-    bit is_write;
-    logic [7:0] data;
+    bit          active;
+    bit          frame_active;
+    bit          addr_valid;
+    bit          is_write;
+    logic [7:0]  data;
     int unsigned bitcount;
   } i2c_transaction_t;
 
@@ -81,5 +81,7 @@ package rt_prof_pkg;
 '{period : TaskBase + PerOffs, deadline : TaskBase + DlOffs, ack : TaskBase + AckOffs}
     ;
   endfunction
+
+  localparam logic [31:0] PrintAddr = 32'h0300_0000;
 
 endpackage
