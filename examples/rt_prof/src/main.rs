@@ -163,7 +163,12 @@ const PRIO_MAIL: u8 = 5;
 const PRIO_UPD: u8 = 3;
 const PRIO_REP: u8 = 1;
 
-static mut MAIL_BUF: [u32; 4] = [0, 0, 0, 0];
+static mut MAIL_BUF: [u32; 4] = [0; 4];
+static mut CTRL_BUF: [u8; 4] = [0; 4];
+
+// PID state per motor
+static mut INTEGRAL: [i32; 4] = [0; 4];
+static mut PREV_ERR: [i16; 4] = [0; 4];
 
 #[entry]
 fn main() -> ! {
@@ -324,7 +329,7 @@ fn finish_sim() {
 fn compute_pid(input: u8, idx: usize) -> u8 {
     // Discrete-time PID controller (per-call integral/derivative coefficients)
     const SETPOINT: i16 = 127;
-    const KP: i32 = 3; // proportional gain
+    const KP: i32 = 1; // proportional gain
     const KI: i32 = 1; // integral gain (per step)
     const KD: i32 = 1; // derivative gain (per step)
     const INTEGRAL_MAX: i32 = 10_000;
@@ -352,13 +357,12 @@ fn compute_pid(input: u8, idx: usize) -> u8 {
             out = 255;
         }
 
+        // used by report tasks
+        CTRL_BUF[idx] = input as u8;
+
         out as u8
     }
 }
-
-// PID state per motor
-static mut INTEGRAL: [i32; 4] = [0; 4];
-static mut PREV_ERR: [i16; 4] = [0; 4];
 
 #[core_interrupt(bsp::interrupt::Interrupt::Timer0Cmp)]
 #[allow(non_snake_case)]
@@ -504,11 +508,12 @@ fn update_0() {
     ack_task(TASKS.control[0].ack_pend);
     ack_task(TASKS.report[0].ack_pend);
 
-    let nperiod_us = 800u32;
-    restart_timer_with_period(MotorIdx::M0, nperiod_us.micros());
-
-    send_letter(TASKS.control[0].period, nperiod_us);
-    send_letter(TASKS.control[0].deadline, nperiod_us);
+    unsafe {
+        let nperiod_us = MAIL_BUF[0];
+        restart_timer_with_period(MotorIdx::M0, nperiod_us.micros());
+        send_letter(TASKS.control[0].period, nperiod_us);
+        send_letter(TASKS.control[0].deadline, nperiod_us);
+    }
 
     ack_task(TASKS.update[0].ack_pend);
 
@@ -524,6 +529,17 @@ fn update_1() {
     // enable nesting manually
     unsafe { riscv::interrupt::enable() };
 
+    // invalidate these if currently active
+    ack_task(TASKS.control[1].ack_pend);
+    ack_task(TASKS.report[1].ack_pend);
+
+    unsafe {
+        let nperiod_us = MAIL_BUF[1];
+        restart_timer_with_period(MotorIdx::M1, nperiod_us.micros());
+        send_letter(TASKS.control[1].period, nperiod_us);
+        send_letter(TASKS.control[1].deadline, nperiod_us);
+    }
+
     ack_task(TASKS.update[1].ack_pend);
 
     // restore mintthresh
@@ -537,6 +553,17 @@ fn update_2() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_UPD as usize).into());
     // enable nesting manually
     unsafe { riscv::interrupt::enable() };
+
+    // invalidate these if currently active
+    ack_task(TASKS.control[2].ack_pend);
+    ack_task(TASKS.report[2].ack_pend);
+
+    unsafe {
+        let nperiod_us = MAIL_BUF[2];
+        restart_timer_with_period(MotorIdx::M2, nperiod_us.micros());
+        send_letter(TASKS.control[2].period, nperiod_us);
+        send_letter(TASKS.control[2].deadline, nperiod_us);
+    }
 
     ack_task(TASKS.update[2].ack_pend);
 
@@ -552,6 +579,17 @@ fn update_3() {
     // enable nesting manually
     unsafe { riscv::interrupt::enable() };
 
+    // invalidate these if currently active
+    ack_task(TASKS.control[3].ack_pend);
+    ack_task(TASKS.report[3].ack_pend);
+
+    unsafe {
+        let nperiod_us = MAIL_BUF[3];
+        restart_timer_with_period(MotorIdx::M3, nperiod_us.micros());
+        send_letter(TASKS.control[3].period, nperiod_us);
+        send_letter(TASKS.control[3].deadline, nperiod_us);
+    }
+
     ack_task(TASKS.update[3].ack_pend);
 
     // restore mintthresh
@@ -564,7 +602,11 @@ fn report_0() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
 
-    send_letter(MBX_PRINT_ADDR, 0xDEADBEEF);
+    unsafe {
+        let time_now = MTimer::instance().into_oneshot().duration().to_micros();
+        let rep_letter = ((time_now as u32) << 16) | ((0u8 as u32) << 8) | (CTRL_BUF[0] as u32);
+        send_letter(MBX_PRINT_ADDR, rep_letter);
+    }
 
     ack_task(TASKS.report[0].ack_pend);
 
@@ -577,6 +619,12 @@ fn report_1() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
 
+    unsafe {
+        let time_now = MTimer::instance().into_oneshot().duration().to_micros();
+        let rep_letter = ((time_now as u32) << 16) | ((1u8 as u32) << 8) | (CTRL_BUF[1] as u32);
+        send_letter(MBX_PRINT_ADDR, rep_letter);
+    }
+
     ack_task(TASKS.report[1].ack_pend);
 
     bsp::register::mintthresh::write(last_mintthresh.into());
@@ -588,6 +636,12 @@ fn report_2() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
 
+    unsafe {
+        let time_now = MTimer::instance().into_oneshot().duration().to_micros();
+        let rep_letter = ((time_now as u32) << 16) | ((2u8 as u32) << 8) | (CTRL_BUF[2] as u32);
+        send_letter(MBX_PRINT_ADDR, rep_letter);
+    }
+
     ack_task(TASKS.report[2].ack_pend);
 
     bsp::register::mintthresh::write(last_mintthresh.into());
@@ -598,6 +652,12 @@ fn report_2() {
 fn report_3() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
+
+        unsafe {
+        let time_now = MTimer::instance().into_oneshot().duration().to_micros();
+        let rep_letter = ((time_now as u32) << 16) | ((3u8 as u32) << 8) | (CTRL_BUF[3] as u32);
+        send_letter(MBX_PRINT_ADDR, rep_letter);
+    }
 
     ack_task(TASKS.report[3].ack_pend);
 

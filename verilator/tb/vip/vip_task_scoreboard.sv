@@ -162,14 +162,16 @@ module vip_task_scoreboard
   endtask
 
   function automatic logic [31:0] generate_directive();
-    localparam logic [31:0] MinPeriod = 'd500;
+    // WCET for 4*I2C sequential I2C operations: ~560 us
+    // TODO: bind this to LF
+    localparam logic [31:0] MinPeriod = 'd1000;
     automatic logic [31:0] directive;
     automatic int unsigned key = $urandom();
     unique case (key % 4)
       32'h0:   directive = MinPeriod * 1;
       32'h1:   directive = MinPeriod * 2;
-      32'h2:   directive = MinPeriod * 3;
-      32'h3:   directive = MinPeriod * 4;
+      32'h2:   directive = MinPeriod * 4;
+      32'h3:   directive = MinPeriod * 8;
       default: ;
     endcase
     return directive;
