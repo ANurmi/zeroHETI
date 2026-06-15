@@ -20,7 +20,8 @@ module zeroheti_core
     output logic                         jtag_td_o,
     input  logic      [Cfg.num_irqs-1:0] ext_irqs_i,
        OBI_BUS.Manager                   obi_mgr,
-           APB.Master                    apb_mgr
+           APB.Master                    apb_mgr,
+       OBI_BUS.Subordinate               obi_sbr
 );
 
   OBI_BUS inst_bus ();
@@ -77,7 +78,8 @@ module zeroheti_core
       .per_bus (per_bus),
       .sba_bus (sba_bus),
       .dbg_bus (dbg_bus),
-      .mbx_bus (obi_mgr)
+      .mbx_bus (obi_mgr),
+      .zeroheti_core_bus (obi_sbr)
     );
 
   logic debug_req;

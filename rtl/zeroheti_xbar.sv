@@ -14,11 +14,12 @@ module zeroheti_xbar
           OBI_BUS.Manager     per_bus,
           OBI_BUS.Subordinate sba_bus,
           OBI_BUS.Manager     dbg_bus,
-          OBI_BUS.Manager     mbx_bus
+          OBI_BUS.Manager     mbx_bus,
+          OBI_BUS.Subordinate zeroheti_core_bus          
 );
   localparam obi_pkg::obi_cfg_t ObiCfg = obi_pkg::ObiDefaultConfig;
 
-  localparam int unsigned NumMgr = 3;
+  localparam int unsigned NumMgr = 4;
   localparam int unsigned NumSbr = 6;
 
   localparam bit [NumMgr-1:0][NumSbr-1:0] Connectivity = '{
@@ -59,6 +60,7 @@ module zeroheti_xbar
   `OBI_ASSIGN(sbr_ports[0], sba_bus_cut, ObiCfg, ObiCfg)
   `OBI_ASSIGN(sbr_ports[1], inst_bus, ObiCfg, ObiCfg)
   `OBI_ASSIGN(sbr_ports[2], data_bus, ObiCfg, ObiCfg)
+  `OBI_ASSIGN(sbr_ports[3], zeroheti_core_bus, ObiCfg, ObiCfg)
 
   `OBI_ASSIGN(dbg_bus, mgr_ports[0], ObiCfg, ObiCfg)
   `OBI_ASSIGN(imem_bus, mgr_ports[1], ObiCfg, ObiCfg)

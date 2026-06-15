@@ -50,6 +50,7 @@ module zeroheti_top
   localparam int unsigned SelWidth = $clog2(NrApbPerip);
 
   OBI_BUS mbx_obi ();
+  OBI_BUS zeroheti_core_sbr_obi ();
 
   AXI_LITE #(
       .AXI_ADDR_WIDTH(32'd32),
@@ -96,7 +97,8 @@ module zeroheti_top
       .jtag_td_o,
       .ext_irqs_i(all_irqs),
       .obi_mgr   (mbx_obi),
-      .apb_mgr   (core_apb)
+      .apb_mgr   (core_apb),
+      .obi_sbr   (zeroheti_core_sbr_obi)
   );
 
   obi_mbx i_mbx (
