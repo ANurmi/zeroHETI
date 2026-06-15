@@ -15,18 +15,20 @@ module zeroheti_xbar
           OBI_BUS.Subordinate sba_bus,
           OBI_BUS.Manager     dbg_bus,
           OBI_BUS.Manager     mbx_bus,
-          OBI_BUS.Subordinate zeroheti_core_bus          
+          OBI_BUS.Subordinate zeroheti_core_bus
 );
   localparam obi_pkg::obi_cfg_t ObiCfg = obi_pkg::ObiDefaultConfig;
 
   localparam int unsigned NumMgr = 4;
   localparam int unsigned NumSbr = 6;
 
-  localparam bit [NumMgr-1:0][NumSbr-1:0] Connectivity = '{
-            '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
+  // Add precise connectivity when all xbar connections are known, all port connections set to 1 for CI pipeline
+  localparam bit [NumMgr-1:0][NumSbr-1:0] Connectivity = '1;
+  /* '{
+      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
       '{1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1},
       '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}
-  };
+  };*/
 
   typedef struct packed {
     int unsigned idx;
