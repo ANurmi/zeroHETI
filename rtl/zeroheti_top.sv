@@ -297,11 +297,11 @@ module zeroheti_top
   assign axil_r_valid_o = mbx_axi.r_valid;
   assign mbx_axi.r_ready = axil_r_ready_i;
 
-  assign core_sbr_obi.addr = 1'b0;
+  assign core_sbr_obi.addr = '0;
   assign core_sbr_obi.req = 1'b0;
   assign core_sbr_obi.rready = 1'b0;
-  assign core_sbr_obi.wdata = 1'b0;
-  assign core_sbr_obi.be = 1'b0;
+  assign core_sbr_obi.wdata = '0;
+  assign core_sbr_obi.be = '0;
   assign core_sbr_obi.we = 1'b0;
   assign core_sbr_obi.aid = 1'b0;
   assign core_sbr_obi.a_optional = 1'b0;
