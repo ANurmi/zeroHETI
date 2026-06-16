@@ -50,7 +50,7 @@ module zeroheti_top
   localparam int unsigned SelWidth = $clog2(NrApbPerip);
 
   OBI_BUS mbx_obi ();
-  OBI_BUS zeroheti_core_sbr_obi ();
+  OBI_BUS core_sbr_obi ();
 
   AXI_LITE #(
       .AXI_ADDR_WIDTH(32'd32),
@@ -98,7 +98,7 @@ module zeroheti_top
       .ext_irqs_i(all_irqs),
       .obi_mgr   (mbx_obi),
       .apb_mgr   (core_apb),
-      .obi_sbr   (zeroheti_core_sbr_obi)
+      .obi_sbr   (core_sbr_obi)
   );
 
   obi_mbx i_mbx (
@@ -296,6 +296,16 @@ module zeroheti_top
   assign axil_r_resp_o = mbx_axi.r_resp;
   assign axil_r_valid_o = mbx_axi.r_valid;
   assign mbx_axi.r_ready = axil_r_ready_i;
+
+  assign core_sbr_obi.addr = 1'b0;
+  assign core_sbr_obi.req = 1'b0;
+  assign core_sbr_obi.rready = 1'b0;
+  assign core_sbr_obi.wdata = 1'b0;
+  assign core_sbr_obi.be = 1'b0;
+  assign core_sbr_obi.we = 1'b0;
+  assign core_sbr_obi.aid = 1'b0;
+  assign core_sbr_obi.a_optional = 1'b0;
+  assign core_sbr_obi.reqpar = 1'b0;
 
 `ifndef SYNTHESIS
 `ifndef TECH_MEMORY
