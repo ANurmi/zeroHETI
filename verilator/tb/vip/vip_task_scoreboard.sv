@@ -123,7 +123,7 @@ module vip_task_scoreboard
       task_set[idx].active = 1;
     end else begin
       if (enable_i) begin
-        $display("[Warning] re-pended active task [%2d]", idx);
+        $display("[Warning] re-pended active task [%2d] at time %0d", idx, counter_us);
       end
     end
   endtask
@@ -164,7 +164,7 @@ module vip_task_scoreboard
   function automatic logic [31:0] generate_directive();
     // WCET for 4*I2C sequential I2C operations: ~560 us
     // TODO: bind this to LF
-    localparam logic [31:0] MinPeriod = 'd1000;
+    automatic logic [31:0] MinPeriod = 'd1000 - (4 * loadfactor_i);
     automatic logic [31:0] directive;
     automatic int unsigned key = $urandom();
     unique case (key % 4)

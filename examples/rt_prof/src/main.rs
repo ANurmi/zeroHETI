@@ -370,7 +370,7 @@ fn control_0() {
     // raise mintthresh to task level
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_CTRL as usize).into());
     // enable nesting manually
-    unsafe { riscv::interrupt::enable() };
+    //unsafe { riscv::interrupt::enable() };
 
     let mut rbuf = [0];
 
@@ -403,7 +403,7 @@ fn control_1() {
     // raise mintthresh to task level
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_CTRL as usize).into());
     // enable nesting manually
-    unsafe { riscv::interrupt::enable() };
+    //unsafe { riscv::interrupt::enable() };
 
     let mut rbuf = [0];
 
@@ -433,7 +433,7 @@ fn control_2() {
     // raise mintthresh to task level
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_CTRL as usize).into());
     // enable nesting manually
-    unsafe { riscv::interrupt::enable() };
+    //unsafe { riscv::interrupt::enable() };
 
     let mut rbuf = [0];
     riscv::interrupt::free(|| {
@@ -463,7 +463,7 @@ fn control_3() {
     // raise mintthresh to task level
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_CTRL as usize).into());
     // enable nesting manually
-    unsafe { riscv::interrupt::enable() };
+    //unsafe { riscv::interrupt::enable() };
 
     let mut rbuf: [u8; 1] = [0];
 
