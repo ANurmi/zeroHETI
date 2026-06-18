@@ -762,7 +762,7 @@ pub fn pend_irq(irq: impl InterruptNumber) {
     }
     #[cfg(feature = "intc-edfic")]
     {
-        use zeroheti_bsp::edfic::Edfic;
+        use bsp::edfic::Edfic;
         Edfic::line(irq.number()).pend();
     }
 }
