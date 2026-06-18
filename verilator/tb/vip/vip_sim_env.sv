@@ -1,4 +1,6 @@
-module vip_sim_env #(
+module vip_sim_env
+  import rt_prof_pkg::*;
+#(
     parameter type i2c_req_t = logic,
     parameter type i2c_rsp_t = logic
 ) (
@@ -10,71 +12,33 @@ module vip_sim_env #(
 
   localparam int unsigned NrMotors = 4;
 
-  localparam logic [31:0] SimStartAddr = 32'h0100_0000;
-  localparam logic [31:0] SimEndAddr = 32'h0100_0001;
-  localparam logic [31:0] SimPsAddr = 32'h0100_0002;
-  localparam logic [31:0] SimLfAddr = 32'h0100_0003;
-  localparam logic [31:0] SimSeedAddr = 32'h0100_0004;
-  localparam logic [31:0] SimPerAddr = 32'h0100_0005;
+  int unsigned             global_prescaler;
 
-  localparam logic [31:0] DlMbxAddr = 32'h0200_0000;
-  localparam logic [31:0] DlUpdAddr = 32'h0200_0001;
-  localparam logic [31:0] DlCtrlAddr = 32'h0200_0002;
-  localparam logic [31:0] DlRepAddr = 32'h0200_0003;
+  logic                    motor_enable;
+  logic        [3:0]       motor_control_valid;
+  logic        [3:0][ 7:0] motor_control_wdata;
+  logic        [3:0][ 7:0] motor_control_rdata;
 
-  localparam logic [31:0] MbxAckAddr = 32'h0300_0000;
+  int unsigned             scb_loadfactor;
+  int unsigned             scb_seed;
+  logic                    scb_enable;
 
-  localparam logic [31:0] Ctrl0AckAddr = 32'h0301_0000;
-  localparam logic [31:0] Ctrl1AckAddr = 32'h0301_0001;
-  localparam logic [31:0] Ctrl2AckAddr = 32'h0301_0002;
-  localparam logic [31:0] Ctrl3AckAddr = 32'h0301_0003;
+  int unsigned             dl_mbx_us;
+  logic        [3:0][31:0] dl_upd_us;
+  logic        [3:0][31:0] dl_ctrl_us;
+  logic        [3:0][31:0] dl_rep_us;
 
-  localparam logic [31:0] Rep0AckAddr = 32'h0401_0000;
-  localparam logic [31:0] Rep1AckAddr = 32'h0401_0001;
-  localparam logic [31:0] Rep2AckAddr = 32'h0401_0002;
-  localparam logic [31:0] Rep3AckAddr = 32'h0401_0003;
-
-  localparam logic [31:0] Upd0AckAddr = 32'h0501_0000;
-  localparam logic [31:0] Upd1AckAddr = 32'h0501_0001;
-  localparam logic [31:0] Upd2AckAddr = 32'h0501_0002;
-  localparam logic [31:0] Upd3AckAddr = 32'h0501_0003;
-
-  logic        [3:0] motor_irqs;
-  logic              motor_enable;
-  int unsigned       motor_prescaler;
-
-  int unsigned       scb_loadfactor;
-  int unsigned       scb_prescaler;
-  int unsigned       scb_seed;
-  logic              scb_enable;
-
-  int unsigned       dl_mbx_us;
-  int unsigned       dl_upd_us;
-  int unsigned       dl_ctrl_us;
-  int unsigned       dl_rep_us;
-
-  typedef logic [31:0] dtype;
-  typedef logic [6:0] atype;
-
-  // use associative arrays for i2c memory space
-  dtype array[atype];
+  logic        [3:0][31:0] per_ctrl_us;
 
   initial begin
 
-    motor_prescaler = 0;
+    global_prescaler = 0;
     scb_enable = 0;
 
     dl_mbx_us = 0;
     dl_upd_us = 0;
     dl_ctrl_us = 0;
     dl_rep_us = 0;
-
-    array = '{
-        7'h68 : 32'hBA11_55AB,
-        7'h13 : 32'h0000_1234,
-        7'h11 : 32'hb011_0c55,
-        7'h0  : 32'hDEAD_BEEF
-    };
   end
 
   logic sim_term_signal;
@@ -83,13 +47,35 @@ module vip_sim_env #(
                          & i_zeroheti.i_core.dbg_bus.wdata[31]
                          & (i_zeroheti.i_core.dbg_bus.addr == 32'h0380);
 
-  assign i2c_rsp_o.rdata = array[i2c_req_i.addr];
+  assign i2c_rsp_o.rdata = (i2c_req_i.addr inside {[7'h10 : 7'h13]}) ?
+      motor_control_rdata[i2c_req_i.addr[1:0]] : 0;
 
   always @(posedge i2c_req_i.valid) begin
     if (i2c_req_i.write) begin
-      $display("[VIP_I2C] write - addr: %h, data: %h", i2c_req_i.addr, i2c_req_i.wdata);
-    end else begin
-      $display("[VIP_I2C] read  - addr: %h, data: %h", i2c_req_i.addr, array[i2c_req_i.addr]);
+      /*if (motor_enable) begin
+        $display("[VIP_I2C] write - addr: 0x%h, data: %d", i2c_req_i.addr, i2c_req_i.wdata);
+      end*/
+      unique case (i2c_req_i.addr)
+        7'h10: begin
+          motor_control_wdata[0] = i2c_req_i.wdata[7:0];
+          motor_control_valid[0] = 1'b1;
+        end
+        7'h11: begin
+          motor_control_wdata[1] = i2c_req_i.wdata[7:0];
+          motor_control_valid[1] = 1'b1;
+        end
+        7'h12: begin
+          motor_control_wdata[2] = i2c_req_i.wdata[7:0];
+          motor_control_valid[2] = 1'b1;
+        end
+        7'h13: begin
+          motor_control_wdata[3] = i2c_req_i.wdata[7:0];
+          motor_control_valid[3] = 1'b1;
+        end
+        default: $display("[VIP_I2C] warning! unknown i2c address");
+      endcase
+      @(posedge clk_i);
+      motor_control_valid = 4'b0;
     end
   end
 
@@ -103,19 +89,19 @@ module vip_sim_env #(
         .Idx(i)
     ) i_motor (
         .clk_i,
-        .prescaler_i   (motor_prescaler),
-        .enable_i      (motor_enable),
-        .speed_target_i(),
-        .speed_tune_i  (),
-        .speed_real_o  (),
-        .irq_o         (motor_irqs[i])
+        .prescaler_i    (global_prescaler),
+        .enable_i       (motor_enable),
+        .period_target_i(per_ctrl_us[i]),
+        .control_valid_i(motor_control_valid[i]),
+        .control_wdata_i(motor_control_wdata[i]),
+        .control_rdata_o(motor_control_rdata[i])
     );
   end
 
   vip_task_scoreboard i_scoreboard (
       .clk_i,
       .enable_i    (scb_enable),
-      .prescaler_i (scb_prescaler),
+      .prescaler_i (global_prescaler),
       .loadfactor_i(scb_loadfactor),
       .seed_i      (scb_seed),
       .mbx_dl_us_i (dl_mbx_us),
@@ -124,70 +110,117 @@ module vip_sim_env #(
       .rep_dl_us_i (dl_rep_us)
   );
 
+  // Map mailbox letters to simulation environment
   task automatic recv_letter(input logic [31:0] addr, input logic [31:0] data);
     unique case (addr)
-      SimStartAddr: begin
+      SimMap.start: begin
         $display("[SCB] Simulation scoreboard active");
         motor_enable = 1'b1;
         scb_enable   = 1'b1;
       end
-      SimEndAddr: begin
+      SimMap.stop: begin
         $display("[SCB] Simulation complete");
         $display(" - Scoreboard task log: \n");
         motor_enable = 1'b0;
         scb_enable   = 1'b0;
       end
-      SimLfAddr:   scb_loadfactor = data;
-      SimPsAddr:   scb_prescaler = data;
-      SimSeedAddr: scb_seed = data;
-      //SimPerAddr: per_rep_us = data;
-      DlMbxAddr:   dl_mbx_us = data;
-      DlUpdAddr:   dl_upd_us = data;
-      DlCtrlAddr:  dl_ctrl_us = data;
-      DlRepAddr:   dl_rep_us = data;
-      MbxAckAddr:  i_sim_env.i_scoreboard.retire_task(0);
+      SimMap.loadfactor: scb_loadfactor = data;
+      SimMap.prescaler: global_prescaler = data;
+      SimMap.seed: scb_seed = data;
 
-      Ctrl0AckAddr: i_sim_env.i_scoreboard.retire_task(5);
-      Ctrl1AckAddr: i_sim_env.i_scoreboard.retire_task(6);
-      Ctrl2AckAddr: i_sim_env.i_scoreboard.retire_task(7);
-      Ctrl3AckAddr: i_sim_env.i_scoreboard.retire_task(8);
+      // Mbx task
+      get_task_addrs(TASK_MBX).deadline: dl_mbx_us = data;
+      // MBX_PER infered from LF
+      get_task_addrs(TASK_MBX).ack: i_sim_env.i_scoreboard.retire_task(TASK_MBX);
 
-      // SW triggered tasks
-      Upd0AckAddr: begin
-        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(1);
-        else i_sim_env.i_scoreboard.activate_task(1);
-      end
+      // Update tasks
+      get_task_addrs(TASK_UPD_0).deadline: dl_upd_us[0] = data;
+      get_task_addrs(TASK_UPD_1).deadline: dl_upd_us[1] = data;
+      get_task_addrs(TASK_UPD_2).deadline: dl_upd_us[2] = data;
+      get_task_addrs(TASK_UPD_3).deadline: dl_upd_us[3] = data;
 
-      Upd1AckAddr: begin
-        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(2);
-        else i_sim_env.i_scoreboard.activate_task(2);
+      // UPD_PER not used
+      get_task_addrs(
+          TASK_UPD_0
+      ).ack: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(TASK_UPD_0);
+        else i_sim_env.i_scoreboard.activate_task(TASK_UPD_0);
       end
 
-      Upd2AckAddr: begin
-        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(3);
-        else i_sim_env.i_scoreboard.activate_task(3);
+      get_task_addrs(
+          TASK_UPD_1
+      ).ack: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(TASK_UPD_1);
+        else i_sim_env.i_scoreboard.activate_task(TASK_UPD_1);
       end
 
-      Upd3AckAddr: begin
-        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(4);
-        else i_sim_env.i_scoreboard.activate_task(4);
+      get_task_addrs(
+          TASK_UPD_2
+      ).ack: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(TASK_UPD_2);
+        else i_sim_env.i_scoreboard.activate_task(TASK_UPD_2);
       end
 
-      Rep0AckAddr: begin
-        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(9);
-        else i_sim_env.i_scoreboard.activate_task(9);
+      get_task_addrs(
+          TASK_UPD_3
+      ).ack: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(TASK_UPD_3);
+        else i_sim_env.i_scoreboard.activate_task(TASK_UPD_3);
       end
-      Rep1AckAddr: begin
-        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(10);
-        else i_sim_env.i_scoreboard.activate_task(10);
+      // Control tasks
+      get_task_addrs(TASK_CTRL_0).period: per_ctrl_us[0] = data;
+      get_task_addrs(TASK_CTRL_1).period: per_ctrl_us[1] = data;
+      get_task_addrs(TASK_CTRL_2).period: per_ctrl_us[2] = data;
+      get_task_addrs(TASK_CTRL_3).period: per_ctrl_us[3] = data;
+
+      get_task_addrs(TASK_CTRL_0).deadline: dl_ctrl_us[0] = data;
+      get_task_addrs(TASK_CTRL_1).deadline: dl_ctrl_us[1] = data;
+      get_task_addrs(TASK_CTRL_2).deadline: dl_ctrl_us[2] = data;
+      get_task_addrs(TASK_CTRL_3).deadline: dl_ctrl_us[3] = data;
+
+      get_task_addrs(TASK_CTRL_0).ack: i_sim_env.i_scoreboard.retire_task(TASK_CTRL_0);
+      get_task_addrs(TASK_CTRL_1).ack: i_sim_env.i_scoreboard.retire_task(TASK_CTRL_1);
+      get_task_addrs(TASK_CTRL_2).ack: i_sim_env.i_scoreboard.retire_task(TASK_CTRL_2);
+      get_task_addrs(TASK_CTRL_3).ack: i_sim_env.i_scoreboard.retire_task(TASK_CTRL_3);
+
+      // Report tasks
+      get_task_addrs(TASK_REP_0).deadline: dl_rep_us[0] = data;
+      get_task_addrs(TASK_REP_1).deadline: dl_rep_us[1] = data;
+      get_task_addrs(TASK_REP_2).deadline: dl_rep_us[2] = data;
+      get_task_addrs(TASK_REP_3).deadline: dl_rep_us[3] = data;
+
+      get_task_addrs(
+          TASK_REP_0
+      ).ack: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(TASK_REP_0);
+        else i_sim_env.i_scoreboard.activate_task(TASK_REP_0);
       end
-      Rep2AckAddr: begin
-        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(11);
-        else i_sim_env.i_scoreboard.activate_task(11);
+
+      get_task_addrs(
+          TASK_REP_1
+      ).ack: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(TASK_REP_1);
+        else i_sim_env.i_scoreboard.activate_task(TASK_REP_1);
       end
-      Rep3AckAddr: begin
-        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(12);
-        else i_sim_env.i_scoreboard.activate_task(12);
+
+      get_task_addrs(
+          TASK_REP_2
+      ).ack: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(TASK_REP_2);
+        else i_sim_env.i_scoreboard.activate_task(TASK_REP_2);
+      end
+
+      get_task_addrs(
+          TASK_REP_3
+      ).ack: begin
+        if (data == 32'h0) i_sim_env.i_scoreboard.retire_task(TASK_REP_3);
+        else i_sim_env.i_scoreboard.activate_task(TASK_REP_3);
+      end
+
+      PrintAddr: begin
+        $write("[REP] Motor #%0d status %3d timestamp %6d us", data[15:8], data[7:0],
+               data[31:16]);
+        $write("\n");
       end
 
       default:

@@ -87,34 +87,32 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
 
     #[inline]
     fn send_addr_frame(&mut self, addr: u8, we: We) {
+        while self.get_tip() != 0 {}
         let addr: u8 = addr << 1 | we.bits();
         write_u8(BASE_ADDR + I2C_TX_OFS, addr);
         self.set_cmd(Cmd::STA | Cmd::WR);
-        while self.get_tip() != 0 {}
     }
 
     fn send_data_frames(&mut self, buf: &[u8]) {
         for byte in &buf[0..buf.len() - 1] {
+            while self.get_tip() != 0 {}
             write_u8(BASE_ADDR + I2C_TX_OFS, *byte);
             self.set_cmd(Cmd::WR);
-            while self.get_tip() != 0 {}
         }
-
+        while self.get_tip() != 0 {}
         // Send last byte with stop condition
         write_u8(BASE_ADDR + I2C_TX_OFS, buf[buf.len() - 1]);
         self.set_cmd(Cmd::WR | Cmd::STO);
-        while self.get_tip() != 0 {}
     }
 
     fn recv_data_frames(&mut self, buf: &mut [u8]) {
         let last_idx = buf.len() - 1;
+        while self.get_tip() != 0 {}
         for byte in &mut buf[0..last_idx] {
             self.set_cmd(Cmd::RD);
             while self.get_tip() != 0 {}
-
             *byte = read_u8(BASE_ADDR + I2C_RX_OFS);
         }
-
         // Read last byte with stop condition
         self.set_cmd(Cmd::RD | Cmd::STO);
         while self.get_tip() != 0 {}
