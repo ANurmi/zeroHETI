@@ -86,7 +86,7 @@ module zeroheti_top_wrapper #(
       .axil_r_resp_o   (r_resp),
       .axil_r_valid_o  (r_valid),
       .axil_r_ready_i  (r_ready),
-      .ext_irq_i       ({1'h0, i2c_irqs}),
+      .ext_irq_i       ({33'h0, i2c_irqs}),
       .i2c_scl_pad_i   (i2c_scl_vip_dut),
       .i2c_scl_pad_o   (  /*NC*/),
       .i2c_scl_padoen_o(i2c_scl_dut_vip),
