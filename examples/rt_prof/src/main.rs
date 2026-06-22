@@ -3,31 +3,246 @@
 #![allow(static_mut_refs)]
 
 mod mailbox;
-mod ring_buffer;
 
-use bsp::{
-    CPU_FREQ_HZ,
-    apb_uart::ApbUart,
-    core_interrupt,
-    i2c::I2c,
-    interrupt::Interrupt::{self},
-    mailbox::MotorIdx,
-    mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
-    mmio,
-    mtimer::MTimer,
-    riscv::{
-        self,
-        asm::{nop, wfi},
-    },
-    rt::entry,
-    sprintln,
-    timer_group::{self, Periodic, Timer},
-};
-use fugit::{ExtU32, ExtU64};
-use riscv_rt::InterruptNumber;
+use bsp::rt as _;
+#[rtic::app(device = bsp)]
 
-use crate::mailbox::MAILBOX;
+mod app {
 
+    const fn parse_u32(s: &str) -> u32 {
+        let mut out: u32 = 0;
+        let mut i: usize = 0;
+        while i < s.len() {
+            out *= 10;
+            out += (s.as_bytes()[i] - b'0') as u32;
+            i += 1;
+        }
+        out
+    }
+
+    // TODO: move this to Mbx HAL
+    #[inline]
+    fn send_letter(addr: u32, data: u32) {
+        mmio::write_u32(MAILBOX.ob.addr as usize, addr);
+        mmio::write_u32(MAILBOX.ob.data as usize, data);
+        // send letter
+        mmio::write_u32(MAILBOX.ctrl as usize, 0x1);
+    }
+
+    /// Runtime in millis, read from env RUNTIME_MS
+    const RUNTIME_MS: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
+    /// Load factor, read from env LOAD_FACTOR
+    const LF: u32 = parse_u32(env!("LOAD_FACTOR"));
+    /// Control task period
+    const CTRL_TASK_PER_US: u32 = 2000;
+
+    use bsp::{
+        CPU_FREQ_HZ,
+        apb_uart::ApbUart,
+        core_interrupt,
+        i2c::{self, I2c},
+        interrupt::Interrupt::{self},
+        mailbox::MotorIdx,
+        mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
+        mmio,
+        mtimer::{self, *},
+        riscv::{
+            self,
+            asm::{nop, wfi},
+        },
+        rt::entry,
+        sprintln,
+        tb::signal_pass,
+        timer_group::{self, Periodic, Timer},
+    };
+    use fugit::{ExtU32, ExtU64};
+    use riscv_rt::InterruptNumber;
+
+    use crate::mailbox::MAILBOX;
+
+    #[shared]
+    struct Shared {
+        i2c: i2c::I2c,
+    }
+
+    #[init]
+    fn init() -> Shared {
+        let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
+        sprintln!("\n\r### Starting rt_prof (rtic) benchmark ###\n\r");
+        let i2c = I2c::init(4);
+
+        MTimer::instance().into_oneshot().start(100u64.micros());
+
+        Shared { i2c }
+    }
+
+    #[task(binds = MachineTimer, priority = 0xff)]
+    struct StartSim {
+        mtimer: mtimer::OneShot,
+        start_time: Option<u64>,
+    }
+
+    impl RticTask for StartSim {
+        fn init() -> Self {
+            let mtimer = MTimer::instance().into_oneshot();
+            Self {
+                mtimer,
+                start_time: None,
+            }
+        }
+        fn exec(&mut self) {
+            match self.start_time.as_mut() {
+                None => {
+                    sprintln!("MachineTimer::Setup");
+                    // Start hyperperiod timer
+                    self.start_time.replace(self.mtimer.counter());
+                    self.mtimer.start(RUNTIME_MS.millis());
+                    sprintln!("- Runtime         (ms): {}", RUNTIME_MS);
+                    sprintln!("- Load factor  (0-100): {}", LF);
+
+                    let timers = &mut [
+                        Timer::init::<TIMER0_ADDR>().into_periodic(),
+                        Timer::init::<TIMER1_ADDR>().into_periodic(),
+                        Timer::init::<TIMER2_ADDR>().into_periodic(),
+                        Timer::init::<TIMER3_ADDR>().into_periodic(),
+                    ];
+
+                    timers
+                        .iter_mut()
+                        .for_each(|t| t.set_period(CTRL_TASK_PER_US.micros()));
+
+                    timers.iter_mut().for_each(Periodic::start);
+
+                    unsafe {
+                        // Clear instruction & cycle counters
+                        riscv::register::minstret::write(0);
+                        riscv::register::mcycle::write(0);
+                        riscv::register::minstreth::write(0);
+                        riscv::register::mcycleh::write(0);
+                    }
+                }
+                Some(start_time) => {
+                    sprintln!("MachineTimer::Teardown");
+
+                    let duration_real_cc = MTimer::instance().into_oneshot().duration().ticks();
+
+                    // Terminate scoreboard
+                    //send_letter(SIM.stop, 0x1);
+
+                    let instret = riscv::register::minstret::read64();
+                    let active_time_cc = riscv::register::mcycle::read64();
+
+                    // Delay to let outbox clear
+                    for _ in 0..100 {
+                        nop();
+                    }
+
+                    sprintln!("- Retired instructions: {instret}");
+                    sprintln!("- Total time      (cc): {duration_real_cc}");
+                    sprintln!("- active time     (cc): {active_time_cc}");
+                    sprintln!(
+                        "- CPU utilization  (%): {}",
+                        (active_time_cc * 100) / duration_real_cc
+                    );
+                    signal_pass(None);
+                }
+            }
+        }
+    }
+
+    #[task(binds = Timer0Cmp, priority = 0x88, shared = [i2c])]
+    struct Ctrl0 {
+        integral: i32,
+        error: i16,
+    }
+    impl RticTask for Ctrl0 {
+        fn init() -> Self {
+            Self {
+                integral: 0,
+                error: 0,
+            }
+        }
+        fn exec(&mut self) {
+            sprintln!("Ding0");
+        }
+    }
+
+    #[task(binds = Timer1Cmp, priority = 0x88, shared = [i2c])]
+    struct Ctrl1 {
+        integral: i32,
+        error: i16,
+    }
+    impl RticTask for Ctrl1 {
+        fn init() -> Self {
+            Self {
+                integral: 0,
+                error: 0,
+            }
+        }
+        fn exec(&mut self) {
+            sprintln!("Ding1");
+        }
+    }
+
+    #[task(binds = Timer2Cmp, priority = 0x88, shared = [i2c])]
+    struct Ctrl2 {
+        integral: i32,
+        error: i16,
+    }
+    impl RticTask for Ctrl2 {
+        fn init() -> Self {
+            Self {
+                integral: 0,
+                error: 0,
+            }
+        }
+        fn exec(&mut self) {
+            sprintln!("Ding2");
+        }
+    }
+
+    #[task(binds = Timer3Cmp, priority = 0x88, shared = [i2c])]
+    struct Ctrl3 {
+        integral: i32,
+        error: i16,
+    }
+    impl RticTask for Ctrl3 {
+        fn init() -> Self {
+            Self {
+                integral: 0,
+                error: 0,
+            }
+        }
+        fn exec(&mut self) {
+            sprintln!("Ding3");
+        }
+    }
+
+    #[task(binds = Mbx, priority = 0xf1, shared = [])]
+    struct Mail {}
+    impl RticTask for Mail {
+        fn init() -> Self {
+            Self {}
+        }
+        fn exec(&mut self) {
+            sprintln!("Mbx");
+            //TODO: how to spawn sw tasks
+            //Update0::spawn(()).unwrap();
+        }
+    }
+
+    #[task(binds = Timer0Ovf, priority = 0x11, shared = [])]
+    struct Update0 {}
+    impl RticTask for Update0 {
+        fn init() -> Self {
+            Self {}
+        }
+        fn exec(&mut self) {
+            sprintln!("Dong0");
+        }
+    }
+}
+/*
 /// Simulator environment address layout
 struct AddrSim {
     /// Start the simulation
@@ -100,39 +315,20 @@ const TASKS: AddrTaskSet = AddrTaskSet {
     ],
 };
 
-/// Motor 0 address
+/// Motor addresses
 const I2C_M0_ADDR: u8 = 0x10;
-/// Motor 1 address
 const I2C_M1_ADDR: u8 = 0x11;
-/// Motor 2 address
 const I2C_M2_ADDR: u8 = 0x12;
-/// Motor 3 address
 const I2C_M3_ADDR: u8 = 0x13;
 
-/// Control task period
-const CTRL_TASK_PER_US: u32 = 2000;
 
 const MBX_PRINT_ADDR: u32 = 0x0300_0000;
 
-const fn parse_u32(s: &str) -> u32 {
-    let mut out: u32 = 0;
-    let mut i: usize = 0;
-    while i < s.len() {
-        out *= 10;
-        out += (s.as_bytes()[i] - b'0') as u32;
-        i += 1;
-    }
-    out
-}
 
-/// Load factor, read from env LOAD_FACTOR
-const LF: u32 = parse_u32(env!("LOAD_FACTOR"));
 /// Prescaler
 const PS: u32 = 10;
 /// Random seed
 const SEED: u32 = 0xB0110c55;
-/// Runtime in millis, read from env RUNTIME_MS
-const RUNTIME_MS: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
 
 const DL_MBX: u32 = 1000;
 const DL_CTRL: u32 = 1000;
@@ -169,7 +365,6 @@ static mut CTRL_BUF: [u8; 4] = [0; 4];
 // PID state per motor
 static mut INTEGRAL: [i32; 4] = [0; 4];
 static mut PREV_ERR: [i16; 4] = [0; 4];
-
 #[entry]
 fn main() -> ! {
     let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
@@ -653,7 +848,7 @@ fn report_3() {
     let last_mintthresh = bsp::register::mintthresh::write((PRIO_REP as usize).into());
     unsafe { riscv::interrupt::enable() };
 
-        unsafe {
+    unsafe {
         let time_now = MTimer::instance().into_oneshot().duration().to_micros();
         let rep_letter = ((time_now as u32) << 16) | ((3u8 as u32) << 8) | (CTRL_BUF[3] as u32);
         send_letter(MBX_PRINT_ADDR, rep_letter);
@@ -766,3 +961,4 @@ pub fn pend_irq(irq: impl InterruptNumber) {
         Edfic::line(irq.number()).pend();
     }
 }
+*/
