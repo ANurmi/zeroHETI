@@ -163,20 +163,19 @@ module vip_task_scoreboard
 
   function automatic logic [31:0] generate_directive();
     // WCET for 4*I2C sequential I2C operations: ~560 us
-    // TODO: bind this to LF
-    automatic logic [31:0] MinPeriod = 'd1000 - (4 * loadfactor_i);
+    automatic logic [31:0] MinPeriod = 'd900;
     automatic logic [31:0] directive;
-    automatic int unsigned key = $urandom();
-    unique case (key % 4)
-      32'h0:   directive = MinPeriod * 1;
-      32'h1:   directive = MinPeriod * 2;
-      32'h2:   directive = MinPeriod * 4;
-      32'h3:   directive = MinPeriod * 8;
-      default: ;
+    automatic int unsigned load = (loadfactor_i * $urandom_range(100, 0)) / 100;
+    automatic logic [1:0] key = (load > 50) ? 0 : (load > 30) ? 1 : (load > 10) ? 2 : 3;
+    unique case (key)
+      2'd0: directive = MinPeriod * 1;
+      2'd1: directive  = MinPeriod * 3;
+      2'd2: directive  = MinPeriod * 5;
+      2'd3: directive   = MinPeriod * 9;
+      default: directive    = MinPeriod * 4;
     endcase
     return directive;
   endfunction
-
 
 endmodule : vip_task_scoreboard
 
