@@ -4,15 +4,13 @@ module zeroheti_int_ctrl #(
     parameter int unsigned TsWidth = 12,
     localparam int unsigned IrqWidth = $clog2(CoreCfg.num_irqs),
     localparam int unsigned PrioWidth = 8
-    //localparam int unsigned PrioWidth = (zeroheti_pkg::IntController == zeroheti_pkg::EDFIC) ? TsWidth : $clog2(
-    //    CoreCfg.num_prio
-    //)
 ) (
     input  logic                               clk_i,
     input  logic                               rst_ni,
     input  logic               [   NrIrqs-1:0] ext_irqs_i,
     output logic                               irq_valid_o,
     input  logic               [         63:0] mtime_i,
+    input  logic                               mtime_en_i,
     output logic               [ IrqWidth-1:0] irq_id_o,
     input  logic               [ IrqWidth-1:0] irq_id_i,
     input  logic                               irq_ack_i,
@@ -52,6 +50,10 @@ module zeroheti_int_ctrl #(
     logic [TsWidth-1:0] deadline;
     logic [7:0] dl_slice;
 
+    logic [63:0] mtime;
+
+    assign mtime = (mtime_en_i) ? mtime_i : 64'h0;
+
     // Extract top 8 bits
     assign dl_slice = deadline[TsWidth-1:TsWidth-8];
 
@@ -86,7 +88,7 @@ module zeroheti_int_ctrl #(
         .irq_dl_o   (deadline),
         .irq_valid_o,
         .irq_ack_i,
-        .mtime_i
+        .mtime_i    (mtime)
     );
 
     assign irq_priv_o = 2'b11;
