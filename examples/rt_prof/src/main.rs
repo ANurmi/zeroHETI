@@ -120,24 +120,17 @@ mod app {
     use bsp::{
         CPU_FREQ_HZ,
         apb_uart::ApbUart,
-        core_interrupt,
         i2c::{self, I2c},
-        interrupt::Interrupt::{self},
         mailbox::MotorIdx,
         mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mmio,
         mtimer::{self, *},
-        riscv::{
-            self,
-            asm::{nop, wfi},
-        },
-        rt::entry,
+        riscv::{self},
         sprintln,
         tb::signal_pass,
         timer_group::{self, Periodic, Timer},
     };
     use fugit::{ExtU32, ExtU64};
-    use riscv_rt::InterruptNumber;
 
     use crate::mailbox::MAILBOX;
 
