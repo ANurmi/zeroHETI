@@ -349,7 +349,6 @@ mod app {
             Self {}
         }
         fn exec(&mut self) {
-
             // IRQ clear
             mmio::write_u32(MAILBOX.ctrl as usize, 0x0002_0000);
             // TODO: more & better abstraction
