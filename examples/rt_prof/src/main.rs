@@ -67,6 +67,9 @@ mod app {
     const TASK_REP_3_DLN: u32 = 0x020C_0001;
     const TASK_REP_3_ACK: u32 = 0x020C_0002;
 
+    /// Sending a letter to this address causes a print of certain format
+    const MBX_PRINT_ADDR: u32 = 0x0300_0000;
+
     // Motor I2C addresses
     const I2C_M0_ADDR: u8 = 0x10;
     const I2C_M1_ADDR: u8 = 0x11;
@@ -589,7 +592,7 @@ mod app {
         }
     }
 
-    #[sw_task(priority = 0x10, shared = [])]
+    #[sw_task(priority = 0x10, shared = [ctrl_buf_0])]
     struct Report0;
     impl RticSwTask for Report0 {
         type SpawnInput = ();
@@ -598,11 +601,18 @@ mod app {
         }
         fn exec(&mut self, _p: ()) {
             sprintln!("[Report 0]");
+
+            let time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            let mut ctrl_buf = 0;
+            self.shared().ctrl_buf_0.lock(|buf| ctrl_buf = *buf);
+            let rep_letter = ((time_now as u32) << 16) | ((0u8 as u32) << 8) | (ctrl_buf as u32);
+            send_letter(MBX_PRINT_ADDR, rep_letter);
+
             sim_task_ack(TASK_REP_0_ACK);
         }
     }
 
-    #[sw_task(priority = 0x10, shared = [])]
+    #[sw_task(priority = 0x10, shared = [ctrl_buf_1])]
     struct Report1;
     impl RticSwTask for Report1 {
         type SpawnInput = ();
@@ -611,10 +621,17 @@ mod app {
         }
         fn exec(&mut self, _p: ()) {
             sprintln!("[Report 1]");
+
+            let time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            let mut ctrl_buf = 0;
+            self.shared().ctrl_buf_1.lock(|buf| ctrl_buf = *buf);
+            let rep_letter = ((time_now as u32) << 16) | ((1u8 as u32) << 8) | (ctrl_buf as u32);
+            send_letter(MBX_PRINT_ADDR, rep_letter);
+
             sim_task_ack(TASK_REP_1_ACK);
         }
     }
-    #[sw_task(priority = 0x10, shared = [])]
+    #[sw_task(priority = 0x10, shared = [ctrl_buf_2])]
     struct Report2;
     impl RticSwTask for Report2 {
         type SpawnInput = ();
@@ -623,10 +640,17 @@ mod app {
         }
         fn exec(&mut self, _p: ()) {
             sprintln!("[Report 2]");
+
+            let time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            let mut ctrl_buf = 0;
+            self.shared().ctrl_buf_2.lock(|buf| ctrl_buf = *buf);
+            let rep_letter = ((time_now as u32) << 16) | ((2u8 as u32) << 8) | (ctrl_buf as u32);
+            send_letter(MBX_PRINT_ADDR, rep_letter);
+
             sim_task_ack(TASK_REP_2_ACK);
         }
     }
-    #[sw_task(priority = 0x10, shared = [])]
+    #[sw_task(priority = 0x10, shared = [ctrl_buf_3])]
     struct Report3;
     impl RticSwTask for Report3 {
         type SpawnInput = ();
@@ -635,6 +659,13 @@ mod app {
         }
         fn exec(&mut self, _p: ()) {
             sprintln!("[Report 3]");
+
+            let time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            let mut ctrl_buf = 0;
+            self.shared().ctrl_buf_3.lock(|buf| ctrl_buf = *buf);
+            let rep_letter = ((time_now as u32) << 16) | ((3u8 as u32) << 8) | (ctrl_buf as u32);
+            send_letter(MBX_PRINT_ADDR, rep_letter);
+
             sim_task_ack(TASK_REP_3_ACK);
         }
     }
