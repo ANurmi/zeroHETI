@@ -319,7 +319,8 @@ mod app {
 
         s_pid.perr = err;
 
-        let mut out: i32 = SETPOINT as i32 + (p_term + i_term + d_term);
+        // Some arbitrary float arithmetic to increase the computational intensity
+        let mut out: i32 = SETPOINT as i32 + (p_term as f32 + i_term as f32 + d_term as f32) as i32;
         out = out.clamp(0, 255);
 
         // used by report tasks
@@ -648,12 +649,13 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
+            /*
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_0.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((0u8 as u32) << 8) | (ctrl_buf as u32);
+            */
             self.shared().obx.lock(|obx| {
-                obx.send(MbxAddr::Print as u32, rep_letter);
-
+                // obx.send(MbxAddr::Print as u32, rep_letter);
                 sim_task_ack(obx, MbxAddr::TaskRep0Ack);
             });
         }
@@ -667,12 +669,13 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
+            /*
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_1.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((1u8 as u32) << 8) | (ctrl_buf as u32);
+            */
             self.shared().obx.lock(|obx| {
-                obx.send(MbxAddr::Print as u32, rep_letter);
-
+                // obx.send(MbxAddr::Print as u32, rep_letter);
                 sim_task_ack(obx, MbxAddr::TaskRep1Ack);
             });
         }
@@ -685,12 +688,13 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
+            /*
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_2.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((2u8 as u32) << 8) | (ctrl_buf as u32);
+            */
             self.shared().obx.lock(|obx| {
-                obx.send(MbxAddr::Print as u32, rep_letter);
-
+                // obx.send(MbxAddr::Print as u32, rep_letter);
                 sim_task_ack(obx, MbxAddr::TaskRep2Ack);
             });
         }
@@ -703,12 +707,13 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
+            /*
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_3.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((3u8 as u32) << 8) | (ctrl_buf as u32);
+            */
             self.shared().obx.lock(|obx| {
-                obx.send(MbxAddr::Print as u32, rep_letter);
-
+                // obx.send(MbxAddr::Print as u32, rep_letter);
                 sim_task_ack(obx, MbxAddr::TaskRep3Ack);
             });
         }
