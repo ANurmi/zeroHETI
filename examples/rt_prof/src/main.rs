@@ -131,6 +131,9 @@ mod app {
     /// Control task initial period
     const CTRL_TASK_PER_US: u32 = 2000;
 
+    const MBX_TASK_DL_US: u32 = 400;
+    const UPD_TASK_DL_US: u32 = 1000;
+
     use bsp::{
         CPU_FREQ_HZ,
         apb_uart::ApbUart,
@@ -237,17 +240,17 @@ mod app {
                     const CMDS: &[(MbxAddr, u32)] = &[
                         (MbxAddr::SimPrescaler, 10),
                         (MbxAddr::SimLoad, LF),
-                        (MbxAddr::TaskMbxDln, 0x400),
+                        (MbxAddr::TaskMbxDln, MBX_TASK_DL_US),
                         // Initialize with very long deadlines
                         (MbxAddr::TaskRep0Dln, 0x4000),
                         (MbxAddr::TaskRep1Dln, 0x4000),
                         (MbxAddr::TaskRep2Dln, 0x4000),
                         (MbxAddr::TaskRep3Dln, 0x4000),
                         // Initialize with very long deadlines
-                        (MbxAddr::TaskUpd0Dln, 0x4000),
-                        (MbxAddr::TaskUpd1Dln, 0x4000),
-                        (MbxAddr::TaskUpd2Dln, 0x4000),
-                        (MbxAddr::TaskUpd3Dln, 0x4000),
+                        (MbxAddr::TaskUpd0Dln, UPD_TASK_DL_US),
+                        (MbxAddr::TaskUpd1Dln, UPD_TASK_DL_US),
+                        (MbxAddr::TaskUpd2Dln, UPD_TASK_DL_US),
+                        (MbxAddr::TaskUpd3Dln, UPD_TASK_DL_US),
                         // Initialize with very long deadlines
                         (MbxAddr::TaskCtrl0Dln, 0x4000),
                         (MbxAddr::TaskCtrl1Dln, 0x4000),
