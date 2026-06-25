@@ -65,11 +65,6 @@ package rt_prof_pkg;
     int unsigned slack_avg;
   } task_ret_t;
 
-  function automatic int unsigned infer_mbx_per(input int unsigned dl, input int unsigned lf);
-    // Use as reference in .rs source
-    return 5 * dl + (4 * (100 - lf));
-  endfunction
-
   function automatic task_addr_t get_task_addrs(input int unsigned task_idx);
 
     automatic logic [31:0] TaskBase = 32'h0200_0000 + (task_idx * 32'h1_0000);

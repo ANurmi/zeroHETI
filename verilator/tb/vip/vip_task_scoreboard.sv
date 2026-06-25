@@ -20,7 +20,7 @@ module vip_task_scoreboard
   int unsigned                       pre_counter = 0;
   int unsigned                       mbx_task_per;
 
-  assign mbx_task_per = infer_mbx_per(mbx_dl_us_i, loadfactor_i);
+  assign mbx_task_per = 'd8000;  // needs to be sparse enough
 
   always @(posedge clk_i) begin : us_counter
     if (enable_i) begin
@@ -58,7 +58,7 @@ module vip_task_scoreboard
 
   always @(counter_us) begin : scb_mbx_proc
     // Activate mailbox task periodically
-    if (counter_us % 64'(mbx_task_per) == 0) begin
+    if ((counter_us % 64'(mbx_task_per) == 0) | counter_us == 10) begin
       activate_task(TASK_MBX);
       i_mbx_drv.send_letter(32'h100, generate_directive());
       i_mbx_drv.send_letter(32'h101, generate_directive());

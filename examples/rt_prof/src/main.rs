@@ -329,16 +329,16 @@ mod app {
     #[task(binds = Timer0Cmp, priority = 0x88, shared = [i2c, ctrl_buf_0, obx])]
     struct Ctrl0 {
         state: PidState,
+        rep_cnt: u8,
     }
     impl RticTask for Ctrl0 {
         fn init() -> Self {
             Self {
                 state: PidState::default(),
+                rep_cnt: 0,
             }
         }
         fn exec(&mut self) {
-            sprintln!("[Control0]");
-
             let mut rbuf = [0];
             self.shared().i2c.lock(|i2c| {
                 // Read motor status
@@ -356,10 +356,15 @@ mod app {
                 i2c.write(I2cAddr::M0 as u8, &[out_v]);
             });
 
-            self.shared()
-                .obx
-                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskRep0Ack));
-            Report0::spawn(()).unwrap();
+            if self.rep_cnt == 3 {
+                self.rep_cnt = 0;
+                self.shared()
+                    .obx
+                    .lock(|obx| sim_task_pend(obx, MbxAddr::TaskRep0Ack));
+                Report0::spawn(()).unwrap();
+            } else {
+                self.rep_cnt += 1;
+            }
             self.shared()
                 .obx
                 .lock(|obx| sim_task_ack(obx, MbxAddr::TaskCtrl0Ack));
@@ -369,16 +374,16 @@ mod app {
     #[task(binds = Timer1Cmp, priority = 0x88, shared = [i2c, ctrl_buf_1, obx])]
     struct Ctrl1 {
         state: PidState,
+        rep_cnt: u8,
     }
     impl RticTask for Ctrl1 {
         fn init() -> Self {
             Self {
                 state: PidState::default(),
+                rep_cnt: 0,
             }
         }
         fn exec(&mut self) {
-            sprintln!("[Control1]");
-
             let mut rbuf = [0];
             self.shared().i2c.lock(|i2c| {
                 // Read motor status
@@ -396,10 +401,15 @@ mod app {
                 i2c.write(I2cAddr::M1 as u8, &[out_v]);
             });
 
-            self.shared()
-                .obx
-                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskRep1Ack));
-            Report1::spawn(()).unwrap();
+            if self.rep_cnt == 3 {
+                self.rep_cnt = 0;
+                self.shared()
+                    .obx
+                    .lock(|obx| sim_task_pend(obx, MbxAddr::TaskRep1Ack));
+                Report1::spawn(()).unwrap();
+            } else {
+                self.rep_cnt += 1;
+            }
             self.shared()
                 .obx
                 .lock(|obx| sim_task_ack(obx, MbxAddr::TaskCtrl1Ack));
@@ -409,16 +419,16 @@ mod app {
     #[task(binds = Timer2Cmp, priority = 0x88, shared = [i2c, ctrl_buf_2, obx])]
     struct Ctrl2 {
         state: PidState,
+        rep_cnt: u8,
     }
     impl RticTask for Ctrl2 {
         fn init() -> Self {
             Self {
                 state: PidState::default(),
+                rep_cnt: 0,
             }
         }
         fn exec(&mut self) {
-            sprintln!("[Control2]");
-
             let mut rbuf = [0];
             self.shared().i2c.lock(|i2c| {
                 // Read motor status
@@ -436,10 +446,15 @@ mod app {
                 i2c.write(I2cAddr::M2 as u8, &[out_v]);
             });
 
-            self.shared()
-                .obx
-                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskRep2Ack));
-            Report2::spawn(()).unwrap();
+            if self.rep_cnt == 3 {
+                self.rep_cnt = 0;
+                self.shared()
+                    .obx
+                    .lock(|obx| sim_task_pend(obx, MbxAddr::TaskRep2Ack));
+                Report2::spawn(()).unwrap();
+            } else {
+                self.rep_cnt += 1;
+            }
             self.shared()
                 .obx
                 .lock(|obx| sim_task_ack(obx, MbxAddr::TaskCtrl2Ack));
@@ -449,16 +464,16 @@ mod app {
     #[task(binds = Timer3Cmp, priority = 0x88, shared = [i2c, ctrl_buf_3, obx])]
     struct Ctrl3 {
         state: PidState,
+        rep_cnt: u8,
     }
     impl RticTask for Ctrl3 {
         fn init() -> Self {
             Self {
                 state: PidState::default(),
+                rep_cnt: 0,
             }
         }
         fn exec(&mut self) {
-            sprintln!("[Control3]");
-
             let mut rbuf = [0];
             self.shared().i2c.lock(|i2c| {
                 // Read motor status
@@ -476,10 +491,15 @@ mod app {
                 i2c.write(I2cAddr::M3 as u8, &[out_v]);
             });
 
-            self.shared()
-                .obx
-                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskRep3Ack));
-            Report3::spawn(()).unwrap();
+            if self.rep_cnt == 3 {
+                self.rep_cnt = 0;
+                self.shared()
+                    .obx
+                    .lock(|obx| sim_task_pend(obx, MbxAddr::TaskRep3Ack));
+                Report3::spawn(()).unwrap();
+            } else {
+                self.rep_cnt += 1;
+            }
             self.shared()
                 .obx
                 .lock(|obx| sim_task_ack(obx, MbxAddr::TaskCtrl3Ack));
@@ -507,7 +527,7 @@ mod app {
                     _ => sprintln!("Weird letter"),
                 };
             }
-            sprintln!("[Mailbox]");
+
             self.shared()
                 .obx
                 .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd0Ack));
@@ -539,8 +559,6 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
-            sprintln!("[Update 0]");
-
             let nperiod_us = self.shared().mail_buf_0.lock(|m| *m);
             restart_timer_with_period(MotorIdx::M0, nperiod_us.micros());
             self.shared().obx.lock(|obx| {
@@ -563,11 +581,9 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
-            sprintln!("[Update 1]");
-
+            let nperiod_us = self.shared().mail_buf_1.lock(|m| *m);
+            restart_timer_with_period(MotorIdx::M1, nperiod_us.micros());
             self.shared().obx.lock(|obx| {
-                let nperiod_us = self.shared().mail_buf_1.lock(|m| *m);
-                restart_timer_with_period(MotorIdx::M1, nperiod_us.micros());
                 obx.send(MbxAddr::TaskCtrl1Per as u32, nperiod_us);
                 obx.send(MbxAddr::TaskCtrl1Dln as u32, nperiod_us);
                 // invalidate these if currently active
@@ -586,15 +602,11 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
-            sprintln!("[Update 2]");
-
-            // invalidate these if currently active
+            let nperiod_us: u32 = self.shared().mail_buf_2.lock(|m| *m);
+            restart_timer_with_period(MotorIdx::M2, nperiod_us.micros());
             self.shared().obx.lock(|obx| {
-                let nperiod_us: u32 = self.shared().mail_buf_2.lock(|m| *m);
-                restart_timer_with_period(MotorIdx::M2, nperiod_us.micros());
                 obx.send(MbxAddr::TaskCtrl2Per as u32, nperiod_us);
                 obx.send(MbxAddr::TaskCtrl2Dln as u32, nperiod_us);
-
                 sim_task_ack(obx, MbxAddr::TaskCtrl2Ack);
                 sim_task_ack(obx, MbxAddr::TaskRep2Ack);
                 sim_task_ack(obx, MbxAddr::TaskUpd2Ack);
@@ -610,15 +622,11 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
-            sprintln!("[Update 3]");
-
-            // invalidate these if currently active
+            let nperiod_us: u32 = self.shared().mail_buf_3.lock(|m| *m);
+            restart_timer_with_period(MotorIdx::M3, nperiod_us.micros());
             self.shared().obx.lock(|obx| {
-                let nperiod_us: u32 = self.shared().mail_buf_3.lock(|m| *m);
-                restart_timer_with_period(MotorIdx::M3, nperiod_us.micros());
                 obx.send(MbxAddr::TaskCtrl3Per as u32, nperiod_us);
                 obx.send(MbxAddr::TaskCtrl3Dln as u32, nperiod_us);
-
                 sim_task_ack(obx, MbxAddr::TaskCtrl3Ack);
                 sim_task_ack(obx, MbxAddr::TaskRep3Ack);
                 sim_task_ack(obx, MbxAddr::TaskUpd3Ack);
@@ -634,8 +642,6 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
-            sprintln!("[Report 0]");
-
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_0.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((0u8 as u32) << 8) | (ctrl_buf as u32);
@@ -655,8 +661,6 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
-            sprintln!("[Report 1]");
-
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_1.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((1u8 as u32) << 8) | (ctrl_buf as u32);
@@ -675,8 +679,6 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
-            sprintln!("[Report 2]");
-
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_2.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((2u8 as u32) << 8) | (ctrl_buf as u32);
@@ -695,8 +697,6 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
-            sprintln!("[Report 3]");
-
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_3.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((3u8 as u32) << 8) | (ctrl_buf as u32);
