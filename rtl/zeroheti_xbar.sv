@@ -22,13 +22,12 @@ module zeroheti_xbar
   localparam int unsigned NumMgr = 4;
   localparam int unsigned NumSbr = 6;
 
-  // Add precise connectivity when all xbar connections are known, all port connections set to 1 for CI pipeline
-  localparam bit [NumMgr-1:0][NumSbr-1:0] Connectivity = '1;
-  /* '{
+  localparam bit [NumMgr-1:0][NumSbr-1:0] Connectivity = '{
+      '{1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0},
       '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
       '{1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1},
       '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}
-  };*/
+  };
 
   typedef struct packed {
     int unsigned idx;
