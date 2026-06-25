@@ -330,10 +330,10 @@ mod app {
             });
             let measured_v = u8::from_le_bytes(rbuf);
 
-            let mut out_v: u8 = 0;
-            self.shared().ctrl_buf_0.lock(|buf| {
-                out_v = compute_pid(measured_v, &mut self.state, buf);
-            });
+            let out_v = self
+                .shared()
+                .ctrl_buf_0
+                .lock(|buf| compute_pid(measured_v, &mut self.state, buf));
 
             self.shared().i2c.lock(|i2c| {
                 // Write to motor
@@ -366,10 +366,10 @@ mod app {
             });
             let measured_v = u8::from_le_bytes(rbuf);
 
-            let mut out_v: u8 = 0;
-            self.shared().ctrl_buf_1.lock(|buf| {
-                out_v = compute_pid(measured_v, &mut self.state, buf);
-            });
+            let out_v = self
+                .shared()
+                .ctrl_buf_1
+                .lock(|buf| compute_pid(measured_v, &mut self.state, buf));
 
             self.shared().i2c.lock(|i2c| {
                 // Write to motor
@@ -402,10 +402,10 @@ mod app {
             });
             let measured_v = u8::from_le_bytes(rbuf);
 
-            let mut out_v: u8 = 0;
-            self.shared().ctrl_buf_2.lock(|buf| {
-                out_v = compute_pid(measured_v, &mut self.state, buf);
-            });
+            let out_v = self
+                .shared()
+                .ctrl_buf_2
+                .lock(|buf| compute_pid(measured_v, &mut self.state, buf));
 
             self.shared().i2c.lock(|i2c| {
                 // Write to motor
@@ -438,10 +438,10 @@ mod app {
             });
             let measured_v = u8::from_le_bytes(rbuf);
 
-            let mut out_v: u8 = 0;
-            self.shared().ctrl_buf_3.lock(|buf| {
-                out_v = compute_pid(measured_v, &mut self.state, buf);
-            });
+            let out_v = self
+                .shared()
+                .ctrl_buf_3
+                .lock(|buf| compute_pid(measured_v, &mut self.state, buf));
 
             self.shared().i2c.lock(|i2c| {
                 // Write to motor
@@ -506,8 +506,7 @@ mod app {
             sprintln!("[Update 0]");
 
             unsafe {
-                let mut nperiod_us: u32 = 0;
-                self.shared().mail_buf_0.lock(|m| nperiod_us = *m);
+                let nperiod_us = self.shared().mail_buf_0.lock(|m| *m);
                 restart_timer_with_period(MotorIdx::M0, nperiod_us.micros());
                 send_letter(TASK_CTRL_0_PER, nperiod_us);
                 send_letter(TASK_CTRL_0_DLN, nperiod_us);
@@ -529,9 +528,9 @@ mod app {
         }
         fn exec(&mut self, _p: ()) {
             sprintln!("[Update 1]");
+
             unsafe {
-                let mut nperiod_us: u32 = 0;
-                self.shared().mail_buf_1.lock(|m| nperiod_us = *m);
+                let nperiod_us = self.shared().mail_buf_1.lock(|m| *m);
                 restart_timer_with_period(MotorIdx::M1, nperiod_us.micros());
                 send_letter(TASK_CTRL_1_PER, nperiod_us);
                 send_letter(TASK_CTRL_1_DLN, nperiod_us);
@@ -553,9 +552,9 @@ mod app {
         }
         fn exec(&mut self, _p: ()) {
             sprintln!("[Update 2]");
+
             unsafe {
-                let mut nperiod_us: u32 = 0;
-                self.shared().mail_buf_2.lock(|m| nperiod_us = *m);
+                let nperiod_us: u32 = self.shared().mail_buf_2.lock(|m| *m);
                 restart_timer_with_period(MotorIdx::M2, nperiod_us.micros());
                 send_letter(TASK_CTRL_2_PER, nperiod_us);
                 send_letter(TASK_CTRL_2_DLN, nperiod_us);
@@ -577,9 +576,9 @@ mod app {
         }
         fn exec(&mut self, _p: ()) {
             sprintln!("[Update 3]");
+
             unsafe {
-                let mut nperiod_us: u32 = 0;
-                self.shared().mail_buf_3.lock(|m| nperiod_us = *m);
+                let nperiod_us: u32 = self.shared().mail_buf_3.lock(|m| *m);
                 restart_timer_with_period(MotorIdx::M3, nperiod_us.micros());
                 send_letter(TASK_CTRL_3_PER, nperiod_us);
                 send_letter(TASK_CTRL_3_DLN, nperiod_us);
@@ -603,8 +602,7 @@ mod app {
             sprintln!("[Report 0]");
 
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
-            let mut ctrl_buf = 0;
-            self.shared().ctrl_buf_0.lock(|buf| ctrl_buf = *buf);
+            let ctrl_buf = self.shared().ctrl_buf_0.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((0u8 as u32) << 8) | (ctrl_buf as u32);
             send_letter(MBX_PRINT_ADDR, rep_letter);
 
@@ -623,8 +621,7 @@ mod app {
             sprintln!("[Report 1]");
 
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
-            let mut ctrl_buf = 0;
-            self.shared().ctrl_buf_1.lock(|buf| ctrl_buf = *buf);
+            let ctrl_buf = self.shared().ctrl_buf_1.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((1u8 as u32) << 8) | (ctrl_buf as u32);
             send_letter(MBX_PRINT_ADDR, rep_letter);
 
@@ -642,8 +639,7 @@ mod app {
             sprintln!("[Report 2]");
 
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
-            let mut ctrl_buf = 0;
-            self.shared().ctrl_buf_2.lock(|buf| ctrl_buf = *buf);
+            let ctrl_buf = self.shared().ctrl_buf_2.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((2u8 as u32) << 8) | (ctrl_buf as u32);
             send_letter(MBX_PRINT_ADDR, rep_letter);
 
@@ -661,8 +657,7 @@ mod app {
             sprintln!("[Report 3]");
 
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
-            let mut ctrl_buf = 0;
-            self.shared().ctrl_buf_3.lock(|buf| ctrl_buf = *buf);
+            let ctrl_buf = self.shared().ctrl_buf_3.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((3u8 as u32) << 8) | (ctrl_buf as u32);
             send_letter(MBX_PRINT_ADDR, rep_letter);
 
