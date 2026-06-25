@@ -2,8 +2,6 @@
 #![no_std]
 #![allow(static_mut_refs)]
 
-mod mailbox;
-
 use bsp::rt as _;
 #[rtic::app(device = bsp, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3])]
 
@@ -87,28 +85,24 @@ mod app {
         out
     }
 
-    // TODO: move this to Mbx HAL
-    #[inline]
-    fn send_letter(addr: u32, data: u32) {
-        mmio::write_u32(MAILBOX.ob.addr as usize, addr);
-        mmio::write_u32(MAILBOX.ob.data as usize, data);
-        // send letter
-        mmio::write_u32(MAILBOX.ctrl as usize, 0x1);
-    }
-    #[inline]
-    fn wait_outbox_empty() {
-        while (mmio::read_u32(MAILBOX.stat as usize) & (0b1 << 2)) == 0 {}
-    }
-
     // rt_prof-specific
-    #[inline]
-    fn sim_task_pend(addr: u32) {
-        send_letter(addr, 0x1);
+
+    #[repr(usize)]
+    pub enum MotorIdx {
+        M0 = 0,
+        M1 = 1,
+        M2 = 2,
+        M3 = 3,
     }
 
     #[inline]
-    fn sim_task_ack(addr: u32) {
-        send_letter(addr, 0x0);
+    fn sim_task_pend(obx: &mut Outbox, addr: u32) {
+        obx.send(addr, 0x1);
+    }
+
+    #[inline]
+    fn sim_task_ack(obx: &mut Outbox, addr: u32) {
+        obx.send(addr, 0x0);
     }
 
     fn restart_timer_with_period(idx: MotorIdx, nperiod: timer_group::Duration) {
@@ -130,9 +124,11 @@ mod app {
         CPU_FREQ_HZ,
         apb_uart::ApbUart,
         i2c::{self, I2c},
-        mailbox::MotorIdx,
-        mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
-        mmio,
+        mailbox::{Inbox, Mailbox, Outbox},
+        mmap::{
+            apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
+            mailbox::MBX_ADDR,
+        },
         mtimer::{self, *},
         riscv::{self},
         sprintln,
@@ -140,8 +136,6 @@ mod app {
         timer_group::{self, Periodic, Timer},
     };
     use fugit::{ExtU32, ExtU64};
-
-    use crate::mailbox::MAILBOX;
 
     #[derive(Clone, Copy, Default)]
     struct PidState {
@@ -154,6 +148,8 @@ mod app {
     #[shared]
     struct Shared {
         i2c: i2c::I2c,
+        ibx: Inbox,
+        obx: Outbox,
         mail_buf_0: u32,
         mail_buf_1: u32,
         mail_buf_2: u32,
@@ -169,11 +165,14 @@ mod app {
         let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
         sprintln!("\n\r### Starting rt_prof (rtic) benchmark ###\n\r");
         let i2c = I2c::init(4);
+        let (ibx, obx) = unsafe { Mailbox::instance::<{ MBX_ADDR }>() }.split();
 
         MTimer::instance().into_oneshot().start(100u64.micros());
 
         Shared {
             i2c,
+            ibx,
+            obx,
             mail_buf_0: 0,
             mail_buf_1: 0,
             mail_buf_2: 0,
@@ -185,7 +184,9 @@ mod app {
         }
     }
 
-    #[task(binds = MachineTimer, priority = 0xff)]
+    #[task(binds = MachineTimer, priority = 0xff,
+        /* shared = use raw pointers/instances instead, during init */
+    )]
     struct StartSim {
         mtimer: mtimer::OneShot,
         start_time: Option<u64>,
@@ -222,30 +223,30 @@ mod app {
 
                     timers.iter_mut().for_each(Periodic::start);
 
-                    send_letter(SIM_PRESCALER, 10);
-                    send_letter(SIM_LOAD, LF);
-                    wait_outbox_empty();
+                    // Safety: sim and app are not yet running
+                    let (_, mut obx) = unsafe { Mailbox::instance::<{ MBX_ADDR }>() }.split();
 
-                    send_letter(TASK_MBX_DLN, 0x400);
-                    wait_outbox_empty();
-
-                    send_letter(TASK_REP_0_DLN, 0x400);
-                    send_letter(TASK_REP_1_DLN, 0x400);
-                    send_letter(TASK_REP_2_DLN, 0x400);
-                    send_letter(TASK_REP_3_DLN, 0x400);
-                    wait_outbox_empty();
-
-                    send_letter(TASK_UPD_0_DLN, 0x400);
-                    send_letter(TASK_UPD_1_DLN, 0x400);
-                    send_letter(TASK_UPD_2_DLN, 0x400);
-                    send_letter(TASK_UPD_3_DLN, 0x400);
-                    wait_outbox_empty();
-
-                    send_letter(TASK_CTRL_0_DLN, 0x400);
-                    send_letter(TASK_CTRL_1_DLN, 0x400);
-                    send_letter(TASK_CTRL_2_DLN, 0x400);
-                    send_letter(TASK_CTRL_3_DLN, 0x400);
-                    send_letter(SIM_START, 0x0);
+                    obx.send_many(&[(SIM_PRESCALER, 10), (SIM_LOAD, LF)]);
+                    obx.send(TASK_MBX_DLN, 0x400);
+                    obx.send_many(&[
+                        (TASK_REP_0_DLN, 0x400),
+                        (TASK_REP_1_DLN, 0x400),
+                        (TASK_REP_2_DLN, 0x400),
+                        (TASK_REP_3_DLN, 0x400),
+                    ]);
+                    obx.send_many(&[
+                        (TASK_UPD_0_DLN, 0x400),
+                        (TASK_UPD_1_DLN, 0x400),
+                        (TASK_UPD_2_DLN, 0x400),
+                        (TASK_UPD_3_DLN, 0x400),
+                    ]);
+                    obx.send_many(&[
+                        (TASK_CTRL_0_DLN, 0x400),
+                        (TASK_CTRL_1_DLN, 0x400),
+                        (TASK_CTRL_2_DLN, 0x400),
+                        (TASK_CTRL_3_DLN, 0x400),
+                    ]);
+                    obx.send(SIM_START, 0x0);
 
                     unsafe {
                         // Clear instruction & cycle counters
@@ -259,7 +260,9 @@ mod app {
                     let duration_real_cc = MTimer::instance().into_oneshot().duration().ticks();
 
                     // Terminate scoreboard
-                    send_letter(SIM_STOP, 0x1);
+                    // Safety: unsure if safe. We'll do it anyway.
+                    let (_, mut obx) = unsafe { Mailbox::instance::<{ MBX_ADDR }>() }.split();
+                    obx.send(SIM_STOP, 0x1);
 
                     let instret = riscv::register::minstret::read64();
                     let active_time_cc = riscv::register::mcycle::read64();
@@ -310,7 +313,7 @@ mod app {
     }
 
     // Hardware tasks
-    #[task(binds = Timer0Cmp, priority = 0x88, shared = [i2c, ctrl_buf_0])]
+    #[task(binds = Timer0Cmp, priority = 0x88, shared = [i2c, ctrl_buf_0, obx])]
     struct Ctrl0 {
         state: PidState,
     }
@@ -340,13 +343,15 @@ mod app {
                 i2c.write(I2C_M0_ADDR, &[out_v]);
             });
 
-            sim_task_pend(TASK_REP_0_ACK);
-            Report0::spawn(()).unwrap();
-            sim_task_ack(TASK_CTRL_0_ACK);
+            self.shared().obx.lock(|obx| {
+                sim_task_pend(obx, TASK_REP_0_ACK);
+                Report0::spawn(()).unwrap();
+                sim_task_ack(obx, TASK_CTRL_0_ACK);
+            });
         }
     }
 
-    #[task(binds = Timer1Cmp, priority = 0x88, shared = [i2c, ctrl_buf_1])]
+    #[task(binds = Timer1Cmp, priority = 0x88, shared = [i2c, ctrl_buf_1, obx])]
     struct Ctrl1 {
         state: PidState,
     }
@@ -376,13 +381,15 @@ mod app {
                 i2c.write(I2C_M1_ADDR, &[out_v]);
             });
 
-            sim_task_pend(TASK_REP_1_ACK);
-            Report1::spawn(()).unwrap();
-            sim_task_ack(TASK_CTRL_1_ACK);
+            self.shared().obx.lock(|obx| {
+                sim_task_pend(obx, TASK_REP_1_ACK);
+                Report1::spawn(()).unwrap();
+                sim_task_ack(obx, TASK_CTRL_1_ACK);
+            });
         }
     }
 
-    #[task(binds = Timer2Cmp, priority = 0x88, shared = [i2c, ctrl_buf_2])]
+    #[task(binds = Timer2Cmp, priority = 0x88, shared = [i2c, ctrl_buf_2, obx])]
     struct Ctrl2 {
         state: PidState,
     }
@@ -412,13 +419,15 @@ mod app {
                 i2c.write(I2C_M2_ADDR, &[out_v]);
             });
 
-            sim_task_pend(TASK_REP_2_ACK);
-            Report2::spawn(()).unwrap();
-            sim_task_ack(TASK_CTRL_2_ACK);
+            self.shared().obx.lock(|obx| {
+                sim_task_pend(obx, TASK_REP_2_ACK);
+                Report2::spawn(()).unwrap();
+                sim_task_ack(obx, TASK_CTRL_2_ACK);
+            })
         }
     }
 
-    #[task(binds = Timer3Cmp, priority = 0x88, shared = [i2c, ctrl_buf_3])]
+    #[task(binds = Timer3Cmp, priority = 0x88, shared = [i2c, ctrl_buf_3, obx])]
     struct Ctrl3 {
         state: PidState,
     }
@@ -448,54 +457,52 @@ mod app {
                 i2c.write(I2C_M3_ADDR, &[out_v]);
             });
 
-            sim_task_pend(TASK_REP_3_ACK);
-            Report3::spawn(()).unwrap();
-            sim_task_ack(TASK_CTRL_3_ACK);
+            self.shared().obx.lock(|obx| {
+                sim_task_pend(obx, TASK_REP_3_ACK);
+                Report3::spawn(()).unwrap();
+                sim_task_ack(obx, TASK_CTRL_3_ACK);
+            });
         }
     }
 
-    #[task(binds = Mbx, priority = 0xf1, shared = [mail_buf_0, mail_buf_1, mail_buf_2, mail_buf_3])]
+    #[task(binds = Mbx, priority = 0xf1, shared = [mail_buf_0, mail_buf_1, mail_buf_2, mail_buf_3, ibx, obx])]
     struct Mail {}
     impl RticTask for Mail {
         fn init() -> Self {
             Self {}
         }
         fn exec(&mut self) {
-            // IRQ clear
-            mmio::write_u32(MAILBOX.ctrl as usize, 0x0002_0000);
-            // TODO: more & better abstraction
-            for _ in 0..4 {
-                // Read inbox
-                let addr = mmio::read_u32(MAILBOX.ib.addr as usize);
-                let data = mmio::read_u32(MAILBOX.ib.data as usize);
+            let mut letters = [(0, 0); 4];
+            self.shared().ibx.lock(|ibx| {
+                ibx.recv_many(&mut letters);
+            });
 
-                unsafe {
-                    match addr {
-                        0x100 => self.shared().mail_buf_0.lock(|mail| *mail = data),
-                        0x101 => self.shared().mail_buf_1.lock(|mail| *mail = data),
-                        0x102 => self.shared().mail_buf_2.lock(|mail| *mail = data),
-                        0x103 => self.shared().mail_buf_3.lock(|mail| *mail = data),
-                        _ => sprintln!("Weird letter"),
-                    }
+            for (addr, data) in letters {
+                match addr {
+                    0x100 => self.shared().mail_buf_0.lock(|mail| *mail = data),
+                    0x101 => self.shared().mail_buf_1.lock(|mail| *mail = data),
+                    0x102 => self.shared().mail_buf_2.lock(|mail| *mail = data),
+                    0x103 => self.shared().mail_buf_3.lock(|mail| *mail = data),
+                    _ => sprintln!("Weird letter"),
                 }
-                // pop letter?
-                mmio::write_u32(MAILBOX.ctrl as usize, 0x0100_0000);
             }
             sprintln!("[Mailbox]");
-            sim_task_pend(TASK_UPD_0_ACK);
-            Update0::spawn(()).unwrap();
-            sim_task_pend(TASK_UPD_1_ACK);
-            Update1::spawn(()).unwrap();
-            sim_task_pend(TASK_UPD_2_ACK);
-            Update2::spawn(()).unwrap();
-            sim_task_pend(TASK_UPD_3_ACK);
-            Update3::spawn(()).unwrap();
-            sim_task_ack(TASK_MBX_ACK);
+            self.shared().obx.lock(|obx| {
+                sim_task_pend(obx, TASK_UPD_0_ACK);
+                Update0::spawn(()).unwrap();
+                sim_task_pend(obx, TASK_UPD_1_ACK);
+                Update1::spawn(()).unwrap();
+                sim_task_pend(obx, TASK_UPD_2_ACK);
+                Update2::spawn(()).unwrap();
+                sim_task_pend(obx, TASK_UPD_3_ACK);
+                Update3::spawn(()).unwrap();
+                sim_task_ack(obx, TASK_MBX_ACK);
+            });
         }
     }
 
     // Software tasks
-    #[sw_task(priority = 0x11, shared = [mail_buf_0])]
+    #[sw_task(priority = 0x11, shared = [mail_buf_0, obx])]
     struct Update0;
     impl RticSwTask for Update0 {
         type SpawnInput = ();
@@ -505,21 +512,21 @@ mod app {
         fn exec(&mut self, _p: ()) {
             sprintln!("[Update 0]");
 
-            unsafe {
-                let nperiod_us = self.shared().mail_buf_0.lock(|m| *m);
-                restart_timer_with_period(MotorIdx::M0, nperiod_us.micros());
-                send_letter(TASK_CTRL_0_PER, nperiod_us);
-                send_letter(TASK_CTRL_0_DLN, nperiod_us);
-            }
-            // invalidate these if currently active
-            sim_task_ack(TASK_CTRL_0_ACK);
-            sim_task_ack(TASK_REP_0_ACK);
+            let nperiod_us = self.shared().mail_buf_0.lock(|m| *m);
+            restart_timer_with_period(MotorIdx::M0, nperiod_us.micros());
+            self.shared().obx.lock(|obx| {
+                obx.send(TASK_CTRL_0_PER, nperiod_us);
+                obx.send(TASK_CTRL_0_DLN, nperiod_us);
 
-            sim_task_ack(TASK_UPD_0_ACK);
+                // invalidate these if currently active
+                sim_task_ack(obx, TASK_CTRL_0_ACK);
+                sim_task_ack(obx, TASK_REP_0_ACK);
+                sim_task_ack(obx, TASK_UPD_0_ACK);
+            });
         }
     }
 
-    #[sw_task(priority = 0x11, shared = [mail_buf_1])]
+    #[sw_task(priority = 0x11, shared = [mail_buf_1, obx])]
     struct Update1;
     impl RticSwTask for Update1 {
         type SpawnInput = ();
@@ -529,21 +536,20 @@ mod app {
         fn exec(&mut self, _p: ()) {
             sprintln!("[Update 1]");
 
-            unsafe {
+            self.shared().obx.lock(|obx| {
                 let nperiod_us = self.shared().mail_buf_1.lock(|m| *m);
                 restart_timer_with_period(MotorIdx::M1, nperiod_us.micros());
-                send_letter(TASK_CTRL_1_PER, nperiod_us);
-                send_letter(TASK_CTRL_1_DLN, nperiod_us);
-            }
-            // invalidate these if currently active
-            sim_task_ack(TASK_CTRL_1_ACK);
-            sim_task_ack(TASK_REP_1_ACK);
-
-            sim_task_ack(TASK_UPD_1_ACK);
+                obx.send(TASK_CTRL_1_PER, nperiod_us);
+                obx.send(TASK_CTRL_1_DLN, nperiod_us);
+                // invalidate these if currently active
+                sim_task_ack(obx, TASK_CTRL_1_ACK);
+                sim_task_ack(obx, TASK_REP_1_ACK);
+                sim_task_ack(obx, TASK_UPD_1_ACK);
+            });
         }
     }
 
-    #[sw_task(priority = 0x11, shared = [mail_buf_2])]
+    #[sw_task(priority = 0x11, shared = [mail_buf_2, obx])]
     struct Update2;
     impl RticSwTask for Update2 {
         type SpawnInput = ();
@@ -553,21 +559,21 @@ mod app {
         fn exec(&mut self, _p: ()) {
             sprintln!("[Update 2]");
 
-            unsafe {
+            // invalidate these if currently active
+            self.shared().obx.lock(|obx| {
                 let nperiod_us: u32 = self.shared().mail_buf_2.lock(|m| *m);
                 restart_timer_with_period(MotorIdx::M2, nperiod_us.micros());
-                send_letter(TASK_CTRL_2_PER, nperiod_us);
-                send_letter(TASK_CTRL_2_DLN, nperiod_us);
-            }
-            // invalidate these if currently active
-            sim_task_ack(TASK_CTRL_2_ACK);
-            sim_task_ack(TASK_REP_2_ACK);
+                obx.send(TASK_CTRL_2_PER, nperiod_us);
+                obx.send(TASK_CTRL_2_DLN, nperiod_us);
 
-            sim_task_ack(TASK_UPD_2_ACK);
+                sim_task_ack(obx, TASK_CTRL_2_ACK);
+                sim_task_ack(obx, TASK_REP_2_ACK);
+                sim_task_ack(obx, TASK_UPD_2_ACK);
+            });
         }
     }
 
-    #[sw_task(priority = 0x11, shared = [mail_buf_3])]
+    #[sw_task(priority = 0x11, shared = [mail_buf_3, obx])]
     struct Update3;
     impl RticSwTask for Update3 {
         type SpawnInput = ();
@@ -577,21 +583,21 @@ mod app {
         fn exec(&mut self, _p: ()) {
             sprintln!("[Update 3]");
 
-            unsafe {
+            // invalidate these if currently active
+            self.shared().obx.lock(|obx| {
                 let nperiod_us: u32 = self.shared().mail_buf_3.lock(|m| *m);
                 restart_timer_with_period(MotorIdx::M3, nperiod_us.micros());
-                send_letter(TASK_CTRL_3_PER, nperiod_us);
-                send_letter(TASK_CTRL_3_DLN, nperiod_us);
-            }
-            // invalidate these if currently active
-            sim_task_ack(TASK_CTRL_3_ACK);
-            sim_task_ack(TASK_REP_3_ACK);
+                obx.send(TASK_CTRL_3_PER, nperiod_us);
+                obx.send(TASK_CTRL_3_DLN, nperiod_us);
 
-            sim_task_ack(TASK_UPD_3_ACK);
+                sim_task_ack(obx, TASK_CTRL_3_ACK);
+                sim_task_ack(obx, TASK_REP_3_ACK);
+                sim_task_ack(obx, TASK_UPD_3_ACK);
+            });
         }
     }
 
-    #[sw_task(priority = 0x10, shared = [ctrl_buf_0])]
+    #[sw_task(priority = 0x10, shared = [ctrl_buf_0, obx])]
     struct Report0;
     impl RticSwTask for Report0 {
         type SpawnInput = ();
@@ -604,13 +610,15 @@ mod app {
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_0.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((0u8 as u32) << 8) | (ctrl_buf as u32);
-            send_letter(MBX_PRINT_ADDR, rep_letter);
+            self.shared().obx.lock(|obx| {
+                obx.send(MBX_PRINT_ADDR, rep_letter);
 
-            sim_task_ack(TASK_REP_0_ACK);
+                sim_task_ack(obx, TASK_REP_0_ACK);
+            });
         }
     }
 
-    #[sw_task(priority = 0x10, shared = [ctrl_buf_1])]
+    #[sw_task(priority = 0x10, shared = [ctrl_buf_1, obx])]
     struct Report1;
     impl RticSwTask for Report1 {
         type SpawnInput = ();
@@ -623,12 +631,14 @@ mod app {
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_1.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((1u8 as u32) << 8) | (ctrl_buf as u32);
-            send_letter(MBX_PRINT_ADDR, rep_letter);
+            self.shared().obx.lock(|obx| {
+                obx.send(MBX_PRINT_ADDR, rep_letter);
 
-            sim_task_ack(TASK_REP_1_ACK);
+                sim_task_ack(obx, TASK_REP_1_ACK);
+            });
         }
     }
-    #[sw_task(priority = 0x10, shared = [ctrl_buf_2])]
+    #[sw_task(priority = 0x10, shared = [ctrl_buf_2, obx])]
     struct Report2;
     impl RticSwTask for Report2 {
         type SpawnInput = ();
@@ -641,12 +651,14 @@ mod app {
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_2.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((2u8 as u32) << 8) | (ctrl_buf as u32);
-            send_letter(MBX_PRINT_ADDR, rep_letter);
+            self.shared().obx.lock(|obx| {
+                obx.send(MBX_PRINT_ADDR, rep_letter);
 
-            sim_task_ack(TASK_REP_2_ACK);
+                sim_task_ack(obx, TASK_REP_2_ACK);
+            });
         }
     }
-    #[sw_task(priority = 0x10, shared = [ctrl_buf_3])]
+    #[sw_task(priority = 0x10, shared = [ctrl_buf_3, obx])]
     struct Report3;
     impl RticSwTask for Report3 {
         type SpawnInput = ();
@@ -659,9 +671,11 @@ mod app {
             let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_3.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((3u8 as u32) << 8) | (ctrl_buf as u32);
-            send_letter(MBX_PRINT_ADDR, rep_letter);
+            self.shared().obx.lock(|obx| {
+                obx.send(MBX_PRINT_ADDR, rep_letter);
 
-            sim_task_ack(TASK_REP_3_ACK);
+                sim_task_ack(obx, TASK_REP_3_ACK);
+            });
         }
     }
 }
