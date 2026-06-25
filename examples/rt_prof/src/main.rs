@@ -165,7 +165,7 @@ mod app {
         let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
         sprintln!("\n\r### Starting rt_prof (rtic) benchmark ###\n\r");
         let i2c = I2c::init(4);
-        let (ibx, obx) = unsafe { Mailbox::instance::<{ MBX_ADDR }>() }.split();
+        let (ibx, obx) = unsafe { Mailbox::instance() }.split();
 
         MTimer::instance().into_oneshot().start(100u64.micros());
 
@@ -224,7 +224,7 @@ mod app {
                     timers.iter_mut().for_each(Periodic::start);
 
                     // Safety: sim and app are not yet running
-                    let (_, mut obx) = unsafe { Mailbox::instance::<{ MBX_ADDR }>() }.split();
+                    let (_, mut obx) = unsafe { Mailbox::instance() }.split();
 
                     obx.send_many(&[(SIM_PRESCALER, 10), (SIM_LOAD, LF)]);
                     obx.send(TASK_MBX_DLN, 0x400);
@@ -261,7 +261,7 @@ mod app {
 
                     // Terminate scoreboard
                     // Safety: unsure if safe. We'll do it anyway.
-                    let (_, mut obx) = unsafe { Mailbox::instance::<{ MBX_ADDR }>() }.split();
+                    let (_, mut obx) = unsafe { Mailbox::instance() }.split();
                     obx.send(SIM_STOP, 0x1);
 
                     let instret = riscv::register::minstret::read64();

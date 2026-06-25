@@ -13,8 +13,8 @@ impl Mailbox {
     ///
     /// This is the global instance. Ensure safe sharing.
     #[inline]
-    pub const unsafe fn instance<const BASE_ADDR: usize>() -> Self {
-        Self(BASE_ADDR as *mut _)
+    pub const unsafe fn instance() -> Self {
+        Self(MBX_ADDR as *mut _)
     }
 
     #[inline]
@@ -25,6 +25,11 @@ impl Mailbox {
 
 pub struct Inbox(*mut RegisterBlock);
 impl Inbox {
+    #[inline]
+    pub const unsafe fn instance() -> Self {
+        Self(MBX_ADDR as *mut _)
+    }
+
     #[inline]
     fn clear_irq(&mut self) {
         unsafe { write_volatile(&mut (*self.0).ctrl as *mut _, Ctrl::IRQ_CLEAR) };
@@ -66,6 +71,11 @@ impl Inbox {
 
 pub struct Outbox(*mut RegisterBlock);
 impl Outbox {
+    #[inline]
+    pub const unsafe fn instance() -> Self {
+        Self(MBX_ADDR as *mut _)
+    }
+
     #[inline]
     fn wait_outbox_empty(&self) {
         while (unsafe { read_volatile::<Stat>(&(*self.0).stat as *const _) })
