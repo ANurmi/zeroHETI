@@ -111,7 +111,7 @@ module vip_task_scoreboard
         [TASK_CTRL_0 : TASK_CTRL_3]: TaskName = {"I2cCtrl", string'(i - 5 + 48)};
         [TASK_REP_0 : TASK_REP_3]:   TaskName = {"I2cReport", string'(i - 9 + 48)};
       endcase
-      $display("T%02d ( %11s ) - count: %3d, avg. slack: %4d us, worst slack: %4d us", i, TaskName,
+      $display("T%02d ( %11s ) - count: %3d, avg. slack: %6d us, worst slack: %6d us", i, TaskName,
                task_set_ret[i].count, task_set_ret[i].slack_avg, task_set_ret[i].slack_worst);
     end
     $display("");

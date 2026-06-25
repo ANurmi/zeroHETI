@@ -238,18 +238,21 @@ mod app {
                         (MbxAddr::SimPrescaler, 10),
                         (MbxAddr::SimLoad, LF),
                         (MbxAddr::TaskMbxDln, 0x400),
-                        (MbxAddr::TaskRep0Dln, 0x400),
-                        (MbxAddr::TaskRep1Dln, 0x400),
-                        (MbxAddr::TaskRep2Dln, 0x400),
-                        (MbxAddr::TaskRep3Dln, 0x400),
-                        (MbxAddr::TaskUpd0Dln, 0x400),
-                        (MbxAddr::TaskUpd1Dln, 0x400),
-                        (MbxAddr::TaskUpd2Dln, 0x400),
-                        (MbxAddr::TaskUpd3Dln, 0x400),
-                        (MbxAddr::TaskCtrl0Dln, 0x400),
-                        (MbxAddr::TaskCtrl1Dln, 0x400),
-                        (MbxAddr::TaskCtrl2Dln, 0x400),
-                        (MbxAddr::TaskCtrl3Dln, 0x400),
+                        // Initialize with very long deadlines
+                        (MbxAddr::TaskRep0Dln, 0x4000),
+                        (MbxAddr::TaskRep1Dln, 0x4000),
+                        (MbxAddr::TaskRep2Dln, 0x4000),
+                        (MbxAddr::TaskRep3Dln, 0x4000),
+                        // Initialize with very long deadlines
+                        (MbxAddr::TaskUpd0Dln, 0x4000),
+                        (MbxAddr::TaskUpd1Dln, 0x4000),
+                        (MbxAddr::TaskUpd2Dln, 0x4000),
+                        (MbxAddr::TaskUpd3Dln, 0x4000),
+                        // Initialize with very long deadlines
+                        (MbxAddr::TaskCtrl0Dln, 0x4000),
+                        (MbxAddr::TaskCtrl1Dln, 0x4000),
+                        (MbxAddr::TaskCtrl2Dln, 0x4000),
+                        (MbxAddr::TaskCtrl3Dln, 0x4000),
                         (MbxAddr::SimStart, 0x0),
                     ];
                     CMDS.iter()
@@ -564,7 +567,7 @@ mod app {
             self.shared().obx.lock(|obx| {
                 obx.send(MbxAddr::TaskCtrl0Per as u32, nperiod_us);
                 obx.send(MbxAddr::TaskCtrl0Dln as u32, nperiod_us);
-
+                obx.send(MbxAddr::TaskRep0Dln as u32, 4 * nperiod_us);
                 // invalidate these if currently active
                 sim_task_ack(obx, MbxAddr::TaskCtrl0Ack);
                 sim_task_ack(obx, MbxAddr::TaskRep0Ack);
@@ -586,6 +589,7 @@ mod app {
             self.shared().obx.lock(|obx| {
                 obx.send(MbxAddr::TaskCtrl1Per as u32, nperiod_us);
                 obx.send(MbxAddr::TaskCtrl1Dln as u32, nperiod_us);
+                obx.send(MbxAddr::TaskRep1Dln as u32, 4 * nperiod_us);
                 // invalidate these if currently active
                 sim_task_ack(obx, MbxAddr::TaskCtrl1Ack);
                 sim_task_ack(obx, MbxAddr::TaskRep1Ack);
@@ -607,6 +611,7 @@ mod app {
             self.shared().obx.lock(|obx| {
                 obx.send(MbxAddr::TaskCtrl2Per as u32, nperiod_us);
                 obx.send(MbxAddr::TaskCtrl2Dln as u32, nperiod_us);
+                obx.send(MbxAddr::TaskRep2Dln as u32, 4 * nperiod_us);
                 sim_task_ack(obx, MbxAddr::TaskCtrl2Ack);
                 sim_task_ack(obx, MbxAddr::TaskRep2Ack);
                 sim_task_ack(obx, MbxAddr::TaskUpd2Ack);
@@ -627,6 +632,7 @@ mod app {
             self.shared().obx.lock(|obx| {
                 obx.send(MbxAddr::TaskCtrl3Per as u32, nperiod_us);
                 obx.send(MbxAddr::TaskCtrl3Dln as u32, nperiod_us);
+                obx.send(MbxAddr::TaskRep3Dln as u32, 4 * nperiod_us);
                 sim_task_ack(obx, MbxAddr::TaskCtrl3Ack);
                 sim_task_ack(obx, MbxAddr::TaskRep3Ack);
                 sim_task_ack(obx, MbxAddr::TaskUpd3Ack);
