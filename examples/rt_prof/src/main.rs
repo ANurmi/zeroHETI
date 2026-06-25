@@ -146,6 +146,7 @@ mod app {
         tb::signal_pass,
         timer_group::{self, Periodic, Timer},
     };
+    use core::fmt::Write;
     use fugit::{ExtU32, ExtU64};
 
     #[derive(Clone, Copy, Default)]
@@ -158,6 +159,7 @@ mod app {
 
     #[shared]
     struct Shared {
+        serial: ApbUart,
         i2c: i2c::I2c,
         ibx: Inbox,
         obx: Outbox,
@@ -173,7 +175,7 @@ mod app {
 
     #[init]
     fn init() -> Shared {
-        let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
+        let serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
         sprintln!("\n\r### Starting rt_prof (rtic) benchmark ###\n\r");
         let i2c = I2c::init(4);
         let (ibx, obx) = unsafe { Mailbox::instance() }.split();
@@ -181,6 +183,7 @@ mod app {
         MTimer::instance().into_oneshot().start(100u64.micros());
 
         Shared {
+            serial,
             i2c,
             ibx,
             obx,
@@ -513,7 +516,7 @@ mod app {
         }
     }
 
-    #[task(binds = Mbx, priority = 0xf1, shared = [mail_buf_0, mail_buf_1, mail_buf_2, mail_buf_3, ibx, obx])]
+    #[task(binds = Mbx, priority = 0xf1, shared = [mail_buf_0, mail_buf_1, mail_buf_2, mail_buf_3, ibx, obx, serial])]
     struct Mail {}
     impl RticTask for Mail {
         fn init() -> Self {
@@ -531,7 +534,12 @@ mod app {
                     0x101 => self.shared().mail_buf_1.lock(|mail| *mail = data),
                     0x102 => self.shared().mail_buf_2.lock(|mail| *mail = data),
                     0x103 => self.shared().mail_buf_3.lock(|mail| *mail = data),
-                    _ => sprintln!("Weird letter"),
+                    _ => {
+                        self.shared()
+                            .serial
+                            .lock(|s| writeln!(s, "Weird letter"))
+                            .ok();
+                    }
                 };
             }
 
