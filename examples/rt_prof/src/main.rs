@@ -226,27 +226,25 @@ mod app {
                     // Safety: sim and app are not yet running
                     let (_, mut obx) = unsafe { Mailbox::instance() }.split();
 
-                    obx.send_many(&[(SIM_PRESCALER, 10), (SIM_LOAD, LF)]);
-                    obx.send(TASK_MBX_DLN, 0x400);
-                    obx.send_many(&[
+                    const CMDS: &[(u32, u32)] = &[
+                        (SIM_PRESCALER, 10),
+                        (SIM_LOAD, LF),
+                        (TASK_MBX_DLN, 0x400),
                         (TASK_REP_0_DLN, 0x400),
                         (TASK_REP_1_DLN, 0x400),
                         (TASK_REP_2_DLN, 0x400),
                         (TASK_REP_3_DLN, 0x400),
-                    ]);
-                    obx.send_many(&[
                         (TASK_UPD_0_DLN, 0x400),
                         (TASK_UPD_1_DLN, 0x400),
                         (TASK_UPD_2_DLN, 0x400),
                         (TASK_UPD_3_DLN, 0x400),
-                    ]);
-                    obx.send_many(&[
                         (TASK_CTRL_0_DLN, 0x400),
                         (TASK_CTRL_1_DLN, 0x400),
                         (TASK_CTRL_2_DLN, 0x400),
                         (TASK_CTRL_3_DLN, 0x400),
-                    ]);
-                    obx.send(SIM_START, 0x0);
+                        (SIM_START, 0x0),
+                    ];
+                    CMDS.iter().for_each(|&(addr, data)| obx.send(addr, data));
 
                     unsafe {
                         // Clear instruction & cycle counters
