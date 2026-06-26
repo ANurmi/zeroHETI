@@ -81,6 +81,7 @@ impl Outbox {
     }
 
     #[inline]
+    #[allow(unused)]
     fn wait_until_obox_empty(&self) {
         // Perform volatile read on the register until `OBOX_EMPT` becomes set
         while !unsafe { read_volatile::<Stat>(&raw const (*self.0).stat).contains(Stat::OBOX_EMPT) }
@@ -89,9 +90,17 @@ impl Outbox {
     }
 
     #[inline]
+    fn wait_until_obox_not_full(&self) {
+        // Perform volatile read on the register until `OBOX_FULL` becomes unset
+        while unsafe { read_volatile::<Stat>(&raw const (*self.0).stat).contains(Stat::OBOX_FULL) }
+        {
+        }
+    }
+
+    #[inline]
     pub fn send(&mut self, addr: u32, data: u32) {
         // Ensure outbox has free capacity before sending
-        self.wait_until_obox_empty();
+        self.wait_until_obox_not_full();
 
         unsafe {
             // Write letter address and data
