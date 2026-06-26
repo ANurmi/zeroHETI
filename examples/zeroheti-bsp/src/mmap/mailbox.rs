@@ -10,26 +10,46 @@ pub struct RegisterBlock {
     // 4 bytes of padding
     _pad: u32,
     /// 0xc..0x14 Inbox
-    pub ibox: IoBox,
+    pub ibox: Letter,
     /// 0x14..0x1c Outbox
-    pub obox: IoBox,
+    pub obox: Letter,
 }
 
 bitflags::bitflags! {
+    /// Status bit layout
+    ///
+    /// Based on obi_mbx.sv
     pub struct Stat: u32 {
-        const OBOX_FULL = 0b1 << 2;
+        const IBOX_EMPT = 0b1 << 0;
+        const IBOX_FULL = 0b1 << 1;
+        const OBOX_EMPT = 0b1 << 2;
+        const OBOX_FULL = 0b1 << 3;
     }
 
+    /// Control bit layout
+    ///
+    /// Based on obi_mbx.sv
     pub struct Ctrl: u32 {
-        const DISPATCH = 0b1 << 0;
-        const IRQ_CLEAR = 0b1 << 17;
-        const POP_INBOX = 0b1 << 24;
+        /// Send outbox
+        const OBOX_SEND = 0b1 << 0;
+        /// Flush inbox
+        const IBOX_FLSH = 0b1 << 8;
+        /// Flush outbox
+        const OBOX_FLSH = 0b1 << 9;
+        /// Set IRQ
+        const IRQ_SET = 0b1 << 16;
+        /// Clear IRQ
+        const IRQ_CLR = 0b1 << 17;
+        /// OBI read acknowledge / pop inbox
+        const READ_ACK = 0b1 << 24;
     }
 }
 
-/// Inbox/outbox address layout
+/// Letter layout
+///
+/// Corresponds to inbox/outbox address layout.
 #[repr(C)]
-pub struct IoBox {
+pub struct Letter {
     pub addr: u32,
     pub data: u32,
 }
