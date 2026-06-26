@@ -341,11 +341,13 @@ mod app {
                 i2c.write(I2C_M0_ADDR, &[out_v]);
             });
 
-            self.shared().obx.lock(|obx| {
-                sim_task_pend(obx, TASK_REP_0_ACK);
-                Report0::spawn(()).unwrap();
-                sim_task_ack(obx, TASK_CTRL_0_ACK);
-            });
+            self.shared()
+                .obx
+                .lock(|obx| sim_task_pend(obx, TASK_REP_0_ACK));
+            Report0::spawn(()).unwrap();
+            self.shared()
+                .obx
+                .lock(|obx| sim_task_ack(obx, TASK_CTRL_0_ACK));
         }
     }
 
@@ -379,11 +381,13 @@ mod app {
                 i2c.write(I2C_M1_ADDR, &[out_v]);
             });
 
-            self.shared().obx.lock(|obx| {
-                sim_task_pend(obx, TASK_REP_1_ACK);
-                Report1::spawn(()).unwrap();
-                sim_task_ack(obx, TASK_CTRL_1_ACK);
-            });
+            self.shared()
+                .obx
+                .lock(|obx| sim_task_pend(obx, TASK_REP_1_ACK));
+            Report1::spawn(()).unwrap();
+            self.shared()
+                .obx
+                .lock(|obx| sim_task_ack(obx, TASK_CTRL_1_ACK));
         }
     }
 
@@ -417,11 +421,13 @@ mod app {
                 i2c.write(I2C_M2_ADDR, &[out_v]);
             });
 
-            self.shared().obx.lock(|obx| {
-                sim_task_pend(obx, TASK_REP_2_ACK);
-                Report2::spawn(()).unwrap();
-                sim_task_ack(obx, TASK_CTRL_2_ACK);
-            })
+            self.shared()
+                .obx
+                .lock(|obx| sim_task_pend(obx, TASK_REP_2_ACK));
+            Report2::spawn(()).unwrap();
+            self.shared()
+                .obx
+                .lock(|obx| sim_task_ack(obx, TASK_CTRL_2_ACK));
         }
     }
 
@@ -455,11 +461,13 @@ mod app {
                 i2c.write(I2C_M3_ADDR, &[out_v]);
             });
 
-            self.shared().obx.lock(|obx| {
-                sim_task_pend(obx, TASK_REP_3_ACK);
-                Report3::spawn(()).unwrap();
-                sim_task_ack(obx, TASK_CTRL_3_ACK);
-            });
+            self.shared()
+                .obx
+                .lock(|obx| sim_task_pend(obx, TASK_REP_3_ACK));
+            Report3::spawn(()).unwrap();
+            self.shared()
+                .obx
+                .lock(|obx| sim_task_ack(obx, TASK_CTRL_3_ACK));
         }
     }
 
@@ -482,20 +490,28 @@ mod app {
                     0x102 => self.shared().mail_buf_2.lock(|mail| *mail = data),
                     0x103 => self.shared().mail_buf_3.lock(|mail| *mail = data),
                     _ => sprintln!("Weird letter"),
-                }
+                };
             }
             sprintln!("[Mailbox]");
-            self.shared().obx.lock(|obx| {
-                sim_task_pend(obx, TASK_UPD_0_ACK);
-                Update0::spawn(()).unwrap();
-                sim_task_pend(obx, TASK_UPD_1_ACK);
-                Update1::spawn(()).unwrap();
-                sim_task_pend(obx, TASK_UPD_2_ACK);
-                Update2::spawn(()).unwrap();
-                sim_task_pend(obx, TASK_UPD_3_ACK);
-                Update3::spawn(()).unwrap();
-                sim_task_ack(obx, TASK_MBX_ACK);
-            });
+            self.shared()
+                .obx
+                .lock(|obx| sim_task_pend(obx, TASK_UPD_0_ACK));
+            Update0::spawn(()).unwrap();
+            self.shared()
+                .obx
+                .lock(|obx| sim_task_pend(obx, TASK_UPD_1_ACK));
+            Update1::spawn(()).unwrap();
+            self.shared()
+                .obx
+                .lock(|obx| sim_task_pend(obx, TASK_UPD_2_ACK));
+            Update2::spawn(()).unwrap();
+            self.shared()
+                .obx
+                .lock(|obx| sim_task_pend(obx, TASK_UPD_3_ACK));
+            Update3::spawn(()).unwrap();
+            self.shared()
+                .obx
+                .lock(|obx| sim_task_ack(obx, TASK_MBX_ACK));
         }
     }
 
