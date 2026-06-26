@@ -125,10 +125,7 @@ mod app {
         apb_uart::ApbUart,
         i2c::{self, I2c},
         mailbox::{Inbox, Mailbox, Outbox},
-        mmap::{
-            apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
-            mailbox::MBX_ADDR,
-        },
+        mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mtimer::{self, *},
         riscv::{self},
         sprintln,
@@ -255,23 +252,29 @@ mod app {
                     }
                 }
                 Some(start_time) => {
-                    let duration_real_cc = MTimer::instance().into_oneshot().duration().ticks();
+                    // Take timestamp for sim end
+                    let now = MTimer::instance().into_oneshot().duration().ticks();
 
                     // Terminate scoreboard
                     // Safety: unsure if safe. We'll do it anyway.
                     let (_, mut obx) = unsafe { Mailbox::instance() }.split();
                     obx.send(SIM_STOP, 0x1);
 
+                    // Calculate simulation duration, accounting for setup time
+                    let duration_real_cc = now - *start_time;
+                    let setup_time_real_cc = *start_time;
+
                     let instret = riscv::register::minstret::read64();
                     let active_time_cc = riscv::register::mcycle::read64();
 
                     sprintln!("MachineTimer::Teardown");
 
-                    sprintln!("- Retired instructions: {instret}");
-                    sprintln!("- Total time      (cc): {duration_real_cc}");
-                    sprintln!("- active time     (cc): {active_time_cc}");
+                    sprintln!("- Retired instructions:      {instret}");
+                    sprintln!("- Total time w/o setup (cc): {duration_real_cc}");
+                    sprintln!("  * Setup              (cc): {setup_time_real_cc}");
+                    sprintln!("  * Active time        (cc): {active_time_cc}");
                     sprintln!(
-                        "- CPU utilization  (%): {}",
+                        "- CPU utilization      (%): {}",
                         (active_time_cc * 100) / duration_real_cc
                     );
                     signal_pass(None);
