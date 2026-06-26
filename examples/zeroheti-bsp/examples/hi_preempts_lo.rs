@@ -47,7 +47,6 @@ fn main() -> ! {
     // After mtimer timeout, the mtimer handler ensures that both interrupts
     // were acknowledged indicating that high preempted low.
     pend_irq(Interrupt::Ext1);
-    pend_irq(Interrupt::Ext0);
 
     // It is considered a failure, if execution falls through the interrupt
     // handlers (low should block until preempted by high).
@@ -70,6 +69,9 @@ fn Ext0() {
 fn low_level() {
     unsafe { LO_VISITED = true };
     sprintln!("lo enter");
+
+    // Pend HI
+    pend_irq(Interrupt::Ext0);
 
     // Enable preemption
     unsafe { core::arch::asm!("csrsi mstatus, 8") };
