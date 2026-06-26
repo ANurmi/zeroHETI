@@ -47,13 +47,12 @@ impl Inbox {
     /// Returns `(addr, data)`
     #[inline]
     pub fn recv(&mut self) -> (u32, u32) {
-        self.clear_irq();
-
         // Read inbox
         let addr = unsafe { read_volatile(&raw mut (*self.0).ibox.addr) };
         let data = unsafe { read_volatile(&raw mut (*self.0).ibox.data) };
 
         self.pop_inbox();
+        self.clear_irq();
 
         (addr, data)
     }
@@ -61,14 +60,13 @@ impl Inbox {
     /// Returns `[(addr, data)]`
     #[inline]
     pub fn recv_many(&mut self, buf: &mut [(u32, u32)]) {
-        self.clear_irq();
-
         for (addr, data) in buf.iter_mut() {
             // Read inbox
             *addr = unsafe { read_volatile(&raw mut (*self.0).ibox.addr) };
             *data = unsafe { read_volatile(&raw mut (*self.0).ibox.data) };
             self.pop_inbox();
         }
+        self.clear_irq();
     }
 }
 
