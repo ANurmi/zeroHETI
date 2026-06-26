@@ -23,7 +23,7 @@ module zeroheti_xbar
   localparam int unsigned NumSbr = 6;
 
   localparam bit [NumMgr-1:0][NumSbr-1:0] Connectivity = '{
-      '{1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0},
+      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
       '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
       '{1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1},
       '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}

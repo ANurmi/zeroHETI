@@ -78,7 +78,7 @@ module zeroheti_core
       .dbg_bus (dbg_bus),
       .mbx_bus (obi_mgr),
       .ext_sbr_bus (obi_sbr)
-    );
+  );
 
   logic debug_req;
 

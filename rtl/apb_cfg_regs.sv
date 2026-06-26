@@ -11,6 +11,7 @@ module apb_cfg_regs #(
 
   assign apb_i.prdata = short_hash;
   assign apb_i.pready = apb_i.psel & apb_i.penable;
+  assign apb_i.pslverr = 1'b0;
 
 endmodule : apb_cfg_regs
 
