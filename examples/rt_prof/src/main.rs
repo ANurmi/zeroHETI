@@ -138,6 +138,10 @@ mod app {
     /// Control task initial period
     const CTRL_TASK_PER_US: u32 = 2000;
 
+    // Initiation inteval for report tasks, i.e., on every Nth
+    // job of the matching control task a report job is spawned.
+    const REP_TASK_II: u8 = 7;
+
     const MBX_TASK_DL_US: u32 = 400;
     const UPD_TASK_DL_US: u32 = 1024;
 
@@ -354,7 +358,7 @@ mod app {
         fn init() -> Self {
             Self {
                 state: PidState::default(),
-                rep_cnt: 0,
+                rep_cnt: 3,
             }
         }
         fn exec(&mut self) {
@@ -375,7 +379,7 @@ mod app {
                 i2c.write(I2cAddr::M0 as u8, &[out_v]);
             });
 
-            if self.rep_cnt == 7 {
+            if self.rep_cnt >= REP_TASK_II - 1 {
                 self.rep_cnt = 0;
                 self.shared()
                     .obx
@@ -399,7 +403,7 @@ mod app {
         fn init() -> Self {
             Self {
                 state: PidState::default(),
-                rep_cnt: 1,
+                rep_cnt: 5,
             }
         }
         fn exec(&mut self) {
@@ -420,7 +424,7 @@ mod app {
                 i2c.write(I2cAddr::M1 as u8, &[out_v]);
             });
 
-            if self.rep_cnt == 7 {
+            if self.rep_cnt >= REP_TASK_II - 1 {
                 self.rep_cnt = 0;
                 self.shared()
                     .obx
@@ -444,7 +448,7 @@ mod app {
         fn init() -> Self {
             Self {
                 state: PidState::default(),
-                rep_cnt: 2,
+                rep_cnt: 1,
             }
         }
         fn exec(&mut self) {
@@ -465,7 +469,7 @@ mod app {
                 i2c.write(I2cAddr::M2 as u8, &[out_v]);
             });
 
-            if self.rep_cnt == 7 {
+            if self.rep_cnt >= REP_TASK_II - 1 {
                 self.rep_cnt = 0;
                 self.shared()
                     .obx
@@ -489,7 +493,7 @@ mod app {
         fn init() -> Self {
             Self {
                 state: PidState::default(),
-                rep_cnt: 3,
+                rep_cnt: 2,
             }
         }
         fn exec(&mut self) {
@@ -510,7 +514,7 @@ mod app {
                 i2c.write(I2cAddr::M3 as u8, &[out_v]);
             });
 
-            if self.rep_cnt == 7 {
+            if self.rep_cnt >= REP_TASK_II - 1 {
                 self.rep_cnt = 0;
                 self.shared()
                     .obx
