@@ -10,9 +10,9 @@ pub struct RegisterBlock {
     // 4 bytes of padding
     _pad: u32,
     /// 0xc..0x14 Inbox
-    pub ibox: Letter,
+    pub(crate) ibox: Letter,
     /// 0x14..0x1c Outbox
-    pub obox: Letter,
+    pub(crate) obox: Letter,
 }
 
 bitflags::bitflags! {
@@ -49,7 +49,7 @@ bitflags::bitflags! {
 ///
 /// Corresponds to inbox/outbox address layout.
 #[repr(C)]
-pub struct Letter {
+pub(crate) struct Letter {
     pub addr: u32,
     pub data: u32,
 }
