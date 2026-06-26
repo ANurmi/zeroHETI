@@ -13,7 +13,6 @@ use bsp::{
     apb_uart::*,
     i2c::I2c,
     interrupt::Interrupt,
-    mailbox::{Inbox, Mailbox, Outbox, MotorIdx},
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mtimer::*,
     nested_interrupt,
@@ -25,7 +24,7 @@ use bsp::{
 };
 use core::{i16, mem::MaybeUninit};
 use fugit::{ExtU32, ExtU64};
-use motor_control::{I2C_ADDRS, *};
+use motor_control::{I2C_ADDRS, mailbox::*, *};
 
 struct SimParams {
     hyperperiod_ms: u64,

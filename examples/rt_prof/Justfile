@@ -1,0 +1,19 @@
+load_factor := "50"
+runtime_ms := "10"
+fref := "ui-test/ref.stdout"
+frun := "ui-test/run.stdout"
+
+ui-freeze:
+    echo "Freezing latest outputs from {{ frun }} to {{ fref }}"
+    cp {{ frun }} {{ fref }}
+
+ui-compare:
+    echo "Comparing {{ frun }} to {{ fref }}"
+    diff -w --color {{ fref }} {{ frun }}
+
+ui-test:
+    echo "Running test, stdout to {{ frun }}"
+    LOAD_FACTOR={{ load_factor }} RUNTIME_MS={{ runtime_ms }} \
+        cargo run --release --features=rtl-tb,intc-clic \
+        | awk '/\[JTAG\] Waiting for end of computation/ { found = 1; next } found { print > "{{ frun }}" } { print }'
+    just ui-compare
