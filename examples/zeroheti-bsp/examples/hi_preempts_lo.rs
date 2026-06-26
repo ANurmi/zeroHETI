@@ -38,7 +38,7 @@ fn main() -> ! {
 
     // Check results after timeout
     let mut mtimer = MTimer::instance().into_oneshot();
-    let timeout = 1000u64.micros();
+    let timeout = 200u64.micros();
     mtimer.start(timeout);
 
     unsafe { riscv::interrupt::enable() };
