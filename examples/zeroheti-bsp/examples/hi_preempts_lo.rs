@@ -1,4 +1,11 @@
-//! Print hello over UART
+//! 1. Sets up two IRQs that should set their flag HI_VISITED or LO_VISITED correspondingly:
+//!
+//!     * HI = Ext0 @ p=2
+//!     * LO = Ext1 @ p=1, BLOCKING
+//!
+//! 2. Main pends LO, which pends HI. HI should preempt LO even if LO is
+//!    blocking. This results in execution of both LO and HI.
+//! 3. Timeout fires in 1000 us, verifying both LO and HI were visited.
 #![no_main]
 #![no_std]
 mod common;
