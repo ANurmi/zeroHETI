@@ -6,74 +6,6 @@ use bsp::rt as _;
 #[rtic::app(device = bsp, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3])]
 
 mod app {
-    // TODO: correct abstraction for addresses
-    const SIM_START: u32 = 0x0100_0000;
-    const SIM_STOP: u32 = 0x0100_0001;
-    const SIM_PRESCALER: u32 = 0x0100_0002;
-    const SIM_LOAD: u32 = 0x0100_0003;
-    const SIM_SEED: u32 = 0x0100_0004;
-
-    const TASK_MBX_PER: u32 = 0x0200_0000;
-    const TASK_MBX_DLN: u32 = 0x0200_0001;
-    const TASK_MBX_ACK: u32 = 0x0200_0002;
-
-    const TASK_UPD_0_PER: u32 = 0x0201_0000;
-    const TASK_UPD_0_DLN: u32 = 0x0201_0001;
-    const TASK_UPD_0_ACK: u32 = 0x0201_0002;
-
-    const TASK_UPD_1_PER: u32 = 0x0202_0000;
-    const TASK_UPD_1_DLN: u32 = 0x0202_0001;
-    const TASK_UPD_1_ACK: u32 = 0x0202_0002;
-
-    const TASK_UPD_2_PER: u32 = 0x0203_0000;
-    const TASK_UPD_2_DLN: u32 = 0x0203_0001;
-    const TASK_UPD_2_ACK: u32 = 0x0203_0002;
-
-    const TASK_UPD_3_PER: u32 = 0x0204_0000;
-    const TASK_UPD_3_DLN: u32 = 0x0204_0001;
-    const TASK_UPD_3_ACK: u32 = 0x0204_0002;
-
-    const TASK_CTRL_0_PER: u32 = 0x0205_0000;
-    const TASK_CTRL_0_DLN: u32 = 0x0205_0001;
-    const TASK_CTRL_0_ACK: u32 = 0x0205_0002;
-
-    const TASK_CTRL_1_PER: u32 = 0x0206_0000;
-    const TASK_CTRL_1_DLN: u32 = 0x0206_0001;
-    const TASK_CTRL_1_ACK: u32 = 0x0206_0002;
-
-    const TASK_CTRL_2_PER: u32 = 0x0207_0000;
-    const TASK_CTRL_2_DLN: u32 = 0x0207_0001;
-    const TASK_CTRL_2_ACK: u32 = 0x0207_0002;
-
-    const TASK_CTRL_3_PER: u32 = 0x0208_0000;
-    const TASK_CTRL_3_DLN: u32 = 0x0208_0001;
-    const TASK_CTRL_3_ACK: u32 = 0x0208_0002;
-
-    const TASK_REP_0_PER: u32 = 0x0209_0000;
-    const TASK_REP_0_DLN: u32 = 0x0209_0001;
-    const TASK_REP_0_ACK: u32 = 0x0209_0002;
-
-    const TASK_REP_1_PER: u32 = 0x020A_0000;
-    const TASK_REP_1_DLN: u32 = 0x020A_0001;
-    const TASK_REP_1_ACK: u32 = 0x020A_0002;
-
-    const TASK_REP_2_PER: u32 = 0x020B_0000;
-    const TASK_REP_2_DLN: u32 = 0x020B_0001;
-    const TASK_REP_2_ACK: u32 = 0x020B_0002;
-
-    const TASK_REP_3_PER: u32 = 0x020C_0000;
-    const TASK_REP_3_DLN: u32 = 0x020C_0001;
-    const TASK_REP_3_ACK: u32 = 0x020C_0002;
-
-    /// Sending a letter to this address causes a print of certain format
-    const MBX_PRINT_ADDR: u32 = 0x0300_0000;
-
-    // Motor I2C addresses
-    const I2C_M0_ADDR: u8 = 0x10;
-    const I2C_M1_ADDR: u8 = 0x11;
-    const I2C_M2_ADDR: u8 = 0x12;
-    const I2C_M3_ADDR: u8 = 0x13;
-
     const fn parse_u32(s: &str) -> u32 {
         let mut out: u32 = 0;
         let mut i: usize = 0;
@@ -87,6 +19,85 @@ mod app {
 
     // rt_prof-specific
 
+    #[derive(Clone, Copy)]
+    #[repr(u32)]
+    #[allow(unused)]
+    enum MbxAddr {
+        SimStart = 0x100_0000,
+        SimStop = 0x100_0001,
+        SimPrescaler = 0x100_0002,
+        SimLoad = 0x100_0003,
+        SimSeed = 0x100_0004,
+
+        /// Period
+        TaskMbxPer = 0x200_0000,
+        /// Deadline
+        TaskMbxDln = 0x200_0001,
+        /// Acknowledge
+        TaskMbxAck = 0x200_0002,
+
+        TaskUpd0Per = 0x201_0000,
+        TaskUpd0Dln = 0x201_0001,
+        TaskUpd0Ack = 0x201_0002,
+
+        TaskUpd1Per = 0x202_0000,
+        TaskUpd1Dln = 0x202_0001,
+        TaskUpd1Ack = 0x202_0002,
+
+        TaskUpd2Per = 0x203_0000,
+        TaskUpd2Dln = 0x203_0001,
+        TaskUpd2Ack = 0x203_0002,
+
+        TaskUpd3Per = 0x204_0000,
+        TaskUpd3Dln = 0x204_0001,
+        TaskUpd3Ack = 0x204_0002,
+
+        TaskCtrl0Per = 0x205_0000,
+        TaskCtrl0Dln = 0x205_0001,
+        TaskCtrl0Ack = 0x205_0002,
+
+        TaskCtrl1Per = 0x206_0000,
+        TaskCtrl1Dln = 0x206_0001,
+        TaskCtrl1Ack = 0x206_0002,
+
+        TaskCtrl2Per = 0x207_0000,
+        TaskCtrl2Dln = 0x207_0001,
+        TaskCtrl2Ack = 0x207_0002,
+
+        TaskCtrl3Per = 0x208_0000,
+        TaskCtrl3Dln = 0x208_0001,
+        TaskCtrl3Ack = 0x208_0002,
+
+        TaskRep0Per = 0x209_0000,
+        TaskRep0Dln = 0x209_0001,
+        TaskRep0Ack = 0x209_0002,
+
+        TaskRep1Per = 0x20A_0000,
+        TaskRep1Dln = 0x20A_0001,
+        TaskRep1Ack = 0x20A_0002,
+
+        TaskRep2Per = 0x20B_0000,
+        TaskRep2Dln = 0x20B_0001,
+        TaskRep2Ack = 0x20B_0002,
+
+        TaskRep3Per = 0x20C_0000,
+        TaskRep3Dln = 0x20C_0001,
+        TaskRep3Ack = 0x20C_0002,
+
+        /// Sending a letter to this address causes a print of certain format
+        Print = 0x300_0000,
+    }
+
+    // Motor I2C addresses
+    #[derive(Clone, Copy)]
+    #[repr(u8)]
+    enum I2cAddr {
+        M0 = 0x10,
+        M1 = 0x11,
+        M2 = 0x12,
+        M3 = 0x13,
+    }
+
     #[repr(usize)]
     pub enum MotorIdx {
         M0 = 0,
@@ -96,13 +107,13 @@ mod app {
     }
 
     #[inline]
-    fn sim_task_pend(obx: &mut Outbox, addr: u32) {
-        obx.send(addr, 0x1);
+    fn sim_task_pend(obx: &mut Outbox, addr: MbxAddr) {
+        obx.send(addr as u32, 0x1);
     }
 
     #[inline]
-    fn sim_task_ack(obx: &mut Outbox, addr: u32) {
-        obx.send(addr, 0x0);
+    fn sim_task_ack(obx: &mut Outbox, addr: MbxAddr) {
+        obx.send(addr as u32, 0x0);
     }
 
     fn restart_timer_with_period(idx: MotorIdx, nperiod: timer_group::Duration) {
@@ -223,25 +234,26 @@ mod app {
                     // Safety: sim and app are not yet running
                     let (_, mut obx) = unsafe { Mailbox::instance() }.split();
 
-                    const CMDS: &[(u32, u32)] = &[
-                        (SIM_PRESCALER, 10),
-                        (SIM_LOAD, LF),
-                        (TASK_MBX_DLN, 0x400),
-                        (TASK_REP_0_DLN, 0x400),
-                        (TASK_REP_1_DLN, 0x400),
-                        (TASK_REP_2_DLN, 0x400),
-                        (TASK_REP_3_DLN, 0x400),
-                        (TASK_UPD_0_DLN, 0x400),
-                        (TASK_UPD_1_DLN, 0x400),
-                        (TASK_UPD_2_DLN, 0x400),
-                        (TASK_UPD_3_DLN, 0x400),
-                        (TASK_CTRL_0_DLN, 0x400),
-                        (TASK_CTRL_1_DLN, 0x400),
-                        (TASK_CTRL_2_DLN, 0x400),
-                        (TASK_CTRL_3_DLN, 0x400),
-                        (SIM_START, 0x0),
+                    const CMDS: &[(MbxAddr, u32)] = &[
+                        (MbxAddr::SimPrescaler, 10),
+                        (MbxAddr::SimLoad, LF),
+                        (MbxAddr::TaskMbxDln, 0x400),
+                        (MbxAddr::TaskRep0Dln, 0x400),
+                        (MbxAddr::TaskRep1Dln, 0x400),
+                        (MbxAddr::TaskRep2Dln, 0x400),
+                        (MbxAddr::TaskRep3Dln, 0x400),
+                        (MbxAddr::TaskUpd0Dln, 0x400),
+                        (MbxAddr::TaskUpd1Dln, 0x400),
+                        (MbxAddr::TaskUpd2Dln, 0x400),
+                        (MbxAddr::TaskUpd3Dln, 0x400),
+                        (MbxAddr::TaskCtrl0Dln, 0x400),
+                        (MbxAddr::TaskCtrl1Dln, 0x400),
+                        (MbxAddr::TaskCtrl2Dln, 0x400),
+                        (MbxAddr::TaskCtrl3Dln, 0x400),
+                        (MbxAddr::SimStart, 0x0),
                     ];
-                    CMDS.iter().for_each(|&(addr, data)| obx.send(addr, data));
+                    CMDS.iter()
+                        .for_each(|&(addr, data)| obx.send(addr as u32, data));
 
                     unsafe {
                         // Clear instruction & cycle counters
@@ -258,7 +270,7 @@ mod app {
                     // Terminate scoreboard
                     // Safety: unsure if safe. We'll do it anyway.
                     let (_, mut obx) = unsafe { Mailbox::instance() }.split();
-                    obx.send(SIM_STOP, 0x1);
+                    obx.send(MbxAddr::SimStop as u32, 0x1);
 
                     // Calculate simulation duration, accounting for setup time
                     let duration_real_cc = now - *start_time;
@@ -330,7 +342,7 @@ mod app {
             let mut rbuf = [0];
             self.shared().i2c.lock(|i2c| {
                 // Read motor status
-                i2c.read(I2C_M0_ADDR, &mut rbuf);
+                i2c.read(I2cAddr::M0 as u8, &mut rbuf);
             });
             let measured_v = u8::from_le_bytes(rbuf);
 
@@ -341,16 +353,16 @@ mod app {
 
             self.shared().i2c.lock(|i2c| {
                 // Write to motor
-                i2c.write(I2C_M0_ADDR, &[out_v]);
+                i2c.write(I2cAddr::M0 as u8, &[out_v]);
             });
 
             self.shared()
                 .obx
-                .lock(|obx| sim_task_pend(obx, TASK_REP_0_ACK));
+                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskRep0Ack));
             Report0::spawn(()).unwrap();
             self.shared()
                 .obx
-                .lock(|obx| sim_task_ack(obx, TASK_CTRL_0_ACK));
+                .lock(|obx| sim_task_ack(obx, MbxAddr::TaskCtrl0Ack));
         }
     }
 
@@ -370,7 +382,7 @@ mod app {
             let mut rbuf = [0];
             self.shared().i2c.lock(|i2c| {
                 // Read motor status
-                i2c.read(I2C_M1_ADDR, &mut rbuf);
+                i2c.read(I2cAddr::M1 as u8, &mut rbuf);
             });
             let measured_v = u8::from_le_bytes(rbuf);
 
@@ -381,16 +393,16 @@ mod app {
 
             self.shared().i2c.lock(|i2c| {
                 // Write to motor
-                i2c.write(I2C_M1_ADDR, &[out_v]);
+                i2c.write(I2cAddr::M1 as u8, &[out_v]);
             });
 
             self.shared()
                 .obx
-                .lock(|obx| sim_task_pend(obx, TASK_REP_1_ACK));
+                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskRep1Ack));
             Report1::spawn(()).unwrap();
             self.shared()
                 .obx
-                .lock(|obx| sim_task_ack(obx, TASK_CTRL_1_ACK));
+                .lock(|obx| sim_task_ack(obx, MbxAddr::TaskCtrl1Ack));
         }
     }
 
@@ -410,7 +422,7 @@ mod app {
             let mut rbuf = [0];
             self.shared().i2c.lock(|i2c| {
                 // Read motor status
-                i2c.read(I2C_M2_ADDR, &mut rbuf);
+                i2c.read(I2cAddr::M2 as u8, &mut rbuf);
             });
             let measured_v = u8::from_le_bytes(rbuf);
 
@@ -421,16 +433,16 @@ mod app {
 
             self.shared().i2c.lock(|i2c| {
                 // Write to motor
-                i2c.write(I2C_M2_ADDR, &[out_v]);
+                i2c.write(I2cAddr::M2 as u8, &[out_v]);
             });
 
             self.shared()
                 .obx
-                .lock(|obx| sim_task_pend(obx, TASK_REP_2_ACK));
+                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskRep2Ack));
             Report2::spawn(()).unwrap();
             self.shared()
                 .obx
-                .lock(|obx| sim_task_ack(obx, TASK_CTRL_2_ACK));
+                .lock(|obx| sim_task_ack(obx, MbxAddr::TaskCtrl2Ack));
         }
     }
 
@@ -450,7 +462,7 @@ mod app {
             let mut rbuf = [0];
             self.shared().i2c.lock(|i2c| {
                 // Read motor status
-                i2c.read(I2C_M3_ADDR, &mut rbuf);
+                i2c.read(I2cAddr::M3 as u8, &mut rbuf);
             });
             let measured_v = u8::from_le_bytes(rbuf);
 
@@ -461,16 +473,16 @@ mod app {
 
             self.shared().i2c.lock(|i2c| {
                 // Write to motor
-                i2c.write(I2C_M3_ADDR, &[out_v]);
+                i2c.write(I2cAddr::M3 as u8, &[out_v]);
             });
 
             self.shared()
                 .obx
-                .lock(|obx| sim_task_pend(obx, TASK_REP_3_ACK));
+                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskRep3Ack));
             Report3::spawn(()).unwrap();
             self.shared()
                 .obx
-                .lock(|obx| sim_task_ack(obx, TASK_CTRL_3_ACK));
+                .lock(|obx| sim_task_ack(obx, MbxAddr::TaskCtrl3Ack));
         }
     }
 
@@ -498,23 +510,23 @@ mod app {
             sprintln!("[Mailbox]");
             self.shared()
                 .obx
-                .lock(|obx| sim_task_pend(obx, TASK_UPD_0_ACK));
+                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd0Ack));
             Update0::spawn(()).unwrap();
             self.shared()
                 .obx
-                .lock(|obx| sim_task_pend(obx, TASK_UPD_1_ACK));
+                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd1Ack));
             Update1::spawn(()).unwrap();
             self.shared()
                 .obx
-                .lock(|obx| sim_task_pend(obx, TASK_UPD_2_ACK));
+                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd2Ack));
             Update2::spawn(()).unwrap();
             self.shared()
                 .obx
-                .lock(|obx| sim_task_pend(obx, TASK_UPD_3_ACK));
+                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd3Ack));
             Update3::spawn(()).unwrap();
             self.shared()
                 .obx
-                .lock(|obx| sim_task_ack(obx, TASK_MBX_ACK));
+                .lock(|obx| sim_task_ack(obx, MbxAddr::TaskMbxAck));
         }
     }
 
@@ -532,13 +544,13 @@ mod app {
             let nperiod_us = self.shared().mail_buf_0.lock(|m| *m);
             restart_timer_with_period(MotorIdx::M0, nperiod_us.micros());
             self.shared().obx.lock(|obx| {
-                obx.send(TASK_CTRL_0_PER, nperiod_us);
-                obx.send(TASK_CTRL_0_DLN, nperiod_us);
+                obx.send(MbxAddr::TaskCtrl0Per as u32, nperiod_us);
+                obx.send(MbxAddr::TaskCtrl0Dln as u32, nperiod_us);
 
                 // invalidate these if currently active
-                sim_task_ack(obx, TASK_CTRL_0_ACK);
-                sim_task_ack(obx, TASK_REP_0_ACK);
-                sim_task_ack(obx, TASK_UPD_0_ACK);
+                sim_task_ack(obx, MbxAddr::TaskCtrl0Ack);
+                sim_task_ack(obx, MbxAddr::TaskRep0Ack);
+                sim_task_ack(obx, MbxAddr::TaskUpd0Ack);
             });
         }
     }
@@ -556,12 +568,12 @@ mod app {
             self.shared().obx.lock(|obx| {
                 let nperiod_us = self.shared().mail_buf_1.lock(|m| *m);
                 restart_timer_with_period(MotorIdx::M1, nperiod_us.micros());
-                obx.send(TASK_CTRL_1_PER, nperiod_us);
-                obx.send(TASK_CTRL_1_DLN, nperiod_us);
+                obx.send(MbxAddr::TaskCtrl1Per as u32, nperiod_us);
+                obx.send(MbxAddr::TaskCtrl1Dln as u32, nperiod_us);
                 // invalidate these if currently active
-                sim_task_ack(obx, TASK_CTRL_1_ACK);
-                sim_task_ack(obx, TASK_REP_1_ACK);
-                sim_task_ack(obx, TASK_UPD_1_ACK);
+                sim_task_ack(obx, MbxAddr::TaskCtrl1Ack);
+                sim_task_ack(obx, MbxAddr::TaskRep1Ack);
+                sim_task_ack(obx, MbxAddr::TaskUpd1Ack);
             });
         }
     }
@@ -580,12 +592,12 @@ mod app {
             self.shared().obx.lock(|obx| {
                 let nperiod_us: u32 = self.shared().mail_buf_2.lock(|m| *m);
                 restart_timer_with_period(MotorIdx::M2, nperiod_us.micros());
-                obx.send(TASK_CTRL_2_PER, nperiod_us);
-                obx.send(TASK_CTRL_2_DLN, nperiod_us);
+                obx.send(MbxAddr::TaskCtrl2Per as u32, nperiod_us);
+                obx.send(MbxAddr::TaskCtrl2Dln as u32, nperiod_us);
 
-                sim_task_ack(obx, TASK_CTRL_2_ACK);
-                sim_task_ack(obx, TASK_REP_2_ACK);
-                sim_task_ack(obx, TASK_UPD_2_ACK);
+                sim_task_ack(obx, MbxAddr::TaskCtrl2Ack);
+                sim_task_ack(obx, MbxAddr::TaskRep2Ack);
+                sim_task_ack(obx, MbxAddr::TaskUpd2Ack);
             });
         }
     }
@@ -604,12 +616,12 @@ mod app {
             self.shared().obx.lock(|obx| {
                 let nperiod_us: u32 = self.shared().mail_buf_3.lock(|m| *m);
                 restart_timer_with_period(MotorIdx::M3, nperiod_us.micros());
-                obx.send(TASK_CTRL_3_PER, nperiod_us);
-                obx.send(TASK_CTRL_3_DLN, nperiod_us);
+                obx.send(MbxAddr::TaskCtrl3Per as u32, nperiod_us);
+                obx.send(MbxAddr::TaskCtrl3Dln as u32, nperiod_us);
 
-                sim_task_ack(obx, TASK_CTRL_3_ACK);
-                sim_task_ack(obx, TASK_REP_3_ACK);
-                sim_task_ack(obx, TASK_UPD_3_ACK);
+                sim_task_ack(obx, MbxAddr::TaskCtrl3Ack);
+                sim_task_ack(obx, MbxAddr::TaskRep3Ack);
+                sim_task_ack(obx, MbxAddr::TaskUpd3Ack);
             });
         }
     }
@@ -628,9 +640,9 @@ mod app {
             let ctrl_buf = self.shared().ctrl_buf_0.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((0u8 as u32) << 8) | (ctrl_buf as u32);
             self.shared().obx.lock(|obx| {
-                obx.send(MBX_PRINT_ADDR, rep_letter);
+                obx.send(MbxAddr::Print as u32, rep_letter);
 
-                sim_task_ack(obx, TASK_REP_0_ACK);
+                sim_task_ack(obx, MbxAddr::TaskRep0Ack);
             });
         }
     }
@@ -649,9 +661,9 @@ mod app {
             let ctrl_buf = self.shared().ctrl_buf_1.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((1u8 as u32) << 8) | (ctrl_buf as u32);
             self.shared().obx.lock(|obx| {
-                obx.send(MBX_PRINT_ADDR, rep_letter);
+                obx.send(MbxAddr::Print as u32, rep_letter);
 
-                sim_task_ack(obx, TASK_REP_1_ACK);
+                sim_task_ack(obx, MbxAddr::TaskRep1Ack);
             });
         }
     }
@@ -669,9 +681,9 @@ mod app {
             let ctrl_buf = self.shared().ctrl_buf_2.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((2u8 as u32) << 8) | (ctrl_buf as u32);
             self.shared().obx.lock(|obx| {
-                obx.send(MBX_PRINT_ADDR, rep_letter);
+                obx.send(MbxAddr::Print as u32, rep_letter);
 
-                sim_task_ack(obx, TASK_REP_2_ACK);
+                sim_task_ack(obx, MbxAddr::TaskRep2Ack);
             });
         }
     }
@@ -689,9 +701,9 @@ mod app {
             let ctrl_buf = self.shared().ctrl_buf_3.lock(|buf| *buf);
             let rep_letter = ((time_now as u32) << 16) | ((3u8 as u32) << 8) | (ctrl_buf as u32);
             self.shared().obx.lock(|obx| {
-                obx.send(MBX_PRINT_ADDR, rep_letter);
+                obx.send(MbxAddr::Print as u32, rep_letter);
 
-                sim_task_ack(obx, TASK_REP_3_ACK);
+                sim_task_ack(obx, MbxAddr::TaskRep3Ack);
             });
         }
     }
