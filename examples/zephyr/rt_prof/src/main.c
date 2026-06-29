@@ -48,7 +48,12 @@ static const uint8_t irqs[] = {
     IRQ_MBX,
     IRQ_EXT(0), IRQ_EXT(1), IRQ_EXT(2), IRQ_EXT(3),
 };
-static struct k_timer finish_timer;
+static void finish_sim(void);
+static inline void check_runtime(void)
+{
+    if ((k_cycle_get_64() - sim_start_cycles) >= (uint64_t)RUNTIME_MS * (CPU_FREQ_HZ / 1000U))
+        finish_sim();
+}
 
 static uint8_t compute_pid(uint8_t input, int idx)
 {
@@ -77,6 +82,7 @@ static uint8_t compute_pid(uint8_t input, int idx)
 static void isr_getmail(const void *arg)
 {
     ARG_UNUSED(arg);
+    check_runtime();
     unsigned int prev = mintthresh_write(PRIO_MAIL);  
     __asm__ volatile("csrsi mstatus, 0x8");           
 
@@ -365,9 +371,29 @@ static void isr_rep3(const void *arg)
     mintthresh_write(prev);
 }
 
-static void finish_sim(struct k_timer *timer)
+static void finish_sim(void)
 {
-    ARG_UNUSED(timer);
+    irq_lock();                                  
+
+    uint64_t total_cc = k_cycle_get_64() - sim_start_cycles;
+
+    send_letter(SIM_STOP, 1);                   
+
+    for (volatile int i = 0; i < 100; i++)
+        __asm__ volatile("nop");
+
+    uint64_t instret, active_cc;
+    READ_CSR64(minstreth, minstret, instret);  
+    READ_CSR64(mcycleh,   mcycle,   active_cc); 
+
+    printf("Instructions retired: %llu, cycles: %llu\n",
+           (unsigned long long)instret, (unsigned long long)active_cc);
+    printf("Total time (cc): %llu, active time (cc): %llu\n",
+           (unsigned long long)total_cc, (unsigned long long)active_cc);
+    if (total_cc != 0)
+        printf("CPU utilization: %llu%%\n",
+               (unsigned long long)((active_cc * 100ULL) / total_cc));
+
     debug_signal_pass();
 }
 int main(void)
@@ -439,9 +465,6 @@ int main(void)
     }
 
     sim_start_cycles = k_cycle_get_64();
-
-    k_timer_init(&finish_timer, finish_sim, NULL);
-    k_timer_start(&finish_timer, K_MSEC(RUNTIME_MS), K_NO_WAIT);
 
     /* release interrupts */
     mintthresh_write(0x00); 
