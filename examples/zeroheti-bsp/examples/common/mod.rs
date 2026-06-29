@@ -67,7 +67,6 @@ pub fn setup_irq(irq: impl InterruptNumber) {
 /// Copy and customize this function if you need more involved configurations.
 #[allow(dead_code)]
 pub fn tear_irq(irq: impl InterruptNumber) {
-    sprintln!("Tear down (id = {})", irq.number());
     #[cfg(feature = "intc-clic")]
     {
         use zeroheti_bsp::clic::{Clic, Polarity, Trig};
