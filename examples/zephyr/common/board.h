@@ -32,7 +32,6 @@
 void riscv_clic_irq_set_pending(uint32_t irq);
 #define clic_pend_irq(n)    riscv_clic_irq_set_pending(n)
 
-/* --- mintthresh helpers --- */
 /*
  * raise threshold, save old
  * re-enable global IRQs
