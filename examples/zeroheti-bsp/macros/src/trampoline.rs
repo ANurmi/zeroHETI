@@ -63,7 +63,7 @@ pub(crate) fn generate_pcs_trap_entry(interrupt: &str) -> proc_macro2::TokenStre
     let instructions = format!(
         r#"core::arch::global_asm!("
                 .section .trap, \"ax\"
-                .align 4
+                .balign 4
                 .global _start_{interrupt}_trap
                 _start_{interrupt}_trap:
                     #----- Interrupts disabled on entry ---#
@@ -100,7 +100,7 @@ pub(crate) fn generate_nested_trap_entry(interrupt: &str, abi: Abi) -> proc_macr
     let instructions = format!(
         r#"core::arch::global_asm!("
                 .section .trap, \"ax\"
-                    .align 4
+                    .balign 4
                     .global _start_{interrupt}_trap
                     _start_{interrupt}_trap:
                         #----- Interrupts disabled on entry ---#
@@ -143,7 +143,7 @@ pub(crate) fn generate_continue_nested_trap_impl(abi: Abi) -> TokenStream {
         r#"
         core::arch::global_asm!("
             .section .trap, \"ax\"
-            .align 4
+            .balign 4
             .global _continue_nested_trap
             _continue_nested_trap:
                 jalr ra, a0, 0                              // jump to corresponding interrupt handler proper (address stored in a0)

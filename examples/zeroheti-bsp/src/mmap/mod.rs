@@ -3,9 +3,9 @@ pub mod clic;
 pub mod edfic;
 pub mod hetic;
 pub mod i2c;
+pub mod mailbox;
 pub mod mtimer;
 pub mod uart;
-pub mod mailbox;
 
 /// Base address for Hetic/CLIC/EDFIC
 pub const INTC_BASE: usize = 0x0010_0000;
