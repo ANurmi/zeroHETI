@@ -103,3 +103,8 @@ jobs:
           make verilate INTC=EDFIC
           cd examples/zeroheti-bsp
           RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-edfic --example all_irqs
+
+      - name: Test APB timers (CLIC)
+        run: |
+          cd examples/zeroheti-bsp
+          RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-clic --example apb_timers
