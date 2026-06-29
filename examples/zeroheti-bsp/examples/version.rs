@@ -2,7 +2,9 @@
 #![no_main]
 #![no_std]
 
-use zeroheti_bsp::{CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, mmio, rt::entry, sprintln};
+use zeroheti_bsp::{
+    CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, mmio, rt::entry, sprintln,
+};
 
 #[entry]
 fn main() -> ! {
