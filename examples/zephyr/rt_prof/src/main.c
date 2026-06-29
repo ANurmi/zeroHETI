@@ -33,8 +33,8 @@
 #define DEADLINE_REP_US   2000U
 #define SIM_PRESCALER_VAL 10U
 #define RANDOM_SEED       0xB0110c55U
-#define LOAD_FACTOR       50U
-#define RUNTIME_MS        100U
+#define LOAD_FACTOR       10U
+#define RUNTIME_MS        10U
 
 /* Shared state */
 static volatile uint32_t period_directive[4];
@@ -48,6 +48,7 @@ static const uint8_t irqs[] = {
     IRQ_MBX,
     IRQ_EXT(0), IRQ_EXT(1), IRQ_EXT(2), IRQ_EXT(3),
 };
+static struct k_timer finish_timer;
 
 static void isr_getmail(const void *arg)
 { 
@@ -105,9 +106,16 @@ static void isr_rep3(const void *arg)
     ARG_UNUSED(arg); 
 }
 
+static void finish_sim(struct k_timer *timer)
+{
+    ARG_UNUSED(timer);
+    debug_signal_pass();
+}
 int main(void)
 {
 	printf("rt-prof demo %s\n", CONFIG_BOARD_TARGET);
+	
+    i2c_init(I2C_PRESCALER);
 
     /* Setup IRQs */
     IRQ_CONNECT(IRQ_MBX,          PRIO_MAIL, isr_getmail, NULL, 1);
@@ -133,6 +141,54 @@ int main(void)
         irq_enable(irqs[i]);
     }
 
-    debug_signal_pass();
-	return 0;
+    // Block all interrupts
+    mintthresh_write(0xFF);
+
+    /* mailbox deadline */
+    send_letter(TASK_DEADLINE(TASK_MBX), DEADLINE_MBX_US);
+
+    /* control periods */
+    for (size_t i = 0; i < NUM_MOTORS; i++) {
+        send_letter(TASK_PERIOD(TASK_CTRL(i)), CTRL_PERIOD_US);
+    }
+
+    /* Control deadline */
+    for (size_t i = 0; i < NUM_MOTORS; i++) {
+        send_letter(TASK_DEADLINE(TASK_CTRL(i)), DEADLINE_CTRL_US);
+    }
+    
+    /* update deadline */
+    for (size_t i = 0; i < NUM_MOTORS; i++) {
+        send_letter(TASK_DEADLINE(TASK_UPD(i)), DEADLINE_UPD_US);
+    }
+
+    /* report deadline */
+    for (size_t i = 0; i < NUM_MOTORS; i++) {
+        send_letter(TASK_DEADLINE(TASK_REP(i)), DEADLINE_REP_US);
+    }
+
+    /* set SIM parameters, start SIM */
+    send_letter(SIM_PRESCALER, SIM_PRESCALER_VAL);
+    send_letter(SIM_LOADFACTOR, LOAD_FACTOR);
+    send_letter(SIM_START, 0);
+
+    /* config and start timers */
+    for (size_t i = 0; i < NUM_MOTORS; i++) {
+        uint32_t base = TIMER_BASE(i);
+        sys_write32(US_TO_TICKS(CTRL_PERIOD_US), TIMER_CMP(base));
+        sys_write32(0x1, TIMER_CTRL(base));
+    }
+
+    sim_start_cycles = k_cycle_get_64();
+
+    k_timer_init(&finish_timer, finish_sim, NULL);
+    k_timer_start(&finish_timer, K_MSEC(RUNTIME_MS), K_NO_WAIT);
+
+    /* release interrupts */
+    mintthresh_write(0x00); 
+    
+    //Suspend main
+    k_sleep(K_FOREVER);
+    
+    return 0;
 }
