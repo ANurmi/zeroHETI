@@ -119,7 +119,8 @@ impl Periodic {
         self.0.set_cmp(duration.ticks());
     }
 
-    /// Schedules the TimerNCmp interrupt to fire every `duration`
+    /// Schedules the TimerNCmp interrupt to fire every `duration`. Call
+    /// [Self::start] to start the timer.
     ///
     /// Also sets the counter to a specific value, allowing to trigger the first
     /// interrupt ahead of schedule.
@@ -128,6 +129,20 @@ impl Periodic {
         // Setting CMP also sets COUNTER, so we override that afterwards
         self.0.set_cmp(period.ticks());
         self.0.set_counter(offset.ticks());
+    }
+
+    /// Schedules the TimerNCmp interrupt to fire every `duration`, with
+    /// specific next trigger time (must be lower than period). Call
+    /// [Self::start] to start the timer.
+    ///
+    /// Also sets the counter to a specific value, allowing to trigger the first
+    /// interrupt ahead of schedule.
+    #[inline]
+    pub fn set_period_next(&mut self, period: Duration, next: Duration) {
+        debug_assert!(next <= period);
+        // Setting CMP also sets COUNTER, so we override that afterwards
+        self.0.set_cmp(period.ticks());
+        self.0.set_counter((period - next).ticks());
     }
 
     /// Starts the timer
