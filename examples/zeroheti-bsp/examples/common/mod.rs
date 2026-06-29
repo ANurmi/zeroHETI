@@ -71,6 +71,7 @@ pub fn tear_irq(irq: impl InterruptNumber) {
     {
         use zeroheti_bsp::clic::{Clic, Polarity, Trig};
 
+        unsafe { Clic::ip(irq).unpend() };
         Clic::ie(irq).disable();
         Clic::ctl(irq).set_level(0x0);
         Clic::attr(irq).set_shv(false);
@@ -81,6 +82,7 @@ pub fn tear_irq(irq: impl InterruptNumber) {
     {
         use zeroheti_bsp::hetic::Hetic;
 
+        Hetic::line(irq.number()).unpend();
         Hetic::line(irq.number()).set_level_prio(0x0);
         Hetic::line(irq.number()).disable();
     }
@@ -88,6 +90,7 @@ pub fn tear_irq(irq: impl InterruptNumber) {
     {
         use zeroheti_bsp::edfic::Edfic;
 
+        Edfic::line(irq.number()).unpend();
         Edfic::line(irq.number()).disable();
     }
 }
