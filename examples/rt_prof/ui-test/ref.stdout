@@ -12,11 +12,11 @@ MachineTimer::Setup
 [Report 0]
 [REP] Motor #0 status 137 timestamp   3350 us
 [Report 1]
-[REP] Motor #1 status 137 timestamp   3442 us
+[REP] Motor #1 status 137 timestamp   3441 us
 [Report 2]
-[REP] Motor #2 status 137 timestamp   3534 us
+[REP] Motor #2 status 137 timestamp   3533 us
 [Report 3]
-[REP] Motor #3 status 137 timestamp   3626 us
+[REP] Motor #3 status 137 timestamp   3625 us
 [Control0]
 [Control1]
 [Control2]
@@ -26,9 +26,9 @@ MachineTimer::Setup
 [Report 1]
 [REP] Motor #1 status 124 timestamp   5442 us
 [Report 2]
-[REP] Motor #2 status 125 timestamp   5534 us
+[REP] Motor #2 status 125 timestamp   5533 us
 [Report 3]
-[REP] Motor #3 status 125 timestamp   5626 us
+[REP] Motor #3 status 125 timestamp   5625 us
 [Mailbox]
 [Update 0]
 [Update 1]
@@ -36,7 +36,7 @@ MachineTimer::Setup
 [Update 3]
 [Control2]
 [Report 2]
-[REP] Motor #2 status 124 timestamp   9228 us
+[REP] Motor #2 status 124 timestamp   9229 us
 [SCB] Simulation complete
  - Scoreboard task log: 
 
@@ -49,7 +49,7 @@ T05 (    I2cCtrl0 ) - count:   3, avg. slack:  884 us, worst slack:  815 us
 T06 (    I2cCtrl1 ) - count:   3, avg. slack:  746 us, worst slack:  608 us
 T07 (    I2cCtrl2 ) - count:   4, avg. slack: 1085 us, worst slack:  410 us
 T08 (    I2cCtrl3 ) - count:   3, avg. slack:  476 us, worst slack:  202 us
-T09 (  I2cReport0 ) - count:   3, avg. slack:  540 us, worst slack:  299 us
+T09 (  I2cReport0 ) - count:   3, avg. slack:  537 us, worst slack:  289 us
 T10 (  I2cReport1 ) - count:   3, avg. slack:  616 us, worst slack:  413 us
 T11 (  I2cReport2 ) - count:   4, avg. slack:  748 us, worst slack:  526 us
 T12 (  I2cReport3 ) - count:   3, avg. slack:  768 us, worst slack:  640 us
@@ -62,7 +62,7 @@ MachineTimer::Teardown
 - Retired instructions:      15159
 - Total time w/o setup (cc): 100083
   * Setup              (cc): 1902
-  * Active time        (cc): 32636
+  * Active time        (cc): 32638
 - CPU utilization      (%): 32
 [TB] Program returned EXIT_SUCCESS
 make[1]: Leaving directory '/home/heksa/code/github/zeroHETI/verilator'
