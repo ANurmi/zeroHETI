@@ -33,7 +33,7 @@
 #define DEADLINE_REP_US   2000U
 #define SIM_PRESCALER_VAL 10U
 #define RANDOM_SEED       0xB0110c55U
-#define LOAD_FACTOR       10U
+#define LOAD_FACTOR       0U
 #define RUNTIME_MS        10U
 
 /* Shared state */
@@ -75,25 +75,139 @@ static uint8_t compute_pid(uint8_t input, int idx)
 }
 
 static void isr_getmail(const void *arg)
-{ 
-    ARG_UNUSED(arg); 
+{
+    ARG_UNUSED(arg);
+    unsigned int prev = mintthresh_write(PRIO_MAIL);  
+    __asm__ volatile("csrsi mstatus, 0x8");           
+
+    // inbox letters
+    for (int i = 0; i < NUM_MOTORS; i++) {
+        uint32_t addr, data;
+        read_letter(&addr, &data);                     
+        switch (addr) {
+            case 0x100: period_directive[0] = data; break;
+            case 0x101: period_directive[1] = data; break;
+            case 0x102: period_directive[2] = data; break;
+            case 0x103: period_directive[3] = data; break;
+            default: break;                           
+        }
+    }
+
+    // Clear the mailbox IRQ line after reading inbox letters
+    sys_write32(MBX_CTRL_IRQ_CLR, MBX_CTRL);
+
+    // pend UpdateCtrl 
+    for (int i = 0; i < NUM_MOTORS; i++) {
+        send_letter(TASK_ACK(TASK_UPD(i)), 1);        
+        clic_pend_irq(IRQ_TIMER_OVF(i));         
+    }
+
+    /* 4. retire GetMail */
+    send_letter(TASK_ACK(TASK_MBX), 0);
+
+    mintthresh_write(prev);
 }
 
 static void isr_upd0(const void *arg)
-{ 
-    ARG_UNUSED(arg); 
+{
+    ARG_UNUSED(arg);
+    unsigned int prev = mintthresh_write(PRIO_UPD);  
+    __asm__ volatile("csrsi mstatus, 0x8");
+
+    send_letter(TASK_ACK(TASK_CTRL(0)), 0);
+    send_letter(TASK_ACK(TASK_REP(0)),  0);
+
+    //new directive period
+    uint32_t nperiod = period_directive[0];
+    uint32_t base = TIMER_BASE(0);
+    sys_write32(0x0, TIMER_CTRL(base));            
+    sys_write32(US_TO_TICKS(nperiod), TIMER_CMP(base));
+    sys_write32(0x1, TIMER_CTRL(base));       
+
+    //new control period + deadline
+    send_letter(TASK_PERIOD(TASK_CTRL(0)),   nperiod);
+    send_letter(TASK_DEADLINE(TASK_CTRL(0)), nperiod);
+
+    //retire UpdateCtrl
+    send_letter(TASK_ACK(TASK_UPD(0)), 0);
+
+    mintthresh_write(prev);
 }
+
 static void isr_upd1(const void *arg)
-{ 
-    ARG_UNUSED(arg); 
+{
+    ARG_UNUSED(arg);
+    unsigned int prev = mintthresh_write(PRIO_UPD);  
+    __asm__ volatile("csrsi mstatus, 0x8");
+
+    send_letter(TASK_ACK(TASK_CTRL(1)), 0);
+    send_letter(TASK_ACK(TASK_REP(1)),  0);
+
+    //new directive period
+    uint32_t nperiod = period_directive[1];
+    uint32_t base = TIMER_BASE(1);
+    sys_write32(0x0, TIMER_CTRL(base));            
+    sys_write32(US_TO_TICKS(nperiod), TIMER_CMP(base));
+    sys_write32(0x1, TIMER_CTRL(base));       
+
+    //new control period + deadline
+    send_letter(TASK_PERIOD(TASK_CTRL(1)),   nperiod);
+    send_letter(TASK_DEADLINE(TASK_CTRL(1)), nperiod);
+
+    //retire UpdateCtrl
+    send_letter(TASK_ACK(TASK_UPD(1)), 0);
+
+    mintthresh_write(prev);
 }
 static void isr_upd2(const void *arg)
-{ 
-    ARG_UNUSED(arg); 
+{
+    ARG_UNUSED(arg);
+    unsigned int prev = mintthresh_write(PRIO_UPD);  
+    __asm__ volatile("csrsi mstatus, 0x8");
+
+    send_letter(TASK_ACK(TASK_CTRL(2)), 0);
+    send_letter(TASK_ACK(TASK_REP(2)),  0);
+
+    //new directive period
+    uint32_t nperiod = period_directive[2];
+    uint32_t base = TIMER_BASE(2);
+    sys_write32(0x0, TIMER_CTRL(base));            
+    sys_write32(US_TO_TICKS(nperiod), TIMER_CMP(base));
+    sys_write32(0x1, TIMER_CTRL(base));       
+
+    //new control period + deadline
+    send_letter(TASK_PERIOD(TASK_CTRL(2)),   nperiod);
+    send_letter(TASK_DEADLINE(TASK_CTRL(2)), nperiod);
+
+    //retire UpdateCtrl
+    send_letter(TASK_ACK(TASK_UPD(2)), 0);
+
+    mintthresh_write(prev);
 }
 static void isr_upd3(const void *arg)
-{ 
-    ARG_UNUSED(arg); 
+{
+    ARG_UNUSED(arg);
+    unsigned int prev = mintthresh_write(PRIO_UPD);  
+    __asm__ volatile("csrsi mstatus, 0x8");
+
+    send_letter(TASK_ACK(TASK_CTRL(3)), 0);
+    send_letter(TASK_ACK(TASK_REP(3)),  0);
+
+    //new directive period
+    uint32_t nperiod = period_directive[3];
+    uint32_t base = TIMER_BASE(3);
+    sys_write32(0x0, TIMER_CTRL(base));            
+    sys_write32(US_TO_TICKS(nperiod), TIMER_CMP(base));
+    sys_write32(0x1, TIMER_CTRL(base));       
+
+    //new control period + deadline
+    send_letter(TASK_PERIOD(TASK_CTRL(3)),   nperiod);
+    send_letter(TASK_DEADLINE(TASK_CTRL(3)), nperiod);
+
+    //retire UpdateCtrl
+    send_letter(TASK_ACK(TASK_UPD(3)), 0);
+
+    mintthresh_write(prev);
 }
 
 static void isr_ctrl0(const void *arg)

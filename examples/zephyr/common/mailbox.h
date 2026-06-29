@@ -35,12 +35,6 @@ static inline void read_letter(uint32_t *addr, uint32_t *data)
     sys_write32(MBX_CTRL_INBOX_ACK, MBX_CTRL);
 }
 
-/* Clear the mailbox IRQ line after reading inbox letters. */
-static inline void mbx_clear_irq(void)
-{
-    sys_write32(MBX_CTRL_IRQ_CLR, MBX_CTRL);
-}
-
 /* --- VIP sim-control addresses --- */
 
 #define SIM_START       0x01000000
