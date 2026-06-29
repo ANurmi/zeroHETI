@@ -50,6 +50,30 @@ static const uint8_t irqs[] = {
 };
 static struct k_timer finish_timer;
 
+static uint8_t compute_pid(uint8_t input, int idx)
+{
+    const int16_t SETPOINT = 127;
+    const int32_t KP = 1, KI = 1, KD = 1;
+    const int32_t INTEGRAL_MAX = 10000;
+
+    int16_t err = SETPOINT - (int16_t)input;
+
+    int32_t integ = pid_integral[idx] + err;         
+    if (integ >  INTEGRAL_MAX) integ =  INTEGRAL_MAX;  
+    if (integ < -INTEGRAL_MAX) integ = -INTEGRAL_MAX;
+    pid_integral[idx] = integ;
+
+    int32_t deriv = (int32_t)(err - pid_prev_err[idx]);
+    pid_prev_err[idx] = err;
+
+    int32_t out = SETPOINT + (KP * err + KI * integ + KD * deriv);
+    if (out < 0)   out = 0;
+    if (out > 255) out = 255;
+
+    motor_status[idx] = input; 
+    return (uint8_t)out;
+}
+
 static void isr_getmail(const void *arg)
 { 
     ARG_UNUSED(arg); 
@@ -73,37 +97,158 @@ static void isr_upd3(const void *arg)
 }
 
 static void isr_ctrl0(const void *arg)
-{ 
-    ARG_UNUSED(arg); 
+{
+    ARG_UNUSED(arg);
+    unsigned int prev = mintthresh_write(PRIO_PID);   
+
+    uint8_t measured;
+    unsigned int key = irq_lock();
+    i2c_read_tx(I2C_MOTOR_ADDR(0), &measured, 1);      
+    irq_unlock(key);
+
+    uint8_t out = compute_pid(measured, 0);
+
+    key = irq_lock();
+    i2c_write_tx(I2C_MOTOR_ADDR(0), &out, 1);          
+    irq_unlock(key);
+
+    send_letter(TASK_ACK(TASK_CTRL(0)), 0);            
+    clic_pend_irq(IRQ_EXT(0));                          
+    send_letter(TASK_ACK(TASK_REP(0)), 1);             
+
+    mintthresh_write(prev);                           
 }
+
 static void isr_ctrl1(const void *arg)
 { 
-    ARG_UNUSED(arg); 
+    ARG_UNUSED(arg);
+    unsigned int prev = mintthresh_write(PRIO_PID);   
+
+    uint8_t measured;
+    unsigned int key = irq_lock();
+    i2c_read_tx(I2C_MOTOR_ADDR(1), &measured, 1);     
+    irq_unlock(key);
+
+    uint8_t out = compute_pid(measured, 1);
+
+    key = irq_lock();
+    i2c_write_tx(I2C_MOTOR_ADDR(1), &out, 1);          
+    irq_unlock(key);
+
+    send_letter(TASK_ACK(TASK_CTRL(1)), 0);            
+    clic_pend_irq(IRQ_EXT(1));                          
+    send_letter(TASK_ACK(TASK_REP(1)), 1);             
+
+    mintthresh_write(prev);                            
 }
+
 static void isr_ctrl2(const void *arg)
 { 
-    ARG_UNUSED(arg); 
+    ARG_UNUSED(arg);
+    unsigned int prev = mintthresh_write(PRIO_PID);   
+
+    uint8_t measured;
+    unsigned int key = irq_lock();
+    i2c_read_tx(I2C_MOTOR_ADDR(2), &measured, 1);      
+    irq_unlock(key);
+
+    uint8_t out = compute_pid(measured, 2);
+
+    key = irq_lock();
+    i2c_write_tx(I2C_MOTOR_ADDR(2), &out, 1);          
+    irq_unlock(key);
+
+    send_letter(TASK_ACK(TASK_CTRL(2)), 0);            
+    clic_pend_irq(IRQ_EXT(2));                          
+    send_letter(TASK_ACK(TASK_REP(2)), 1);             
+
+    mintthresh_write(prev);                           
 }
 static void isr_ctrl3(const void *arg)
 { 
-    ARG_UNUSED(arg); 
+    ARG_UNUSED(arg);
+    unsigned int prev = mintthresh_write(PRIO_PID);  
+
+    uint8_t measured;
+    unsigned int key = irq_lock();
+    i2c_read_tx(I2C_MOTOR_ADDR(3), &measured, 1);      
+    irq_unlock(key);
+
+    uint8_t out = compute_pid(measured, 3);
+
+    key = irq_lock();
+    i2c_write_tx(I2C_MOTOR_ADDR(3), &out, 1);          
+    irq_unlock(key);
+
+    send_letter(TASK_ACK(TASK_CTRL(3)), 0);            
+    clic_pend_irq(IRQ_EXT(3));                          
+    send_letter(TASK_ACK(TASK_REP(3)), 1);             
+
+    mintthresh_write(prev);                            
 }
 
 static void isr_rep0(const void *arg)
-{ 
-    ARG_UNUSED(arg); 
+{
+    ARG_UNUSED(arg);
+    unsigned int prev = mintthresh_write(PRIO_REP);  
+    __asm__ volatile("csrsi mstatus, 0x8");           
+
+    uint32_t time_us =
+        (uint32_t)((k_cycle_get_64() - sim_start_cycles) / (CPU_FREQ_HZ / 1000000U));
+
+    uint32_t rep_letter = (time_us << 16) | ((uint32_t)0 << 8) | motor_status[0];
+    send_letter(MBX_PRINT_ADDR, rep_letter);          
+
+    send_letter(TASK_ACK(TASK_REP(0)), 0);            
+
+    mintthresh_write(prev);                            
 }
 static void isr_rep1(const void *arg)
-{ 
-    ARG_UNUSED(arg); 
+{
+    ARG_UNUSED(arg);
+    unsigned int prev = mintthresh_write(PRIO_REP);   
+    __asm__ volatile("csrsi mstatus, 0x8");           
+
+    uint32_t time_us =
+        (uint32_t)((k_cycle_get_64() - sim_start_cycles) / (CPU_FREQ_HZ / 1000000U));
+
+    uint32_t rep_letter = (time_us << 16) | ((uint32_t)1 << 8) | motor_status[1];
+    send_letter(MBX_PRINT_ADDR, rep_letter);
+
+    send_letter(TASK_ACK(TASK_REP(1)), 0);
+
+    mintthresh_write(prev);                           
 }
 static void isr_rep2(const void *arg)
-{ 
-    ARG_UNUSED(arg); 
+{
+    ARG_UNUSED(arg);
+    unsigned int prev = mintthresh_write(PRIO_REP);   
+    __asm__ volatile("csrsi mstatus, 0x8");           
+
+    uint32_t time_us =
+        (uint32_t)((k_cycle_get_64() - sim_start_cycles) / (CPU_FREQ_HZ / 1000000U));
+
+    uint32_t rep_letter = (time_us << 16) | ((uint32_t)2 << 8) | motor_status[2];
+    send_letter(MBX_PRINT_ADDR, rep_letter);          
+    send_letter(TASK_ACK(TASK_REP(2)), 0);            
+
+    mintthresh_write(prev);                            
 }
 static void isr_rep3(const void *arg)
-{ 
-    ARG_UNUSED(arg); 
+{
+    ARG_UNUSED(arg);
+    unsigned int prev = mintthresh_write(PRIO_REP);
+    __asm__ volatile("csrsi mstatus, 0x8");       
+
+    uint32_t time_us =
+        (uint32_t)((k_cycle_get_64() - sim_start_cycles) / (CPU_FREQ_HZ / 1000000U));
+
+    uint32_t rep_letter = (time_us << 16) | ((uint32_t)3 << 8) | motor_status[3];
+    send_letter(MBX_PRINT_ADDR, rep_letter);          
+
+    send_letter(TASK_ACK(TASK_REP(3)), 0); 
+
+    mintthresh_write(prev);
 }
 
 static void finish_sim(struct k_timer *timer)
