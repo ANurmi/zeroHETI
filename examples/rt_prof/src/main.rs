@@ -140,7 +140,7 @@ mod app {
 
     // Initiation inteval for report tasks, i.e., on every Nth
     // job of the matching control task a report job is spawned.
-    const REP_TASK_II: u32 = 6;
+    const REP_TASK_II: u32 = 5;
 
     const MBX_TASK_DL_US: u32 = 1000;
     const UPD_TASK_DL_US: u32 = 2000;
@@ -317,7 +317,7 @@ mod app {
                     sprintln!("  * Setup              (cc): {setup_time_real_cc}");
                     sprintln!("  * Active time        (cc): {active_time_cc}");
                     sprintln!(
-                        "- CPU utilization      (%): {}",
+                        "- CPU utilization       (%): {}",
                         (active_time_cc * 100) / duration_real_cc
                     );
                     signal_pass(None);
@@ -559,7 +559,6 @@ mod app {
                 ibx.recv_many(&mut letters);
             });
 
-
             for (addr, data) in letters {
                 match addr {
                     0x0 =>
@@ -715,8 +714,8 @@ mod app {
             self.shared().serial.lock(|s| {
                 writeln!(
                     s,
-                    "[TaskRep-{} @{:6} us] read  value {:3} from I2C",
-                    task_idx, time_now, read_buf
+                    "[TaskRep-{} @{:6} us] measured    value {:3} from motor {:1} on I2C bus",
+                    task_idx, time_now, read_buf, task_idx
                 )
                 .ok()
             });
@@ -724,8 +723,8 @@ mod app {
             self.shared().serial.lock(|s| {
                 writeln!(
                     s,
-                    "[TaskRep-{} @{:6} us] wrote value {:3} to   I2C",
-                    task_idx, time_now, ctrl_buf
+                    "[TaskRep-{} @{:6} us] set control value {:3} to   motor {:1} on I2C bus",
+                    task_idx, time_now, ctrl_buf, task_idx
                 )
                 .ok()
             });
@@ -753,8 +752,8 @@ mod app {
             self.shared().serial.lock(|s| {
                 writeln!(
                     s,
-                    "[TaskRep-{} @{:6} us] read  value {:3} from I2C",
-                    task_idx, time_now, read_buf
+                    "[TaskRep-{} @{:6} us] measured    value {:3} from motor {:1} on I2C bus",
+                    task_idx, time_now, read_buf, task_idx
                 )
                 .ok()
             });
@@ -763,8 +762,8 @@ mod app {
             self.shared().serial.lock(|s| {
                 writeln!(
                     s,
-                    "[TaskRep-{} @{:6} us] wrote value {:3} to   I2C",
-                    task_idx, time_now, ctrl_buf
+                    "[TaskRep-{} @{:6} us] set control value {:3} to   motor {:1} on I2C bus",
+                    task_idx, time_now, ctrl_buf, task_idx
                 )
                 .ok()
             });
@@ -790,8 +789,8 @@ mod app {
             self.shared().serial.lock(|s| {
                 writeln!(
                     s,
-                    "[TaskRep-{} @{:6} us] read  value {:3} from I2C",
-                    task_idx, time_now, read_buf
+                    "[TaskRep-{} @{:6} us] measured    value {:3} from motor {:1} on I2C bus",
+                    task_idx, time_now, read_buf, task_idx
                 )
                 .ok()
             });
@@ -799,8 +798,8 @@ mod app {
             self.shared().serial.lock(|s| {
                 writeln!(
                     s,
-                    "[TaskRep-{} @{:6} us] wrote value {:3} to   I2C",
-                    task_idx, time_now, ctrl_buf
+                    "[TaskRep-{} @{:6} us] set control value {:3} to   motor {:1} on I2C bus",
+                    task_idx, time_now, ctrl_buf, task_idx
                 )
                 .ok()
             });
@@ -827,8 +826,8 @@ mod app {
             self.shared().serial.lock(|s| {
                 writeln!(
                     s,
-                    "[TaskRep-{} @{:6} us] read  value {:3} from I2C",
-                    task_idx, time_now, read_buf
+                    "[TaskRep-{} @{:6} us] measured    value {:3} from motor {:1} on I2C bus",
+                    task_idx, time_now, read_buf, task_idx
                 )
                 .ok()
             });
@@ -837,8 +836,8 @@ mod app {
             self.shared().serial.lock(|s| {
                 writeln!(
                     s,
-                    "[TaskRep-{} @{:6} us] wrote value {:3} to   I2C",
-                    task_idx, time_now, ctrl_buf
+                    "[TaskRep-{} @{:6} us] set control value {:3} to   motor {:1} on I2C bus",
+                    task_idx, time_now, ctrl_buf, task_idx
                 )
                 .ok()
             });
