@@ -68,10 +68,10 @@ module vip_task_scoreboard
       // Reset credits on every activation of this task
       directive_credits = loadfactor_i;
 
-      i_mbx_drv.send_letter(32'h100, generate_directive());
-      i_mbx_drv.send_letter(32'h101, generate_directive());
-      i_mbx_drv.send_letter(32'h102, generate_directive());
-      i_mbx_drv.send_letter(32'h103, generate_directive());
+      if ($urandom() % 10 > 5) i_mbx_drv.send_letter(32'h100, generate_directive());
+      if ($urandom() % 10 > 4) i_mbx_drv.send_letter(32'h101, generate_directive());
+      if ($urandom() % 10 > 6) i_mbx_drv.send_letter(32'h102, generate_directive());
+      if ($urandom() % 10 > 3) i_mbx_drv.send_letter(32'h103, generate_directive());
       i_mbx_drv.raise_irq();
     end
   end : scb_mbx_proc

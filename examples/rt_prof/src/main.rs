@@ -142,7 +142,7 @@ mod app {
     // job of the matching control task a report job is spawned.
     const REP_TASK_II: u32 = 6;
 
-    const MBX_TASK_DL_US: u32 = 400;
+    const MBX_TASK_DL_US: u32 = 1000;
     const UPD_TASK_DL_US: u32 = 2000;
 
     use bsp::{
@@ -154,6 +154,7 @@ mod app {
         mailbox::{Inbox, Mailbox, Outbox},
         mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mtimer::{self, *},
+        register::Permission::W,
         riscv::{self},
         sprintln,
         tb::signal_pass,
@@ -266,20 +267,20 @@ mod app {
                         (MbxAddr::SimLoad, LF),
                         (MbxAddr::TaskMbxDln, MBX_TASK_DL_US),
                         // Initialize with very long deadlines
-                        (MbxAddr::TaskRep0Dln, 0x4000),
-                        (MbxAddr::TaskRep1Dln, 0x4000),
-                        (MbxAddr::TaskRep2Dln, 0x4000),
-                        (MbxAddr::TaskRep3Dln, 0x4000),
+                        (MbxAddr::TaskRep0Dln, 0x1000),
+                        (MbxAddr::TaskRep1Dln, 0x1000),
+                        (MbxAddr::TaskRep2Dln, 0x1000),
+                        (MbxAddr::TaskRep3Dln, 0x1000),
                         // Initialize with very long deadlines
                         (MbxAddr::TaskUpd0Dln, UPD_TASK_DL_US),
                         (MbxAddr::TaskUpd1Dln, UPD_TASK_DL_US),
                         (MbxAddr::TaskUpd2Dln, UPD_TASK_DL_US),
                         (MbxAddr::TaskUpd3Dln, UPD_TASK_DL_US),
                         // Initialize with very long deadlines
-                        (MbxAddr::TaskCtrl0Dln, 0x4000),
-                        (MbxAddr::TaskCtrl1Dln, 0x4000),
-                        (MbxAddr::TaskCtrl2Dln, 0x4000),
-                        (MbxAddr::TaskCtrl3Dln, 0x4000),
+                        (MbxAddr::TaskCtrl0Dln, 0x1000),
+                        (MbxAddr::TaskCtrl1Dln, 0x1000),
+                        (MbxAddr::TaskCtrl2Dln, 0x1000),
+                        (MbxAddr::TaskCtrl3Dln, 0x1000),
                         (MbxAddr::SimStart, 0x0),
                     ];
                     CMDS.iter()
@@ -553,16 +554,45 @@ mod app {
         }
         fn exec(&mut self) {
             let mut letters = [(0, 0); 4];
+
             self.shared().ibx.lock(|ibx| {
                 ibx.recv_many(&mut letters);
             });
 
+
             for (addr, data) in letters {
                 match addr {
-                    0x100 => self.shared().mail_buf_0.lock(|mail| *mail = data),
-                    0x101 => self.shared().mail_buf_1.lock(|mail| *mail = data),
-                    0x102 => self.shared().mail_buf_2.lock(|mail| *mail = data),
-                    0x103 => self.shared().mail_buf_3.lock(|mail| *mail = data),
+                    0x0 =>
+                        /* ignore zero-addressed letters */
+                        {}
+                    0x100 => {
+                        self.shared().mail_buf_0.lock(|mail| *mail = data);
+                        self.shared()
+                            .obx
+                            .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd0Ack));
+                        Update0::spawn(()).unwrap();
+                    }
+                    0x101 => {
+                        self.shared().mail_buf_1.lock(|mail| *mail = data);
+                        self.shared()
+                            .obx
+                            .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd1Ack));
+                        Update1::spawn(()).unwrap();
+                    }
+                    0x102 => {
+                        self.shared().mail_buf_2.lock(|mail| *mail = data);
+                        self.shared()
+                            .obx
+                            .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd2Ack));
+                        Update2::spawn(()).unwrap();
+                    }
+                    0x103 => {
+                        self.shared().mail_buf_3.lock(|mail| *mail = data);
+                        self.shared()
+                            .obx
+                            .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd3Ack));
+                        Update3::spawn(()).unwrap();
+                    }
                     _ => {
                         self.shared()
                             .serial
@@ -572,22 +602,6 @@ mod app {
                 };
             }
 
-            self.shared()
-                .obx
-                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd0Ack));
-            Update0::spawn(()).unwrap();
-            self.shared()
-                .obx
-                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd1Ack));
-            Update1::spawn(()).unwrap();
-            self.shared()
-                .obx
-                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd2Ack));
-            Update2::spawn(()).unwrap();
-            self.shared()
-                .obx
-                .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd3Ack));
-            Update3::spawn(()).unwrap();
             self.shared()
                 .obx
                 .lock(|obx| sim_task_ack(obx, MbxAddr::TaskMbxAck));
@@ -618,7 +632,7 @@ mod app {
         }
     }
 
-    #[sw_task(priority = 0x11, shared = [mail_buf_1, obx])]
+    #[sw_task(priority = 0xfb, shared = [mail_buf_1, obx])]
     struct Update1;
     impl RticSwTask for Update1 {
         type SpawnInput = ();
@@ -641,7 +655,7 @@ mod app {
         }
     }
 
-    #[sw_task(priority = 0x11, shared = [mail_buf_2, obx])]
+    #[sw_task(priority = 0xfb, shared = [mail_buf_2, obx])]
     struct Update2;
     impl RticSwTask for Update2 {
         type SpawnInput = ();
@@ -663,7 +677,7 @@ mod app {
         }
     }
 
-    #[sw_task(priority = 0x11, shared = [mail_buf_3, obx])]
+    #[sw_task(priority = 0xfb, shared = [mail_buf_3, obx])]
     struct Update3;
     impl RticSwTask for Update3 {
         type SpawnInput = ();
@@ -685,7 +699,7 @@ mod app {
         }
     }
 
-    #[sw_task(priority = 0x10, shared = [ctrl_buf_0, read_buf_0, obx, serial])]
+    #[sw_task(priority = 0xF1, shared = [ctrl_buf_0, read_buf_0, obx, serial])]
     struct Report0;
     impl RticSwTask for Report0 {
         type SpawnInput = ();
