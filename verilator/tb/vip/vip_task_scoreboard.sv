@@ -20,7 +20,11 @@ module vip_task_scoreboard
   int unsigned                       pre_counter = 0;
   int unsigned                       mbx_task_per;
 
-  assign mbx_task_per = infer_mbx_per(mbx_dl_us_i, loadfactor_i);
+  // Credit-based system for assigning control task periods
+  // from load factor.
+  int unsigned                       directive_credits = 0;
+
+  assign mbx_task_per = 'd8000;  // needs to be sparse enough
 
   always @(posedge clk_i) begin : us_counter
     if (enable_i) begin
@@ -58,12 +62,16 @@ module vip_task_scoreboard
 
   always @(counter_us) begin : scb_mbx_proc
     // Activate mailbox task periodically
-    if (counter_us % 64'(mbx_task_per) == 0) begin
+    if ((counter_us % 64'(mbx_task_per) == 0) | counter_us == 10) begin
       activate_task(TASK_MBX);
-      i_mbx_drv.send_letter(32'h100, generate_directive());
-      i_mbx_drv.send_letter(32'h101, generate_directive());
-      i_mbx_drv.send_letter(32'h102, generate_directive());
-      i_mbx_drv.send_letter(32'h103, generate_directive());
+
+      // Reset credits on every activation of this task
+      directive_credits = loadfactor_i;
+
+      if ($urandom() % 10 > 5) i_mbx_drv.send_letter(32'h100, generate_directive());
+      if ($urandom() % 10 > 4) i_mbx_drv.send_letter(32'h101, generate_directive());
+      if ($urandom() % 10 > 6) i_mbx_drv.send_letter(32'h102, generate_directive());
+      if ($urandom() % 10 > 3) i_mbx_drv.send_letter(32'h103, generate_directive());
       i_mbx_drv.raise_irq();
     end
   end : scb_mbx_proc
@@ -111,7 +119,7 @@ module vip_task_scoreboard
         [TASK_CTRL_0 : TASK_CTRL_3]: TaskName = {"I2cCtrl", string'(i - 5 + 48)};
         [TASK_REP_0 : TASK_REP_3]:   TaskName = {"I2cReport", string'(i - 9 + 48)};
       endcase
-      $display("T%02d ( %11s ) - count: %3d, avg. slack: %4d us, worst slack: %4d us", i, TaskName,
+      $display("T%02d ( %11s ) - count: %3d, avg. slack: %6d us, worst slack: %6d us", i, TaskName,
                task_set_ret[i].count, task_set_ret[i].slack_avg, task_set_ret[i].slack_worst);
     end
     $display("");
@@ -163,17 +171,24 @@ module vip_task_scoreboard
 
   function automatic logic [31:0] generate_directive();
     // WCET for 4*I2C sequential I2C operations: ~560 us
-    automatic logic [31:0] MinPeriod = 'd900;
+    automatic logic [31:0] MinPeriod = 'd1200;
     automatic logic [31:0] directive;
-    automatic int unsigned load = (loadfactor_i * $urandom_range(100, 0)) / 100;
-    automatic logic [1:0] key = (load > 50) ? 0 : (load > 30) ? 1 : (load > 10) ? 2 : 3;
+
+    automatic int unsigned load = $urandom_range(directive_credits, 0);
+    automatic logic [1:0] key = (load > 24) ? 0 : (load > 14) ? 1 : (load > 5) ? 2 : 3;
+
     unique case (key)
-      2'd0: directive = MinPeriod * 1;
-      2'd1: directive  = MinPeriod * 3;
-      2'd2: directive  = MinPeriod * 5;
-      2'd3: directive   = MinPeriod * 9;
-      default: directive    = MinPeriod * 4;
+      2'd0:    directive = MinPeriod * 1;
+      2'd1:    directive = MinPeriod * 3;
+      2'd2:    directive = MinPeriod * 5;
+      2'd3:    directive = MinPeriod * 7;
+      default: directive = MinPeriod * 3;
     endcase
+
+    // Decrement by 25 credits or cap at zero.
+    if (directive_credits > 25) directive_credits -= 25;
+    else directive_credits = 0;
+
     return directive;
   endfunction
 

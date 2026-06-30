@@ -182,8 +182,8 @@ module obi_mbx #(
       unique case (obi_sbr.addr)
         StatAddr:     obi_rdata_d = status_q;
         ObiCtrlAddr:  obi_rdata_d = obi_control_q;
-        IboxAddrAddr: obi_rdata_d = in_letter_obi.addr;
-        IboxDataAddr: obi_rdata_d = in_letter_obi.data;
+        IboxAddrAddr: if (!inbox_empty) obi_rdata_d = in_letter_obi.addr;
+        IboxDataAddr: if (!inbox_empty) obi_rdata_d = in_letter_obi.data;
         default:      ;
       endcase
     end
