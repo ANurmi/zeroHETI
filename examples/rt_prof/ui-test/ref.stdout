@@ -9,13 +9,13 @@ MachineTimer::Setup
 [TaskRep-1 @  3496 us] set control value  97 to   motor 1 on I2C bus
 [TaskRep-3 @  7204 us] measured    value 125 from motor 3 on I2C bus
 [TaskRep-3 @  7529 us] set control value 123 to   motor 3 on I2C bus
-[TaskRep-2 @  9286 us] measured    value 113 from motor 2 on I2C bus
-[TaskRep-2 @  9612 us] set control value 149 to   motor 2 on I2C bus
+[TaskRep-2 @  9285 us] measured    value 113 from motor 2 on I2C bus
+[TaskRep-2 @  9611 us] set control value 149 to   motor 2 on I2C bus
 [SCB] Simulation complete
  - Scoreboard task log: 
 
 T00 (     GetMail ) - count:   2, avg. slack:    911 us, worst slack:    909 us
-T01 ( UpdateCtrl0 ) - count:   1, avg. slack:   1948 us, worst slack:   1948 us
+T01 ( UpdateCtrl0 ) - count:   1, avg. slack:   1938 us, worst slack:   1938 us
 T02 ( UpdateCtrl1 ) - count:   1, avg. slack:   1312 us, worst slack:   1312 us
 T03 ( UpdateCtrl2 ) - count:   1, avg. slack:   1305 us, worst slack:   1305 us
 T04 ( UpdateCtrl3 ) - count:   0, avg. slack:      0 us, worst slack:      0 us
@@ -33,10 +33,10 @@ T12 (  I2cReport3 ) - count:   1, avg. slack:   3424 us, worst slack:   3424 us
 [M2] worst jitter (us): 423
 [M3] worst jitter (us): 653
 MachineTimer::Teardown
-- Retired instructions:      24136
+- Retired instructions:      24149
 - Total time w/o setup (cc): 100084
   * Setup              (cc): 1945
-  * Active time        (cc): 52640
+  * Active time        (cc): 52644
 - CPU utilization       (%): 52
 [TB] Program returned EXIT_SUCCESS
 make[1]: Leaving directory '/home/antti/work/git/zeroHETI/verilator'

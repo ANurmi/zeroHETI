@@ -546,7 +546,7 @@ mod app {
         }
     }
 
-    #[task(binds = Mbx, priority = 0xfe, shared = [mail_buf_0, mail_buf_1, mail_buf_2, mail_buf_3, ibx, obx, serial])]
+    #[task(binds = Mbx, priority = 0xfe, shared = [mail_buf_0, mail_buf_1, mail_buf_2, mail_buf_3, ibx, obx ])]
     struct Mail {}
     impl RticTask for Mail {
         fn init() -> Self {
@@ -592,12 +592,7 @@ mod app {
                             .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd3Ack));
                         Update3::spawn(()).unwrap();
                     }
-                    _ => {
-                        self.shared()
-                            .serial
-                            .lock(|s| writeln!(s, "Weird letter"))
-                            .ok();
-                    }
+                    _ => panic!("Weird letter")
                 };
             }
 
