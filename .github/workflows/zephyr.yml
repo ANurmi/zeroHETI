@@ -3,7 +3,7 @@ name: zephyr workflow
 on:
   push:
     branches:
-      - zephyr/motor_control
+      - zephyr/rt-prof
   pull_request:
     branches:
       - "*"
@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: zephyr/motor_control
+          ref: zephyr/rt-prof
           path: zeroheti
 
       - name: Fetch zephyr dependencies
@@ -30,15 +30,15 @@ jobs:
           cd zephyr/    
           west sdk install           
 
-      - name: build motor-control app
+      - name: build rt-prof app
         run: | 
           cd zephyr/
-          west build -b hetiboard $GITHUB_WORKSPACE/zeroheti/examples/zephyr/motor_control -p always
+          west build -b hetiboard $GITHUB_WORKSPACE/zeroheti/examples/zephyr/rt_prof -p always
       
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
-          name: zephyr-motor-elf
+          name: rt-prof-elf
           path: zephyr/build/zephyr/zephyr.elf
 
   build-hw:
@@ -51,7 +51,7 @@ jobs:
     steps:    
       - uses: actions/checkout@v4
         with:
-          ref: zephyr/motor_control
+          ref: zephyr/rt-prof
           path: zeroheti
 
       - name: Fetch dependencies
@@ -68,10 +68,10 @@ jobs:
       - name: Download firmware
         uses: actions/download-artifact@v4
         with:
-          name: zephyr-motor-elf
+          name: rt-prof-elf
           path: zeroheti/build/sw/
       
-      - name: Run zephyr-motor ELF 
+      - name: Run rt-prof ELF 
         run: |
           cd zeroheti/
           make simv TEST=zephyr
