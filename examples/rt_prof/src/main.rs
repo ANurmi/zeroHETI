@@ -140,10 +140,10 @@ mod app {
 
     // Initiation inteval for report tasks, i.e., on every Nth
     // job of the matching control task a report job is spawned.
-    const REP_TASK_II: u8 = 7;
+    const REP_TASK_II: u32 = 6;
 
     const MBX_TASK_DL_US: u32 = 400;
-    const UPD_TASK_DL_US: u32 = 1024;
+    const UPD_TASK_DL_US: u32 = 2000;
 
     use bsp::{
         CPU_FREQ_HZ,
@@ -180,6 +180,10 @@ mod app {
         mail_buf_1: u32,
         mail_buf_2: u32,
         mail_buf_3: u32,
+        read_buf_0: u8,
+        read_buf_1: u8,
+        read_buf_2: u8,
+        read_buf_3: u8,
         ctrl_buf_0: u8,
         ctrl_buf_1: u8,
         ctrl_buf_2: u8,
@@ -204,6 +208,10 @@ mod app {
             mail_buf_1: 0,
             mail_buf_2: 0,
             mail_buf_3: 0,
+            read_buf_0: 0,
+            read_buf_1: 0,
+            read_buf_2: 0,
+            read_buf_3: 0,
             ctrl_buf_0: 0,
             ctrl_buf_1: 0,
             ctrl_buf_2: 0,
@@ -343,16 +351,16 @@ mod app {
         out = out.clamp(0, 255);
 
         // used by report tasks
-        *ctrl_buf = input as u8;
+        *ctrl_buf = out as u8;
 
         out as u8
     }
 
     // Hardware tasks
-    #[task(binds = Timer0Cmp, priority = 0xfc, shared = [i2c, ctrl_buf_0, obx])]
+    #[task(binds = Timer0Cmp, priority = 0xfc, shared = [i2c, read_buf_0, obx, ctrl_buf_0])]
     struct Ctrl0 {
         state: PidState,
-        rep_cnt: u8,
+        rep_cnt: u32,
     }
     impl RticTask for Ctrl0 {
         fn init() -> Self {
@@ -367,7 +375,9 @@ mod app {
                 // Read motor status
                 i2c.read(I2cAddr::M0 as u8, &mut rbuf);
             });
+
             let measured_v = u8::from_le_bytes(rbuf);
+            self.shared().read_buf_0.lock(|buf| *buf = measured_v);
 
             let out_v = self
                 .shared()
@@ -394,10 +404,10 @@ mod app {
         }
     }
 
-    #[task(binds = Timer1Cmp, priority = 0xfc, shared = [i2c, ctrl_buf_1, obx])]
+    #[task(binds = Timer1Cmp, priority = 0xfc, shared = [i2c,read_buf_1, obx, ctrl_buf_1])]
     struct Ctrl1 {
         state: PidState,
-        rep_cnt: u8,
+        rep_cnt: u32,
     }
     impl RticTask for Ctrl1 {
         fn init() -> Self {
@@ -412,7 +422,9 @@ mod app {
                 // Read motor status
                 i2c.read(I2cAddr::M1 as u8, &mut rbuf);
             });
+
             let measured_v = u8::from_le_bytes(rbuf);
+            self.shared().read_buf_1.lock(|buf| *buf = measured_v);
 
             let out_v = self
                 .shared()
@@ -439,10 +451,10 @@ mod app {
         }
     }
 
-    #[task(binds = Timer2Cmp, priority = 0xfc, shared = [i2c, ctrl_buf_2, obx])]
+    #[task(binds = Timer2Cmp, priority = 0xfc, shared = [i2c, read_buf_2, obx, ctrl_buf_2])]
     struct Ctrl2 {
         state: PidState,
-        rep_cnt: u8,
+        rep_cnt: u32,
     }
     impl RticTask for Ctrl2 {
         fn init() -> Self {
@@ -457,7 +469,9 @@ mod app {
                 // Read motor status
                 i2c.read(I2cAddr::M2 as u8, &mut rbuf);
             });
+
             let measured_v = u8::from_le_bytes(rbuf);
+            self.shared().read_buf_2.lock(|buf| *buf = measured_v);
 
             let out_v = self
                 .shared()
@@ -484,10 +498,10 @@ mod app {
         }
     }
 
-    #[task(binds = Timer3Cmp, priority = 0xfc, shared = [i2c, ctrl_buf_3, obx])]
+    #[task(binds = Timer3Cmp, priority = 0xfc, shared = [i2c, read_buf_3, obx, ctrl_buf_3])]
     struct Ctrl3 {
         state: PidState,
-        rep_cnt: u8,
+        rep_cnt: u32,
     }
     impl RticTask for Ctrl3 {
         fn init() -> Self {
@@ -502,7 +516,9 @@ mod app {
                 // Read motor status
                 i2c.read(I2cAddr::M3 as u8, &mut rbuf);
             });
+
             let measured_v = u8::from_le_bytes(rbuf);
+            self.shared().read_buf_3.lock(|buf| *buf = measured_v);
 
             let out_v = self
                 .shared()
@@ -592,7 +608,7 @@ mod app {
             self.shared().obx.lock(|obx| {
                 obx.send(MbxAddr::TaskCtrl0Per as u32, nperiod_us);
                 obx.send(MbxAddr::TaskCtrl0Dln as u32, nperiod_us);
-                obx.send(MbxAddr::TaskRep0Dln as u32, 4 * nperiod_us);
+                obx.send(MbxAddr::TaskRep0Dln as u32, REP_TASK_II * nperiod_us);
                 Clic::ctl(Interrupt::Timer0Cmp).set_level(to_prio(nperiod_us));
                 // invalidate these if currently active
                 sim_task_ack(obx, MbxAddr::TaskCtrl0Ack);
@@ -615,7 +631,7 @@ mod app {
             self.shared().obx.lock(|obx| {
                 obx.send(MbxAddr::TaskCtrl1Per as u32, nperiod_us);
                 obx.send(MbxAddr::TaskCtrl1Dln as u32, nperiod_us);
-                obx.send(MbxAddr::TaskRep1Dln as u32, 4 * nperiod_us);
+                obx.send(MbxAddr::TaskRep1Dln as u32, REP_TASK_II * nperiod_us);
                 Clic::ctl(Interrupt::Timer1Cmp).set_level(to_prio(nperiod_us));
                 // invalidate these if currently active
                 sim_task_ack(obx, MbxAddr::TaskCtrl1Ack);
@@ -638,7 +654,7 @@ mod app {
             self.shared().obx.lock(|obx| {
                 obx.send(MbxAddr::TaskCtrl2Per as u32, nperiod_us);
                 obx.send(MbxAddr::TaskCtrl2Dln as u32, nperiod_us);
-                obx.send(MbxAddr::TaskRep2Dln as u32, 4 * nperiod_us);
+                obx.send(MbxAddr::TaskRep2Dln as u32, REP_TASK_II * nperiod_us);
                 Clic::ctl(Interrupt::Timer2Cmp).set_level(to_prio(nperiod_us));
                 sim_task_ack(obx, MbxAddr::TaskCtrl2Ack);
                 sim_task_ack(obx, MbxAddr::TaskRep2Ack);
@@ -660,7 +676,7 @@ mod app {
             self.shared().obx.lock(|obx| {
                 obx.send(MbxAddr::TaskCtrl3Per as u32, nperiod_us);
                 obx.send(MbxAddr::TaskCtrl3Dln as u32, nperiod_us);
-                obx.send(MbxAddr::TaskRep3Dln as u32, 4 * nperiod_us);
+                obx.send(MbxAddr::TaskRep3Dln as u32, REP_TASK_II * nperiod_us);
                 Clic::ctl(Interrupt::Timer3Cmp).set_level(to_prio(nperiod_us));
                 sim_task_ack(obx, MbxAddr::TaskCtrl3Ack);
                 sim_task_ack(obx, MbxAddr::TaskRep3Ack);
@@ -669,7 +685,7 @@ mod app {
         }
     }
 
-    #[sw_task(priority = 0x10, shared = [ctrl_buf_0, obx, serial])]
+    #[sw_task(priority = 0x10, shared = [ctrl_buf_0, read_buf_0, obx, serial])]
     struct Report0;
     impl RticSwTask for Report0 {
         type SpawnInput = ();
@@ -677,24 +693,29 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
-            /*
-            let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_0.lock(|buf| *buf);
-            let rep_letter = ((time_now as u32) << 16) | ((0u8 as u32) << 8) | (ctrl_buf as u32);
-            */
-            self.shared()
-                .serial
-                .lock(|s| write!(s, "This is a very long print with number {}!", 0).ok());
-            self.shared()
-                .serial
-                .lock(|s| write!(s, "This print is split into many pieces.").ok());
+            let read_buf = self.shared().read_buf_0.lock(|buf| *buf);
+            let task_idx: u8 = 0;
+
+            let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
             self.shared().serial.lock(|s| {
-                write!(
+                writeln!(
                     s,
-                    "This gives us some preemption points while keeping the CPU busy. \n"
+                    "[TaskRep-{} @{:6} us] read  value {:3} from I2C",
+                    task_idx, time_now, read_buf
                 )
                 .ok()
             });
+            time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            self.shared().serial.lock(|s| {
+                writeln!(
+                    s,
+                    "[TaskRep-{} @{:6} us] wrote value {:3} to   I2C",
+                    task_idx, time_now, ctrl_buf
+                )
+                .ok()
+            });
+
             self.shared().obx.lock(|obx| {
                 // obx.send(MbxAddr::Print as u32, rep_letter);
                 sim_task_ack(obx, MbxAddr::TaskRep0Ack);
@@ -702,7 +723,7 @@ mod app {
         }
     }
 
-    #[sw_task(priority = 0xF1, shared = [ctrl_buf_1, obx, serial])]
+    #[sw_task(priority = 0xF1, shared = [ctrl_buf_1, read_buf_1, obx, serial])]
     struct Report1;
     impl RticSwTask for Report1 {
         type SpawnInput = ();
@@ -710,21 +731,26 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
-            /*
-            let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_1.lock(|buf| *buf);
-            let rep_letter = ((time_now as u32) << 16) | ((1u8 as u32) << 8) | (ctrl_buf as u32);
-            */
-            self.shared()
-                .serial
-                .lock(|s| write!(s, "This is a very long print with number {}!", 1).ok());
-            self.shared()
-                .serial
-                .lock(|s| write!(s, "This print is split into many pieces.").ok());
+            let read_buf = self.shared().read_buf_1.lock(|buf| *buf);
+            let task_idx: u8 = 1;
+
+            let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
             self.shared().serial.lock(|s| {
-                write!(
+                writeln!(
                     s,
-                    "This gives us some preemption points while keeping the CPU busy. \n"
+                    "[TaskRep-{} @{:6} us] read  value {:3} from I2C",
+                    task_idx, time_now, read_buf
+                )
+                .ok()
+            });
+
+            time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            self.shared().serial.lock(|s| {
+                writeln!(
+                    s,
+                    "[TaskRep-{} @{:6} us] wrote value {:3} to   I2C",
+                    task_idx, time_now, ctrl_buf
                 )
                 .ok()
             });
@@ -734,7 +760,7 @@ mod app {
             });
         }
     }
-    #[sw_task(priority = 0xF1, shared = [ctrl_buf_2, obx, serial])]
+    #[sw_task(priority = 0xF1, shared = [ctrl_buf_2, read_buf_2, obx, serial])]
     struct Report2;
     impl RticSwTask for Report2 {
         type SpawnInput = ();
@@ -742,31 +768,36 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
-            /*
-            let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_2.lock(|buf| *buf);
-            let rep_letter = ((time_now as u32) << 16) | ((2u8 as u32) << 8) | (ctrl_buf as u32);
-            */
-            self.shared()
-                .serial
-                .lock(|s| write!(s, "This is a very long print with number {}!", 2).ok());
-            self.shared()
-                .serial
-                .lock(|s| write!(s, "This print is split into many pieces.").ok());
+            let read_buf = self.shared().read_buf_2.lock(|buf| *buf);
+            let task_idx: u8 = 2;
+
+            let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
             self.shared().serial.lock(|s| {
-                write!(
+                writeln!(
                     s,
-                    "This gives us some preemption points while keeping the CPU busy. \n"
+                    "[TaskRep-{} @{:6} us] read  value {:3} from I2C",
+                    task_idx, time_now, read_buf
                 )
                 .ok()
             });
+            time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            self.shared().serial.lock(|s| {
+                writeln!(
+                    s,
+                    "[TaskRep-{} @{:6} us] wrote value {:3} to   I2C",
+                    task_idx, time_now, ctrl_buf
+                )
+                .ok()
+            });
+
             self.shared().obx.lock(|obx| {
                 // obx.send(MbxAddr::Print as u32, rep_letter);
                 sim_task_ack(obx, MbxAddr::TaskRep2Ack);
             });
         }
     }
-    #[sw_task(priority = 0xF1, shared = [ctrl_buf_3, obx, serial])]
+    #[sw_task(priority = 0xF1, shared = [ctrl_buf_3, read_buf_3, obx, serial])]
     struct Report3;
     impl RticSwTask for Report3 {
         type SpawnInput = ();
@@ -774,24 +805,30 @@ mod app {
             Self {}
         }
         fn exec(&mut self, _p: ()) {
-            /*
-            let time_now = MTimer::instance().into_oneshot().duration().to_micros();
             let ctrl_buf = self.shared().ctrl_buf_3.lock(|buf| *buf);
-            let rep_letter = ((time_now as u32) << 16) | ((3u8 as u32) << 8) | (ctrl_buf as u32);
-            */
-            self.shared()
-                .serial
-                .lock(|s| write!(s, "This is a very long print with number {}!", 3).ok());
-            self.shared()
-                .serial
-                .lock(|s| write!(s, "This print is split into many pieces.").ok());
+            let read_buf = self.shared().read_buf_3.lock(|buf| *buf);
+            let task_idx: u8 = 3;
+
+            let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
             self.shared().serial.lock(|s| {
-                write!(
+                writeln!(
                     s,
-                    "This gives us some preemption points while keeping the CPU busy. \n"
+                    "[TaskRep-{} @{:6} us] read  value {:3} from I2C",
+                    task_idx, time_now, read_buf
                 )
                 .ok()
             });
+
+            time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            self.shared().serial.lock(|s| {
+                writeln!(
+                    s,
+                    "[TaskRep-{} @{:6} us] wrote value {:3} to   I2C",
+                    task_idx, time_now, ctrl_buf
+                )
+                .ok()
+            });
+
             self.shared().obx.lock(|obx| {
                 // obx.send(MbxAddr::Print as u32, rep_letter);
                 sim_task_ack(obx, MbxAddr::TaskRep3Ack);

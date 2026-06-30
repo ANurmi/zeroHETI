@@ -20,6 +20,10 @@ module vip_task_scoreboard
   int unsigned                       pre_counter = 0;
   int unsigned                       mbx_task_per;
 
+  // Credit-based system for assigning control task periods
+  // from load factor.
+  int unsigned                       directive_credits = 0;
+
   assign mbx_task_per = 'd8000;  // needs to be sparse enough
 
   always @(posedge clk_i) begin : us_counter
@@ -60,6 +64,10 @@ module vip_task_scoreboard
     // Activate mailbox task periodically
     if ((counter_us % 64'(mbx_task_per) == 0) | counter_us == 10) begin
       activate_task(TASK_MBX);
+
+      // Reset credits on every activation of this task
+      directive_credits = loadfactor_i;
+
       i_mbx_drv.send_letter(32'h100, generate_directive());
       i_mbx_drv.send_letter(32'h101, generate_directive());
       i_mbx_drv.send_letter(32'h102, generate_directive());
@@ -163,17 +171,24 @@ module vip_task_scoreboard
 
   function automatic logic [31:0] generate_directive();
     // WCET for 4*I2C sequential I2C operations: ~560 us
-    automatic logic [31:0] MinPeriod = 'd900;
+    automatic logic [31:0] MinPeriod = 'd1200;
     automatic logic [31:0] directive;
-    automatic int unsigned load = (loadfactor_i * $urandom_range(100, 0)) / 100;
-    automatic logic [1:0] key = (load > 50) ? 0 : (load > 30) ? 1 : (load > 10) ? 2 : 3;
+
+    automatic int unsigned load = $urandom_range(directive_credits, 0);
+    automatic logic [1:0] key = (load > 24) ? 0 : (load > 14) ? 1 : (load > 5) ? 2 : 3;
+
     unique case (key)
-      2'd0: directive = MinPeriod * 1;
-      2'd1: directive  = MinPeriod * 3;
-      2'd2: directive  = MinPeriod * 5;
-      2'd3: directive   = MinPeriod * 9;
-      default: directive    = MinPeriod * 4;
+      2'd0:    directive = MinPeriod * 1;
+      2'd1:    directive = MinPeriod * 3;
+      2'd2:    directive = MinPeriod * 5;
+      2'd3:    directive = MinPeriod * 7;
+      default: directive = MinPeriod * 3;
     endcase
+
+    // Decrement by 25 credits or cap at zero.
+    if (directive_credits > 25) directive_credits -= 25;
+    else directive_credits = 0;
+
     return directive;
   endfunction
 
