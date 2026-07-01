@@ -140,7 +140,7 @@ mod app {
 
     // Initiation inteval for report tasks, i.e., on every Nth
     // job of the matching control task a report job is spawned.
-    const REP_TASK_II: u32 = 5;
+    const REP_TASK_II: u32 = 7;
 
     const MBX_TASK_DL_US: u32 = 1000;
     const UPD_TASK_DL_US: u32 = 2000;
@@ -592,7 +592,7 @@ mod app {
                             .lock(|obx| sim_task_pend(obx, MbxAddr::TaskUpd3Ack));
                         Update3::spawn(()).unwrap();
                     }
-                    _ => panic!("Weird letter")
+                    _ => panic!("Weird letter"),
                 };
             }
 
