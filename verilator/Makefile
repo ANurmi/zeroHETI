@@ -122,5 +122,5 @@ verilate_compliance: init
 
 .PHONY: simv
 simv: $(TEST)
-	$(VERIL_BUILD_DIR)/obj_dir/V$(TOP_MODULE) $(TEST) --load=$(LOAD)
+	$(VERIL_BUILD_DIR)/obj_dir/V$(TOP_MODULE) $(TEST) --load=$(LOAD) --trace-fst=$(DEBUG)
 
