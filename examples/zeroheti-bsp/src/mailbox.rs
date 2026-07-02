@@ -57,16 +57,28 @@ impl Inbox {
         (addr, data)
     }
 
-    /// Returns `[(addr, data)]`
+    /// ## Arguments
+    ///
+    /// * buf - `[(addr, data)]`
+    ///
+    /// Returns number of letters received.
     #[inline]
-    pub fn recv_many(&mut self, buf: &mut [(u32, u32)]) {
+    #[must_use]
+    pub fn recv_many(&mut self, buf: &mut [(u32, u32)]) -> usize {
+        let mut count = 0;
         for (addr, data) in buf.iter_mut() {
+            let stat = unsafe { read_volatile::<Stat>(&raw const (*self.0).stat) };
+            if stat.contains(Stat::IBOX_EMPT) {
+                break;
+            }
             // Read inbox
             *addr = unsafe { read_volatile(&raw mut (*self.0).ibox.addr) };
             *data = unsafe { read_volatile(&raw mut (*self.0).ibox.data) };
             self.pop_inbox();
+            count += 1;
         }
         self.clear_irq();
+        count
     }
 }
 
