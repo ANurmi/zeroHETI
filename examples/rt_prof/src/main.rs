@@ -553,13 +553,14 @@ mod app {
             Self {}
         }
         fn exec(&mut self) {
+            let mut len = 0;
             let mut letters = [(0, 0); 4];
 
             self.shared().ibx.lock(|ibx| {
-                ibx.recv_many(&mut letters);
+                len = ibx.recv_many(&mut letters);
             });
 
-            for (addr, data) in letters {
+            for &(addr, data) in &letters[0..len] {
                 match addr {
                     0x0 =>
                         /* ignore zero-addressed letters */
