@@ -693,6 +693,31 @@ mod app {
         }
     }
 
+    enum ReportKind {
+        Measure,
+        Control,
+    }
+
+    fn report_task(serial: &mut ApbUart, task_idx: u8, time_now: u64, buf: u8, rk: ReportKind) {
+        match rk {
+            ReportKind::Measure => writeln!(
+                serial,
+                "[TaskRep-{task} @{:6} us] measured    value {:3} from motor {task:1} on I2C bus",
+                time_now,
+                buf,
+                task = task_idx,
+            ),
+            ReportKind::Control => writeln!(
+                serial,
+                "[TaskRep-{task} @{:6} us] set control value {:3} to   motor {task:1} on I2C bus",
+                time_now,
+                buf,
+                task = task_idx
+            ),
+        }
+        .ok();
+    }
+
     #[sw_task(priority = 0xF1, shared = [ctrl_buf_0, read_buf_0, obx, serial])]
     struct Report0;
     impl RticSwTask for Report0 {
@@ -706,23 +731,13 @@ mod app {
             let task_idx: u8 = 0;
 
             let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
-            self.shared().serial.lock(|s| {
-                writeln!(
-                    s,
-                    "[TaskRep-{} @{:6} us] measured    value {:3} from motor {:1} on I2C bus",
-                    task_idx, time_now, read_buf, task_idx
-                )
-                .ok()
-            });
+            self.shared()
+                .serial
+                .lock(|s| report_task(s, task_idx, time_now, read_buf, ReportKind::Measure));
             time_now = MTimer::instance().into_oneshot().duration().to_micros();
-            self.shared().serial.lock(|s| {
-                writeln!(
-                    s,
-                    "[TaskRep-{} @{:6} us] set control value {:3} to   motor {:1} on I2C bus",
-                    task_idx, time_now, ctrl_buf, task_idx
-                )
-                .ok()
-            });
+            self.shared()
+                .serial
+                .lock(|s| report_task(s, task_idx, time_now, ctrl_buf, ReportKind::Control));
 
             self.shared().obx.lock(|obx| {
                 // obx.send(MbxAddr::Print as u32, rep_letter);
@@ -744,24 +759,14 @@ mod app {
             let task_idx: u8 = 1;
 
             let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
-            self.shared().serial.lock(|s| {
-                writeln!(
-                    s,
-                    "[TaskRep-{} @{:6} us] measured    value {:3} from motor {:1} on I2C bus",
-                    task_idx, time_now, read_buf, task_idx
-                )
-                .ok()
-            });
+            self.shared()
+                .serial
+                .lock(|s| report_task(s, task_idx, time_now, read_buf, ReportKind::Measure));
 
             time_now = MTimer::instance().into_oneshot().duration().to_micros();
-            self.shared().serial.lock(|s| {
-                writeln!(
-                    s,
-                    "[TaskRep-{} @{:6} us] set control value {:3} to   motor {:1} on I2C bus",
-                    task_idx, time_now, ctrl_buf, task_idx
-                )
-                .ok()
-            });
+            self.shared()
+                .serial
+                .lock(|s| report_task(s, task_idx, time_now, ctrl_buf, ReportKind::Control));
             self.shared().obx.lock(|obx| {
                 // obx.send(MbxAddr::Print as u32, rep_letter);
                 sim_task_ack(obx, MbxAddr::TaskRep1Ack);
@@ -781,23 +786,13 @@ mod app {
             let task_idx: u8 = 2;
 
             let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
-            self.shared().serial.lock(|s| {
-                writeln!(
-                    s,
-                    "[TaskRep-{} @{:6} us] measured    value {:3} from motor {:1} on I2C bus",
-                    task_idx, time_now, read_buf, task_idx
-                )
-                .ok()
-            });
+            self.shared()
+                .serial
+                .lock(|s| report_task(s, task_idx, time_now, read_buf, ReportKind::Measure));
             time_now = MTimer::instance().into_oneshot().duration().to_micros();
-            self.shared().serial.lock(|s| {
-                writeln!(
-                    s,
-                    "[TaskRep-{} @{:6} us] set control value {:3} to   motor {:1} on I2C bus",
-                    task_idx, time_now, ctrl_buf, task_idx
-                )
-                .ok()
-            });
+            self.shared()
+                .serial
+                .lock(|s| report_task(s, task_idx, time_now, ctrl_buf, ReportKind::Control));
 
             self.shared().obx.lock(|obx| {
                 // obx.send(MbxAddr::Print as u32, rep_letter);
@@ -818,24 +813,14 @@ mod app {
             let task_idx: u8 = 3;
 
             let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
-            self.shared().serial.lock(|s| {
-                writeln!(
-                    s,
-                    "[TaskRep-{} @{:6} us] measured    value {:3} from motor {:1} on I2C bus",
-                    task_idx, time_now, read_buf, task_idx
-                )
-                .ok()
-            });
+            self.shared()
+                .serial
+                .lock(|s| report_task(s, task_idx, time_now, read_buf, ReportKind::Measure));
 
             time_now = MTimer::instance().into_oneshot().duration().to_micros();
-            self.shared().serial.lock(|s| {
-                writeln!(
-                    s,
-                    "[TaskRep-{} @{:6} us] set control value {:3} to   motor {:1} on I2C bus",
-                    task_idx, time_now, ctrl_buf, task_idx
-                )
-                .ok()
-            });
+            self.shared()
+                .serial
+                .lock(|s| report_task(s, task_idx, time_now, ctrl_buf, ReportKind::Control));
 
             self.shared().obx.lock(|obx| {
                 // obx.send(MbxAddr::Print as u32, rep_letter);
