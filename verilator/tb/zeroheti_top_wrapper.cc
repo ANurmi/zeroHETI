@@ -24,6 +24,7 @@ int main(int argc, char** argv) {
 
   std::string elf_name = "";
   bool load_is_jtag = false;
+  bool trace_fst    = false;
   bool elf_given    = false;
 
   // ignore argv[0] (name of executable)
@@ -33,6 +34,8 @@ int main(int argc, char** argv) {
       case '-':
         if (arg_string.substr(0,6) == "--load") {
           load_is_jtag = (arg_string.substr(6,5) == "=JTAG");
+        } else if (arg_string.substr(0,11) == "--trace-fst") {
+          trace_fst = (arg_string.substr(11,2) == "=1");
         } else {
           std::cout << "[Warning] unresolved - args found" << std::endl;
         }
@@ -55,7 +58,9 @@ int main(int argc, char** argv) {
 
     std::filesystem::path elfpath = tb->resolve_elf(elf_name);
 
-    tb->open_trace("../build/verilator_build/waveform.fst");
+    if (trace_fst) {
+      tb->open_trace("../build/verilator_build/waveform.fst");
+    }
 
     tb->reset();
     tb->jtag_reset_master();
@@ -72,6 +77,12 @@ int main(int argc, char** argv) {
     }
     uint32_t exit_code = tb->jtag_wait_eoc();
 
+    if (trace_fst) {
+      tb->close_trace();
+    }
+
+
   delete tb;
+
   return exit_code;
 }

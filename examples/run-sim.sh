@@ -3,9 +3,8 @@
 # Runs verilator using the ELF supplied as $1
 
 # `-e` exit on non-zero exit status
-# `-u` exit on variable expand failure
 # `-x` echo commands
-set -eux
+set -ex
 
 PROJECT_ROOT=../../
 BUILD_DIR=${PROJECT_ROOT}/build
@@ -19,6 +18,9 @@ cp $1 ${SW_BUILD_DIR}/$(basename $1).elf
 
 XLEN=32
 
+
+[[ -z "${DEBUG}" ]] && TRACE='0' || TRACE="${DEBUG}"
+
 # Run verilator simulation with ELF
 cd ${PROJECT_ROOT}
-make simv TEST=$(basename $1) XLEN=${XLEN}
+make simv TEST=$(basename $1) XLEN=${XLEN} DEBUG=${TRACE}
