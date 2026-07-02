@@ -154,7 +154,6 @@ mod app {
         mailbox::{Inbox, Mailbox, Outbox},
         mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mtimer::{self, *},
-        register::Permission::W,
         riscv::{self},
         sprintln,
         tb::signal_pass,
