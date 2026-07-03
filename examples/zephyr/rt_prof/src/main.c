@@ -345,13 +345,12 @@ static void finish_sim(void)
     READ_CSR64(minstreth, minstret, instret);  
     READ_CSR64(mcycleh,   mcycle,   active_cc); 
 
-    printf("Instructions retired: %llu, cycles: %llu\n",
-           (unsigned long long)instret, (unsigned long long)active_cc);
-    printf("Total time (cc): %llu, active time (cc): %llu\n",
-           (unsigned long long)total_cc, (unsigned long long)active_cc);
-    if (total_cc != 0)
-        printf("CPU utilization: %llu%%\n",
-               (unsigned long long)((active_cc * 100ULL) / total_cc));
+    printf("- Retired instructions:      %llu\n", (unsigned long long)instret);
+    printf("- Total time w/o setup (cc): %llu\n", (unsigned long long)total_cc);
+    printf("  * Active time        (cc): %llu\n", (unsigned long long)active_cc);
+    if (total_cc)
+        printf("- CPU utilization       (%%): %llu\n",
+               (unsigned long long)(active_cc * 100ULL / total_cc));
 
     debug_signal_pass();
 }
