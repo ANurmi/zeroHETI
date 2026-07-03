@@ -140,7 +140,7 @@ module vip_task_scoreboard
       task_set[idx].active = 1;
     end else begin
       if (enable_i) begin
-        $display("[Warning] re-pended active task [%2d] at time %0d", idx, counter_us);
+        $fatal(1, "[Error] re-pended active task [%2d] at time %0d", idx, counter_us);
       end
     end
   endtask
