@@ -15,6 +15,11 @@ module vip_task_scoreboard
 
   //localparam zeroheti_pkg::int_ctrl_e IntC = zeroheti_pkg::`INTC;
 
+  // Uninterrupted task durations: 
+  // CTRL ~ 230 us
+  // REP (current prints) ~ 683 us
+  // For control tasks period === deadline
+
   task_t           [TaskSetSize-1:0] task_set;
   task_ret_t       [TaskSetSize-1:0] task_set_ret;
 
@@ -160,15 +165,14 @@ module vip_task_scoreboard
 
     if (task_set[idx].active) task_set[idx].active = 0;
     /*
-    log_slack(idx);
-
+      log_slack(idx);
+*/
     unique case (idx) inside
       TASK_MBX:                    task_set[idx].dl_us = mbx_dl_us_i;
       [TASK_UPD_0 : TASK_UPD_3]:   task_set[idx].dl_us = upd_dl_us_i[idx-1];
       [TASK_CTRL_0 : TASK_CTRL_3]: task_set[idx].dl_us = ctrl_dl_us_i[idx-5];
       [TASK_REP_0 : TASK_REP_3]:   task_set[idx].dl_us = rep_dl_us_i[idx-9];
     endcase
-*/
   endtask
   /*
   task automatic log_slack(input int unsigned i);

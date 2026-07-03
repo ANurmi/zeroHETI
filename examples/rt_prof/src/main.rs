@@ -136,7 +136,7 @@ mod app {
     /// Load factor, read from env LOAD_FACTOR
     const LF: u32 = parse_u32(env!("LOAD_FACTOR"));
     /// Control task initial period
-    const CTRL_TASK_PER_US: u32 = 2000;
+    const CTRL_TASK_PER_US: u32 = 4000;
 
     // Initiation inteval for report tasks, i.e., on every Nth
     // job of the matching control task a report job is spawned.
@@ -276,10 +276,10 @@ mod app {
                         (MbxAddr::TaskUpd2Dln, UPD_TASK_DL_US),
                         (MbxAddr::TaskUpd3Dln, UPD_TASK_DL_US),
                         // Initialize with very long deadlines
-                        (MbxAddr::TaskCtrl0Dln, 0x1000),
-                        (MbxAddr::TaskCtrl1Dln, 0x1000),
-                        (MbxAddr::TaskCtrl2Dln, 0x1000),
-                        (MbxAddr::TaskCtrl3Dln, 0x1000),
+                        (MbxAddr::TaskCtrl0Dln, CTRL_TASK_PER_US),
+                        (MbxAddr::TaskCtrl1Dln, CTRL_TASK_PER_US),
+                        (MbxAddr::TaskCtrl2Dln, CTRL_TASK_PER_US),
+                        (MbxAddr::TaskCtrl3Dln, CTRL_TASK_PER_US),
                         (MbxAddr::SimStart, 0x0),
                     ];
                     CMDS.iter()
@@ -413,7 +413,7 @@ mod app {
         fn init() -> Self {
             Self {
                 state: PidState::default(),
-                rep_cnt: 5,
+                rep_cnt: 2,
             }
         }
         fn exec(&mut self) {
@@ -507,7 +507,7 @@ mod app {
         fn init() -> Self {
             Self {
                 state: PidState::default(),
-                rep_cnt: 2,
+                rep_cnt: 5,
             }
         }
         fn exec(&mut self) {
@@ -702,7 +702,7 @@ mod app {
         match rk {
             ReportKind::Measure => writeln!(
                 serial,
-                "[TaskRep-{task} @{:6} us] measured    value {:3} from motor {task:1} on I2C bus",
+                "[TaskRep-{task} @{:6} us] measure avg value {:3} from motor {task:1} on I2C bus",
                 time_now,
                 buf,
                 task = task_idx,
@@ -718,22 +718,43 @@ mod app {
         .ok();
     }
 
+    #[inline]
+    fn compute_avg(buf: [u8; 5]) -> u8 {
+        //TODO: compute
+        0x15
+    }
+
     #[sw_task(priority = 0xF1, shared = [ctrl_buf_0, read_buf_0, obx, serial])]
-    struct Report0;
+    struct Report0 {
+        avg_buf: [u8; 5],
+        avg_ptr: u32,
+    }
     impl RticSwTask for Report0 {
         type SpawnInput = ();
         fn init() -> Self {
-            Self {}
+            Self {
+                avg_buf: [0; 5],
+                avg_ptr: 0,
+            }
         }
         fn exec(&mut self, _p: ()) {
             let ctrl_buf = self.shared().ctrl_buf_0.lock(|buf| *buf);
             let read_buf = self.shared().read_buf_0.lock(|buf| *buf);
             let task_idx: u8 = 0;
 
+            //TODO: implement on other tasks
+            self.avg_buf[self.avg_ptr as usize] = read_buf;
+            self.avg_ptr += 1;
+            if self.avg_ptr == 5 {
+                self.avg_ptr = 0;
+            }
+
+            let avg_buf = compute_avg(self.avg_buf);
+
             let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
             self.shared()
                 .serial
-                .lock(|s| report_task(s, task_idx, time_now, read_buf, ReportKind::Measure));
+                .lock(|s| report_task(s, task_idx, time_now, avg_buf, ReportKind::Measure));
             time_now = MTimer::instance().into_oneshot().duration().to_micros();
             self.shared()
                 .serial
