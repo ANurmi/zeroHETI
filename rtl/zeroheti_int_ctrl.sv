@@ -48,6 +48,7 @@ module zeroheti_int_ctrl #(
   end else if (CoreCfg.ic == EDFIC) begin : g_edfic
 
     logic [TsWidth-1:0] deadline;
+
     logic [7:0] dl_slice;
 
     logic [63:0] mtime;
