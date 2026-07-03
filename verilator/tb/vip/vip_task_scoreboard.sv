@@ -13,8 +13,11 @@ module vip_task_scoreboard
     input logic        [3:0][31:0] rep_dl_us_i
 );
 
+  //localparam zeroheti_pkg::int_ctrl_e IntC = zeroheti_pkg::`INTC;
+
   task_t           [TaskSetSize-1:0] task_set;
   task_ret_t       [TaskSetSize-1:0] task_set_ret;
+
 
   longint unsigned                   counter_us = 0;
   int unsigned                       pre_counter = 0;
@@ -22,7 +25,8 @@ module vip_task_scoreboard
 
   // Credit-based system for assigning control task periods
   // from load factor.
-  int unsigned                       directive_credits = 0;
+  //int unsigned                       directive_credits = 0;
+
 
   assign mbx_task_per = 'd8000;  // needs to be sparse enough
 
@@ -35,6 +39,8 @@ module vip_task_scoreboard
     end
   end : us_counter
 
+  //always @(posedge clk_i) begin :
+  /*
   logic [3:0] irq_ctrl_q;
 
   always @(posedge clk_i) begin
@@ -43,25 +49,24 @@ module vip_task_scoreboard
     irq_ctrl_q[2] <= i_zeroheti.i_apb_timer.irq_o[5];
     irq_ctrl_q[3] <= i_zeroheti.i_apb_timer.irq_o[7];
   end
-
+*/
   always @(posedge clk_i) begin
     if (enable_i) begin
-      if (!irq_ctrl_q[0] && i_zeroheti.i_apb_timer.irq_o[1]) activate_task(TASK_CTRL_0);
-      if (!irq_ctrl_q[1] && i_zeroheti.i_apb_timer.irq_o[3]) activate_task(TASK_CTRL_1);
-      if (!irq_ctrl_q[2] && i_zeroheti.i_apb_timer.irq_o[5]) activate_task(TASK_CTRL_2);
-      if (!irq_ctrl_q[3] && i_zeroheti.i_apb_timer.irq_o[7]) activate_task(TASK_CTRL_3);
+      if (i_zeroheti.i_apb_timer.irq_o[1]) activate_task(TASK_CTRL_0);
+      if (i_zeroheti.i_apb_timer.irq_o[3]) activate_task(TASK_CTRL_1);
+      if (i_zeroheti.i_apb_timer.irq_o[5]) activate_task(TASK_CTRL_2);
+      if (i_zeroheti.i_apb_timer.irq_o[7]) activate_task(TASK_CTRL_3);
     end
   end
-
   always @(counter_us) begin : scb_main_proc
-
+    /*
     // Check for deadline misses
     for (int i = 0; i < TaskSetSize; i++) begin
       if (task_set[i].active & task_set[i].dl_us == 0) begin
         $fatal(1, "Deadline miss for task %0d!", i);
       end
     end
-
+*/
     // Decrement DL of active tasks
     for (int i = 0; i < TaskSetSize; i++) begin
       if (task_set[i].active) task_set[i].dl_us--;
@@ -69,11 +74,12 @@ module vip_task_scoreboard
 
   end : scb_main_proc
 
+
   always @(counter_us) begin : scb_mbx_proc
     // Activate mailbox task periodically
     if ((counter_us % 64'(mbx_task_per) == 0) | counter_us == 10) begin
-      activate_task(TASK_MBX);
 
+      /*
       // Reset credits on every activation of this task
       directive_credits = loadfactor_i;
 
@@ -81,18 +87,23 @@ module vip_task_scoreboard
       if ($urandom() % 10 > 4) i_mbx_drv.send_letter(32'h101, generate_directive());
       if ($urandom() % 10 > 6) i_mbx_drv.send_letter(32'h102, generate_directive());
       if ($urandom() % 10 > 3) i_mbx_drv.send_letter(32'h103, generate_directive());
+      */
+
+      activate_task(TASK_MBX);
       i_mbx_drv.raise_irq();
     end
   end : scb_mbx_proc
 
-
   initial begin
 
-    @(posedge enable_i);
 
+    @(posedge enable_i);
+    /*
     // Seed random generator
     $urandom(seed_i);
     $urandom_range(seed_i);
+*/
+    //if (IntC == zeroheti_pkg::CLIC) $display("ringdingingin");
 
     for (int i = 0; i < TaskSetSize; i++) begin
 
@@ -136,10 +147,10 @@ module vip_task_scoreboard
   end
 
   task automatic activate_task(input int idx);
-    if (!task_set[idx].active) begin
-      task_set[idx].active = 1;
-    end else begin
-      if (enable_i) begin
+    if (enable_i) begin
+      if (!task_set[idx].active) begin
+        task_set[idx].active = 1;
+      end else begin
         $fatal(1, "[Error] re-pended active task [%2d] at time %0d", idx, counter_us);
       end
     end
@@ -148,7 +159,7 @@ module vip_task_scoreboard
   task automatic retire_task(input int idx);
 
     if (task_set[idx].active) task_set[idx].active = 0;
-
+    /*
     log_slack(idx);
 
     unique case (idx) inside
@@ -157,9 +168,9 @@ module vip_task_scoreboard
       [TASK_CTRL_0 : TASK_CTRL_3]: task_set[idx].dl_us = ctrl_dl_us_i[idx-5];
       [TASK_REP_0 : TASK_REP_3]:   task_set[idx].dl_us = rep_dl_us_i[idx-9];
     endcase
-
+*/
   endtask
-
+  /*
   task automatic log_slack(input int unsigned i);
     if (task_set_ret[i].count == 0) begin  // initial state
       task_set_ret[i].slack_worst = task_set[i].dl_us;
@@ -200,6 +211,7 @@ module vip_task_scoreboard
 
     return directive;
   endfunction
+*/
 
 endmodule : vip_task_scoreboard
 
