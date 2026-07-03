@@ -35,12 +35,21 @@ module vip_task_scoreboard
     end
   end : us_counter
 
-  always @(i_zeroheti.i_apb_timer.irq_o) begin
+  logic [3:0] irq_ctrl_q;
+
+  always @(posedge clk_i) begin
+    irq_ctrl_q[0] <= i_zeroheti.i_apb_timer.irq_o[1];
+    irq_ctrl_q[1] <= i_zeroheti.i_apb_timer.irq_o[3];
+    irq_ctrl_q[2] <= i_zeroheti.i_apb_timer.irq_o[5];
+    irq_ctrl_q[3] <= i_zeroheti.i_apb_timer.irq_o[7];
+  end
+
+  always @(posedge clk_i) begin
     if (enable_i) begin
-      if (i_zeroheti.i_apb_timer.irq_o[1]) activate_task(TASK_CTRL_0);
-      if (i_zeroheti.i_apb_timer.irq_o[3]) activate_task(TASK_CTRL_1);
-      if (i_zeroheti.i_apb_timer.irq_o[5]) activate_task(TASK_CTRL_2);
-      if (i_zeroheti.i_apb_timer.irq_o[7]) activate_task(TASK_CTRL_3);
+      if (!irq_ctrl_q[0] && i_zeroheti.i_apb_timer.irq_o[1]) activate_task(TASK_CTRL_0);
+      if (!irq_ctrl_q[1] && i_zeroheti.i_apb_timer.irq_o[3]) activate_task(TASK_CTRL_1);
+      if (!irq_ctrl_q[2] && i_zeroheti.i_apb_timer.irq_o[5]) activate_task(TASK_CTRL_2);
+      if (!irq_ctrl_q[3] && i_zeroheti.i_apb_timer.irq_o[7]) activate_task(TASK_CTRL_3);
     end
   end
 
@@ -131,7 +140,7 @@ module vip_task_scoreboard
       task_set[idx].active = 1;
     end else begin
       if (enable_i) begin
-        $display("[Warning] re-pended active task [%2d] at time %0d", idx, counter_us);
+        $fatal(1, "[Error] re-pended active task [%2d] at time %0d", idx, counter_us);
       end
     end
   endtask
