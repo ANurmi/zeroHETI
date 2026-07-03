@@ -33,7 +33,7 @@
 #define DEADLINE_REP_US   2000U
 #define SIM_PRESCALER_VAL 10U
 #define RANDOM_SEED       0xB0110c55U
-#define LOAD_FACTOR       0U
+#define LOAD_FACTOR       80U
 #define RUNTIME_MS        10U
 
 /* Shared state */
@@ -83,42 +83,27 @@ static void isr_getmail(const void *arg)
 {
     ARG_UNUSED(arg);
     check_runtime();
-    unsigned int prev = mintthresh_write(PRIO_MAIL);  
-    __asm__ volatile("csrsi mstatus, 0x8");           
 
-    // inbox letters
-    for (int i = 0; i < NUM_MOTORS; i++) {
+    /* read inbox directives while not empty*/
+    while (!(sys_read32(MBX_STAT) & 0x1)) {         
         uint32_t addr, data;
-        read_letter(&addr, &data);                     
-        switch (addr) {
-            case 0x100: period_directive[0] = data; break;
-            case 0x101: period_directive[1] = data; break;
-            case 0x102: period_directive[2] = data; break;
-            case 0x103: period_directive[3] = data; break;
-            default: break;                           
+        read_letter(&addr, &data);
+        int motor_index = (addr == 0x100) ? 0 : (addr == 0x101) ? 1 : (addr == 0x102) ? 2 : (addr == 0x103) ? 3 : -1;
+        if (motor_index >= 0) {
+            period_directive[motor_index] = data;
+            send_letter(TASK_ACK(TASK_UPD(motor_index)), 1);
+            clic_pend_irq(IRQ_TIMER_OVF(motor_index));
         }
     }
 
-    // Clear the mailbox IRQ line after reading inbox letters
     sys_write32(MBX_CTRL_IRQ_CLR, MBX_CTRL);
-
-    // pend UpdateCtrl 
-    for (int i = 0; i < NUM_MOTORS; i++) {
-        send_letter(TASK_ACK(TASK_UPD(i)), 1);        
-        clic_pend_irq(IRQ_TIMER_OVF(i));         
-    }
-
-    /* 4. retire GetMail */
     send_letter(TASK_ACK(TASK_MBX), 0);
 
-    mintthresh_write(prev);
 }
 
 static void isr_upd0(const void *arg)
 {
     ARG_UNUSED(arg);
-    unsigned int prev = mintthresh_write(PRIO_UPD);  
-    __asm__ volatile("csrsi mstatus, 0x8");
 
     send_letter(TASK_ACK(TASK_CTRL(0)), 0);
     send_letter(TASK_ACK(TASK_REP(0)),  0);
@@ -137,14 +122,11 @@ static void isr_upd0(const void *arg)
     //retire UpdateCtrl
     send_letter(TASK_ACK(TASK_UPD(0)), 0);
 
-    mintthresh_write(prev);
 }
 
 static void isr_upd1(const void *arg)
 {
     ARG_UNUSED(arg);
-    unsigned int prev = mintthresh_write(PRIO_UPD);  
-    __asm__ volatile("csrsi mstatus, 0x8");
 
     send_letter(TASK_ACK(TASK_CTRL(1)), 0);
     send_letter(TASK_ACK(TASK_REP(1)),  0);
@@ -163,13 +145,10 @@ static void isr_upd1(const void *arg)
     //retire UpdateCtrl
     send_letter(TASK_ACK(TASK_UPD(1)), 0);
 
-    mintthresh_write(prev);
 }
 static void isr_upd2(const void *arg)
 {
     ARG_UNUSED(arg);
-    unsigned int prev = mintthresh_write(PRIO_UPD);  
-    __asm__ volatile("csrsi mstatus, 0x8");
 
     send_letter(TASK_ACK(TASK_CTRL(2)), 0);
     send_letter(TASK_ACK(TASK_REP(2)),  0);
@@ -188,13 +167,10 @@ static void isr_upd2(const void *arg)
     //retire UpdateCtrl
     send_letter(TASK_ACK(TASK_UPD(2)), 0);
 
-    mintthresh_write(prev);
 }
 static void isr_upd3(const void *arg)
 {
     ARG_UNUSED(arg);
-    unsigned int prev = mintthresh_write(PRIO_UPD);  
-    __asm__ volatile("csrsi mstatus, 0x8");
 
     send_letter(TASK_ACK(TASK_CTRL(3)), 0);
     send_letter(TASK_ACK(TASK_REP(3)),  0);
@@ -213,13 +189,11 @@ static void isr_upd3(const void *arg)
     //retire UpdateCtrl
     send_letter(TASK_ACK(TASK_UPD(3)), 0);
 
-    mintthresh_write(prev);
 }
 
 static void isr_ctrl0(const void *arg)
 {
     ARG_UNUSED(arg);
-    unsigned int prev = mintthresh_write(PRIO_PID);   
 
     uint8_t measured;
     unsigned int key = irq_lock();
@@ -236,13 +210,11 @@ static void isr_ctrl0(const void *arg)
     clic_pend_irq(IRQ_EXT(0));                          
     send_letter(TASK_ACK(TASK_REP(0)), 1);             
 
-    mintthresh_write(prev);                           
 }
 
 static void isr_ctrl1(const void *arg)
 { 
     ARG_UNUSED(arg);
-    unsigned int prev = mintthresh_write(PRIO_PID);   
 
     uint8_t measured;
     unsigned int key = irq_lock();
@@ -259,13 +231,11 @@ static void isr_ctrl1(const void *arg)
     clic_pend_irq(IRQ_EXT(1));                          
     send_letter(TASK_ACK(TASK_REP(1)), 1);             
 
-    mintthresh_write(prev);                            
 }
 
 static void isr_ctrl2(const void *arg)
 { 
     ARG_UNUSED(arg);
-    unsigned int prev = mintthresh_write(PRIO_PID);   
 
     uint8_t measured;
     unsigned int key = irq_lock();
@@ -282,12 +252,10 @@ static void isr_ctrl2(const void *arg)
     clic_pend_irq(IRQ_EXT(2));                          
     send_letter(TASK_ACK(TASK_REP(2)), 1);             
 
-    mintthresh_write(prev);                           
 }
 static void isr_ctrl3(const void *arg)
 { 
     ARG_UNUSED(arg);
-    unsigned int prev = mintthresh_write(PRIO_PID);  
 
     uint8_t measured;
     unsigned int key = irq_lock();
@@ -304,14 +272,12 @@ static void isr_ctrl3(const void *arg)
     clic_pend_irq(IRQ_EXT(3));                          
     send_letter(TASK_ACK(TASK_REP(3)), 1);             
 
-    mintthresh_write(prev);                            
 }
 
 static void isr_rep0(const void *arg)
 {
     ARG_UNUSED(arg);
-    unsigned int prev = mintthresh_write(PRIO_REP);  
-    __asm__ volatile("csrsi mstatus, 0x8");           
+    check_runtime(); 
 
     uint32_t time_us =
         (uint32_t)((k_cycle_get_64() - sim_start_cycles) / (CPU_FREQ_HZ / 1000000U));
@@ -321,13 +287,11 @@ static void isr_rep0(const void *arg)
 
     send_letter(TASK_ACK(TASK_REP(0)), 0);            
 
-    mintthresh_write(prev);                            
 }
 static void isr_rep1(const void *arg)
 {
     ARG_UNUSED(arg);
-    unsigned int prev = mintthresh_write(PRIO_REP);   
-    __asm__ volatile("csrsi mstatus, 0x8");           
+    check_runtime(); 
 
     uint32_t time_us =
         (uint32_t)((k_cycle_get_64() - sim_start_cycles) / (CPU_FREQ_HZ / 1000000U));
@@ -337,13 +301,11 @@ static void isr_rep1(const void *arg)
 
     send_letter(TASK_ACK(TASK_REP(1)), 0);
 
-    mintthresh_write(prev);                           
 }
 static void isr_rep2(const void *arg)
 {
     ARG_UNUSED(arg);
-    unsigned int prev = mintthresh_write(PRIO_REP);   
-    __asm__ volatile("csrsi mstatus, 0x8");           
+    check_runtime();
 
     uint32_t time_us =
         (uint32_t)((k_cycle_get_64() - sim_start_cycles) / (CPU_FREQ_HZ / 1000000U));
@@ -352,13 +314,11 @@ static void isr_rep2(const void *arg)
     send_letter(MBX_PRINT_ADDR, rep_letter);          
     send_letter(TASK_ACK(TASK_REP(2)), 0);            
 
-    mintthresh_write(prev);                            
 }
 static void isr_rep3(const void *arg)
 {
     ARG_UNUSED(arg);
-    unsigned int prev = mintthresh_write(PRIO_REP);
-    __asm__ volatile("csrsi mstatus, 0x8");       
+    check_runtime();
 
     uint32_t time_us =
         (uint32_t)((k_cycle_get_64() - sim_start_cycles) / (CPU_FREQ_HZ / 1000000U));
@@ -368,7 +328,6 @@ static void isr_rep3(const void *arg)
 
     send_letter(TASK_ACK(TASK_REP(3)), 0); 
 
-    mintthresh_write(prev);
 }
 
 static void finish_sim(void)
@@ -437,7 +396,7 @@ int main(void)
         send_letter(TASK_PERIOD(TASK_CTRL(i)), CTRL_PERIOD_US);
     }
 
-    /* Control deadline */
+    /* control deadline */
     for (size_t i = 0; i < NUM_MOTORS; i++) {
         send_letter(TASK_DEADLINE(TASK_CTRL(i)), DEADLINE_CTRL_US);
     }
