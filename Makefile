@@ -1,35 +1,37 @@
 SW_DIR ?= examples/smoke_tests
 
-.PHONY: ips
+RISCOF ?= $(shell bender path riscof_verilator)
+
+.PHONY: ips elf vlint verilate simv riscof_build riscof_run fpga clean_build clean_ips clean_all
+
 ips:
 	bender update
 	bender vendor init
 
-.PHONY: elf
 elf:
 	@$(MAKE) -C $(SW_DIR) elf --no-print-directory
 
-.PHONY: vlint
 vlint:
 	$(MAKE) -C verilator lint
 
-.PHONY: verilate
 verilate:
 	$(MAKE) -C verilator verilate
 
-.PHONY: simv
 simv:
 	$(MAKE) -C verilator simv
 
-.PHONY: fpga
+riscof_build:
+	$(MAKE) -C riscof compile
+
+riscof_run:
+	$(MAKE) -C riscof riscof_run
+
 fpga:
 	@$(MAKE) -C fpga syn --no-print-directory
 
-.PHONY: clean_build
 clean_build:
 	rm -fr build
 
-.PHONY: clean_ips
 clean_ips:
 	rm -fr .bender
 
