@@ -18,8 +18,9 @@ jobs:
 
       - name: Install Bender
         run: |
+          mkdir -p tmp/bin && cd tmp/bin
           curl -L https://github.com/pulp-platform/bender/releases/download/v0.29.1/bender-0.29.1-x86_64-linux-gnu-ubuntu24.04.tar.gz | tar xz -C .
-          echo $GITHUB_WORKSPACE >> $GITHUB_PATH
+          echo $GITHUB_WORKSPACE/tmp/bin >> $GITHUB_PATH
 
       - name: Fetch dependencies
         run: bender update && bender vendor init
@@ -28,7 +29,7 @@ jobs:
         run: sudo apt install verilator=5.020-1
 
       - name: Build Verilator model of DUT
-        run: make verilate_compliance
+        run: make riscof_build
 
       - name: Install gcc and riscof
         run: |
@@ -37,13 +38,13 @@ jobs:
           wget -qO- https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2023.07.05/riscv32-elf-ubuntu-22.04-gcc-nightly-2023.07.05-nightly.tar.gz | tar xz
           echo $GITHUB_WORKSPACE/riscv/bin >> $GITHUB_PATH
 
-      - name: Setup SAIL-RISCV Model
+      - name: Install SAIL-RISCV Model
         run: |
-          cd dv/bin/ && tar -xzf sail-riscv.tar.gz
-          echo $GITHUB_WORKSPACE/dv/bin/sail-riscv >> $GITHUB_PATH
+          cd riscof/bin/ && tar -xzf sail-riscv.tar.gz
+          echo $GITHUB_WORKSPACE/riscof/bin/sail-riscv >> $GITHUB_PATH
 
       - name: Init arch tests
-        run: cd dv/ && riscof arch-test --clone
+        run: make -C riscof riscof_clone
 
       - name: Run compliance tests
-        run: cd dv/ && riscof --verbose info run --suite riscv-arch-test/riscv-test-suite/rv32i_m/I --env riscv-arch-test/riscv-test-suite/env --config=./config.ini --no-browser
+        run: make -C riscof riscof_run

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Support for real APB UART in Verilator
 
+### Removed
+- Local RISC-V compliance setup
+
 ## [v0.1.0] - 2026-07-03
 
 ### Added
