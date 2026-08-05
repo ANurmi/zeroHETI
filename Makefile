@@ -17,10 +17,6 @@ vlint:
 verilate:
 	$(MAKE) -C verilator verilate
 
-.PHONY: verilate_compliance
-verilate_compliance:
-	$(MAKE) -C verilator verilate_compliance
-
 .PHONY: simv
 simv:
 	$(MAKE) -C verilator simv
@@ -28,10 +24,6 @@ simv:
 .PHONY: fpga
 fpga:
 	@$(MAKE) -C fpga syn --no-print-directory
-
-.PHONY: compliance
-compliance:
-	@$(MAKE) -C dv riscof_all --no-print-directory
 
 .PHONY: clean_build
 clean_build:
