@@ -33,6 +33,7 @@ lint_off -rule UNOPTFLAT -file "*/edf-ic-*/*" -match "*"
 lint_off -rule UNOPTFLAT -file "*/apb-*/*" -match "*"
 lint_off -rule UNOPTFLAT -file "*/riscv-dbg-*/*" -match "*"
 lint_off -rule UNOPTFLAT -file "*/rt-ibex-*/*" -match "*"
+lint_off -rule UNOPTFLAT -file "*/obi_to_apb_intf.sv" -match "*"
 
 lint_off -rule PINMISSING -file "*/ibex_core.sv" -match "*"
 lint_off -rule PINMISSING -file "*/ibex_top.sv" -match "*"
