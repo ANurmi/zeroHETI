@@ -3,6 +3,7 @@
 #![allow(static_mut_refs)]
 
 use bsp::rt as _;
+
 #[rtic::app(device = bsp, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3])]
 
 mod app {
@@ -147,6 +148,7 @@ mod app {
 
     use bsp::{
         CPU_FREQ_HZ,
+        asm_delay,
         apb_uart::ApbUart,
         clic::Clic,
         i2c::{self, I2c},
@@ -245,6 +247,8 @@ mod app {
                     sprintln!("- Runtime         (ms): {}", RUNTIME_MS);
                     sprintln!("- Load factor  (0-100): {}", LF);
 
+                    asm_delay(1000);
+
                     let timers = &mut [
                         Timer::init::<TIMER0_ADDR>().into_periodic(),
                         Timer::init::<TIMER1_ADDR>().into_periodic(),
@@ -319,6 +323,8 @@ mod app {
                         "- CPU utilization       (%): {}",
                         (active_time_cc * 100) / duration_real_cc
                     );
+
+                    asm_delay(1000);
                     signal_pass(None);
                 }
             }
@@ -702,14 +708,14 @@ mod app {
         match rk {
             ReportKind::Measure => writeln!(
                 serial,
-                "[TaskRep-{task} @{:6} us] measure avg value {:3} from motor {task:1} on I2C bus",
+                "[R{task} @{:6} us] R {:3} M {task:1}",
                 time_now,
                 buf,
                 task = task_idx,
             ),
             ReportKind::Control => writeln!(
                 serial,
-                "[TaskRep-{task} @{:6} us] set control value {:3} to   motor {task:1} on I2C bus",
+                "[R{task} @{:6} us] W {:3} M {task:1}",
                 time_now,
                 buf,
                 task = task_idx
