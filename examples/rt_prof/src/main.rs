@@ -143,14 +143,14 @@ mod app {
     // job of the matching control task a report job is spawned.
     const REP_TASK_II: u32 = 7;
 
-    const REP_TASK_DL_US: u32 = 8000;
-    const MBX_TASK_DL_US: u32 = 1000;
+    const REP_TASK_DL_US: u32 = 9000;
+    const MBX_TASK_DL_US: u32 = 3000;
     const UPD_TASK_DL_US: u32 = 2000;
 
     use bsp::{
         CPU_FREQ_HZ,
-        asm_delay,
         apb_uart::ApbUart,
+        asm_delay,
         clic::Clic,
         i2c::{self, I2c},
         interrupt::Interrupt,
@@ -627,7 +627,7 @@ mod app {
                 Clic::ctl(Interrupt::Timer0Cmp).set_level(to_prio(nperiod_us));
                 // invalidate these if currently active
                 sim_task_ack(obx, MbxAddr::TaskCtrl0Ack);
-                sim_task_ack(obx, MbxAddr::TaskRep0Ack);
+                //sim_task_ack(obx, MbxAddr::TaskRep0Ack);
                 sim_task_ack(obx, MbxAddr::TaskUpd0Ack);
             });
         }
@@ -709,14 +709,14 @@ mod app {
         match rk {
             ReportKind::Measure => writeln!(
                 serial,
-                "[R{task} @{:6} us] R {:3} M {task:1}",
+                "[R{task} @{:6} us] R {:3}",
                 time_now,
                 buf,
                 task = task_idx,
             ),
             ReportKind::Control => writeln!(
                 serial,
-                "[R{task} @{:6} us] W {:3} M {task:1}",
+                "[R{task} @{:6} us] W {:3}",
                 time_now,
                 buf,
                 task = task_idx

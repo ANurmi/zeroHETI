@@ -94,6 +94,8 @@ module vip_task_scoreboard
       if ($urandom() % 10 > 3) i_mbx_drv.send_letter(32'h103, generate_directive());
       */
 
+      i_mbx_drv.send_letter(32'h100, generate_directive());
+
       activate_task(TASK_MBX);
       i_mbx_drv.raise_irq();
     end
@@ -192,9 +194,10 @@ module vip_task_scoreboard
 
     task_set_ret[i].count += 1;
   endtask
-  /*
+
   function automatic logic [31:0] generate_directive();
     // WCET for 4*I2C sequential I2C operations: ~560 us
+    /*
     automatic logic [31:0] MinPeriod = 'd1200;
     automatic logic [31:0] directive;
 
@@ -212,10 +215,10 @@ module vip_task_scoreboard
     // Decrement by 25 credits or cap at zero.
     if (directive_credits > 25) directive_credits -= 25;
     else directive_credits = 0;
-
-    return directive;
-  endfunction
 */
+    return 2000;
+  endfunction
+
 
 endmodule : vip_task_scoreboard
 
