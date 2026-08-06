@@ -15,7 +15,7 @@ module vip_task_scoreboard
 
   //localparam zeroheti_pkg::int_ctrl_e IntC = zeroheti_pkg::`INTC;
 
-  // Uninterrupted task durations: 
+  // Uninterrupted task durations:
   // CTRL ~ 230 us
   // REP (current prints) ~ 683 us
   // For control tasks period === deadline
@@ -63,21 +63,21 @@ module vip_task_scoreboard
       if (i_zeroheti.i_apb_timer.irq_o[7]) activate_task(TASK_CTRL_3);
     end
   end
-  always @(counter_us) begin : scb_main_proc
-    /*
+
+  always @(counter_us) begin : dl_proc
     // Check for deadline misses
     for (int i = 0; i < TaskSetSize; i++) begin
       if (task_set[i].active & task_set[i].dl_us == 0) begin
         $fatal(1, "Deadline miss for task %0d!", i);
       end
     end
-*/
+
     // Decrement DL of active tasks
     for (int i = 0; i < TaskSetSize; i++) begin
       if (task_set[i].active) task_set[i].dl_us--;
     end
 
-  end : scb_main_proc
+  end : dl_proc
 
 
   always @(counter_us) begin : scb_mbx_proc
@@ -164,9 +164,9 @@ module vip_task_scoreboard
   task automatic retire_task(input int idx);
 
     if (task_set[idx].active) task_set[idx].active = 0;
-    /*
-      log_slack(idx);
-*/
+
+    log_slack(idx);
+
     unique case (idx) inside
       TASK_MBX:                    task_set[idx].dl_us = mbx_dl_us_i;
       [TASK_UPD_0 : TASK_UPD_3]:   task_set[idx].dl_us = upd_dl_us_i[idx-1];
@@ -174,7 +174,7 @@ module vip_task_scoreboard
       [TASK_REP_0 : TASK_REP_3]:   task_set[idx].dl_us = rep_dl_us_i[idx-9];
     endcase
   endtask
-  /*
+
   task automatic log_slack(input int unsigned i);
     if (task_set_ret[i].count == 0) begin  // initial state
       task_set_ret[i].slack_worst = task_set[i].dl_us;
@@ -192,7 +192,7 @@ module vip_task_scoreboard
 
     task_set_ret[i].count += 1;
   endtask
-
+  /*
   function automatic logic [31:0] generate_directive();
     // WCET for 4*I2C sequential I2C operations: ~560 us
     automatic logic [31:0] MinPeriod = 'd1200;

@@ -143,6 +143,7 @@ mod app {
     // job of the matching control task a report job is spawned.
     const REP_TASK_II: u32 = 7;
 
+    const REP_TASK_DL_US: u32 = 8000;
     const MBX_TASK_DL_US: u32 = 1000;
     const UPD_TASK_DL_US: u32 = 2000;
 
@@ -270,10 +271,10 @@ mod app {
                         (MbxAddr::SimLoad, LF),
                         (MbxAddr::TaskMbxDln, MBX_TASK_DL_US),
                         // Initialize with very long deadlines
-                        (MbxAddr::TaskRep0Dln, 0x1000),
-                        (MbxAddr::TaskRep1Dln, 0x1000),
-                        (MbxAddr::TaskRep2Dln, 0x1000),
-                        (MbxAddr::TaskRep3Dln, 0x1000),
+                        (MbxAddr::TaskRep0Dln, REP_TASK_DL_US),
+                        (MbxAddr::TaskRep1Dln, REP_TASK_DL_US),
+                        (MbxAddr::TaskRep2Dln, REP_TASK_DL_US),
+                        (MbxAddr::TaskRep3Dln, REP_TASK_DL_US),
                         // Initialize with very long deadlines
                         (MbxAddr::TaskUpd0Dln, UPD_TASK_DL_US),
                         (MbxAddr::TaskUpd1Dln, UPD_TASK_DL_US),
@@ -372,7 +373,7 @@ mod app {
         fn init() -> Self {
             Self {
                 state: PidState::default(),
-                rep_cnt: 3,
+                rep_cnt: 4,
             }
         }
         fn exec(&mut self) {
@@ -466,7 +467,7 @@ mod app {
         fn init() -> Self {
             Self {
                 state: PidState::default(),
-                rep_cnt: 1,
+                rep_cnt: 5,
             }
         }
         fn exec(&mut self) {
@@ -513,7 +514,7 @@ mod app {
         fn init() -> Self {
             Self {
                 state: PidState::default(),
-                rep_cnt: 5,
+                rep_cnt: 0,
             }
         }
         fn exec(&mut self) {

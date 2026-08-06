@@ -87,7 +87,7 @@ module vip_mbx_driver #(
 
     automatic letter_t letter;
     automatic logic [31:0] status;
-    
+
     axi_read(StatAddr, status);
 
     if (~status[2]) begin
