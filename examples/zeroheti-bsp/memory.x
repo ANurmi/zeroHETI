@@ -26,7 +26,7 @@ REGION_ALIAS("REGION_DATA", DMEM);
 PROVIDE(_start_DefaultHandler_trap = _start_trap);
 */
 
-/* Core interrupts */
+/* Core interrupts (NC: not connected) */
 /* NC: PROVIDE(_start_SupervisorSoft_trap = _start_DefaultHandler_trap); */
 PROVIDE(_start_MachineSoft_trap = _start_DefaultHandler_trap);
 /* NC: PROVIDE(_start_SupervisorTimer_trap = _start_DefaultHandler_trap); */
