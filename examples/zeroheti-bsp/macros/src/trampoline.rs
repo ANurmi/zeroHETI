@@ -1,5 +1,5 @@
 use crate::{
-    archi::{Abi, CALLER_SAVE_ABI, CALLER_SAVE_EABI},
+    archi::{Abi, CALLER_SAVE_EABI, CALLER_SAVE_RVI},
     validate::validate_interrupt_handler,
 };
 use proc_macro::TokenStream;
@@ -85,7 +85,7 @@ pub(crate) fn generate_pcs_trap_entry(interrupt: &str) -> proc_macro2::TokenStre
 /// [generate_continue_nested_trap].
 pub(crate) fn generate_nested_trap_entry(interrupt: &str, abi: Abi) -> proc_macro2::TokenStream {
     let abi = match abi {
-        Abi::Ilp32 => CALLER_SAVE_ABI,
+        Abi::Ilp32 => CALLER_SAVE_RVI,
         Abi::Ilp32e => CALLER_SAVE_EABI,
     };
 
@@ -127,7 +127,7 @@ pub(crate) fn generate_nested_trap_entry(interrupt: &str, abi: Abi) -> proc_macr
 /// frame.
 pub(crate) fn generate_continue_nested_trap_impl(abi: Abi) -> TokenStream {
     let abi = match abi {
-        Abi::Ilp32 => CALLER_SAVE_ABI,
+        Abi::Ilp32 => CALLER_SAVE_RVI,
         Abi::Ilp32e => CALLER_SAVE_EABI,
     };
 
