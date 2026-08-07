@@ -1,12 +1,15 @@
 name: zephyr workflow
 
+# Run workflow only when hardware or Zephyr changes
 on:
-  push:
-    branches:
-      - zephyr/rt-prof
   pull_request:
-    branches:
-      - "*"
+    paths:
+      - 'zephyr/**'
+      - 'examples/zephyr/**'
+      - 'rtl/**'
+      - 'verilator/**'
+      - 'Bender.yml'
+      - 'west.yml'
 
 jobs:
   build-zephyr:
@@ -42,7 +45,6 @@ jobs:
           path: zephyr/build/zephyr/zephyr.elf
 
   build-hw:
-    needs: build-zephyr
     runs-on: ubuntu-24.04
     container:
       image: ghcr.io/soc-hub-fi/zeroheti-ci:latest
