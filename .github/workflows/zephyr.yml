@@ -1,12 +1,10 @@
 name: zephyr workflow
 
+# Triggers only on pull requests starting with zephyr/
 on:
-  push:
-    branches:
-      - zephyr/rt-prof
   pull_request:
     branches:
-      - "*"
+      - "zephyr/*"
 
 jobs:
   build-zephyr:
