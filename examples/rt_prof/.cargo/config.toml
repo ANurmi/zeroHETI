@@ -18,6 +18,6 @@ rustflags = [
     "-C",
     "link-arg=-march=rv32emc",
     "-C",
-    "link-arg=-mabi=ilp32e"
+    "link-arg=-mabi=ilp32e",
 ]
 runner = "../run-sim.sh"
