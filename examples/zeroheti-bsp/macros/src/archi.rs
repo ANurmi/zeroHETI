@@ -10,8 +10,11 @@ pub(crate) enum Abi {
 
 /// RISC-V standard ABI on RVE/ILP32E
 ///
-/// These registers are saved by the interrupt prologue and should not be
-/// preserved across compiler generated calls.
+/// This is the caller-saved set of the *standard* ILP32E ABI, which is what
+/// rustc generates (incl. `compiler_builtins`). The nested interrupt prologue
+/// must stack all of these registers: compiler generated code may hold a live
+/// value in any of them (e.g. `__udivdi3` clobbers `a4`/`x14`) when an
+/// interrupt fires. See issue #106.
 #[rustfmt::skip]
 pub(crate) const CALLER_SAVE_RVE: &[&str] = &[
     // `ra`: return address, stores the address to return to after a function call or interrupt.
@@ -26,8 +29,9 @@ pub(crate) const CALLER_SAVE_RVE: &[&str] = &[
 
 /// RISC-V standard ABI on RVI/ILP32
 ///
-/// These registers are saved by the interrupt prologue and should not be
-/// preserved across compiler generated calls.
+/// This is the caller-saved set of the *standard* ILP32 ABI, which is what
+/// rustc generates. The nested interrupt prologue must stack all of these
+/// registers. See issue #106.
 #[rustfmt::skip]
 pub(crate) const CALLER_SAVE_RVI: &[&str] = concat_slices!([&str]:
     CALLER_SAVE_RVE,
@@ -45,6 +49,14 @@ pub(crate) const CALLER_SAVE_RVI: &[&str] = concat_slices!([&str]:
 /// preserved across compiler generated calls.
 ///
 /// [RISC-V EABI](https://github.com/riscvarchive/riscv-eabi-spec/)
+///
+/// This reduced set is what the hardware PCS save mechanism stacks and what the
+/// CLIC fast-interrupt documentation prescribes. It is NOT what rustc's
+/// standard ILP32E codegen guarantees to preserve (`x6`, `x7` and `x14` are
+/// caller-saved in the standard ABI), so it is kept here only as a reference:
+/// the software trampoline must use the more pessimistic [`CALLER_SAVE_RVE`]
+/// set instead. See issue #106.
+#[allow(dead_code)]
 #[rustfmt::skip]
 pub(crate) const CALLER_SAVE_EABI: &[&str] = &[
     // `ra`: return address, stores the address to return to after a function call or interrupt.
