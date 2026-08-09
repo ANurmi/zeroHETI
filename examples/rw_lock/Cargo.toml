@@ -1,0 +1,40 @@
+[package]
+name = "rw_lock"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp", features = [
+    "rt",
+] }
+fugit = "0.3.7"
+# It is strange that this is needed as a direct dependency; build breaks otherwise
+riscv-rt = { version = "0.17.1", features = ["single-hart", "v-trap", "no-interrupts"] }
+rtic = { version = "0.1.0", path = "../mrtic/distributions/zeroheti-rtic", features = ["rtl-tb"] }
+[features]
+default = []
+
+intc-clic = ["bsp/intc-clic", "rtic/intc-clic"]
+intc-edfic = ["bsp/intc-edfic", "rtic/intc-edfic"]
+
+# Use this feature when using cosimulators such as QuestaSim
+rtl-tb = ["bsp/rtl-tb"]
+# Use this feature when deploying on FPGA
+fpga = ["bsp/fpga"]
+# Readers use `read` locks instead of plain mutexes on the protected resource
+rw = []
+
+[profile.dev]
+# There seems to be a problem in riscv-rt with regards to linking in default_start_trap in debug
+# mode. `codegen-units = 1` avoids that
+codegen-units = 1
+opt-level = "s"
+
+[profile.release]
+# There seems to be a problem in riscv-rt with regards to linking in default_start_trap in debug
+# mode. `codegen-units = 1` avoids that
+codegen-units = 1
+opt-level = "s"
+
+[build-dependencies]
+riscv-target-parser = "0.1.3"
