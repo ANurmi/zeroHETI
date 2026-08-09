@@ -6,17 +6,6 @@ use bsp::rt as _;
 #[rtic::app(device = bsp, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3])]
 
 mod app {
-    const fn parse_u32(s: &str) -> u32 {
-        let mut out: u32 = 0;
-        let mut i: usize = 0;
-        while i < s.len() {
-            out *= 10;
-            out += (s.as_bytes()[i] - b'0') as u32;
-            i += 1;
-        }
-        out
-    }
-
     const fn to_prio(per: u32) -> u8 {
         // Shifting out lowest 8 bits makes timing granularity
         // 256 (us), which is sufficient to represent the set
@@ -154,6 +143,7 @@ mod app {
         mailbox::{Inbox, Mailbox, Outbox},
         mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mtimer::{self, *},
+        parse_u32,
         riscv::{self},
         sprintln,
         tb::signal_pass,
