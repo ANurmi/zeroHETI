@@ -1,0 +1,24 @@
+runtime_ms := "20"
+fmutex := "ui-test/run-mutex.stdout"
+frw := "ui-test/run-rw.stdout"
+
+run-mutex:
+    echo "== mutex build =="
+    stdbuf -oL cargo run --release -Frtl-tb,intc-clic
+
+run-rw:
+    echo "== rw-lock build =="
+    stdbuf -oL cargo run --release -Frtl-tb,intc-clic,rw
+
+compare:
+    mkdir -p ui-test
+    @: > {{ fmutex }}
+    RUNTIME_MS={{ runtime_ms }} stdbuf -oL cargo run --release -Frtl-tb,intc-clic \
+        | tee {{ fmutex }}
+    RUNTIME_MS={{ runtime_ms }} stdbuf -oL cargo run --release -Frtl-tb,intc-clic,rw \
+        | tee {{ frw }}
+    echo ""
+    echo "=== side-by-side ==="
+    paste <(grep -E "worst|VERDICT" {{ fmutex }}) \
+          <(grep -E "worst|VERDICT" {{ frw }}) \
+        | column -t -s $'\t'
