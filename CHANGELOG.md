@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.1.1] - 2026-08-10
+
 ### Added
 - Support for real APB UART in Verilator
 
