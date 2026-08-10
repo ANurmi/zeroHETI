@@ -15,5 +15,5 @@ dv/zeroheti/__pycache__
 rtl/vendor
 
 # Terminal UI testing
-**/ui-test/run.stdout
+**/ui-test/run*.stdout
 
