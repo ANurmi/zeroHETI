@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- rt-ibex interrupt timing [patch](https://github.com/soc-hub-fi/rt-ibex/pull/8)
+
 ## [v0.1.1] - 2026-08-10
 
 ### Added
