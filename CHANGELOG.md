@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- JTAG idcode configuration at compile-time
+
 ### Fixed
 - rt-ibex interrupt timing [patch](https://github.com/soc-hub-fi/rt-ibex/pull/8)
 
