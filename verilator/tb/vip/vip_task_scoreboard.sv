@@ -13,13 +13,6 @@ module vip_task_scoreboard
     input logic        [3:0][31:0] rep_dl_us_i
 );
 
-  //localparam zeroheti_pkg::int_ctrl_e IntC = zeroheti_pkg::`INTC;
-
-  // Uninterrupted task durations:
-  // CTRL ~ 230 us
-  // REP (current prints) ~ 683 us
-  // For control tasks period === deadline
-
   task_t           [TaskSetSize-1:0] task_set;
   task_ret_t       [TaskSetSize-1:0] task_set_ret;
 
@@ -28,12 +21,7 @@ module vip_task_scoreboard
   int unsigned                       pre_counter = 0;
   int unsigned                       mbx_task_per;
 
-  // Credit-based system for assigning control task periods
-  // from load factor.
-  //int unsigned                       directive_credits = 0;
-
-
-  assign mbx_task_per = 'd8000;  // needs to be sparse enough
+  assign mbx_task_per = 'd7550;  // needs to be sparse enough
 
   always @(posedge clk_i) begin : us_counter
     if (enable_i) begin
@@ -44,17 +32,6 @@ module vip_task_scoreboard
     end
   end : us_counter
 
-  //always @(posedge clk_i) begin :
-  /*
-  logic [3:0] irq_ctrl_q;
-
-  always @(posedge clk_i) begin
-    irq_ctrl_q[0] <= i_zeroheti.i_apb_timer.irq_o[1];
-    irq_ctrl_q[1] <= i_zeroheti.i_apb_timer.irq_o[3];
-    irq_ctrl_q[2] <= i_zeroheti.i_apb_timer.irq_o[5];
-    irq_ctrl_q[3] <= i_zeroheti.i_apb_timer.irq_o[7];
-  end
-*/
   always @(posedge clk_i) begin
     if (enable_i) begin
       if (i_zeroheti.i_apb_timer.irq_o[1]) activate_task(TASK_CTRL_0);
@@ -79,22 +56,13 @@ module vip_task_scoreboard
 
   end : dl_proc
 
-
   always @(counter_us) begin : scb_mbx_proc
     // Activate mailbox task periodically
     if ((counter_us % 64'(mbx_task_per) == 0) | counter_us == 10) begin
 
-      /*
-      // Reset credits on every activation of this task
-      directive_credits = loadfactor_i;
-
-      if ($urandom() % 10 > 5) i_mbx_drv.send_letter(32'h100, generate_directive());
-      if ($urandom() % 10 > 4) i_mbx_drv.send_letter(32'h101, generate_directive());
-      if ($urandom() % 10 > 6) i_mbx_drv.send_letter(32'h102, generate_directive());
-      if ($urandom() % 10 > 3) i_mbx_drv.send_letter(32'h103, generate_directive());
-      */
-
-      i_mbx_drv.send_letter(32'h100, generate_directive());
+      for (int i = 0; i < 4; i++) begin
+        i_mbx_drv.send_letter((32'h100 + i), generate_directive(loadfactor_i));
+      end
 
       activate_task(TASK_MBX);
       i_mbx_drv.raise_irq();
@@ -105,12 +73,6 @@ module vip_task_scoreboard
 
 
     @(posedge enable_i);
-    /*
-    // Seed random generator
-    $urandom(seed_i);
-    $urandom_range(seed_i);
-*/
-    //if (IntC == zeroheti_pkg::CLIC) $display("ringdingingin");
 
     for (int i = 0; i < TaskSetSize; i++) begin
 
@@ -146,7 +108,7 @@ module vip_task_scoreboard
         [TASK_CTRL_0 : TASK_CTRL_3]: TaskName = {"I2cCtrl", string'(i - 5 + 48)};
         [TASK_REP_0 : TASK_REP_3]:   TaskName = {"I2cReport", string'(i - 9 + 48)};
       endcase
-      $display("T%02d ( %11s ) - count: %3d, avg. slack: %6d us, worst slack: %6d us", i, TaskName,
+      $display("T%02d ( %11s ) - count: %4d, avg. slack: %6d us, worst slack: %6d us", i, TaskName,
                task_set_ret[i].count, task_set_ret[i].slack_avg, task_set_ret[i].slack_worst);
     end
     $display("");
@@ -195,30 +157,29 @@ module vip_task_scoreboard
     task_set_ret[i].count += 1;
   endtask
 
-  function automatic logic [31:0] generate_directive();
+  function automatic logic [31:0] generate_directive(input int unsigned max_load);
     // WCET for 4*I2C sequential I2C operations: ~560 us
+
     /*
-    automatic logic [31:0] MinPeriod = 'd1200;
-    automatic logic [31:0] directive;
+    unique case (max_load) inside
+      [32'd100 : 32'd80]: period = $urandom_range(1000, 7000);
+      [32'd80 : 32'd60]: period = $urandom_range(2000, 7000);
+      [32'd40 : 32'd20]: period = $urandom_range(5000, 7000);
+      [32'd20 : 32'd00]: period = 7000;
+      default: period = 7000;
+    endcase*/
 
-    automatic int unsigned load = $urandom_range(directive_credits, 0);
-    automatic logic [1:0] key = (load > 24) ? 0 : (load > 14) ? 1 : (load > 5) ? 2 : 3;
 
-    unique case (key)
-      2'd0:    directive = MinPeriod * 1;
-      2'd1:    directive = MinPeriod * 3;
-      2'd2:    directive = MinPeriod * 5;
-      2'd3:    directive = MinPeriod * 7;
-      default: directive = MinPeriod * 3;
-    endcase
+    //return period;
 
-    // Decrement by 25 credits or cap at zero.
-    if (directive_credits > 25) directive_credits -= 25;
-    else directive_credits = 0;
-*/
-    return 2000;
+    return (max_load > 'd80) ? $urandom_range(
+        1000, 7000
+    ) : (max_load > 'd60) ? $urandom_range(
+        2000, 7000
+    ) : (max_load > 'd40) ? $urandom_range(
+        5000, 5000
+    ) : 7000;
   endfunction
-
 
 endmodule : vip_task_scoreboard
 

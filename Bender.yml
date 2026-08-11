@@ -16,7 +16,7 @@ dependencies:
   obi: { git: "https://github.com/pulp-platform/obi.git", version: 0.1.7 }
   edfic: { git: "https://github.com/ANurmi/edfic.git", rev: "main" }
   vbench: { git: "https://github.com/ANurmi/vbench", rev: "main" }
-  riscof_verilator: { git: "https://github.com/ANurmi/riscof_verilator.git", version: 0.1.2 }
+  riscof_verilator: { git: "https://github.com/ANurmi/riscof_verilator.git", rev: "main" }
 
 sources:
 - target: rtl

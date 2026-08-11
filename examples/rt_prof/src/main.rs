@@ -141,11 +141,20 @@ mod app {
 
     // Initiation inteval for report tasks, i.e., on every Nth
     // job of the matching control task a report job is spawned.
-    const REP_TASK_II: u32 = 7;
+    const REP_TASK_II: u32 = 8;
 
-    const REP_TASK_DL_US: u32 = 9000;
+    // TODO: need to match with task prios
+    const REP_TASK_DL_US: u32 = 12_000;
     const MBX_TASK_DL_US: u32 = 3000;
     const UPD_TASK_DL_US: u32 = 2000;
+
+    /*
+    const PRIO_MBX: u8 = 0xF8;
+    const PRIO_CTRL_HI: u8 = 0xF0;
+    const PRIO_CTRL_HI: u8 = 0xF0;
+    const PRIO_REP: u8 = 0xA0;
+    const PRIO_REP: u8 = 0xA0;
+*/
 
     use bsp::{
         CPU_FREQ_HZ,
@@ -611,90 +620,123 @@ mod app {
 
     // Software tasks
     #[sw_task(priority = 0xfb, shared = [mail_buf_0, obx])]
-    struct Update0;
+    struct Update0 {
+        per_last: u32,
+    }
     impl RticSwTask for Update0 {
         type SpawnInput = ();
         fn init() -> Self {
-            Self {}
+            Self { per_last: 0 }
         }
         fn exec(&mut self, _p: ()) {
             let nperiod_us = self.shared().mail_buf_0.lock(|m| *m);
-            restart_timer_with_period(MotorIdx::M0, nperiod_us.micros());
+
+            // Only update if directive changed from last call
+            if nperiod_us != self.per_last {
+                restart_timer_with_period(MotorIdx::M0, nperiod_us.micros());
+                self.shared().obx.lock(|obx| {
+                    obx.send(MbxAddr::TaskCtrl0Per as u32, nperiod_us);
+                    obx.send(MbxAddr::TaskCtrl0Dln as u32, nperiod_us);
+                    obx.send(MbxAddr::TaskRep0Dln as u32, REP_TASK_II * nperiod_us);
+                    Clic::ctl(Interrupt::Timer0Cmp).set_level(to_prio(nperiod_us));
+                    // invalidate these if currently active
+                    sim_task_ack(obx, MbxAddr::TaskCtrl0Ack);
+                });
+
+                self.per_last = nperiod_us;
+            }
+
             self.shared().obx.lock(|obx| {
-                obx.send(MbxAddr::TaskCtrl0Per as u32, nperiod_us);
-                obx.send(MbxAddr::TaskCtrl0Dln as u32, nperiod_us);
-                obx.send(MbxAddr::TaskRep0Dln as u32, REP_TASK_II * nperiod_us);
-                Clic::ctl(Interrupt::Timer0Cmp).set_level(to_prio(nperiod_us));
-                // invalidate these if currently active
-                sim_task_ack(obx, MbxAddr::TaskCtrl0Ack);
-                //sim_task_ack(obx, MbxAddr::TaskRep0Ack);
                 sim_task_ack(obx, MbxAddr::TaskUpd0Ack);
             });
         }
     }
 
     #[sw_task(priority = 0xfb, shared = [mail_buf_1, obx])]
-    struct Update1;
+    struct Update1 {
+        per_last: u32,
+    }
     impl RticSwTask for Update1 {
         type SpawnInput = ();
         fn init() -> Self {
-            Self {}
+            Self { per_last: 0 }
         }
         fn exec(&mut self, _p: ()) {
             let nperiod_us = self.shared().mail_buf_1.lock(|m| *m);
-            restart_timer_with_period(MotorIdx::M1, nperiod_us.micros());
+
+            if nperiod_us != self.per_last {
+                restart_timer_with_period(MotorIdx::M1, nperiod_us.micros());
+                self.shared().obx.lock(|obx| {
+                    obx.send(MbxAddr::TaskCtrl1Per as u32, nperiod_us);
+                    obx.send(MbxAddr::TaskCtrl1Dln as u32, nperiod_us);
+                    obx.send(MbxAddr::TaskRep1Dln as u32, REP_TASK_II * nperiod_us);
+                    Clic::ctl(Interrupt::Timer1Cmp).set_level(to_prio(nperiod_us));
+                    // invalidate these if currently active
+                    sim_task_ack(obx, MbxAddr::TaskCtrl1Ack);
+                });
+                self.per_last = nperiod_us;
+            }
             self.shared().obx.lock(|obx| {
-                obx.send(MbxAddr::TaskCtrl1Per as u32, nperiod_us);
-                obx.send(MbxAddr::TaskCtrl1Dln as u32, nperiod_us);
-                obx.send(MbxAddr::TaskRep1Dln as u32, REP_TASK_II * nperiod_us);
-                Clic::ctl(Interrupt::Timer1Cmp).set_level(to_prio(nperiod_us));
-                // invalidate these if currently active
-                sim_task_ack(obx, MbxAddr::TaskCtrl1Ack);
-                sim_task_ack(obx, MbxAddr::TaskRep1Ack);
                 sim_task_ack(obx, MbxAddr::TaskUpd1Ack);
             });
         }
     }
 
     #[sw_task(priority = 0xfb, shared = [mail_buf_2, obx])]
-    struct Update2;
+    struct Update2 {
+        per_last: u32,
+    }
     impl RticSwTask for Update2 {
         type SpawnInput = ();
         fn init() -> Self {
-            Self {}
+            Self { per_last: 0 }
         }
         fn exec(&mut self, _p: ()) {
             let nperiod_us: u32 = self.shared().mail_buf_2.lock(|m| *m);
-            restart_timer_with_period(MotorIdx::M2, nperiod_us.micros());
+
+            if nperiod_us != self.per_last {
+                restart_timer_with_period(MotorIdx::M2, nperiod_us.micros());
+                self.shared().obx.lock(|obx| {
+                    obx.send(MbxAddr::TaskCtrl2Per as u32, nperiod_us);
+                    obx.send(MbxAddr::TaskCtrl2Dln as u32, nperiod_us);
+                    obx.send(MbxAddr::TaskRep2Dln as u32, REP_TASK_II * nperiod_us);
+                    Clic::ctl(Interrupt::Timer2Cmp).set_level(to_prio(nperiod_us));
+                    sim_task_ack(obx, MbxAddr::TaskCtrl2Ack);
+                });
+
+                self.per_last = nperiod_us;
+            }
             self.shared().obx.lock(|obx| {
-                obx.send(MbxAddr::TaskCtrl2Per as u32, nperiod_us);
-                obx.send(MbxAddr::TaskCtrl2Dln as u32, nperiod_us);
-                obx.send(MbxAddr::TaskRep2Dln as u32, REP_TASK_II * nperiod_us);
-                Clic::ctl(Interrupt::Timer2Cmp).set_level(to_prio(nperiod_us));
-                sim_task_ack(obx, MbxAddr::TaskCtrl2Ack);
-                sim_task_ack(obx, MbxAddr::TaskRep2Ack);
                 sim_task_ack(obx, MbxAddr::TaskUpd2Ack);
             });
         }
     }
 
     #[sw_task(priority = 0xfb, shared = [mail_buf_3, obx])]
-    struct Update3;
+    struct Update3 {
+        per_last: u32,
+    }
     impl RticSwTask for Update3 {
         type SpawnInput = ();
         fn init() -> Self {
-            Self {}
+            Self { per_last: 0 }
         }
         fn exec(&mut self, _p: ()) {
             let nperiod_us: u32 = self.shared().mail_buf_3.lock(|m| *m);
-            restart_timer_with_period(MotorIdx::M3, nperiod_us.micros());
+
+            if nperiod_us != self.per_last {
+                restart_timer_with_period(MotorIdx::M3, nperiod_us.micros());
+                self.shared().obx.lock(|obx| {
+                    obx.send(MbxAddr::TaskCtrl3Per as u32, nperiod_us);
+                    obx.send(MbxAddr::TaskCtrl3Dln as u32, nperiod_us);
+                    obx.send(MbxAddr::TaskRep3Dln as u32, REP_TASK_II * nperiod_us);
+                    Clic::ctl(Interrupt::Timer3Cmp).set_level(to_prio(nperiod_us));
+                    sim_task_ack(obx, MbxAddr::TaskCtrl3Ack);
+                });
+
+                self.per_last = nperiod_us;
+            }
             self.shared().obx.lock(|obx| {
-                obx.send(MbxAddr::TaskCtrl3Per as u32, nperiod_us);
-                obx.send(MbxAddr::TaskCtrl3Dln as u32, nperiod_us);
-                obx.send(MbxAddr::TaskRep3Dln as u32, REP_TASK_II * nperiod_us);
-                Clic::ctl(Interrupt::Timer3Cmp).set_level(to_prio(nperiod_us));
-                sim_task_ack(obx, MbxAddr::TaskCtrl3Ack);
-                sim_task_ack(obx, MbxAddr::TaskRep3Ack);
                 sim_task_ack(obx, MbxAddr::TaskUpd3Ack);
             });
         }
@@ -709,14 +751,14 @@ mod app {
         match rk {
             ReportKind::Measure => writeln!(
                 serial,
-                "[R{task} @{:6} us] R {:3}",
+                "[R{task} @{:8} us] R {:3}",
                 time_now,
                 buf,
                 task = task_idx,
             ),
             ReportKind::Control => writeln!(
                 serial,
-                "[R{task} @{:6} us] W {:3}",
+                "[R{task} @{:8} us] W {:3}",
                 time_now,
                 buf,
                 task = task_idx
@@ -725,56 +767,34 @@ mod app {
         .ok();
     }
 
-    #[inline]
-    fn compute_avg(buf: [u8; 5]) -> u8 {
-        //TODO: compute
-        0x15
-    }
-
-    #[sw_task(priority = 0xF1, shared = [ctrl_buf_0, read_buf_0, obx, serial])]
-    struct Report0 {
-        avg_buf: [u8; 5],
-        avg_ptr: u32,
-    }
+    #[sw_task(priority = 0xD8, shared = [ctrl_buf_0, read_buf_0, obx, serial])]
+    struct Report0 {}
     impl RticSwTask for Report0 {
         type SpawnInput = ();
         fn init() -> Self {
-            Self {
-                avg_buf: [0; 5],
-                avg_ptr: 0,
-            }
+            Self {}
         }
         fn exec(&mut self, _p: ()) {
             let ctrl_buf = self.shared().ctrl_buf_0.lock(|buf| *buf);
             let read_buf = self.shared().read_buf_0.lock(|buf| *buf);
             let task_idx: u8 = 0;
 
-            //TODO: implement on other tasks
-            self.avg_buf[self.avg_ptr as usize] = read_buf;
-            self.avg_ptr += 1;
-            if self.avg_ptr == 5 {
-                self.avg_ptr = 0;
-            }
-
-            let avg_buf = compute_avg(self.avg_buf);
-
             let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
             self.shared()
                 .serial
-                .lock(|s| report_task(s, task_idx, time_now, avg_buf, ReportKind::Measure));
+                .lock(|s| report_task(s, task_idx, time_now, read_buf, ReportKind::Measure));
             time_now = MTimer::instance().into_oneshot().duration().to_micros();
             self.shared()
                 .serial
                 .lock(|s| report_task(s, task_idx, time_now, ctrl_buf, ReportKind::Control));
 
             self.shared().obx.lock(|obx| {
-                // obx.send(MbxAddr::Print as u32, rep_letter);
                 sim_task_ack(obx, MbxAddr::TaskRep0Ack);
             });
         }
     }
 
-    #[sw_task(priority = 0xF1, shared = [ctrl_buf_1, read_buf_1, obx, serial])]
+    #[sw_task(priority = 0xD8, shared = [ctrl_buf_1, read_buf_1, obx, serial])]
     struct Report1;
     impl RticSwTask for Report1 {
         type SpawnInput = ();
@@ -801,7 +821,7 @@ mod app {
             });
         }
     }
-    #[sw_task(priority = 0xF1, shared = [ctrl_buf_2, read_buf_2, obx, serial])]
+    #[sw_task(priority = 0xD8, shared = [ctrl_buf_2, read_buf_2, obx, serial])]
     struct Report2;
     impl RticSwTask for Report2 {
         type SpawnInput = ();
@@ -828,7 +848,7 @@ mod app {
             });
         }
     }
-    #[sw_task(priority = 0xF1, shared = [ctrl_buf_3, read_buf_3, obx, serial])]
+    #[sw_task(priority = 0xD8, shared = [ctrl_buf_3, read_buf_3, obx, serial])]
     struct Report3;
     impl RticSwTask for Report3 {
         type SpawnInput = ();
