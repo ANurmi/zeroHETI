@@ -1,4 +1,4 @@
-ZH_ROOT         ?= $(realpath $(CURDIR))/..
+ZH_ROOT         ?= $(realpath $(CURDIR)/..)
 BUILD_DIR       ?= $(ZH_ROOT)/build
 SW_BUILD_DIR    ?= $(ZH_ROOT)/build/sw
 VERIL_DIR       ?= $(ZH_ROOT)/verilator
@@ -25,6 +25,8 @@ LOAD            ?= READMEM
 IMEM_BYTES       = 32768
 DMEM_BYTES       = 32768
 
+DEBUG           ?= 0
+
 # IMEM base 0x1_0000, DMEM base 0x2_0000
 DMEM_REL_OFFS_WORDS = 16385
 
@@ -40,10 +42,13 @@ ISA              = RV32$(BASE)$(MULT)$(COMP)
 
 GIT_HASH = $(shell git rev-parse --short HEAD)
 
+JTAG_IDCODE = feedc0d3
+
 VDEFS ?= \
   +define+VERILATOR=1 \
 	+define+GIT_HASH=$(GIT_HASH) \
 	+define+ZH_ROOT=$(ZH_ROOT) \
+	+define+JTAG_IDCODE=$(JTAG_IDCODE) \
 	+define+IMEM_BYTES=$(IMEM_BYTES) \
 	+define+DMEM_BYTES=$(DMEM_BYTES) \
 	+define+INTC=$(INTC) \
@@ -64,7 +69,7 @@ VFLAGS           = \
   --trace-params \
   --hierarchical \
   --build \
-   -CFLAGS "-I$(VBENCH)/src -DZH_ROOT=$(ZH_ROOT)" \
+   -CFLAGS "-I$(VBENCH)/src -DZH_ROOT=$(ZH_ROOT) -DIDCODE=0x$(JTAG_IDCODE)" \
   --Mdir $(VERIL_BUILD_DIR)/obj_dir \
    -j `nproc` \
 

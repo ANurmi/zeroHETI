@@ -10,8 +10,6 @@
 #define JTAGTDO   jtag_td_o
 #define JTAGTRSTN jtag_trst_ni
 
-#define IDCODE    0xfeedc0d3
-
 #include "zeroheti_top_wrapper.h"
 
 

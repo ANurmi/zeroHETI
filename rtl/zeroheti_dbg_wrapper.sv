@@ -16,6 +16,8 @@ module zeroheti_dbg_wrapper
            OBI_BUS.Manager     sba_mgr
 );
 
+  localparam int unsigned IdCode = 32'h`JTAG_IDCODE;
+
   logic         dmi_rst_n;
   dm::dmi_req_t dmi_req;
   logic dmi_req_ready, dmi_req_valid;
@@ -23,7 +25,7 @@ module zeroheti_dbg_wrapper
   logic dmi_rsp_ready, dmi_rsp_valid;
 
   dmi_jtag #(
-      .IdcodeValue(32'hFEEDC0D3)
+      .IdcodeValue(IdCode)
   ) i_dmi_jtag (
       .clk_i,
       .rst_ni,
