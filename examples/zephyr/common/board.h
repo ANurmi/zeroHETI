@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /* --- Timing --- */
-#define CPU_FREQ_HZ     10000000U
+#define CPU_FREQ_HZ     100000000U
 #define US_TO_TICKS(us) ((us) * (CPU_FREQ_HZ / 1000000U))
 
 /* --- I2C --- */

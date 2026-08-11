@@ -76,6 +76,7 @@ module vip_zeroheti_top #(
       .axi_mgr(drv_bus)
   );
 
+  /*
   vip_sim_env #(
       .i2c_req_t(i2c_req_t),
       .i2c_rsp_t(gen_rsp_t)
@@ -85,6 +86,7 @@ module vip_zeroheti_top #(
       .i2c_req_i(i2c_req),
       .i2c_rsp_o(i2c_rsp)
   );
+*/
 
   assign aw_valid_o       = drv_bus.aw_valid;
   assign aw_addr_o        = drv_bus.aw_addr;

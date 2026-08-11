@@ -107,9 +107,9 @@ impl<const BASE_ADDR: usize> ApbUartHal<BASE_ADDR> {
     /// Blocks until the transmit FIFO is empty before transmitting.
     #[inline]
     fn putc(&mut self, c: u8) {
-        while !self.is_transmit_empty() {}
         // Safety: UART_THR is 4-byte aligned
         write_u8(BASE_ADDR + UART_RBR_THR_DLL_OFS, c);
+        while !self.is_transmit_empty() {}
     }
 
     #[inline]
