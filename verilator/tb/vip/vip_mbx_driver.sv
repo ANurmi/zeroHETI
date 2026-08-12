@@ -18,6 +18,7 @@ module vip_mbx_driver #(
     logic [31:0] data;
   } letter_t;
 
+  /*
   // Polls every 10 us @ 10 MHz
   int unsigned ps = 'd100;
   int unsigned cnt = 0;
@@ -27,7 +28,7 @@ module vip_mbx_driver #(
       poll_empty();
       cnt = 0;
     end else cnt++;
-  end
+  end*/
 
   task automatic axi_read(input logic [31:0] addr, output logic [31:0] rdata);
     @(negedge clk_i);

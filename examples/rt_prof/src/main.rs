@@ -13,6 +13,7 @@ mod app {
         i2c::{self, I2c},
         mmap::apb_timer::TIMER0_ADDR,
         mmio,
+        mailbox::Mailbox,
         mtimer::{self, *},
         riscv::{self},
         sprintln,
@@ -22,6 +23,8 @@ mod app {
 
     use fugit::{ExtU32, ExtU64};
 
+    const CFG_BASE_ADDR: usize = 0x0000_3500;
+    
     fn clear_perf_counters() {
         unsafe {
             riscv::register::minstret::write(0);
@@ -42,18 +45,24 @@ mod app {
     fn init() -> Shared {
         let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
         let i2c = I2c::init(4);
+        let (_ibx, mut obx) = unsafe { Mailbox::instance() }.split();
 
         sprintln!("Start, CPU (MHz): {}", CPU_FREQ_HZ / 1_000_000);
 
-        const CFG_BASE_ADDR: usize = 0x0000_3500;
-
         let rd = mmio::read_u32(CFG_BASE_ADDR);
 
+        obx.send(67,67);
+        
+        // scb enable
         mmio::write_u32(CFG_BASE_ADDR + 4, 1);
-        mmio::write_u32(CFG_BASE_ADDR + 8, 2);
-        mmio::write_u32(CFG_BASE_ADDR + 12, 3);
-        mmio::write_u32(CFG_BASE_ADDR + 16, 4);
-        sprintln!("Version: {:X}", rd);
+        
+        /*
+        mmio::write_u32(CFG_BASE_ADDR + 8, 1);
+        mmio::write_u32(CFG_BASE_ADDR + 12, 1);
+        mmio::write_u32(CFG_BASE_ADDR + 16, 1);
+        mmio::write_u32(CFG_BASE_ADDR + 20, 1);
+        */
+        sprintln!("HW build commit: {:X}", rd);
 
         MTimer::instance().into_oneshot().start(1000u64.micros());
 
@@ -102,7 +111,9 @@ mod app {
             Self {}
         }
         fn exec(&mut self) {
+            mmio::write_u32(CFG_BASE_ADDR + 8, 1);
             sprintln!("T0");
+            mmio::write_u32(CFG_BASE_ADDR + 8, 0);
         }
     }
 }

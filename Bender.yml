@@ -46,7 +46,6 @@ sources:
   - verilator/tb/vip/rt_prof_pkg.sv
   - verilator/tb/vip/vip_motor_sim.sv
   - verilator/tb/vip/vip_task_scoreboard.sv
-  - verilator/tb/vip/vip_sim_env.sv
   - verilator/tb/vip/vip_i2c.sv
   - verilator/tb/vip/vip_uart.sv
   - verilator/tb/vip/vip_mbx_driver.sv
