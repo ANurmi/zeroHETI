@@ -33,11 +33,11 @@
 #define DEADLINE_REP_US   2000U
 #define SIM_PRESCALER_VAL 10U
 #define RANDOM_SEED       0xB0110c55U
-#define LOAD_FACTOR       80U
-#define RUNTIME_MS        100U
+#define LOAD_FACTOR       500U
+#define RUNTIME_MS        200U
 
 #define M(n) ((const void *)(uintptr_t)(n))
-
+static volatile uint8_t rep_active[4];
 
 /* Shared state */
 static volatile uint32_t period_directive[4];
@@ -113,6 +113,7 @@ static void isr_upd(const void *arg)
 
     send_letter(TASK_ACK(TASK_CTRL(n)), 0);
     send_letter(TASK_ACK(TASK_REP(n)),  0);
+    rep_active[n] = 0;
 
     uint32_t nperiod = period_directive[n];
     sys_write32(0x0, TIMER_CTRL(base));
@@ -142,8 +143,11 @@ static void isr_ctrl(const void *arg)
     irq_unlock(key);
 
     send_letter(TASK_ACK(TASK_CTRL(n)), 0);
-    clic_pend_irq(IRQ_EXT(n));
-    send_letter(TASK_ACK(TASK_REP(n)), 1);
+    if (!rep_active[n]) {
+        rep_active[n] = 1;
+        clic_pend_irq(IRQ_EXT(n));
+        send_letter(TASK_ACK(TASK_REP(n)), 1);
+    }
     
     __asm__ volatile("csrci mstatus, 0x8");
     mintthresh_write(prev);
@@ -160,6 +164,7 @@ static void isr_rep(const void *arg)
 
     send_letter(MBX_PRINT_ADDR, (time_us << 16) | ((uint32_t)n << 8) | motor_status[n]);
     send_letter(TASK_ACK(TASK_REP(n)), 0);
+    rep_active[n] = 0;
 }
 
 static void finish_sim(void)
