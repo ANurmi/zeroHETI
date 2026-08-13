@@ -45,6 +45,7 @@ jobs:
           path: zephyr/build/zephyr/zephyr.elf
 
   build-hw:
+    needs: build-zephyr
     runs-on: ubuntu-24.04
     container:
       image: ghcr.io/soc-hub-fi/zeroheti-ci:latest
