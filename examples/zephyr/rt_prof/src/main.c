@@ -34,7 +34,10 @@
 #define SIM_PRESCALER_VAL 10U
 #define RANDOM_SEED       0xB0110c55U
 #define LOAD_FACTOR       80U
-#define RUNTIME_MS        10U
+#define RUNTIME_MS        100U
+
+#define M(n) ((const void *)(uintptr_t)(n))
+
 
 /* Shared state */
 static volatile uint32_t period_directive[4];
@@ -101,233 +104,62 @@ static void isr_getmail(const void *arg)
 
 }
 
-static void isr_upd0(const void *arg)
+static void isr_upd(const void *arg)
 {
-    ARG_UNUSED(arg);
+    __asm__ volatile("csrsi mstatus, 0x8");
+    
+    const int n = (int)(uintptr_t)arg;
+    const uint32_t base = TIMER_BASE(n);
 
-    send_letter(TASK_ACK(TASK_CTRL(0)), 0);
-    send_letter(TASK_ACK(TASK_REP(0)),  0);
+    send_letter(TASK_ACK(TASK_CTRL(n)), 0);
+    send_letter(TASK_ACK(TASK_REP(n)),  0);
 
-    //new directive period
-    uint32_t nperiod = period_directive[0];
-    uint32_t base = TIMER_BASE(0);
-    sys_write32(0x0, TIMER_CTRL(base));            
+    uint32_t nperiod = period_directive[n];
+    sys_write32(0x0, TIMER_CTRL(base));
     sys_write32(US_TO_TICKS(nperiod), TIMER_CMP(base));
-    sys_write32(0x1, TIMER_CTRL(base));       
+    sys_write32(0x1, TIMER_CTRL(base));
 
-    //new control period + deadline
-    send_letter(TASK_PERIOD(TASK_CTRL(0)),   nperiod);
-    send_letter(TASK_DEADLINE(TASK_CTRL(0)), nperiod);
-
-    //retire UpdateCtrl
-    send_letter(TASK_ACK(TASK_UPD(0)), 0);
-
+    send_letter(TASK_PERIOD(TASK_CTRL(n)),   nperiod);
+    send_letter(TASK_DEADLINE(TASK_CTRL(n)), nperiod);
+    send_letter(TASK_ACK(TASK_UPD(n)), 0);
 }
 
-static void isr_upd1(const void *arg)
+static void isr_ctrl(const void *arg)
 {
-    ARG_UNUSED(arg);
-
-    send_letter(TASK_ACK(TASK_CTRL(1)), 0);
-    send_letter(TASK_ACK(TASK_REP(1)),  0);
-
-    //new directive period
-    uint32_t nperiod = period_directive[1];
-    uint32_t base = TIMER_BASE(1);
-    sys_write32(0x0, TIMER_CTRL(base));            
-    sys_write32(US_TO_TICKS(nperiod), TIMER_CMP(base));
-    sys_write32(0x1, TIMER_CTRL(base));       
-
-    //new control period + deadline
-    send_letter(TASK_PERIOD(TASK_CTRL(1)),   nperiod);
-    send_letter(TASK_DEADLINE(TASK_CTRL(1)), nperiod);
-
-    //retire UpdateCtrl
-    send_letter(TASK_ACK(TASK_UPD(1)), 0);
-
-}
-static void isr_upd2(const void *arg)
-{
-    ARG_UNUSED(arg);
-
-    send_letter(TASK_ACK(TASK_CTRL(2)), 0);
-    send_letter(TASK_ACK(TASK_REP(2)),  0);
-
-    //new directive period
-    uint32_t nperiod = period_directive[2];
-    uint32_t base = TIMER_BASE(2);
-    sys_write32(0x0, TIMER_CTRL(base));            
-    sys_write32(US_TO_TICKS(nperiod), TIMER_CMP(base));
-    sys_write32(0x1, TIMER_CTRL(base));       
-
-    //new control period + deadline
-    send_letter(TASK_PERIOD(TASK_CTRL(2)),   nperiod);
-    send_letter(TASK_DEADLINE(TASK_CTRL(2)), nperiod);
-
-    //retire UpdateCtrl
-    send_letter(TASK_ACK(TASK_UPD(2)), 0);
-
-}
-static void isr_upd3(const void *arg)
-{
-    ARG_UNUSED(arg);
-
-    send_letter(TASK_ACK(TASK_CTRL(3)), 0);
-    send_letter(TASK_ACK(TASK_REP(3)),  0);
-
-    //new directive period
-    uint32_t nperiod = period_directive[3];
-    uint32_t base = TIMER_BASE(3);
-    sys_write32(0x0, TIMER_CTRL(base));            
-    sys_write32(US_TO_TICKS(nperiod), TIMER_CMP(base));
-    sys_write32(0x1, TIMER_CTRL(base));       
-
-    //new control period + deadline
-    send_letter(TASK_PERIOD(TASK_CTRL(3)),   nperiod);
-    send_letter(TASK_DEADLINE(TASK_CTRL(3)), nperiod);
-
-    //retire UpdateCtrl
-    send_letter(TASK_ACK(TASK_UPD(3)), 0);
-
-}
-
-static void isr_ctrl0(const void *arg)
-{
-    ARG_UNUSED(arg);
-
-    uint8_t measured;
+    unsigned int prev = mintthresh_write(PRIO_PID);
+    __asm__ volatile("csrsi mstatus, 0x8");
+    
+    const int n = (int)(uintptr_t)arg;
+    uint8_t measured, out;
     unsigned int key = irq_lock();
-    i2c_read_tx(I2C_MOTOR_ADDR(0), &measured, 1);      
+    i2c_read_tx(I2C_MOTOR_ADDR(n), &measured, 1);
     irq_unlock(key);
 
-    uint8_t out = compute_pid(measured, 0);
+    out = compute_pid(measured, n);
 
     key = irq_lock();
-    i2c_write_tx(I2C_MOTOR_ADDR(0), &out, 1);          
+    i2c_write_tx(I2C_MOTOR_ADDR(n), &out, 1);
     irq_unlock(key);
 
-    send_letter(TASK_ACK(TASK_CTRL(0)), 0);            
-    clic_pend_irq(IRQ_EXT(0));                          
-    send_letter(TASK_ACK(TASK_REP(0)), 1);             
-
+    send_letter(TASK_ACK(TASK_CTRL(n)), 0);
+    clic_pend_irq(IRQ_EXT(n));
+    send_letter(TASK_ACK(TASK_REP(n)), 1);
+    
+    __asm__ volatile("csrci mstatus, 0x8");
+    mintthresh_write(prev);
 }
 
-static void isr_ctrl1(const void *arg)
-{ 
-    ARG_UNUSED(arg);
-
-    uint8_t measured;
-    unsigned int key = irq_lock();
-    i2c_read_tx(I2C_MOTOR_ADDR(1), &measured, 1);     
-    irq_unlock(key);
-
-    uint8_t out = compute_pid(measured, 1);
-
-    key = irq_lock();
-    i2c_write_tx(I2C_MOTOR_ADDR(1), &out, 1);          
-    irq_unlock(key);
-
-    send_letter(TASK_ACK(TASK_CTRL(1)), 0);            
-    clic_pend_irq(IRQ_EXT(1));                          
-    send_letter(TASK_ACK(TASK_REP(1)), 1);             
-
-}
-
-static void isr_ctrl2(const void *arg)
-{ 
-    ARG_UNUSED(arg);
-
-    uint8_t measured;
-    unsigned int key = irq_lock();
-    i2c_read_tx(I2C_MOTOR_ADDR(2), &measured, 1);      
-    irq_unlock(key);
-
-    uint8_t out = compute_pid(measured, 2);
-
-    key = irq_lock();
-    i2c_write_tx(I2C_MOTOR_ADDR(2), &out, 1);          
-    irq_unlock(key);
-
-    send_letter(TASK_ACK(TASK_CTRL(2)), 0);            
-    clic_pend_irq(IRQ_EXT(2));                          
-    send_letter(TASK_ACK(TASK_REP(2)), 1);             
-
-}
-static void isr_ctrl3(const void *arg)
-{ 
-    ARG_UNUSED(arg);
-
-    uint8_t measured;
-    unsigned int key = irq_lock();
-    i2c_read_tx(I2C_MOTOR_ADDR(3), &measured, 1);      
-    irq_unlock(key);
-
-    uint8_t out = compute_pid(measured, 3);
-
-    key = irq_lock();
-    i2c_write_tx(I2C_MOTOR_ADDR(3), &out, 1);          
-    irq_unlock(key);
-
-    send_letter(TASK_ACK(TASK_CTRL(3)), 0);            
-    clic_pend_irq(IRQ_EXT(3));                          
-    send_letter(TASK_ACK(TASK_REP(3)), 1);             
-
-}
-
-static void isr_rep0(const void *arg)
+static void isr_rep(const void *arg)
 {
-    ARG_UNUSED(arg);
-    check_runtime(); 
-
-    uint32_t time_us =
-        (uint32_t)((k_cycle_get_64() - sim_start_cycles) / (CPU_FREQ_HZ / 1000000U));
-
-    uint32_t rep_letter = (time_us << 16) | ((uint32_t)0 << 8) | motor_status[0];
-    send_letter(MBX_PRINT_ADDR, rep_letter);          
-
-    send_letter(TASK_ACK(TASK_REP(0)), 0);            
-
-}
-static void isr_rep1(const void *arg)
-{
-    ARG_UNUSED(arg);
-    check_runtime(); 
-
-    uint32_t time_us =
-        (uint32_t)((k_cycle_get_64() - sim_start_cycles) / (CPU_FREQ_HZ / 1000000U));
-
-    uint32_t rep_letter = (time_us << 16) | ((uint32_t)1 << 8) | motor_status[1];
-    send_letter(MBX_PRINT_ADDR, rep_letter);
-
-    send_letter(TASK_ACK(TASK_REP(1)), 0);
-
-}
-static void isr_rep2(const void *arg)
-{
-    ARG_UNUSED(arg);
+    __asm__ volatile("csrsi mstatus, 0x8");
     check_runtime();
 
+    const int n = (int)(uintptr_t)arg;
     uint32_t time_us =
         (uint32_t)((k_cycle_get_64() - sim_start_cycles) / (CPU_FREQ_HZ / 1000000U));
 
-    uint32_t rep_letter = (time_us << 16) | ((uint32_t)2 << 8) | motor_status[2];
-    send_letter(MBX_PRINT_ADDR, rep_letter);          
-    send_letter(TASK_ACK(TASK_REP(2)), 0);            
-
-}
-static void isr_rep3(const void *arg)
-{
-    ARG_UNUSED(arg);
-    check_runtime();
-
-    uint32_t time_us =
-        (uint32_t)((k_cycle_get_64() - sim_start_cycles) / (CPU_FREQ_HZ / 1000000U));
-
-    uint32_t rep_letter = (time_us << 16) | ((uint32_t)3 << 8) | motor_status[3];
-    send_letter(MBX_PRINT_ADDR, rep_letter);          
-
-    send_letter(TASK_ACK(TASK_REP(3)), 0); 
-
+    send_letter(MBX_PRINT_ADDR, (time_us << 16) | ((uint32_t)n << 8) | motor_status[n]);
+    send_letter(TASK_ACK(TASK_REP(n)), 0);
 }
 
 static void finish_sim(void)
@@ -363,20 +195,20 @@ int main(void)
     /* Setup IRQs */
     IRQ_CONNECT(IRQ_MBX,          PRIO_MAIL, isr_getmail, NULL, 1);
 
-    IRQ_CONNECT(IRQ_TIMER_OVF(0), PRIO_UPD,  isr_upd0,    NULL, 1);
-    IRQ_CONNECT(IRQ_TIMER_OVF(1), PRIO_UPD,  isr_upd1,    NULL, 1);
-    IRQ_CONNECT(IRQ_TIMER_OVF(2), PRIO_UPD,  isr_upd2,    NULL, 1);
-    IRQ_CONNECT(IRQ_TIMER_OVF(3), PRIO_UPD,  isr_upd3,    NULL, 1);
-    
-    IRQ_CONNECT(IRQ_TIMER_CMP(0), PRIO_PID,  isr_ctrl0,   NULL, 1);
-    IRQ_CONNECT(IRQ_TIMER_CMP(1), PRIO_PID,  isr_ctrl1,   NULL, 1);
-    IRQ_CONNECT(IRQ_TIMER_CMP(2), PRIO_PID,  isr_ctrl2,   NULL, 1);
-    IRQ_CONNECT(IRQ_TIMER_CMP(3), PRIO_PID,  isr_ctrl3,   NULL, 1);
+    IRQ_CONNECT(IRQ_TIMER_OVF(0), PRIO_UPD,  isr_upd,  M(0), 1);
+    IRQ_CONNECT(IRQ_TIMER_OVF(1), PRIO_UPD,  isr_upd,  M(1), 1);
+    IRQ_CONNECT(IRQ_TIMER_OVF(2), PRIO_UPD,  isr_upd,  M(2), 1);
+    IRQ_CONNECT(IRQ_TIMER_OVF(3), PRIO_UPD,  isr_upd,  M(3), 1);
 
-    IRQ_CONNECT(IRQ_EXT(0),       PRIO_REP,  isr_rep0,    NULL, 1);
-    IRQ_CONNECT(IRQ_EXT(1),       PRIO_REP,  isr_rep1,    NULL, 1);
-    IRQ_CONNECT(IRQ_EXT(2),       PRIO_REP,  isr_rep2,    NULL, 1);
-    IRQ_CONNECT(IRQ_EXT(3),       PRIO_REP,  isr_rep3,    NULL, 1);
+    IRQ_CONNECT(IRQ_TIMER_CMP(0), PRIO_PID,  isr_ctrl, M(0), 1);
+    IRQ_CONNECT(IRQ_TIMER_CMP(1), PRIO_PID,  isr_ctrl, M(1), 1);
+    IRQ_CONNECT(IRQ_TIMER_CMP(2), PRIO_PID,  isr_ctrl, M(2), 1);
+    IRQ_CONNECT(IRQ_TIMER_CMP(3), PRIO_PID,  isr_ctrl, M(3), 1);
+
+    IRQ_CONNECT(IRQ_EXT(0),       PRIO_REP,  isr_rep,  M(0), 1);
+    IRQ_CONNECT(IRQ_EXT(1),       PRIO_REP,  isr_rep,  M(1), 1);
+    IRQ_CONNECT(IRQ_EXT(2),       PRIO_REP,  isr_rep,  M(2), 1);
+    IRQ_CONNECT(IRQ_EXT(3),       PRIO_REP,  isr_rep,  M(3), 1);
 
     /* vector-set + enable */
     for (size_t i = 0; i < ARRAY_SIZE(irqs); i++) {
@@ -421,6 +253,11 @@ int main(void)
         sys_write32(US_TO_TICKS(CTRL_PERIOD_US), TIMER_CMP(base));
         sys_write32(0x1, TIMER_CTRL(base));
     }
+
+    __asm__ volatile("csrw mcycle,    0");
+    __asm__ volatile("csrw mcycleh,   0");
+    __asm__ volatile("csrw minstret,  0");
+    __asm__ volatile("csrw minstreth, 0");
 
     sim_start_cycles = k_cycle_get_64();
 
