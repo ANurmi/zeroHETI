@@ -13,22 +13,6 @@ module vip_mbx_driver #(
   localparam logic [31:0] OboxAddrAddr = 32'h0003_0014;
   localparam logic [31:0] OboxDataAddr = 32'h0003_0018;
 
-  typedef struct packed {
-    logic [31:0] addr;
-    logic [31:0] data;
-  } letter_t;
-
-  /*
-  // Polls every 10 us @ 10 MHz
-  int unsigned ps = 'd100;
-  int unsigned cnt = 0;
-
-  always @(posedge clk_i) begin
-    if (cnt >= ps) begin
-      poll_empty();
-      cnt = 0;
-    end else cnt++;
-  end*/
 
   task automatic axi_read(input logic [31:0] addr, output logic [31:0] rdata);
     @(negedge clk_i);
@@ -75,34 +59,25 @@ module vip_mbx_driver #(
     axi_mgr.b_ready = 0;
   endtask
 
-  task automatic poll_empty();
+  task automatic is_empty(output bit empty);
+
     automatic logic [31:0] status;
     axi_read(StatAddr, status);
-    while (~status[2]) begin
-      get_mail();
-      axi_read(StatAddr, status);
-    end
-  endtask
 
-  task automatic get_mail();
-
-    automatic letter_t letter;
-    automatic logic [31:0] status;
-
-    axi_read(StatAddr, status);
-
-    if (~status[2]) begin
-      axi_read(OboxAddrAddr, letter.addr);
-      axi_read(OboxDataAddr, letter.data);
-
-      // Ack letter after read
-      axi_write(AxiCtrlAddr, 32'h1);
-
-      // pass letter to sim env
-      //i_sim_env.recv_letter(letter.addr, letter.data);
-    end
+    empty = status[2];
 
   endtask
+
+  task automatic get_letter(output rt_prof_pkg::letter_t letter);
+
+    axi_read(OboxAddrAddr, letter.addr);
+    axi_read(OboxDataAddr, letter.data);
+    // Ack letter after read
+    axi_write(AxiCtrlAddr, 32'h1);
+
+  endtask
+
+  /*
 
   task automatic send_letter(input logic [31:0] addr, input logic [31:0] data);
     axi_write(IboxAddrAddr, addr);
@@ -114,6 +89,6 @@ module vip_mbx_driver #(
   task automatic raise_irq();
     axi_write(AxiCtrlAddr, 32'h0001_0000);
   endtask
-
+*/
 
 endmodule : vip_mbx_driver

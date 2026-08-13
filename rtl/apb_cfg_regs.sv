@@ -4,13 +4,20 @@ module apb_cfg_regs #(
     input logic rst_ni,
     APB.Slave apb_i
 );
-
-  logic [7:0] local_addr;
-  assign local_addr = apb_i.paddr[7:0];
-
   // Bake in Git version information into HW
-  logic [31:0] short_hash;
-  assign short_hash = 32'h`GIT_HASH;
+  localparam logic [31:0] ShortHash = 32'h`GIT_HASH;
+  // Static platform configuration visible to SW
+  localparam logic IntcEdfic = (zeroheti_pkg::`INTC == zeroheti_pkg::EDFIC);
+
+  localparam logic [7:0] ImemPow2 = 8'($clog2(`IMEM_BYTES));
+  localparam logic [7:0] DmemPow2 = 8'($clog2(`DMEM_BYTES));
+
+  logic [11:0] local_addr;
+  assign local_addr = apb_i.paddr[11:0];
+
+
+  logic [31:0] platform_cfg;
+  assign platform_cfg = {8'h0, DmemPow2, ImemPow2, 7'h0, IntcEdfic};
 
   // General-purpose register bank
   // Useful as white-box simulation hook
@@ -36,22 +43,23 @@ module apb_cfg_regs #(
       if (apb_i.pwrite) begin
         // Currently supports only word writes
         unique case (local_addr)
-          8'h00:  /*read-only*/;
-          8'h04: gpreg_d[0] = apb_i.pwdata;
-          8'h08: gpreg_d[1] = apb_i.pwdata;
-          8'h0C: gpreg_d[2] = apb_i.pwdata;
-          8'h10: gpreg_d[3] = apb_i.pwdata;
-          8'h14: gpreg_d[4] = apb_i.pwdata;
+          12'h000:  /*read-only*/;
+          12'h100: gpreg_d[0] = apb_i.pwdata;
+          12'h104: gpreg_d[1] = apb_i.pwdata;
+          12'h108: gpreg_d[2] = apb_i.pwdata;
+          12'h10C: gpreg_d[3] = apb_i.pwdata;
+          12'h110: gpreg_d[4] = apb_i.pwdata;
           default: ;
         endcase
       end else begin
         unique case (local_addr)
-          8'h00:   apb_i.prdata = short_hash;
-          8'h04:   apb_i.prdata = gpreg_q[0];
-          8'h08:   apb_i.prdata = gpreg_q[1];
-          8'h0C:   apb_i.prdata = gpreg_q[2];
-          8'h10:   apb_i.prdata = gpreg_q[3];
-          8'h14:   apb_i.prdata = gpreg_q[4];
+          12'h000: apb_i.prdata = ShortHash;
+          12'h004: apb_i.prdata = platform_cfg;
+          12'h100: apb_i.prdata = gpreg_q[0];
+          12'h104: apb_i.prdata = gpreg_q[1];
+          12'h108: apb_i.prdata = gpreg_q[2];
+          12'h10C: apb_i.prdata = gpreg_q[3];
+          12'h110: apb_i.prdata = gpreg_q[4];
           default: ;
         endcase
       end
