@@ -20,11 +20,13 @@
 static inline void send_letter(uint32_t addr, uint32_t data)
 {   
     /* Check MBX_STAT [2] bit */
-    while (!(sys_read32(MBX_STAT) & (1u << 2)))
+    while (sys_read32(MBX_STAT) & (1u << 3))
         ;
+    unsigned int key = irq_lock();
     sys_write32(addr, MBX_OADD);
     sys_write32(data, MBX_ODAT);
     sys_write32(MBX_CTRL_SEND, MBX_CTRL);
+    irq_unlock(key);
 }
 
 /* Read and ack inbox letters */
