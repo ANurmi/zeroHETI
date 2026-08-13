@@ -106,3 +106,15 @@ unsafe fn print_irq() {
         riscv::register::mcause::read().code() & 0xfff,
     );
 }
+
+/// Parse a u32 from a string at compile time
+pub const fn parse_u32(s: &str) -> u32 {
+    let mut out: u32 = 0;
+    let mut i: usize = 0;
+    while i < s.len() {
+        out *= 10;
+        out += (s.as_bytes()[i] - b'0') as u32;
+        i += 1;
+    }
+    out
+}

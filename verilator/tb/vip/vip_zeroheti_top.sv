@@ -6,6 +6,8 @@ module vip_zeroheti_top #(
     output logic        sda_o,
     input  logic        scl_i,
     output logic        scl_o,
+    input  logic        uart_rx_i,
+    output logic        uart_tx_o,
     output logic [ 3:0] i2c_irq_o,
     output logic [31:0] aw_addr_o,
     output logic [ 2:0] aw_prot_o,
@@ -36,18 +38,22 @@ module vip_zeroheti_top #(
   ) drv_bus ();
 
   typedef struct packed {
-    bit          valid;
-    bit          write;
-    logic [6:0]  addr;
+    bit         valid;
+    bit         write;
+    logic [6:0] addr;
     logic [7:0] wdata;
   } i2c_req_t;
 
-  typedef struct packed {
-    logic [7:0] rdata;
-  } gen_rsp_t;
+  typedef struct packed {logic [7:0] rdata;} gen_rsp_t;
 
   i2c_req_t i2c_req;
   gen_rsp_t i2c_rsp;
+
+  vip_uart #() i_vip_uart (
+      .clk_i,
+      .rx_i(uart_rx_i),
+      .tx_o(uart_tx_o)
+  );
 
   vip_i2c #(
       .req_t(i2c_req_t),
@@ -64,8 +70,7 @@ module vip_zeroheti_top #(
       .vip_rsp_i(i2c_rsp)
   );
 
-  vip_mbx_driver #(
-  ) i_mbx_drv (
+  vip_mbx_driver #() i_mbx_drv (
       .clk_i,
       .rst_ni,
       .axi_mgr(drv_bus)

@@ -1,8 +1,8 @@
-module zeroheti_compliance #(
-    parameter  zeroheti_pkg::core_cfg_t Cfg = zeroheti_pkg::`CORE_CFG
+module riscof_dut #(
 ) (
-    input  logic        clk_i,
-    input  logic        rst_ni,
+    input logic clk_i,
+    input logic rst_ni,
+
     // Instruction memory interface
     output logic        instr_req_o,
     input  logic        instr_gnt_i,
@@ -19,16 +19,9 @@ module zeroheti_compliance #(
     output logic [31:0] data_addr_o,
     output logic [31:0] data_wdata_o,
     input  logic [31:0] data_rdata_i,
-    input  logic        data_err_i,
-    // Not used, but needed for vbench conformance
-    input  logic jtag_tck_i,
-    input  logic jtag_tms_i,
-    input  logic jtag_td_i,
-    input  logic jtag_trst_ni,
-    output logic jtag_td_o
+    input  logic        data_err_i
 );
 
-  localparam logic [31:0] ComplianceBootAddr = 32'h0000_0000;
 
   ibex_top_tracing #() i_rt_ibex (
       .clk_i,
@@ -36,9 +29,9 @@ module zeroheti_compliance #(
 
       .scan_rst_ni(1'b0),
       .ram_cfg_i  (10'b0),
-      .hart_id_i  (Cfg.hart_id),
+      .hart_id_i  (),
       .test_en_i  (1'b0),
-      .boot_addr_i(ComplianceBootAddr),
+      .boot_addr_i(),
 
       .instr_req_o,
       .instr_addr_o,
@@ -85,5 +78,4 @@ module zeroheti_compliance #(
       .alert_major_bus_o     ()
   );
 
-endmodule : zeroheti_compliance
-
+endmodule : riscof_dut

@@ -3,9 +3,9 @@ build-std = ["core", "compiler_builtins"]
 build-std-features = ["compiler-builtins-mem"]
 
 [build]
-target = "riscv32ec-unknown-eabi.json"
+target = "riscv32ec-unknown-none-elf.json"
 
-[target.riscv32ec-unknown-eabi]
+[target.riscv32ec-unknown-none-elf]
 rustflags = [
     "-C",
     "linker=riscv32-unknown-elf-gcc",
@@ -22,7 +22,7 @@ rustflags = [
 ]
 runner = "../run-sim.sh"
 
-[target.riscv32emc-unknown-eabi]
+[target.riscv32emc-unknown-none-elf]
 rustflags = [
     "-C",
     "linker=riscv32-unknown-elf-gcc",
@@ -34,23 +34,6 @@ rustflags = [
     "link-arg=-nostartfiles",
     "-C",
     "link-arg=-march=rv32emc",
-    "-C",
-    "link-arg=-mabi=ilp32e"
-]
-runner = "../run-sim.sh"
-
-[target.riscv32ic-unknown-eabi]
-rustflags = [
-    "-C",
-    "linker=riscv32-unknown-elf-gcc",
-    "-C",
-    "link-arg=-Wl,-Tmemory.x",
-    "-C",
-    "link-arg=-Wl,-Tlink.x",
-    "-C",
-    "link-arg=-nostartfiles",
-    "-C",
-    "link-arg=-march=rv32ic",
     "-C",
     "link-arg=-mabi=ilp32e"
 ]
@@ -70,23 +53,6 @@ rustflags = [
     "link-arg=-march=rv32ic",
     "-C",
     "link-arg=-mabi=ilp32"
-]
-runner = "../run-sim.sh"
-
-[target.riscv32imc-unknown-eabi]
-rustflags = [
-    "-C",
-    "linker=riscv32-unknown-elf-gcc",
-    "-C",
-    "link-arg=-Wl,-Tmemory.x",
-    "-C",
-    "link-arg=-Wl,-Tlink.x",
-    "-C",
-    "link-arg=-nostartfiles",
-    "-C",
-    "link-arg=-march=rv32imc",
-    "-C",
-    "link-arg=-mabi=ilp32e"
 ]
 runner = "../run-sim.sh"
 

@@ -1,11 +1,11 @@
 [build]
-target = "riscv32emc-unknown-eabi.json"
+target = "riscv32emc-unknown-none-elf.json"
 
 [unstable]
 build-std = ["core", "compiler_builtins"]
 build-std-features = ["compiler-builtins-mem"]
 
-[target.riscv32emc-unknown-eabi]
+[target.riscv32emc-unknown-none-elf]
 rustflags = [
     "-C",
     "linker=riscv32-unknown-elf-gcc",
@@ -18,6 +18,6 @@ rustflags = [
     "-C",
     "link-arg=-march=rv32emc",
     "-C",
-    "link-arg=-mabi=ilp32e"
+    "link-arg=-mabi=ilp32e",
 ]
 runner = "../run-sim.sh"
