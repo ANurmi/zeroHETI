@@ -33,8 +33,8 @@
 #define DEADLINE_REP_US   2000U
 #define SIM_PRESCALER_VAL 10U
 #define RANDOM_SEED       0xB0110c55U
-#define LOAD_FACTOR       500U
-#define RUNTIME_MS        200U
+#define LOAD_FACTOR       80U
+#define RUNTIME_MS        10U
 
 #define M(n) ((const void *)(uintptr_t)(n))
 static volatile uint8_t rep_active[4];
