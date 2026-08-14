@@ -101,7 +101,7 @@ module vip_task_scoreboard #(
         ts[2].dl_target_cc = letter.data;
         ts[2].dl_cc        = letter.data;
       end
-      default: $display("Weird letter");
+      default: $display("Weird letter - addr: %08h", letter.addr);
     endcase
   endtask
 
