@@ -15,6 +15,7 @@ log = { version = "0.4.29", default-features = false }
 rtic = { version = "0.1.0", path = "../mrtic/distributions/zeroheti-rtic", optional = true, features = ["rtl-tb"] }
 [features]
 default = []
+debug-expand = ["rtic/debug-expand"]
 ufmt = ["bsp/ufmt"]
 
 intc-clic = ["bsp/intc-clic", "rtic/intc-clic"]
