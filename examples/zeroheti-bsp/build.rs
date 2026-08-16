@@ -1,7 +1,5 @@
 use riscv_target_parser::RiscvTarget;
-use std::{collections::HashSet, env, fs, path::PathBuf, process::Command};
-
-const VALID_RISCV_EXTENSIONS: &[char] = &['i', 'e', 'm', 'c', 'a', 'f', 'd'];
+use std::{collections::HashSet, env, fs, path::PathBuf};
 
 fn add_linker_script() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
@@ -71,28 +69,9 @@ fn main() {
     let target = env::var("TARGET").unwrap();
     let cargo_flags = env::var("CARGO_ENCODED_RUSTFLAGS").unwrap();
 
-    // Extract ABI name and export as cfg(llvm_abiname)
-    let layout = extract_abiname(&target);
-    println!("cargo:rustc-check-cfg=cfg(llvm_abiname, values(\"ilp32\", \"ilp32e\"))",);
-    println!("cargo:rustc-cfg=llvm_abiname=\"{}\"", layout);
-
-    // Let cargo know we're using extension flags so it doesn't create a superfluous
-    // warning about them
-    for ext in VALID_RISCV_EXTENSIONS {
-        println!("cargo::rustc-check-cfg=cfg(riscv{})", ext);
-    }
-
     // Set configuration flags depending on the target
     if target.starts_with("riscv") {
-        println!("cargo:rustc-cfg=riscv");
-        // This is required until target_arch & target_feature risc-v work is
-        // stable and in-use (rust 1.75.0)
         let extensions = parse_extensions(&target, &cargo_flags);
-
-        // expose the ISA extensions
-        for ext in &extensions {
-            println!("cargo:rustc-cfg=riscv{}", ext);
-        }
 
         // Collect extensions to an environment variable that can be printed from the program
         println!(
@@ -111,22 +90,4 @@ fn main() {
 
     println!("cargo:rerun-if-env-changed=RISCV_RT_BASE_ISA");
     println!("cargo:rerun-if-changed=build.rs");
-}
-
-fn extract_abiname(target: &str) -> String {
-    let output = Command::new("rustc")
-        .args([
-            "-Zunstable-options",
-            "--print",
-            "target-spec-json",
-            "--target",
-            &format!("{}.json", target),
-        ])
-        .output()
-        .unwrap();
-    println!("{output:?}");
-    let json = String::from_utf8(output.stdout).unwrap();
-    let v: serde_json::Value = serde_json::from_str(&json).unwrap();
-    let layout = v["llvm-abiname"].as_str().unwrap();
-    layout.to_string()
 }

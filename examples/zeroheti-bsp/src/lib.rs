@@ -49,21 +49,21 @@ compile_error!(
 compile_error!("Select exactly one of -Ffpga -Frtl-tb");
 
 // Generate the `_continue_nested_trap` symbol
-#[cfg(all(feature = "nest-continue", llvm_abiname = "ilp32"))]
+#[cfg(all(feature = "nest-continue", target_abi = ""))]
 zeroheti_bsp_macros::generate_continue_nested_trap_ilp32!();
 
-#[cfg(all(feature = "nest-continue", llvm_abiname = "ilp32e"))]
+#[cfg(all(feature = "nest-continue", target_abi = "ilp32e"))]
 zeroheti_bsp_macros::generate_continue_nested_trap_ilp32e!();
 
 // Re-export macros for nested interrupts
 pub use zeroheti_bsp_macros::generate_pcs_trap_entry;
-#[cfg(llvm_abiname = "ilp32")]
+#[cfg(target_abi = "")]
 pub use zeroheti_bsp_macros::{
     generate_continue_nested_trap_ilp32 as generate_continue_nested_trap,
     generate_nested_trap_entry_ilp32 as generate_nested_trap_entry,
     nested_interrupt_ilp32 as nested_interrupt,
 };
-#[cfg(llvm_abiname = "ilp32e")]
+#[cfg(target_abi = "ilp32e")]
 pub use zeroheti_bsp_macros::{
     generate_continue_nested_trap_ilp32e as generate_continue_nested_trap,
     generate_nested_trap_entry_ilp32e as generate_nested_trap_entry,
