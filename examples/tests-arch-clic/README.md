@@ -39,7 +39,8 @@ pass/fail backdoor (write to `0x380`). The per-target
 Run all tests, e.g.:
 
 ```sh
-for t in nomint-mie nomint-ie nomint-thresh wfi direct; do
+for t in nomint-mie nomint-ie nomint-thresh wfi direct \
+         edge-level; do
   cargo run --release -Frtl-tb --bin "$t"
 done
 ```
@@ -56,6 +57,7 @@ non-zero exit on failure.
 | `nomint-thresh` | clicnomint-03 | No interrupt fires when its level is not above `mintthresh` | <font color="green">PASS</font> |
 | `wfi` | clicwfi-01 | `wfi` wakes without trapping when an interrupt is pending and `mie = 0` | <font color="green">PASS</font> |
 | `direct` | clicdirect-01 | Direct-mode (`shv = 0`) handler entry, trigger/clear, no re-entry while `mil` held | <font color="yellow">EXPECTED-FAIL</font> |
+| `edge-level` | edge-level | Edge re-pend stays pending while `mil` held and re-fires after `mret` | <font color="green">PASS</font> |
 
 Every "must-not-fire" test includes a positive-control phase (re-enable the
 gate, confirm the interrupt then fires) so it cannot pass spuriously.
@@ -103,6 +105,21 @@ Reproduced with a bare `loop {}` and with a busy polling loop, and with the
 pending bit set before and after `enable_mie()` — i.e. not a timing or test
 artifact. The SHV path (`shv = 1`, used by all other tests) is unaffected.
 Do not gate CI on this test until the rt-ibex issue is fixed.
+
+### PASS — edge-level (`edge-level`)
+
+Ext0 (edge-triggered) fires; the claim clears the edge pending bit. Inside
+the handler (`mil = 1`), a fresh `clicintip` edge is pended: it must latch
+pending without re-entering. After the handler's `mret` (mil back to `0`), the
+still-pending edge is taken again. Checks: no re-entry while `mil = 1`, the
+re-pended edge is pending, and it re-fires exactly once after `mret`.
+
+**Coverage hole:** the level-triggered half of this scenario is not testable
+via software on this part. `clic_gateway` level mode (`le = 0`) drives `ip`
+straight from the external source line and ignores software `clicintip`
+writes, and the verilated top ties all external interrupt lines off except I2C
+(`verilator/tb/zeroheti_top_wrapper.sv`), so a level cannot be raised or
+lowered from the firmware.
 
 ## Hardware notes
 
