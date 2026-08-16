@@ -86,7 +86,7 @@ jobs:
         run: |
           cd examples/tests-arch-clic
           cargo check -Frtl-tb --bins
-          for t in nomint-mie nomint-ie nomint-thresh wfi; do
+          for t in nomint-mie nomint-ie nomint-thresh wfi mnxti edge-level; do
             cargo run --release -Frtl-tb --bin "$t"
           done
 
