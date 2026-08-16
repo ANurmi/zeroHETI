@@ -9,6 +9,7 @@ bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp", features = [
 ] }
 # Required if riscv-macros::core_interrupt is used. riscv-rt version must align with BSP
 riscv-rt = { version = "0.18.0" }
+obs-trace = { path = "../obs-trace" }
 ufmt = "0.2.0"
 more-asserts = "0.3.1"
 log = { version = "0.4.29", default-features = false }

@@ -1,0 +1,19 @@
+[package]
+name = "obs-trace"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "obs_trace"
+path = "src/lib.rs"
+
+[dependencies]
+bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp" }
+
+[features]
+default = []
+intc-clic = ["bsp/intc-clic"]
+intc-edfic = ["bsp/intc-edfic"]
+intc-hetic = ["bsp/intc-hetic"]
+rtl-tb = ["bsp/rtl-tb"]
+fpga = ["bsp/fpga"]
