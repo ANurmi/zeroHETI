@@ -40,7 +40,8 @@ Run all tests, e.g.:
 
 ```sh
 for t in nomint-mie nomint-ie nomint-thresh wfi \
-         mnxti edge-level; do
+         level-preempt level-no-preempt level-thresh-in-handler \
+         shv shv-illegal mnxti edge-level; do
   cargo run --release -Frtl-tb --bin "$t"
 done
 ```
@@ -59,6 +60,11 @@ non-zero exit on failure.
 | `nomint-thresh` | clicnomint-03 | No interrupt fires when its level is not above `mintthresh` | <font color="green">PASS</font> |
 | `wfi` | clicwfi-01 | `wfi` wakes without trapping when an interrupt is pending and `mie = 0` | <font color="green">PASS</font> |
 | `direct` | clicdirect-01 | Direct-mode (`shv = 0`) handler entry, trigger/clear, no re-entry while `mil` held | <font color="yellow">EXPECTED-FAIL</font> |
+| `level-preempt` | cliclevel-02 | Higher-level interrupt preempts a lower-level handler | <font color="gray">???</font> |
+| `level-no-preempt` | cliclevel-03 | Lower-level interrupt does not preempt a higher-level handler | <font color="gray">???</font> |
+| `level-thresh-in-handler` | cliclevel-04 | An interrupt whose level equals a raised `mintthresh` does not preempt (positive control) | <font color="gray">???</font> |
+| `shv` | smclicshv | SHV entry via `mtvt + 4*id`, `mcause.minhv = 1`, edge ip auto-clear | <font color="gray">???</font> |
+| `shv-illegal` | smclicshv-illegal | SHV table entry to an illegal instruction raises an illegal-instruction exception, not the handler | <font color="gray">???</font> |
 | `mnxti` | smclicmnxti | `mnxti` reports the top pending non-SHV interrupt (peek, `mie = 0`) | <font color="green">PASS</font> |
 | `edge-level` | edge-level | Edge re-pend stays pending while `mil` held and re-fires after `mret` | <font color="green">PASS</font> |
 
@@ -109,6 +115,52 @@ pending bit set before and after `enable_mie()` — i.e. not a timing or test
 artifact. The SHV path (`shv = 1`, used by all other tests) is unaffected.
 Do not gate CI on this test until the rt-ibex issue is fixed.
 
+### ??? — cliclevel-02 (`level-preempt`)
+
+Ext0 (level `0x10`) fires first; its handler asserts Ext1 (level `0x80`).
+Since `0x80 > max(mil = 0x10, thresh = 0)`, the CLIC preempts into the Ext1
+handler, which records `mcause.code = 28` and `mintstatus.mil = 0x80`, and
+`mret` resumes inside the Ext0 handler. The Ext0 handler then redirects `mepc`
+to `do_finish`. Checks: both handlers ran exactly once, in visit order
+`[Ext0, Ext1]`, Ext1's `mcause`/`mil` are correct.
+
+### ??? — cliclevel-03 (`level-no-preempt`)
+
+Ext0 (level `0x80`) fires first; its handler asserts Ext1 (level `0x10`).
+Since `0x10` is not above `max(mil = 0x80, thresh = 0)`, Ext1 must stay
+pending and never enter its handler. Checks: Ext0 ran once, Ext1 never ran,
+Ext1 remains pending (then unpended before `mret`). Ext1 has a handler
+defined only to catch a wrong preemption.
+
+### ??? — cliclevel-04 (`level-thresh-in-handler`)
+
+Ext0 (level `0x10`) fires first; its handler raises `mintthresh` to `0x80`
+and asserts Ext1 (level `0x80`). Preemption requires strictly `level >
+max(mil, mintthresh)`, so `0x80 == thresh` must not preempt. Positive control:
+lowering the threshold to `0x40` lets the same Ext1 preempt. Checks: Ext0 ran
+once, Ext1 did not preempt at `0x80 == thresh`, Ext1 preempted exactly once
+after the threshold drop.
+
+### ??? — smclicshv (`shv`)
+
+Ext0 configured with `shv = 1`. The CLIC entry jumps to the address stored in
+vector-table entry `mtvt + 4*27` (the `_start_Ext0_trap` handler), bypassing
+the software trap entry, so `mcause`/`mepc`/`mstatus` reach the handler
+untouched. Checks: `mcause.is_interrupt()`, `mcause.code = 27`,
+`mcause.minhv = 1`, and the edge `clicintip` pending bit is auto-cleared on
+core acknowledge (claim).
+
+### ??? — smclicshv-illegal (`shv-illegal`)
+
+`mtvt` is repointed at a 256-byte-aligned table in DMEM whose Ext0 entry (27)
+holds the address of a word containing the illegal encoding `0xFFFFFFFF`.
+Taking the SHV interrupt jumps there; executing `0xFFFFFFFF` traps with
+`mcause` = illegal instruction (`irq = 0`, `code = 2`), which the exception
+dispatcher routes to the `IllegalInstruction` handler. Checks: the exception
+handler ran exactly once, `mcause` is not an interrupt with `code = 2`, and
+the Ext0 handler never ran. Requires an executable data region: IMEM and DMEM
+are both executable on this part, so a plain DMEM static is fetchable.
+
 ### PASS — smclicmnxti (`mnxti`)
 
 With `shv = 0` sources at level 1 and `mie = 0` (so nothing is taken),
@@ -143,7 +195,10 @@ lowered from the firmware.
 - Nesting rule: an interrupt is taken iff `level > max(mintthresh,
   mintstatus.mil)`; on take `mil = level`, on `mret` it is swapped with
   `mcause.mpil`.
-- Edge-triggered `clicintip` auto-clears on core acknowledge.
+- Edge-triggered (`clicintattr.trig = 1`) `clicintip` is set by a rising edge
+  of the source or of the software pending register and auto-clears on core
+  acknowledge (claim). In level-sensitive mode the pending bit follows the
+  external source and ignores software `clicintip` writes.
 - `mnxti` (rt-ibex) is a peek only — no claim or jump side effects — and with
   `CLIC_SHV = 1` it reports only `shv = 0` interrupts.
 - `mscratchcsw`/`mscratchcswl` are plain RW storage (no auto-swap), so csw
