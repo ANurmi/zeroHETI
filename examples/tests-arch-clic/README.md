@@ -39,7 +39,7 @@ pass/fail backdoor (write to `0x380`). The per-target
 Run all tests, e.g.:
 
 ```sh
-for t in nomint-mie nomint-ie nomint-thresh wfi direct \
+for t in nomint-mie nomint-ie nomint-thresh wfi \
          mnxti edge-level; do
   cargo run --release -Frtl-tb --bin "$t"
 done
@@ -47,6 +47,8 @@ done
 
 A test prints `[<id>] PASSED` and exits 0 on success, `[FAIL]` lines plus a
 non-zero exit on failure.
+
+ `direct` is excluded; it is EXPECTED-FAIL, see below.
 
 ## Test cases and expected statuses
 
