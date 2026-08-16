@@ -19,6 +19,13 @@ default = []
 debug-expand = ["rtic/debug-expand"]
 ufmt = ["bsp/ufmt"]
 
+# RTIC observability hooks: trace every task activation/completion and
+# resource acquire/release into a ring buffer, dumped over UART at teardown.
+# Adds a small per-hook cost (~1.4k cycles / ~0.7% active time) and a slow
+# UART dump (~25 s wall clock in the sim vs ~3 s without); leave off for
+# quick benchmark runs.
+obs = []
+
 intc-clic = ["bsp/intc-clic", "rtic/intc-clic"]
 intc-edfic = ["bsp/intc-edfic", "rtic/intc-edfic"]
 
