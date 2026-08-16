@@ -58,8 +58,19 @@
 //!
 //! The teardown dump over UART dominates wall-clock time in the sim (~25 s with
 //! the `obs` feature vs ~3 s without at `RUNTIME_MS=10`).
+//!
+//! # Timestamps
+//!
+//! Each event records the low 32 bits of the free-running machine timer
+//! (`mtimer` counter), sampled right at the hook call. `mtimer` ticks at
+//! [`bsp::CPU_FREQ_HZ`], so 2^32 ticks is > 85 s at 50 MHz — runs are
+//! milliseconds, making the truncated value unambiguous. The ts is written
+//! inline with the event word under the same claim, so under the lock-free
+//! protocol a slot's ts/word pair belongs to the same push except in the rare
+//! nested-claim collision (where either claimant's pair wins — microseconds
+//! apart, the ts stays valid for the slot either way).
 
-use bsp::sprintln;
+use bsp::{mtimer::MTimer, sprintln};
 
 use crate::app::{ResourceId, RticObservability, TaskId};
 
@@ -76,6 +87,7 @@ enum ObsKind {
 
 static mut OBS_TRACE_LEN: u32 = 0;
 static mut OBS_TRACE: [u32; OBS_TRACE_CAP] = [0; OBS_TRACE_CAP];
+static mut OBS_TRACE_TS: [u32; OBS_TRACE_CAP] = [0; OBS_TRACE_CAP];
 
 pub struct Obs;
 
@@ -99,16 +111,21 @@ fn obs_push(kind: ObsKind, id: u8, task_prio: u16, ceiling: u16) {
         | (id as u32) << 16
         | ((task_prio & 0xff) as u32) << 8
         | (ceiling & 0xff) as u32;
-    obs_append(word);
+    // Safety: reads of mtimer hi/lo may be disjoint if preempted mid-read, but
+    // the result is only a timestamp for tracing. This is a pure read; it does
+    // not disturb the OneShot used for the hyperperiod runtime.
+    let ts = MTimer::instance().counter() as u32;
+    obs_append(word, ts);
 }
 
 /// Lock-free append; see the module docs for the concurrency model.
-fn obs_append(word: u32) {
+fn obs_append(word: u32, ts: u32) {
     // Safety: single-hart protocol above; aligned 32-bit accesses are atomic.
     unsafe {
         let idx = OBS_TRACE_LEN;
         if (idx as usize) < OBS_TRACE_CAP {
             OBS_TRACE[idx as usize] = word;
+            OBS_TRACE_TS[idx as usize] = ts;
             OBS_TRACE_LEN = OBS_TRACE_LEN.max(idx + 1);
         }
     }
@@ -118,18 +135,29 @@ pub fn obs_dump() {
     // Safety: run at teardown only; all pushes have completed.
     unsafe {
         let n = OBS_TRACE_LEN.min(OBS_TRACE_CAP as u32);
-        sprintln!("[obs] trace: {n} events");
+        sprintln!("[obs] trace: {n} events @ mtimer ticks");
         for i in 0..n {
             let w = OBS_TRACE[i as usize];
+            let ts = OBS_TRACE_TS[i as usize];
             let kind = (w >> 24) as u8;
             let id = (w >> 16) as u8;
             let prio = (w >> 8) as u8;
             let ceiling = w as u8;
             match kind {
-                0 => sprintln!("[obs] act   {}", task_name(id)),
-                1 => sprintln!("[obs] comp  {}", task_name(id)),
-                2 => sprintln!("[obs] acq   {} t={} c={}", res_name(id), prio, ceiling),
-                3 => sprintln!("[obs] rel   {} t={} c={}", res_name(id), prio, ceiling),
+                0 => sprintln!("[obs] @{ts:>10} act  {}", task_name(id)),
+                1 => sprintln!("[obs] @{ts:>10} comp {}", task_name(id)),
+                2 => sprintln!(
+                    "[obs] @{ts:>10} acq  {} t={} c={}",
+                    res_name(id),
+                    prio,
+                    ceiling
+                ),
+                3 => sprintln!(
+                    "[obs] @{ts:>10} rel  {} t={} c={}",
+                    res_name(id),
+                    prio,
+                    ceiling
+                ),
                 _ => {}
             }
         }
