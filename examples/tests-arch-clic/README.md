@@ -40,7 +40,7 @@ Run all tests, e.g.:
 
 ```sh
 for t in nomint-mie nomint-ie nomint-thresh wfi direct \
-         edge-level; do
+         mnxti edge-level; do
   cargo run --release -Frtl-tb --bin "$t"
 done
 ```
@@ -57,6 +57,7 @@ non-zero exit on failure.
 | `nomint-thresh` | clicnomint-03 | No interrupt fires when its level is not above `mintthresh` | <font color="green">PASS</font> |
 | `wfi` | clicwfi-01 | `wfi` wakes without trapping when an interrupt is pending and `mie = 0` | <font color="green">PASS</font> |
 | `direct` | clicdirect-01 | Direct-mode (`shv = 0`) handler entry, trigger/clear, no re-entry while `mil` held | <font color="yellow">EXPECTED-FAIL</font> |
+| `mnxti` | smclicmnxti | `mnxti` reports the top pending non-SHV interrupt (peek, `mie = 0`) | <font color="green">PASS</font> |
 | `edge-level` | edge-level | Edge re-pend stays pending while `mil` held and re-fires after `mret` | <font color="green">PASS</font> |
 
 Every "must-not-fire" test includes a positive-control phase (re-enable the
@@ -106,6 +107,19 @@ pending bit set before and after `enable_mie()` — i.e. not a timing or test
 artifact. The SHV path (`shv = 1`, used by all other tests) is unaffected.
 Do not gate CI on this test until the rt-ibex issue is fixed.
 
+### PASS — smclicmnxti (`mnxti`)
+
+With `shv = 0` sources at level 1 and `mie = 0` (so nothing is taken),
+`mnxti` is a peek that returns `{mtvt[31:8], id << 2}` for the highest-level
+pending interrupt and `0` otherwise. Checks: `0` with nothing pending; with
+Ext0 (27) pending it encodes id 27 and the `mtvt` base; with Ext0 and Ext1
+pending at the same level the tie is resolved to the lowest-indexed source
+(Ext0 = 27, matching the `clic_target` tree's tie-break). `rt-ibex` implements
+`mnxti` without claim or jump side effects, so the peek never triggers the
+direct-mode fetch glitch. The test ends with the two lines latched pending
+(an unclaimed edge pending is only cleared by a claim, not by `unpend`, on
+this CLIC — so there is no clean way back to "nothing pending").
+
 ### PASS — edge-level (`edge-level`)
 
 Ext0 (edge-triggered) fires; the claim clears the edge pending bit. Inside
@@ -128,5 +142,7 @@ lowered from the firmware.
   mintstatus.mil)`; on take `mil = level`, on `mret` it is swapped with
   `mcause.mpil`.
 - Edge-triggered `clicintip` auto-clears on core acknowledge.
+- `mnxti` (rt-ibex) is a peek only — no claim or jump side effects — and with
+  `CLIC_SHV = 1` it reports only `shv = 0` interrupts.
 - `mscratchcsw`/`mscratchcswl` are plain RW storage (no auto-swap), so csw
   signature tests are not meaningful on this core.
