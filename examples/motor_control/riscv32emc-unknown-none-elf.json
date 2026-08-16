@@ -1,5 +1,6 @@
 {
   "arch": "riscv32",
+  "abi": "ilp32e",
   "atomic-cas": false,
   "cpu": "generic-rv32",
   "crt-objects-fallback": "false",

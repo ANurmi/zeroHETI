@@ -1,5 +1,5 @@
 [toolchain]
-channel = "nightly-2025-10-07"
+channel = "nightly-2026-08-16"
 targets = [
     # target definitions are supplied as JSON
 ]
