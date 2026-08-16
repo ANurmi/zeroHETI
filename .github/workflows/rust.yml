@@ -80,6 +80,16 @@ jobs:
           cd examples/zeroheti-bsp
           RUSTFLAGS=$TEST_BUILD_RUSTFLAGS cargo run --release -Frtl-tb -Fintc-clic --example hi_preempts_lo
 
+      - name: Test CLIC architecture
+        # `direct` (clicdirect-01) is excluded: it is EXPECTED-FAIL (rt-ibex
+        # direct-mode fetch glitch) and hangs the simulator.
+        run: |
+          cd examples/tests-arch-clic
+          cargo check -Frtl-tb --bins
+          for t in nomint-mie nomint-ie nomint-thresh wfi; do
+            cargo run --release -Frtl-tb --bin "$t"
+          done
+
       - name: Test all IRQs (HETIC)
         # Run optionally, or if HETIC is mentioned in commit
         if: >
