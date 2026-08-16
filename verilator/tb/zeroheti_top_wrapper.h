@@ -17,7 +17,7 @@ class TbZeroHeti: public Testbench<Vzeroheti_top_wrapper> {
 
         std::filesystem::path resolve_elf(std::string elf_name) {
           std::filesystem::path res = elf_name;
-          if (elf_name.substr(elf_name.size() - 4) != ".elf") {
+          if (elf_name.size() < 4 || elf_name.substr(elf_name.size() - 4) != ".elf") {
             res += ".elf";
           }
 
