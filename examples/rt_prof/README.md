@@ -34,6 +34,15 @@ recorded and dumped over UART during teardown, e.g.:
 `t` is the running task's priority and `c` the raised SRP ceiling, so
 scheduling dynamics and SRP system-ceiling behavior are fully reconstructable.
 
+The backend is deliberately lock-free: it relies on RTIC's single-hart, LIFO
+preemption guarantees (a hook can only be interrupted by a strictly
+higher-priority task) instead of masking interrupts. Task handlers run with
+`mstatus.MIE` set and preemption gated by the CLIC level threshold, so a
+critical section would perturb the timing the hooks exist to observe. Appends
+commit the tail index with `max`, so a nested claim can drop at most one event
+and never corrupts the buffer. See the module docs in `src/obs.rs` for the
+full concurrency model.
+
 Runtime: the hooks add only ~1.4k retired instructions / ~0.7% of active time,
 but the teardown UART dump dominates wall-clock time in the sim (~25 s with
 `obs` vs ~3 s without at the default `RUNTIME_MS=10`). It is disabled by
