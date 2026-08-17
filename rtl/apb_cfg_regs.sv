@@ -8,42 +8,45 @@ module apb_cfg_regs #(
   localparam logic [31:0] ShortHash = 32'h`GIT_HASH;
   // Static platform configuration visible to SW
   localparam logic IntcEdfic = (zeroheti_pkg::`INTC == zeroheti_pkg::EDFIC);
-
   localparam logic [7:0] ImemPow2 = 8'($clog2(`IMEM_BYTES));
   localparam logic [7:0] DmemPow2 = 8'($clog2(`DMEM_BYTES));
+  localparam logic [31:0] PlatformCfg = {8'h0, DmemPow2, ImemPow2, 7'h0, IntcEdfic};
 
   logic [11:0] local_addr;
   assign local_addr = apb_i.paddr[11:0];
 
-
-  logic [31:0] platform_cfg;
-  assign platform_cfg = {8'h0, DmemPow2, ImemPow2, 7'h0, IntcEdfic};
-
   // General-purpose register bank
   // Useful as white-box simulation hook
   logic [4:0][31:0] gpreg_d, gpreg_q;
+
+  logic mtime_en_d, mtime_en_q;
 
   logic apb_event;
   assign apb_event = apb_i.psel & apb_i.penable;
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (~rst_ni) begin
-      gpreg_q <= '0;
+      gpreg_q    <= '0;
+      mtime_en_q <= '0;
     end else begin
-      gpreg_q <= gpreg_d;
+      gpreg_q    <= gpreg_d;
+      mtime_en_q <= mtime_en_d;
     end
   end
 
   always_comb begin
 
     apb_i.prdata = 0;
-    gpreg_d = gpreg_q;
+    gpreg_d      = gpreg_q;
+    mtime_en_d   = mtime_en_q;
 
     if (apb_event) begin
       if (apb_i.pwrite) begin
         // Currently supports only word writes
         unique case (local_addr)
           12'h000:  /*read-only*/;
+          12'h004:  /*read-only*/;
+          12'h008: mtime_en_d = apb_i.pwdata[0];
           12'h100: gpreg_d[0] = apb_i.pwdata;
           12'h104: gpreg_d[1] = apb_i.pwdata;
           12'h108: gpreg_d[2] = apb_i.pwdata;
@@ -54,7 +57,8 @@ module apb_cfg_regs #(
       end else begin
         unique case (local_addr)
           12'h000: apb_i.prdata = ShortHash;
-          12'h004: apb_i.prdata = platform_cfg;
+          12'h004: apb_i.prdata = PlatformCfg;
+          12'h008: apb_i.prdata = {31'h0, mtime_en_q};
           12'h100: apb_i.prdata = gpreg_q[0];
           12'h104: apb_i.prdata = gpreg_q[1];
           12'h108: apb_i.prdata = gpreg_q[2];

@@ -14,6 +14,7 @@ module zeroheti_core
     input  logic                         jtag_tms_i,
     input  logic                         jtag_trst_ni,
     input  logic                         jtag_td_i,
+    input  logic                         intc_mtime_en_i,
     output logic                         jtag_td_o,
     input  logic      [Cfg.num_irqs-1:0] ext_irqs_i,
        OBI_BUS.Manager                   obi_mgr,
@@ -54,7 +55,7 @@ module zeroheti_core
       .irq_level_o(irq_level),
       .irq_priv_o (irq_priv),
       .irq_shv_o  (irq_shv),
-      .mtime_en_i (1'b0),
+      .mtime_en_i (intc_mtime_en_i),
       .obi_sbr    (intc_bus)
   );
 

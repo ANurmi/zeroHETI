@@ -69,6 +69,7 @@ module zeroheti_top
   logic [(TGSize*2)-1:0] apb_timer_irqs;
 
   logic [          63:0] mtime;
+  logic                  intc_mtime_en;
 
   always_comb begin : irq_mapping
     all_irqs                       = '0;
@@ -95,7 +96,8 @@ module zeroheti_top
       .jtag_trst_ni,
       .jtag_td_i,
       .jtag_td_o,
-      .ext_irqs_i(all_irqs),
+      .intc_mtime_en_i (intc_mtime_en),
+      .ext_irqs_i         (all_irqs),
       .obi_mgr   (mbx_obi),
       .apb_mgr   (core_apb),
       .obi_sbr   (core_sbr_obi)
@@ -270,6 +272,7 @@ module zeroheti_top
   apb_cfg_regs #() i_cfg_regs (
       .clk_i,
       .rst_ni,
+      .intc_mtime_en_o(intc_mtime_en),
       .apb_i(demux_apb[4])
   );
 
