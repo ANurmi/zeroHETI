@@ -2,7 +2,7 @@
 use core::arch::global_asm;
 
 #[cfg(feature = "rt")]
-#[unsafe(export_name = "_setup_interrupts")]
+#[riscv_rt::setup_interrupts]
 fn setup_interrupt_vector() {
     use crate::register::{mintthresh, mtvec, mtvt};
 
