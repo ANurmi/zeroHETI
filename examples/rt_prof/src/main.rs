@@ -144,13 +144,22 @@ mod app {
         mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mtimer::{self, *},
         parse_u32,
-        riscv::{self},
+        register::{mcycle, mcycleh, minstret, minstreth},
         sprintln,
         tb::signal_pass,
         timer_group::{self, Periodic, Timer},
     };
     use core::fmt::Write;
     use fugit::{ExtU32, ExtU64};
+
+    fn clear_perf_counters() {
+        unsafe {
+            minstret::write(0);
+            mcycle::write(0);
+            minstreth::write(0);
+            mcycleh::write(0);
+        }
+    }
 
     #[derive(Clone, Copy, Default)]
     struct PidState {
@@ -275,13 +284,7 @@ mod app {
                     CMDS.iter()
                         .for_each(|&(addr, data)| obx.send(addr as u32, data));
 
-                    unsafe {
-                        // Clear instruction & cycle counters
-                        riscv::register::minstret::write(0);
-                        riscv::register::mcycle::write(0);
-                        riscv::register::minstreth::write(0);
-                        riscv::register::mcycleh::write(0);
-                    }
+                    clear_perf_counters();
                 }
                 Some(start_time) => {
                     // Take timestamp for sim end
@@ -296,8 +299,8 @@ mod app {
                     let duration_real_cc = now - *start_time;
                     let setup_time_real_cc = *start_time;
 
-                    let instret = riscv::register::minstret::read64();
-                    let active_time_cc = riscv::register::mcycle::read64();
+                    let instret = minstret::read64();
+                    let active_time_cc = mcycle::read64();
 
                     sprintln!("MachineTimer::Teardown");
 

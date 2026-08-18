@@ -14,9 +14,9 @@ mod app {
         mailbox::Mailbox,
         mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR},
         mmio,
-        mtimer::{self, *},
+        mtimer::*,
         parse_u32,
-        riscv::{self},
+        register::{mcycle, mcycleh, minstret, minstreth},
         sprintln,
         tb::signal_pass,
         timer_group::{Periodic, Timer},
@@ -29,10 +29,10 @@ mod app {
 
     fn clear_perf_counters() {
         unsafe {
-            riscv::register::minstret::write(0);
-            riscv::register::mcycle::write(0);
-            riscv::register::minstreth::write(0);
-            riscv::register::mcycleh::write(0);
+            minstret::write(0);
+            mcycle::write(0);
+            minstreth::write(0);
+            mcycleh::write(0);
         }
     }
 
@@ -117,7 +117,7 @@ mod app {
         timers.iter_mut().for_each(Periodic::start);
 
         clear_perf_counters();
-        // scb enable
+        // Scoreboard enable
         mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 1);
 
         Shared { i2c }
@@ -130,12 +130,12 @@ mod app {
             Self {}
         }
         fn exec(&mut self) {
-            // Disable scoreboard
+            // Scoreboard disable
             mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 0);
 
             let now = MTimer::instance().into_oneshot().duration().ticks();
-            let minstret = riscv::register::minstret::read64();
-            let mcycle = riscv::register::mcycle::read64();
+            let minstret = minstret::read64();
+            let mcycle = mcycle::read64();
 
             sprintln!(
                 "CPU util: {}%, instructions: {}",
