@@ -3,10 +3,9 @@
 #![no_std]
 mod common;
 
-use fugit::ExtU64;
 use zeroheti_bsp::{
-    CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, interrupt::Interrupt, mtimer::MTimer,
-    rt::entry, sprintln,
+    CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, fugit::ExtU64, interrupt::Interrupt,
+    mtimer::MTimer, rt::entry, sprintln,
 };
 
 use crate::common::{init_intc, setup_irq};

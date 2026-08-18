@@ -138,6 +138,7 @@ mod app {
         CPU_FREQ_HZ,
         apb_uart::ApbUart,
         clic::Clic,
+        fugit::{ExtU32, ExtU64},
         i2c::{self, I2c},
         interrupt::Interrupt,
         mailbox::{Inbox, Mailbox, Outbox},
@@ -150,7 +151,6 @@ mod app {
         timer_group::{self, Periodic, Timer},
     };
     use core::{fmt::Write, mem::MaybeUninit};
-    use fugit::{ExtU32, ExtU64};
 
     fn clear_perf_counters() {
         unsafe {

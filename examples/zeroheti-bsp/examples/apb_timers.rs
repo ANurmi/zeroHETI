@@ -6,11 +6,11 @@ mod common;
 
 use core::{file, ptr};
 
-use fugit::{ExtU32, ExtU64};
 use zeroheti_bsp::{
     CPU_FREQ_HZ, NOPS_PER_SEC,
     apb_uart::ApbUart,
     asm_delay,
+    fugit::{ExtU32, ExtU64},
     interrupt::Interrupt,
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mtimer::MTimer,

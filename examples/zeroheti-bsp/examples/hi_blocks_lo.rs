@@ -4,10 +4,10 @@
 mod common;
 
 use crate::common::{init_intc, pend_irq};
-use fugit::ExtU64;
 use riscv::InterruptNumber;
 use zeroheti_bsp::{
-    CPU_FREQ_HZ, apb_uart::ApbUart, interrupt::Interrupt, mtimer::MTimer, rt::entry, sprintln,
+    CPU_FREQ_HZ, apb_uart::ApbUart, fugit::ExtU64, interrupt::Interrupt, mtimer::MTimer, rt::entry,
+    sprintln,
 };
 
 /// Indicates that the high-level interrupt was called

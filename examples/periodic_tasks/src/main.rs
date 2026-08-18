@@ -10,6 +10,7 @@ use bsp::rt::{InterruptNumber, core_interrupt};
 use bsp::{
     CPU_FREQ_HZ,
     apb_uart::*,
+    fugit::ExtU32,
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mtimer::{self, MTimer},
     riscv::{self, asm::wfi},
@@ -21,7 +22,6 @@ use bsp::{
 };
 use core::arch::asm;
 use core::ptr;
-use fugit::ExtU32;
 use more_asserts as ma;
 
 #[cfg_attr(feature = "ufmt", derive(uDebug))]

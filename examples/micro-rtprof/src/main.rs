@@ -10,6 +10,7 @@ mod app {
         CPU_FREQ_HZ,
         apb_uart::ApbUart,
         asm_delay,
+        fugit::{ExtU32, ExtU64},
         i2c::{self, I2c},
         mailbox::Mailbox,
         mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR},
@@ -21,8 +22,6 @@ mod app {
         tb::signal_pass,
         timer_group::{Periodic, Timer},
     };
-
-    use fugit::{ExtU32, ExtU64};
 
     const CFG_BASE_ADDR: usize = 0x0000_4000;
     const CFG_TASK_OFFS: usize = 0x0000_0100;
@@ -133,7 +132,7 @@ mod app {
             // Scoreboard disable
             mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 0);
 
-            let now = MTimer::instance().into_oneshot().duration().ticks();
+            let now = MTimer::instance().into_oneshot().duration().as_ticks();
             let minstret = minstret::read64();
             let mcycle = mcycle::read64();
 
