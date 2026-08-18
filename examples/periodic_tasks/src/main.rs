@@ -10,16 +10,17 @@ use bsp::rt::{InterruptNumber, core_interrupt};
 use bsp::{
     CPU_FREQ_HZ,
     apb_uart::*,
-    interrupt::Interrupt,
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mtimer::{self, MTimer},
     riscv::{self, asm::wfi},
+    rt as riscv_rt,
     rt::entry,
     sprintln,
     tb::signal_pass,
     timer_group::{Periodic, Timer},
 };
 use core::arch::asm;
+use core::ptr;
 use fugit::ExtU32;
 use more_asserts as ma;
 
@@ -298,14 +299,14 @@ unsafe fn MachineTimer() {
 pub fn setup_irq(irq: impl InterruptNumber, level: u8) {
     Hetic::line(irq.number()).set_trig(Trig::Edge);
     Hetic::line(irq.number()).set_pol(Pol::Pos);
-    Hetic::line(irq.number()).set_level(level);
+    Hetic::line(irq.number()).set_level_prio(level);
     Hetic::line(irq.number()).enable();
 }
 
 /// Tear down the IRQ configuration to avoid side-effects for further testing
 pub fn tear_irq(irq: impl InterruptNumber) {
     Hetic::line(irq.number()).disable();
-    Hetic::line(irq.number()).set_level(0x0);
+    Hetic::line(irq.number()).set_level_prio(0x0);
     Hetic::line(irq.number()).set_trig(Trig::Level);
     Hetic::line(irq.number()).set_pol(Pol::Pos);
 }
