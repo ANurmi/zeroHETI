@@ -103,7 +103,7 @@ impl Timer {
     }
 }
 
-const DENOM: u32 = CPU_FREQ_HZ;
+const DENOM: u64 = CPU_FREQ_HZ as u64;
 pub type Duration = fugit::Duration<u32, 1, DENOM>;
 
 pub struct Periodic(Timer);
@@ -116,7 +116,7 @@ impl Periodic {
     #[inline]
     pub fn set_period(&mut self, duration: Duration) {
         // Setting CMP also sets COUNTER
-        self.0.set_cmp(duration.ticks());
+        self.0.set_cmp(duration.as_ticks());
     }
 
     /// Schedules the TimerNCmp interrupt to fire every `duration`. Call
@@ -127,8 +127,8 @@ impl Periodic {
     #[inline]
     pub fn set_period_offset(&mut self, period: Duration, offset: Duration) {
         // Setting CMP also sets COUNTER, so we override that afterwards
-        self.0.set_cmp(period.ticks());
-        self.0.set_counter(offset.ticks());
+        self.0.set_cmp(period.as_ticks());
+        self.0.set_counter(offset.as_ticks());
     }
 
     /// Schedules the TimerNCmp interrupt to fire every `duration`, with
@@ -141,8 +141,8 @@ impl Periodic {
     pub fn set_period_next(&mut self, period: Duration, next: Duration) {
         debug_assert!(next <= period);
         // Setting CMP also sets COUNTER, so we override that afterwards
-        self.0.set_cmp(period.ticks());
-        self.0.set_counter((period - next).ticks());
+        self.0.set_cmp(period.as_ticks());
+        self.0.set_counter((period - next).as_ticks());
     }
 
     /// Starts the timer

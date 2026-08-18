@@ -32,6 +32,7 @@ pub use ufmt;
 #[cfg(feature = "embedded-hal")]
 pub use embedded_hal;
 pub use embedded_io;
+pub use fugit;
 pub use peripherals::Peripherals;
 pub use riscv;
 #[cfg(feature = "rt")]

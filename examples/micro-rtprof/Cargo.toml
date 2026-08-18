@@ -7,11 +7,8 @@ edition = "2024"
 bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp", features = [
     "rt",
 ] }
-fugit = "0.3.7"
 ufmt = "0.2.0"
 more-asserts = "0.3.1"
-# It is strange that this is needed as a direct dependency; build breaks otherwise
-riscv-rt = { version = "0.17.1", features = ["single-hart", "v-trap", "no-interrupts"] }
 log = { version = "0.4.29", default-features = false }
 rtic = { version = "0.1.0", path = "../mrtic/distributions/zeroheti-rtic", optional = true, features = ["rtl-tb"] }
 [features]

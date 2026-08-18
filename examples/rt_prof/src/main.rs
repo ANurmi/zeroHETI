@@ -138,11 +138,12 @@ mod app {
         CPU_FREQ_HZ,
         apb_uart::ApbUart,
         clic::Clic,
+        fugit::{ExtU32, ExtU64},
         i2c::{self, I2c},
         interrupt::Interrupt,
         mailbox::{Inbox, Mailbox, Outbox},
         mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
-        mtimer::{self, *},
+        mtimer::*,
         parse_u32,
         register::{mcycle, mcycleh, minstret, minstreth},
         sprintln,
@@ -150,7 +151,6 @@ mod app {
         timer_group::{self, Periodic, Timer},
     };
     use core::{fmt::Write, mem::MaybeUninit};
-    use fugit::{ExtU32, ExtU64};
 
     fn clear_perf_counters() {
         unsafe {

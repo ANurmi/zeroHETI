@@ -11,7 +11,7 @@ fn main() -> ! {
 
     sprintln!("[{} ({})]", core::file!(), env!("RISCV_EXTS"));
 
-    let CFG_BASE_ADDR = 0x0000_4000;
+    const CFG_BASE_ADDR: usize = 0x0000_4000;
 
     let rd = mmio::read_u32(CFG_BASE_ADDR);
     let cfg = mmio::read_u32(CFG_BASE_ADDR + 4);

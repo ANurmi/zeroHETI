@@ -6,11 +6,11 @@ mod common;
 
 use core::{file, ptr};
 
-use fugit::{ExtU32, ExtU64};
 use zeroheti_bsp::{
     CPU_FREQ_HZ, NOPS_PER_SEC,
     apb_uart::ApbUart,
     asm_delay,
+    fugit::{ExtU32, ExtU64},
     interrupt::Interrupt,
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mtimer::MTimer,
@@ -54,8 +54,7 @@ fn main() -> ! {
 
     unsafe { riscv::interrupt::enable() };
 
-    while (unsafe { ptr::read_volatile(&raw const IRQ_RECVD as *const u64) } & 0b1111) != 0b1111 {
-    }
+    while (unsafe { ptr::read_volatile(&raw const IRQ_RECVD as *const u64) } & 0b1111) != 0b1111 {}
 
     zeroheti_bsp::tb::signal_pass(Some(&mut serial));
 
