@@ -9,7 +9,7 @@ bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp", features = [
 ] }
 # Required if riscv-macros::core_interrupt is used. riscv-rt version must align with BSP
 riscv-rt = { version = "0.18.0" }
-obs-trace = { path = "../obs-trace" }
+obs-trace = { path = "../obs-trace", optional = true }
 ufmt = "0.2.0"
 more-asserts = "0.3.1"
 log = { version = "0.4.29", default-features = false }
@@ -24,7 +24,7 @@ ufmt = ["bsp/ufmt"]
 # Adds a small per-hook cost (~1.4k cycles / ~0.7% active time) and a slow
 # UART dump (~25 s wall clock in the sim vs ~3 s without); leave off for
 # quick benchmark runs.
-obs = []
+obs = ["dep:obs-trace"]
 
 intc-clic = ["bsp/intc-clic", "rtic/intc-clic"]
 intc-edfic = ["bsp/intc-edfic", "rtic/intc-edfic"]
