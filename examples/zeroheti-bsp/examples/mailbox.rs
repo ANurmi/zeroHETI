@@ -10,12 +10,12 @@ use zeroheti_bsp::{
 fn main() -> ! {
     let mut serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
 
-    let MBX_STAT_ADDR = 0x0003_0000;
-    let MBX_CTRL_ADDR = 0x0003_0004;
-    let _MBX_IADD_ADDR = 0x0003_0008;
-    let _MBX_IDAT_ADDR = 0x0003_000C;
-    let MBX_OADD_ADDR = 0x0003_0010;
-    let MBX_ODAT_ADDR = 0x0003_0014;
+    const MBX_STAT_ADDR: usize = 0x0003_0000;
+    const MBX_CTRL_ADDR: usize = 0x0003_0004;
+    const _MBX_IADD_ADDR: usize = 0x0003_0008;
+    const _MBX_IDAT_ADDR: usize = 0x0003_000C;
+    const MBX_OADD_ADDR: usize = 0x0003_0010;
+    const MBX_ODAT_ADDR: usize = 0x0003_0014;
 
     let letter_0 = 0x2b00b1e5;
 
