@@ -54,7 +54,8 @@ fn main() -> ! {
 
     unsafe { riscv::interrupt::enable() };
 
-    while (unsafe { IRQ_RECVD } & 0b1111) != 0b1111 {}
+    while (unsafe { ptr::read_volatile((&raw const IRQ_RECVD) as *const u64) } & 0b1111) != 0b1111 {
+    }
 
     zeroheti_bsp::tb::signal_pass(Some(&mut serial));
 
