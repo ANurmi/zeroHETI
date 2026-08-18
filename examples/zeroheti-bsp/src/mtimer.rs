@@ -210,7 +210,7 @@ impl MTimerLo {
     }
 }
 
-const DENOM: u32 = CPU_FREQ_HZ;
+const DENOM: u64 = CPU_FREQ_HZ as u64;
 pub type Duration = fugit::Duration<u64, 1, DENOM>;
 
 pub struct OneShot(MTimer);
@@ -222,7 +222,7 @@ impl OneShot {
         let cnt = self.0.counter();
         let clkdiv = self.0.clkdiv();
 
-        self.0.set_cmp(cnt + duration.ticks() / clkdiv as u64);
+        self.0.set_cmp(cnt + duration.as_ticks() / clkdiv as u64);
         self.0.enable();
     }
 

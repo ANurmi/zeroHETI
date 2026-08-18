@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 zeroheti-bsp-macros = { path = "macros"}
 embedded-io = "0.7.1"
-fugit = "0.3.7"
+fugit = "0.5.0"
 riscv = { version = "0.16.0", features = ["rt"] }
 riscv-peripheral = "0.5.0"
 riscv-types = "0.1.0"
