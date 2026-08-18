@@ -1,5 +1,5 @@
 // Simple UART receiver
-// Baudrate hardcoded to 1_500_000;
+// Baudrate hardcoded to 115_200;
 // TODO: parameterize
 
 module vip_uart #(
@@ -9,7 +9,7 @@ module vip_uart #(
     output logic tx_o
 );
 
-  localparam int unsigned PsMax = 80;
+  localparam int unsigned PsMax = 864;
 
   logic        [7:0] char;
 

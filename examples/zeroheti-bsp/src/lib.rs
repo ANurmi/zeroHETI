@@ -70,10 +70,10 @@ pub use zeroheti_bsp_macros::{
     nested_interrupt_ilp32e as nested_interrupt,
 };
 
-#[cfg_attr(feature = "rtl-tb", doc = "10 MHz")]
+#[cfg_attr(feature = "rtl-tb", doc = "100 MHz")]
 pub const CPU_FREQ_HZ: u32 = match () {
     #[cfg(feature = "rtl-tb")]
-    () => 10_000_000,
+    () => 100_000_000,
     #[cfg(feature = "fpga")]
     () => 25_000_000,
 };

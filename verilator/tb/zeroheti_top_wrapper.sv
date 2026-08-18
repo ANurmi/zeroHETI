@@ -33,7 +33,7 @@ module zeroheti_top_wrapper #(
   logic b_valid, b_ready;
   logic r_valid, r_ready;
 
-  vip_zeroheti_top i_vip_zeroheti_top (
+  vip_zeroheti_top i_vip (
       .clk_i,
       .rst_ni,
       .sda_i     (i2c_sda_dut_vip),
@@ -64,7 +64,7 @@ module zeroheti_top_wrapper #(
       .r_ready_o (r_ready)
   );
 
-  zeroheti_top i_zeroheti (
+  zeroheti_top i_dut (
       .clk_i,
       .rst_ni,
       .jtag_tck_i,

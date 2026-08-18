@@ -104,7 +104,7 @@ package zeroheti_pkg;
       last : 32'h0000_3300 + (16 * TGSize)
   };
   localparam addr_rule_t I2cAddr = '{base : 32'h0000_3200, last : 32'h0000_3218};
-  localparam addr_rule_t CfgAddr = '{base : 32'h0000_3500, last : 32'h0000_3600};
+  localparam addr_rule_t CfgAddr = '{base : 32'h0000_4000, last : 32'h0000_5000};
   localparam addr_rule_t ImemAddr = '{base : 32'h0001_0000, last : (32'h0001_0000 + ImemSize)};
   localparam addr_rule_t DmemAddr = '{base : 32'h0002_0000, last : (32'h0002_0000 + DmemSize)};
   localparam addr_rule_t ExtAddr = '{base : 32'h0003_0000, last : 32'h0010_0000};

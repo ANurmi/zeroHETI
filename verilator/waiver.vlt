@@ -26,6 +26,7 @@ lint_off -rule WIDTHTRUNC -file "*/pulp_i2c/*" -match "*"
 lint_off -rule WIDTHTRUNC -file "*/apb_timer*/*" -match "*"
 
 lint_off -rule UNOPTFLAT -file "*/common_cells*/*" -match "*"
+lint_off -rule UNOPTFLAT -file "*/obi_to_apb_intf.sv" -match "*"
 lint_off -rule UNOPTFLAT -file "*/obi*/*" -match "*"
 lint_off -rule UNOPTFLAT -file "*/obi_*/*" -match "*"
 lint_off -rule UNOPTFLAT -file "*/clic*/*" -match "*"

@@ -1,5 +1,6 @@
 package rt_prof_pkg;
 
+  /*
   typedef struct packed {
     logic [31:0] base;
     logic [31:0] start;
@@ -15,7 +16,7 @@ package rt_prof_pkg;
     logic [31:0] deadline;
     logic [31:0] ack;
   } task_addr_t;
-
+*/
   typedef struct packed {
     bit          active;
     bit          frame_active;
@@ -25,6 +26,23 @@ package rt_prof_pkg;
     int unsigned bitcount;
   } i2c_transaction_t;
 
+  typedef struct packed {
+    logic [31:0] addr;
+    logic [31:0] data;
+  } letter_t;
+
+  typedef struct packed {
+    bit          available;
+    bit          started;
+    int          dl_cc;
+    int          ret_worst_cc;
+    int          ret_avg_cc;
+    int unsigned dl_target_cc;
+    int          count_total;
+    int unsigned count_misses;
+  } task_t;
+
+  /*
   localparam sim_addr_t SimMap = '{
       base      : 32'h0100_0000,
       start     : 32'h0100_0000 + 0,
@@ -78,5 +96,5 @@ package rt_prof_pkg;
   endfunction
 
   localparam logic [31:0] PrintAddr = 32'h0300_0000;
-
+*/
 endpackage

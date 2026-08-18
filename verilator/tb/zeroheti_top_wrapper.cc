@@ -79,6 +79,7 @@ int main(int argc, char** argv) {
       tb->close_trace();
     }
 
+    tb->m_dut->final();
 
   delete tb;
 
