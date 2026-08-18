@@ -9,7 +9,7 @@ bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp", features = [
 ] }
 riscv-types = "0.1.0"
 
-[features] 
+[features]
 default = []
 ufmt = ["bsp/ufmt"]
 # Use this feature when using cosimulators such as QuestaSim
