@@ -10,8 +10,6 @@ bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp", features = [
 fugit = "0.3.7"
 ufmt = "0.2.0"
 more-asserts = "0.3.1"
-# It is strange that this is needed as a direct dependency; build breaks otherwise
-riscv-rt = { version = "0.17.0", features = ["single-hart", "v-trap", "no-interrupts"] }
 
 [features]
 default = []
