@@ -19,6 +19,17 @@ impl MTimer {
         Self {}
     }
 
+    /// Returns the global mtimer instance and sets the prescaler
+    #[inline]
+    pub fn with_ps(ps: u32) -> Self {
+        debug_assert!(ps <= 255);
+
+        // Enable timer (bit 0) & set prescaler (bits 15:8)
+        write_u32(MTIMER_BASE + MTIME_CTRL_ADDR_OFS, ps << 8);
+
+        Self {}
+    }
+
     /// Starts the count
     ///
     /// `prescaler` must be less than or equal to 255
@@ -57,6 +68,12 @@ impl MTimer {
         let lo = read_u32(MTIMER_BASE + MTIME_LOW_ADDR_OFS);
 
         ((hi as u64) << 32) | lo as u64
+    }
+
+    /// Returns the current prescaler value in hardware
+    #[inline]
+    pub fn prescaler(&self) -> u32 {
+        (read_u32(MTIMER_BASE + MTIME_CTRL_ADDR_OFS) >> 8) & 0xFF
     }
 
     #[inline]
