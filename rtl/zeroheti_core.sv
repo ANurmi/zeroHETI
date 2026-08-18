@@ -38,6 +38,9 @@ module zeroheti_core
   logic [    IrqWidth-1:0] irq_id_claim;
   logic [             1:0] irq_priv;
 
+  logic [63:0] mtime_gated;
+  assign mtime_gated = (mtime_en_i) ? mtime_i : 64'h0;
+
   zeroheti_int_ctrl #(
 .CoreCfg(Cfg),
       .TsWidth(TsWidth)
@@ -157,7 +160,7 @@ module zeroheti_core
       .irq_level_i (8'(irq_level)),
       .irq_shv_i   (irq_shv),
       .irq_priv_i  (irq_priv),
-      .mtime_i,
+      .mtime_i (mtime_gated),
 
       .scramble_key_valid_i(1'b0),
       .scramble_key_i      (128'b0),
