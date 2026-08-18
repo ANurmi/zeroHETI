@@ -20,8 +20,7 @@ restricted to the M-mode (`smclic`) cases that apply to this core.
 ## Prerequisites
 
 - The verilated hardware model, built with `make verilate INTC=CLIC FULL_UART=1`
-  (run from the repo root; the tests use `sprintln!`, which requires the real
-  APB UART).
+  (run from the repo root).
 - The RISC-V toolchain and Verilator available on `PATH` (see repo `README.md`).
 
 ## Running the tests
