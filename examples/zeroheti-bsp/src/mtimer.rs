@@ -200,6 +200,13 @@ impl OneShot {
         self.0.enable();
     }
 
+    #[inline]
+    pub fn start_ps(&mut self, duration: Duration, ps: u8) {
+        let cnt = self.0.counter();
+        self.0.set_cmp(cnt + duration.ticks());
+        self.0.enable_with_prescaler(ps as u32);
+    }
+
     /// Unschedules the `MachineTimer' interrupt by setting mtimecmp to
     /// `u64::MAX`
     ///

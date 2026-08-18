@@ -2,6 +2,7 @@ module apb_cfg_regs #(
 ) (
     input logic clk_i,
     input logic rst_ni,
+    output logic intc_mtime_en_o,
     APB.Slave apb_i
 );
   // Bake in Git version information into HW
@@ -15,11 +16,13 @@ module apb_cfg_regs #(
   logic [11:0] local_addr;
   assign local_addr = apb_i.paddr[11:0];
 
+
   // General-purpose register bank
   // Useful as white-box simulation hook
   logic [4:0][31:0] gpreg_d, gpreg_q;
 
   logic mtime_en_d, mtime_en_q;
+  assign intc_mtime_en_o = mtime_en_q;
 
   logic apb_event;
   assign apb_event = apb_i.psel & apb_i.penable;

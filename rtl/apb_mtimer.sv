@@ -25,7 +25,7 @@ module apb_mtimer #(
   logic [63:0] mtimecmp_q;
   logic [31:0] mtimecmp_hi, mtimecmp_lo;
   logic [7:0] prescaler_q, prescaler_d;
-  logic [2:0] counter_q, counter_d;
+  logic [7:0] counter_q, counter_d;
   logic enable_q, enable_d;
 
   assign mtime_o = mtime_q;

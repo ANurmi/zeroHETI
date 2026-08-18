@@ -73,6 +73,9 @@ mod app {
                 panic!("INTC=EDFIC, expected CLIC");
             }
             #[cfg(feature = "intc-edfic")]
+            // EDFIC-specific: enable mtime to interrupt controller
+            mmio::write_u32(CFG_BASE_ADDR + 8, 0x1);
+
             if !is_intc_edfic {
                 panic!("INTC=!EDFIC, expected EDFIC");
             }
@@ -96,7 +99,10 @@ mod app {
         obx.send(task_dl_base + 1, TIMER1_PER_US * US_TO_CC);
         obx.send(task_dl_base + 2, TIMER2_PER_US * US_TO_CC);
 
-        MTimer::instance().into_oneshot().start(RT.millis());
+        // TODO: fix API
+        MTimer::instance()
+            .into_oneshot()
+            .start_ps((RT.millis() / 100), 100);
 
         let timers = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),

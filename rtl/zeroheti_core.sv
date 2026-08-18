@@ -157,6 +157,7 @@ module zeroheti_core
       .irq_level_i (8'(irq_level)),
       .irq_shv_i   (irq_shv),
       .irq_priv_i  (irq_priv),
+      .mtime_i,
 
       .scramble_key_valid_i(1'b0),
       .scramble_key_i      (128'b0),
