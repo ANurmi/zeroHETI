@@ -102,7 +102,7 @@ mod app {
         // TODO: fix API
         MTimer::instance()
             .into_oneshot()
-            .start_ps((RT.millis() / 100), 100);
+            .start_ps((RT.millis() / 250), 250);
 
         let timers = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),
