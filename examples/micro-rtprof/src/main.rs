@@ -101,7 +101,7 @@ mod app {
         obx.send(task_dl_base + 1, TIMER1_PER_US * US_TO_CC);
         obx.send(task_dl_base + 2, TIMER2_PER_US * US_TO_CC);
 
-        // TODO: fix API
+        // Setup mtimer to trigger `Finish` task
         MTimer::with_clkdiv(250).into_oneshot().start(RT.millis());
 
         let timers = &mut [
@@ -124,16 +124,13 @@ mod app {
     }
 
     #[task(binds = MachineTimer, priority = 0xff)]
-    struct StartSim {
-        mtimer: mtimer::OneShot,
-    }
-    impl RticTask for StartSim {
+    struct Finish {}
+    impl RticTask for Finish {
         fn init() -> Self {
-            let mtimer = MTimer::instance().into_oneshot();
-            Self { mtimer }
+            Self {}
         }
         fn exec(&mut self) {
-            //Disable scoreboard
+            // Disable scoreboard
             mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 0);
 
             let now = MTimer::instance().into_oneshot().duration().ticks();
