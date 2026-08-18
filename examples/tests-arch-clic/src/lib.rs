@@ -14,8 +14,7 @@ use bsp::{
 use riscv_types::InterruptNumber;
 
 /// Initialize the CLIC and the UART for a test: clear stale per-hart state,
-/// enable full 8-bit interrupt levels, and configure the (real, `FULL_UART`)
-/// APB UART so `sprintln!` does not hang polling for THRE.
+/// enable full 8-bit interrupt levels, and configure APB UART.
 pub fn init_arch_test() {
     // HACK: clear mintstatus, required for zeroHETI
     unsafe { mintstatus::write(0usize.into()) };
