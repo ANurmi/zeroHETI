@@ -8,10 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `rt-ibex` support for dynamic priorities
 - JTAG idcode configuration at compile-time
 
 ### Fixed
-- rt-ibex interrupt timing [patch](https://github.com/soc-hub-fi/rt-ibex/pull/8)
+- `apb_mtimer` prescaler width from 3 to 8 bits
+- `rt-ibex` interrupt timing [patch](https://github.com/soc-hub-fi/rt-ibex/pull/8)
 
 ## [v0.1.1] - 2026-08-10
 
