@@ -19,6 +19,18 @@ impl MTimer {
         Self {}
     }
 
+    /// Returns the global mtimer instance and sets the divider
+    #[inline]
+    pub fn with_clkdiv(div: u32) -> Self {
+        let ps = div - 1;
+        debug_assert!(ps <= 255);
+
+        // Enable timer (bit 0) & set prescaler (bits 15:8)
+        write_u32(MTIMER_BASE + MTIME_CTRL_ADDR_OFS, ps << 8);
+
+        Self {}
+    }
+
     /// Starts the count
     ///
     /// `prescaler` must be less than or equal to 255
@@ -57,6 +69,18 @@ impl MTimer {
         let lo = read_u32(MTIMER_BASE + MTIME_LOW_ADDR_OFS);
 
         ((hi as u64) << 32) | lo as u64
+    }
+
+    /// Returns the current prescaler value in hardware
+    #[inline]
+    pub fn prescaler(&self) -> u32 {
+        (read_u32(MTIMER_BASE + MTIME_CTRL_ADDR_OFS) >> 8) & 0xFF
+    }
+
+    /// Returns the current clock divider value, based on the prescaler value in hardware
+    #[inline]
+    pub fn clkdiv(&self) -> u32 {
+        self.prescaler() + 1
     }
 
     #[inline]
@@ -196,15 +220,10 @@ impl OneShot {
     #[inline]
     pub fn start(&mut self, duration: Duration) {
         let cnt = self.0.counter();
-        self.0.set_cmp(cnt + duration.ticks());
-        self.0.enable();
-    }
+        let clkdiv = self.0.clkdiv();
 
-    #[inline]
-    pub fn start_ps(&mut self, duration: Duration, ps: u8) {
-        let cnt = self.0.counter();
-        self.0.set_cmp(cnt + duration.ticks());
-        self.0.enable_with_prescaler(ps as u32);
+        self.0.set_cmp(cnt + duration.ticks() / clkdiv as u64);
+        self.0.enable();
     }
 
     /// Unschedules the `MachineTimer' interrupt by setting mtimecmp to
@@ -230,7 +249,9 @@ impl OneShot {
     /// Returns the current duration since zero as tracked by the timer
     #[inline]
     pub fn duration(&self) -> Duration {
-        Duration::from_ticks(self.0.counter())
+        let cnt = self.0.counter();
+        let clkdiv = self.0.clkdiv();
+        Duration::from_ticks(cnt * clkdiv as u64)
     }
 
     /// Gets the timer compare value

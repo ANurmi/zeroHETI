@@ -100,9 +100,9 @@ mod app {
         obx.send(task_dl_base + 2, TIMER2_PER_US * US_TO_CC);
 
         // TODO: fix API
-        MTimer::instance()
+        MTimer::with_clkdiv(250)
             .into_oneshot()
-            .start_ps(RT.millis() / 250, 250);
+            .start(RT.millis());
 
         let timers = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),
