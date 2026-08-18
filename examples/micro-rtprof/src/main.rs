@@ -64,7 +64,7 @@ mod app {
         let rd = mmio::read_u32(CFG_BASE_ADDR);
         let cfg = mmio::read_u32(CFG_BASE_ADDR + 4);
         let is_intc_edfic = (cfg & 0b1) == 0b1;
-        let intc_name = if (is_intc_edfic) { "EDFIC" } else { "CLIC" };
+        let intc_name = if is_intc_edfic { "EDFIC" } else { "CLIC" };
 
         #[cfg(any(feature = "intc-edfic", feature = "intc-clic"))]
         {
@@ -102,7 +102,7 @@ mod app {
         // TODO: fix API
         MTimer::instance()
             .into_oneshot()
-            .start_ps((RT.millis() / 250), 250);
+            .start_ps(RT.millis() / 250, 250);
 
         let timers = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),
