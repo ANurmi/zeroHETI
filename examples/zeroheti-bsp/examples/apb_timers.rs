@@ -54,7 +54,7 @@ fn main() -> ! {
 
     unsafe { riscv::interrupt::enable() };
 
-    while (unsafe { ptr::read_volatile((&raw const IRQ_RECVD) as *const u64) } & 0b1111) != 0b1111 {
+    while (unsafe { ptr::read_volatile(&raw const IRQ_RECVD as *const u64) } & 0b1111) != 0b1111 {
     }
 
     zeroheti_bsp::tb::signal_pass(Some(&mut serial));
@@ -74,7 +74,7 @@ fn timer0() {
     tear_irq(Interrupt::Timer0Cmp);
 
     // Record that the particular line was raised
-    let mut val = unsafe { ptr::read_volatile(&raw const (IRQ_RECVD) as *const _) };
+    let mut val = unsafe { ptr::read_volatile(&raw const IRQ_RECVD as *const _) };
     val |= 0b1u64 << 0;
     unsafe { ptr::write_volatile(&raw mut (IRQ_RECVD) as *mut _, val) };
 }
@@ -88,7 +88,7 @@ fn timer1() {
     tear_irq(Interrupt::Timer1Cmp);
 
     // Record that the particular line was raised
-    let mut val = unsafe { ptr::read_volatile(&raw const (IRQ_RECVD) as *const _) };
+    let mut val = unsafe { ptr::read_volatile(&raw const IRQ_RECVD as *const _) };
     val |= 0b1u64 << 1;
     unsafe { ptr::write_volatile(&raw mut (IRQ_RECVD) as *mut _, val) };
 }
@@ -102,7 +102,7 @@ fn timer2() {
     tear_irq(Interrupt::Timer2Cmp);
 
     // Record that the particular line was raised
-    let mut val = unsafe { ptr::read_volatile(&raw const (IRQ_RECVD) as *const _) };
+    let mut val = unsafe { ptr::read_volatile(&raw const IRQ_RECVD as *const _) };
     val |= 0b1u64 << 2;
     unsafe { ptr::write_volatile(&raw mut (IRQ_RECVD) as *mut _, val) };
 }
@@ -116,7 +116,7 @@ fn timer3() {
     tear_irq(Interrupt::Timer3Cmp);
 
     // Record that the particular line was raised
-    let mut val = unsafe { ptr::read_volatile(&raw const (IRQ_RECVD) as *const _) };
+    let mut val = unsafe { ptr::read_volatile(&raw const IRQ_RECVD as *const _) };
     val |= 0b1u64 << 3;
     unsafe { ptr::write_volatile(&raw mut (IRQ_RECVD) as *mut _, val) };
 }

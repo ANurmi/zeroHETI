@@ -9,7 +9,7 @@ compile_error!(
     "at least one interrupt controller feature is required, pass -Fintc-hetic, -Fintc-clic, -Fintc-edfic"
 );
 
-use core::ptr::{self, addr_of, addr_of_mut};
+use core::ptr::self;
 use riscv_types::InterruptNumber;
 
 use crate::common::{UART_BAUD, init_intc, pend_irq, setup_irq};
@@ -76,7 +76,7 @@ fn main() -> ! {
     for _ in 0..2_000 {
         if IRQS.iter().all(|irq: &Interrupt| {
             let bit: u64 = 0b1 << irq.number();
-            (unsafe { ptr::read_volatile(addr_of!(IRQ_RECVD) as *const _) & bit } == bit)
+            (unsafe { ptr::read_volatile(&raw const IRQ_RECVD as *const _) & bit } == bit)
         }) {
             break;
         }
@@ -86,7 +86,7 @@ fn main() -> ! {
     let mut failures = 0;
     for &irq in IRQS {
         let bit: u64 = 0b1 << irq.number();
-        if unsafe { ptr::read_volatile(addr_of!(IRQ_RECVD) as *const _) & bit } == bit {
+        if unsafe { ptr::read_volatile(&raw const IRQ_RECVD as *const _) & bit } == bit {
             tb::signal_partial_ok!("{:?} = {}", irq, irq.number());
         } else {
             tb::signal_partial_fail!("{:?} = {}", irq, irq.number());
@@ -114,7 +114,7 @@ fn interrupt_handler() {
     let irq_code = (riscv::register::mcause::read().bits() & 0xfff) as u16;
 
     // Record that the particular line was raised
-    let mut val = unsafe { ptr::read_volatile(addr_of!(IRQ_RECVD) as *const _) };
+    let mut val = unsafe { ptr::read_volatile(&raw const IRQ_RECVD as *const _) };
     val |= 0b1u64 << irq_code;
-    unsafe { ptr::write_volatile(addr_of_mut!(IRQ_RECVD) as *mut _, val) };
+    unsafe { ptr::write_volatile(&raw mut IRQ_RECVD, val) };
 }
