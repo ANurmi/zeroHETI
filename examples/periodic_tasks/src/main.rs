@@ -6,8 +6,9 @@
 use bsp::embedded_io::Write;
 use bsp::hetic::{Hetic, Pol, Trig};
 use bsp::interrupt::Interrupt;
-use bsp::rt::{core_interrupt, InterruptNumber};
+use bsp::rt::{InterruptNumber, core_interrupt};
 use bsp::{
+    CPU_FREQ_HZ,
     apb_uart::*,
     interrupt::Interrupt,
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
@@ -17,7 +18,6 @@ use bsp::{
     sprintln,
     tb::signal_pass,
     timer_group::{Periodic, Timer},
-    CPU_FREQ_HZ,
 };
 use core::arch::asm;
 use fugit::ExtU32;
