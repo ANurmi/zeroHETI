@@ -149,7 +149,7 @@ fn main() -> ! {
 
         unsafe { riscv::interrupt::enable() };
 
-        while !unsafe { TIMEOUT } {
+        while !unsafe { ptr::read_volatile(&raw const TIMEOUT) } {
             wfi();
         }
 
