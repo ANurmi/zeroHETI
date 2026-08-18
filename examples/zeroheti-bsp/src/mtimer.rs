@@ -213,15 +213,10 @@ impl OneShot {
     #[inline]
     pub fn start(&mut self, duration: Duration) {
         let cnt = self.0.counter();
-        self.0.set_cmp(cnt + duration.ticks());
-        self.0.enable();
-    }
+        let ps = self.0.prescaler();
 
-    #[inline]
-    pub fn start_ps(&mut self, duration: Duration, ps: u8) {
-        let cnt = self.0.counter();
-        self.0.set_cmp(cnt + duration.ticks());
-        self.0.enable_with_prescaler(ps as u32);
+        self.0.set_cmp(cnt + duration.ticks() / ps as u64);
+        self.0.enable();
     }
 
     /// Unschedules the `MachineTimer' interrupt by setting mtimecmp to
@@ -247,7 +242,9 @@ impl OneShot {
     /// Returns the current duration since zero as tracked by the timer
     #[inline]
     pub fn duration(&self) -> Duration {
-        Duration::from_ticks(self.0.counter())
+        let cnt = self.0.counter();
+        let ps = self.0.prescaler();
+        Duration::from_ticks(cnt * ps as u64)
     }
 
     /// Gets the timer compare value
