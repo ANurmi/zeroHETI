@@ -39,7 +39,7 @@ module zeroheti_core
   logic [             1:0] irq_priv;
 
   logic [63:0] mtime_gated;
-  assign mtime_gated = (mtime_en_i) ? mtime_i : 64'h0;
+  assign mtime_gated = (intc_mtime_en_i) ? mtime_i : 64'h0;
 
   zeroheti_int_ctrl #(
 .CoreCfg(Cfg),

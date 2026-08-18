@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - JTAG idcode configuration at compile-time
 
 ### Fixed
+- Dynamic CPU threshold gated with config register
 - `apb_mtimer` prescaler width from 3 to 8 bits
 - `rt-ibex` interrupt timing [patch](https://github.com/soc-hub-fi/rt-ibex/pull/8)
 
