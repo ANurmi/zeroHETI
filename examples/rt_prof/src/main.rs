@@ -149,7 +149,7 @@ mod app {
         tb::signal_pass,
         timer_group::{self, Periodic, Timer},
     };
-    use core::fmt::Write;
+    use core::{fmt::Write, mem::MaybeUninit};
     use fugit::{ExtU32, ExtU64};
 
     fn clear_perf_counters() {
@@ -189,6 +189,8 @@ mod app {
         ctrl_buf_3: u8,
     }
 
+    static mut START_TIME: MaybeUninit<u64> = MaybeUninit::uninit();
+
     #[init]
     fn init() -> Shared {
         let serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
@@ -196,7 +198,58 @@ mod app {
         let i2c = I2c::init(4);
         let (ibx, obx) = unsafe { Mailbox::instance() }.split();
 
-        MTimer::instance().into_oneshot().start(100u64.micros());
+        let mut mtimer = MTimer::instance().into_oneshot();
+
+        sprintln!("MachineTimer::Setup");
+
+        // Start hyperperiod timer
+        unsafe { START_TIME.write(mtimer.counter()) };
+        mtimer.start(RUNTIME_MS.millis());
+
+        sprintln!("- Runtime         (ms): {}", RUNTIME_MS);
+        sprintln!("- Load factor  (0-100): {}", LF);
+
+        let timers = &mut [
+            Timer::init::<TIMER0_ADDR>().into_periodic(),
+            Timer::init::<TIMER1_ADDR>().into_periodic(),
+            Timer::init::<TIMER2_ADDR>().into_periodic(),
+            Timer::init::<TIMER3_ADDR>().into_periodic(),
+        ];
+
+        timers
+            .iter_mut()
+            .for_each(|t| t.set_period(CTRL_TASK_PER_US.micros()));
+
+        timers.iter_mut().for_each(Periodic::start);
+
+        // Safety: sim and app are not yet running
+        let (_, mut obx) = unsafe { Mailbox::instance() }.split();
+
+        const CMDS: &[(MbxAddr, u32)] = &[
+            (MbxAddr::SimPrescaler, 10),
+            (MbxAddr::SimLoad, LF),
+            (MbxAddr::TaskMbxDln, MBX_TASK_DL_US),
+            // Initialize with very long deadlines
+            (MbxAddr::TaskRep0Dln, 0x1000),
+            (MbxAddr::TaskRep1Dln, 0x1000),
+            (MbxAddr::TaskRep2Dln, 0x1000),
+            (MbxAddr::TaskRep3Dln, 0x1000),
+            // Initialize with very long deadlines
+            (MbxAddr::TaskUpd0Dln, UPD_TASK_DL_US),
+            (MbxAddr::TaskUpd1Dln, UPD_TASK_DL_US),
+            (MbxAddr::TaskUpd2Dln, UPD_TASK_DL_US),
+            (MbxAddr::TaskUpd3Dln, UPD_TASK_DL_US),
+            // Initialize with very long deadlines
+            (MbxAddr::TaskCtrl0Dln, 0x1000),
+            (MbxAddr::TaskCtrl1Dln, 0x1000),
+            (MbxAddr::TaskCtrl2Dln, 0x1000),
+            (MbxAddr::TaskCtrl3Dln, 0x1000),
+            (MbxAddr::SimStart, 0x0),
+        ];
+        CMDS.iter()
+            .for_each(|&(addr, data)| obx.send(addr as u32, data));
+
+        clear_perf_counters();
 
         Shared {
             serial,
@@ -219,102 +272,42 @@ mod app {
     }
 
     #[task(binds = MachineTimer, priority = 0xff,
-        /* shared = use raw pointers/instances instead, during init */
+        /* shared = use raw pointers/instances instead to avoid interference with RTIC thresholds */
     )]
-    struct StartSim {
-        mtimer: mtimer::OneShot,
-        start_time: Option<u64>,
-    }
+    struct Finish {}
 
-    impl RticTask for StartSim {
+    impl RticTask for Finish {
         fn init() -> Self {
-            let mtimer = MTimer::instance().into_oneshot();
-            Self {
-                mtimer,
-                start_time: None,
-            }
+            Self {}
         }
         fn exec(&mut self) {
-            match self.start_time.as_mut() {
-                None => {
-                    sprintln!("MachineTimer::Setup");
-                    // Start hyperperiod timer
-                    self.start_time.replace(self.mtimer.counter());
-                    self.mtimer.start(RUNTIME_MS.millis());
-                    sprintln!("- Runtime         (ms): {}", RUNTIME_MS);
-                    sprintln!("- Load factor  (0-100): {}", LF);
+            // Take timestamp for sim end
+            let now = MTimer::instance().into_oneshot().duration().ticks();
 
-                    let timers = &mut [
-                        Timer::init::<TIMER0_ADDR>().into_periodic(),
-                        Timer::init::<TIMER1_ADDR>().into_periodic(),
-                        Timer::init::<TIMER2_ADDR>().into_periodic(),
-                        Timer::init::<TIMER3_ADDR>().into_periodic(),
-                    ];
+            // Terminate scoreboard
+            // Safety: unsure if safe. We'll do it anyway.
+            let (_, mut obx) = unsafe { Mailbox::instance() }.split();
+            obx.send(MbxAddr::SimStop as u32, 0x1);
 
-                    timers
-                        .iter_mut()
-                        .for_each(|t| t.set_period(CTRL_TASK_PER_US.micros()));
+            // Calculate simulation duration, accounting for setup time
+            let start_time = unsafe { START_TIME.assume_init_read() };
+            let duration_real_cc = now - start_time;
+            let setup_time_real_cc = start_time;
 
-                    timers.iter_mut().for_each(Periodic::start);
+            let instret = minstret::read64();
+            let active_time_cc = mcycle::read64();
 
-                    // Safety: sim and app are not yet running
-                    let (_, mut obx) = unsafe { Mailbox::instance() }.split();
+            sprintln!("MachineTimer::Teardown");
 
-                    const CMDS: &[(MbxAddr, u32)] = &[
-                        (MbxAddr::SimPrescaler, 10),
-                        (MbxAddr::SimLoad, LF),
-                        (MbxAddr::TaskMbxDln, MBX_TASK_DL_US),
-                        // Initialize with very long deadlines
-                        (MbxAddr::TaskRep0Dln, 0x1000),
-                        (MbxAddr::TaskRep1Dln, 0x1000),
-                        (MbxAddr::TaskRep2Dln, 0x1000),
-                        (MbxAddr::TaskRep3Dln, 0x1000),
-                        // Initialize with very long deadlines
-                        (MbxAddr::TaskUpd0Dln, UPD_TASK_DL_US),
-                        (MbxAddr::TaskUpd1Dln, UPD_TASK_DL_US),
-                        (MbxAddr::TaskUpd2Dln, UPD_TASK_DL_US),
-                        (MbxAddr::TaskUpd3Dln, UPD_TASK_DL_US),
-                        // Initialize with very long deadlines
-                        (MbxAddr::TaskCtrl0Dln, 0x1000),
-                        (MbxAddr::TaskCtrl1Dln, 0x1000),
-                        (MbxAddr::TaskCtrl2Dln, 0x1000),
-                        (MbxAddr::TaskCtrl3Dln, 0x1000),
-                        (MbxAddr::SimStart, 0x0),
-                    ];
-                    CMDS.iter()
-                        .for_each(|&(addr, data)| obx.send(addr as u32, data));
-
-                    clear_perf_counters();
-                }
-                Some(start_time) => {
-                    // Take timestamp for sim end
-                    let now = MTimer::instance().into_oneshot().duration().ticks();
-
-                    // Terminate scoreboard
-                    // Safety: unsure if safe. We'll do it anyway.
-                    let (_, mut obx) = unsafe { Mailbox::instance() }.split();
-                    obx.send(MbxAddr::SimStop as u32, 0x1);
-
-                    // Calculate simulation duration, accounting for setup time
-                    let duration_real_cc = now - *start_time;
-                    let setup_time_real_cc = *start_time;
-
-                    let instret = minstret::read64();
-                    let active_time_cc = mcycle::read64();
-
-                    sprintln!("MachineTimer::Teardown");
-
-                    sprintln!("- Retired instructions:      {instret}");
-                    sprintln!("- Total time w/o setup (cc): {duration_real_cc}");
-                    sprintln!("  * Setup              (cc): {setup_time_real_cc}");
-                    sprintln!("  * Active time        (cc): {active_time_cc}");
-                    sprintln!(
-                        "- CPU utilization       (%): {}",
-                        (active_time_cc * 100) / duration_real_cc
-                    );
-                    signal_pass(None);
-                }
-            }
+            sprintln!("- Retired instructions:      {instret}");
+            sprintln!("- Total time w/o setup (cc): {duration_real_cc}");
+            sprintln!("  * Setup              (cc): {setup_time_real_cc}");
+            sprintln!("  * Active time        (cc): {active_time_cc}");
+            sprintln!(
+                "- CPU utilization       (%): {}",
+                (active_time_cc * 100) / duration_real_cc
+            );
+            signal_pass(None);
         }
     }
 
