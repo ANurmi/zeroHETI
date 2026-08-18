@@ -19,9 +19,10 @@ impl MTimer {
         Self {}
     }
 
-    /// Returns the global mtimer instance and sets the prescaler
+    /// Returns the global mtimer instance and sets the divider
     #[inline]
-    pub fn with_ps(ps: u32) -> Self {
+    pub fn with_clkdiv(div: u32) -> Self {
+        let ps = div - 1;
         debug_assert!(ps <= 255);
 
         // Enable timer (bit 0) & set prescaler (bits 15:8)
@@ -74,6 +75,12 @@ impl MTimer {
     #[inline]
     pub fn prescaler(&self) -> u32 {
         (read_u32(MTIMER_BASE + MTIME_CTRL_ADDR_OFS) >> 8) & 0xFF
+    }
+
+    /// Returns the current clock divider value, based on the prescaler value in hardware
+    #[inline]
+    pub fn clkdiv(&self) -> u32 {
+        self.prescaler() + 1
     }
 
     #[inline]
@@ -213,9 +220,9 @@ impl OneShot {
     #[inline]
     pub fn start(&mut self, duration: Duration) {
         let cnt = self.0.counter();
-        let ps = self.0.prescaler();
+        let clkdiv = self.0.clkdiv();
 
-        self.0.set_cmp(cnt + duration.ticks() / ps as u64);
+        self.0.set_cmp(cnt + duration.ticks() / clkdiv as u64);
         self.0.enable();
     }
 
@@ -243,8 +250,8 @@ impl OneShot {
     #[inline]
     pub fn duration(&self) -> Duration {
         let cnt = self.0.counter();
-        let ps = self.0.prescaler();
-        Duration::from_ticks(cnt * ps as u64)
+        let clkdiv = self.0.clkdiv();
+        Duration::from_ticks(cnt * clkdiv as u64)
     }
 
     /// Gets the timer compare value

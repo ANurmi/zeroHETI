@@ -100,7 +100,7 @@ mod app {
         obx.send(task_dl_base + 2, TIMER2_PER_US * US_TO_CC);
 
         // TODO: fix API
-        MTimer::with_ps(250)
+        MTimer::with_clkdiv(250)
             .into_oneshot()
             .start(RT.millis());
 
