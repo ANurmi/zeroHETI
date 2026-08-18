@@ -3,8 +3,12 @@
 #![allow(static_mut_refs)]
 
 use bsp::rt as _;
-#[rtic::app(device = bsp /*, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3]*/)]
 
+#[cfg(feature = "obs")]
+mod obs;
+
+#[cfg_attr(feature = "obs", rtic::app(device = bsp, obs = crate::obs::Obs /*, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3]*/))]
+#[cfg_attr(not(feature = "obs"), rtic::app(device = bsp /*, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3]*/))]
 mod app {
     use bsp::{
         CPU_FREQ_HZ,
@@ -141,6 +145,8 @@ mod app {
                 ((mcycle * 100) / now),
                 minstret
             );
+            #[cfg(feature = "obs")]
+            crate::obs::obs_dump();
             signal_pass(None);
         }
     }
