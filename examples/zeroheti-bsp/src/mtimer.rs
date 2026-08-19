@@ -23,9 +23,9 @@ impl MTimer {
     #[inline]
     pub fn with_clkdiv(div: u32) -> Self {
         let ps = div - 1;
-        debug_assert!(ps <= 255);
+        debug_assert!(ps <= 1023);
 
-        // Enable timer (bit 0) & set prescaler (bits 15:8)
+        // Enable timer (bit 0) & set prescaler (bits 17:8)
         write_u32(MTIMER_BASE + MTIME_CTRL_ADDR_OFS, ps << 8);
 
         Self {}
@@ -33,12 +33,12 @@ impl MTimer {
 
     /// Starts the count
     ///
-    /// `prescaler` must be less than or equal to 255
+    /// `prescaler` must be less than or equal to 1023
     #[inline]
     pub fn enable_with_prescaler(&mut self, prescaler: u32) {
-        debug_assert!(prescaler <= 255);
+        debug_assert!(prescaler <= 1023);
 
-        // Enable timer (bit 0) & set prescaler (bits 15:8)
+        // Enable timer (bit 0) & set prescaler (bits 17:8)
         write_u32(MTIMER_BASE + MTIME_CTRL_ADDR_OFS, (prescaler << 8) | 0b1);
     }
 
@@ -146,7 +146,7 @@ pub struct MTimerLo(MTimer);
 impl MTimerLo {
     /// Starts the count
     ///
-    /// `prescaler` must be less than or equal to 255
+    /// `prescaler` must be less than or equal to 1023
     #[inline]
     pub fn enable_with_prescaler(&mut self, prescaler: u32) {
         self.0.enable_with_prescaler(prescaler)
