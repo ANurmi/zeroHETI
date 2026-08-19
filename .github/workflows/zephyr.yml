@@ -2,12 +2,14 @@ name: zephyr workflow
 
 # Run workflow only when hardware or Zephyr changes
 on:
+  push:
+    branches:
+      - zephyr/rt-prof
   pull_request:
     paths:
       - 'zephyr/**'
       - 'examples/zephyr/**'
       - 'rtl/**'
-      - 'verilator/**'
       - 'Bender.yml'
       - 'west.yml'
 
@@ -36,7 +38,8 @@ jobs:
       - name: build rt-prof app
         run: | 
           cd zephyr/
-          west build -b hetiboard $GITHUB_WORKSPACE/zeroheti/examples/zephyr/rt_prof -p always
+          west build -b hetiboard $GITHUB_WORKSPACE/zeroheti/examples/zephyr/rt_prof -p always \
+            -- -DRT_PROF_MAIN=main_edfic.c
       
       - name: Upload firmware
         uses: actions/upload-artifact@v4
@@ -66,7 +69,7 @@ jobs:
         run: |
           mkdir zeroheti/build && mkdir zeroheti/build/sw 
           cd zeroheti/
-          make verilate INTC=CLIC
+          make verilate INTC=EDFIC
 
       - name: Download firmware
         uses: actions/download-artifact@v4
