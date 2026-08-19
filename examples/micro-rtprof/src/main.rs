@@ -42,9 +42,9 @@ mod app {
     const TIMER1_PER_US: u32 = 5 * (100 - LF);
     const TIMER2_PER_US: u32 = 9 * (100 - LF);
 
-    const TIMER0_LOAD: u32 = 200;
-    const TIMER1_LOAD: u32 = 500;
-    const TIMER2_LOAD: u32 = 900;
+    const TIMER0_LOAD: u32 = 200; // ~12 us
+    const TIMER1_LOAD: u32 = 500; // ~30 us
+    const TIMER2_LOAD: u32 = 900; // ~54 us
 
     const US_TO_CC: u32 = 100;
 
@@ -100,8 +100,7 @@ mod app {
         obx.send(task_dl_base + 1, TIMER1_PER_US * US_TO_CC);
         obx.send(task_dl_base + 2, TIMER2_PER_US * US_TO_CC);
 
-        // Setup mtimer to trigger `Finish` task
-        MTimer::with_clkdiv(250).into_oneshot().start(RT.millis());
+        MTimer::with_clkdiv(200).into_oneshot().start(RT.millis());
 
         let timers = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),
@@ -145,7 +144,7 @@ mod app {
         }
     }
 
-    #[task(binds = Timer0Cmp, priority = 0xAA)]
+    #[task(binds = Timer0Cmp, priority = 150)]
     struct Timer0 {}
     impl RticTask for Timer0 {
         fn init() -> Self {
@@ -158,7 +157,7 @@ mod app {
         }
     }
 
-    #[task(binds = Timer1Cmp, priority = 0x0A)]
+    #[task(binds = Timer1Cmp, priority = 100)]
     struct Timer1 {}
     impl RticTask for Timer1 {
         fn init() -> Self {
@@ -171,7 +170,7 @@ mod app {
         }
     }
 
-    #[task(binds = Timer2Cmp, priority = 0x08)]
+    #[task(binds = Timer2Cmp, priority = 50)]
     struct Timer2 {}
     impl RticTask for Timer2 {
         fn init() -> Self {
