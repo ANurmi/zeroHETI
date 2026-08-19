@@ -72,7 +72,7 @@ module vip_task_scoreboard #(
   assign scb_enable = i_dut.i_cfg_regs.gpreg_q[0][0];
 
   for (genvar i = 0; i < NrTasks; i++) begin : g_sim_hook
-    assign ts[i].available = (ts[i].available) ? 1'b1:  i_dut.i_apb_timer.irq_o[(2*i)+1];
+    assign ts[i].available = (ts[i].available) ? 1'b1 : i_dut.i_apb_timer.irq_o[(2*i)+1];
     assign ts[i].started   = i_dut.i_cfg_regs.gpreg_q[i+1][0];
   end
 
@@ -80,7 +80,7 @@ module vip_task_scoreboard #(
   always @(negedge scb_enable) begin
     $display("Task Scoreboard Log:");
     for (int i = 0; i < NrTasks; i++) begin
-      $display("T%0d: total %3d, miss-%%:%3d, worst (cc): %5d, avg (cc): %5d", i,
+      $display("T%0d: total %5d, miss-%%:%3d, worst (cc): %5d, avg (cc): %5d", i,
                ts[i].count_total, (ts[i].count_misses * 100 / ts[i].count_total),
                ts[i].ret_worst_cc, ts[i].ret_avg_cc);
     end
