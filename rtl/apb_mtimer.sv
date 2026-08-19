@@ -24,8 +24,8 @@ module apb_mtimer #(
   logic [31:0] mtime_hi, mtime_lo;
   logic [63:0] mtimecmp_q;
   logic [31:0] mtimecmp_hi, mtimecmp_lo;
-  logic [7:0] prescaler_q, prescaler_d;
-  logic [7:0] counter_q, counter_d;
+  logic [9:0] prescaler_q, prescaler_d;
+  logic [9:0] counter_q, counter_d;
   logic enable_q, enable_d;
 
   assign mtime_o = mtime_q;
@@ -80,7 +80,7 @@ module apb_mtimer #(
           MTimeCmpAddrHigh: mtimecmp_hi = pwdata_i;
           CtrlAddr: begin
             enable_d    = pwdata_i[0];
-            prescaler_d = pwdata_i[15:8];
+            prescaler_d = pwdata_i[17:8];
           end
           default:          ;
         endcase
@@ -92,7 +92,7 @@ module apb_mtimer #(
           MTimeCmpAddrHigh: prdata_o = mtimecmp_q[63:32];
           CtrlAddr: begin
             prdata_o[0]    = enable_q;
-            prdata_o[15:8] = prescaler_q;
+            prdata_o[17:8] = prescaler_q;
           end
           default:          ;
         endcase
