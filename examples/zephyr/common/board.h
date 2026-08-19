@@ -23,10 +23,13 @@
 #define IRQ_EXT(i)       (27 + (i))
 
 /* --- IRQ priorities --- */
-#define PRIO_MAIL   5
-#define PRIO_PID    4
-#define PRIO_UPD    3
-#define PRIO_REP    1 
+#define PRIO_MAIL   254
+#define PRIO_PID    252
+#define PRIO_UPD    251
+#define PRIO_REP    241
+
+/* Deadlines to CLIC levels */
+#define TO_PRIO(dl_us)  (255U - ((dl_us) >> 8))
 
 /* --- CLIC software-pend --- */
 void riscv_clic_irq_set_pending(uint32_t irq);

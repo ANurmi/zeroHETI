@@ -28,9 +28,9 @@
 
 #define CTRL_PERIOD_US    2000U
 #define DEADLINE_MBX_US   1000U
-#define DEADLINE_CTRL_US  1000U
+#define DEADLINE_CTRL_US  0x1000U
 #define DEADLINE_UPD_US   2000U
-#define DEADLINE_REP_US   2000U
+#define DEADLINE_REP_US   0x1000U
 #define SIM_PRESCALER_VAL 10U
 #define RANDOM_SEED       0xB0110c55U
 #define LOAD_FACTOR       80U
@@ -121,7 +121,11 @@ static void isr_upd(const void *arg)
     sys_write32(0x1, TIMER_CTRL(base));
 
     send_letter(TASK_PERIOD(TASK_CTRL(n)),   nperiod);
-    send_letter(TASK_DEADLINE(TASK_CTRL(n)), nperiod);
+    send_letter(TASK_DEADLINE(TASK_CTRL(n)), nperiod / 2);
+
+    riscv_clic_irq_priority_set(IRQ_TIMER_CMP(n), TO_PRIO(nperiod / 2), 1);
+    riscv_clic_irq_vector_set(IRQ_TIMER_CMP(n));
+
     send_letter(TASK_ACK(TASK_UPD(n)), 0);
 }
 
@@ -132,17 +136,15 @@ static void isr_ctrl(const void *arg)
     
     const int n = (int)(uintptr_t)arg;
     uint8_t measured, out;
-    unsigned int key = irq_lock();
+
     i2c_read_tx(I2C_MOTOR_ADDR(n), &measured, 1);
-    irq_unlock(key);
 
     out = compute_pid(measured, n);
 
-    key = irq_lock();
     i2c_write_tx(I2C_MOTOR_ADDR(n), &out, 1);
-    irq_unlock(key);
 
     send_letter(TASK_ACK(TASK_CTRL(n)), 0);
+
     if (!rep_active[n]) {
         rep_active[n] = 1;
         clic_pend_irq(IRQ_EXT(n));
