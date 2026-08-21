@@ -282,7 +282,7 @@ mod app {
         }
         fn exec(&mut self) {
             // Take timestamp for sim end
-            let now = MTimer::instance().into_oneshot().duration().ticks();
+            let now = MTimer::instance().into_oneshot().duration().as_ticks();
 
             // Terminate scoreboard
             // Safety: unsure if safe. We'll do it anyway.
@@ -716,11 +716,11 @@ mod app {
             let read_buf = self.shared().read_buf_0.lock(|buf| *buf);
             let task_idx: u8 = 0;
 
-            let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            let mut time_now = MTimer::instance().into_oneshot().duration().as_micros();
             self.shared()
                 .serial
                 .lock(|s| report_task(s, task_idx, time_now, read_buf, ReportKind::Measure));
-            time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            time_now = MTimer::instance().into_oneshot().duration().as_micros();
             self.shared()
                 .serial
                 .lock(|s| report_task(s, task_idx, time_now, ctrl_buf, ReportKind::Control));
@@ -744,12 +744,12 @@ mod app {
             let read_buf = self.shared().read_buf_1.lock(|buf| *buf);
             let task_idx: u8 = 1;
 
-            let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            let mut time_now = MTimer::instance().into_oneshot().duration().as_micros();
             self.shared()
                 .serial
                 .lock(|s| report_task(s, task_idx, time_now, read_buf, ReportKind::Measure));
 
-            time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            time_now = MTimer::instance().into_oneshot().duration().as_micros();
             self.shared()
                 .serial
                 .lock(|s| report_task(s, task_idx, time_now, ctrl_buf, ReportKind::Control));
@@ -771,11 +771,11 @@ mod app {
             let read_buf = self.shared().read_buf_2.lock(|buf| *buf);
             let task_idx: u8 = 2;
 
-            let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            let mut time_now = MTimer::instance().into_oneshot().duration().as_micros();
             self.shared()
                 .serial
                 .lock(|s| report_task(s, task_idx, time_now, read_buf, ReportKind::Measure));
-            time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            time_now = MTimer::instance().into_oneshot().duration().as_micros();
             self.shared()
                 .serial
                 .lock(|s| report_task(s, task_idx, time_now, ctrl_buf, ReportKind::Control));
@@ -798,12 +798,12 @@ mod app {
             let read_buf = self.shared().read_buf_3.lock(|buf| *buf);
             let task_idx: u8 = 3;
 
-            let mut time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            let mut time_now = MTimer::instance().into_oneshot().duration().as_micros();
             self.shared()
                 .serial
                 .lock(|s| report_task(s, task_idx, time_now, read_buf, ReportKind::Measure));
 
-            time_now = MTimer::instance().into_oneshot().duration().to_micros();
+            time_now = MTimer::instance().into_oneshot().duration().as_micros();
             self.shared()
                 .serial
                 .lock(|s| report_task(s, task_idx, time_now, ctrl_buf, ReportKind::Control));
