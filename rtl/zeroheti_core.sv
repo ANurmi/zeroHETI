@@ -3,7 +3,7 @@ module zeroheti_core
 #(
     parameter zeroheti_pkg::core_cfg_t Cfg = zeroheti_pkg::DefaultCfg,
     localparam int unsigned IrqWidth = $clog2(Cfg.num_irqs),
-    localparam int unsigned TsWidth = 8,
+    localparam int unsigned TsWidth = 9,
     localparam int unsigned PrioWidth = 8
 ) (
     input  logic                         clk_i,

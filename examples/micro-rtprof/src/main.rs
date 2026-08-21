@@ -100,7 +100,7 @@ mod app {
         obx.send(task_dl_base + 1, TIMER1_PER_US * US_TO_CC);
         obx.send(task_dl_base + 2, TIMER2_PER_US * US_TO_CC);
 
-        MTimer::with_clkdiv(200).into_oneshot().start(RT.millis());
+        MTimer::with_clkdiv(500).into_oneshot().start(RT.millis());
 
         let timers = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),
