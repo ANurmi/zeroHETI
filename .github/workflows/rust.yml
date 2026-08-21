@@ -29,6 +29,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: "true"
 
       - name: Fetch dependencies
         run: bender update && bender vendor init
@@ -39,6 +41,13 @@ jobs:
           cargo check -Frtl-tb -Fintc-hetic --lib --examples
           cargo check -Frtl-tb -Fintc-clic --lib --examples
           cargo check -Frtl-tb -Fintc-edfic --lib --examples
+
+      - name: Check active projects
+        run: |
+          # Check each active project in its most basic configuration to ensure work is not interrupted by refactors
+          # One line per active project. Feel free to add or remove when a project becomes active or inactive.
+          cd examples/rt_prof && LOAD_FACTOR=0 RUNTIME_MS=10 cargo check --release -Frtl-tb -Fintc-clic && cd -
+          cd examples/micro-rtprof && LOAD_FACTOR=0 RUNTIME_MS=10 cargo check --release -Frtl-tb -Fintc-edfic && cd -
 
       - name: Build hardware (CLIC)
         run: |

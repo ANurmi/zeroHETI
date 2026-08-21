@@ -6,19 +6,18 @@
 use bsp::embedded_io::Write;
 use bsp::hetic::{Hetic, Pol, Trig};
 use bsp::interrupt::Interrupt;
-use bsp::rt::{core_interrupt, InterruptNumber};
+use bsp::rt::{InterruptNumber, core_interrupt};
 use bsp::{
+    CPU_FREQ_HZ,
     apb_uart::*,
     fugit::ExtU32,
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mtimer::{self, MTimer},
     riscv::{self, asm::wfi},
-    rt as riscv_rt,
     rt::entry,
     sprintln,
     tb::signal_pass,
     timer_group::{Periodic, Timer},
-    CPU_FREQ_HZ,
 };
 use core::arch::asm;
 use core::ptr;
@@ -33,7 +32,7 @@ struct Task {
 }
 
 const RUN_COUNT: usize = 1;
-const TEST_DURATION: mtimer::Duration = mtimer::Duration::micros(1_000);
+const TEST_DURATION: mtimer::Duration = mtimer::Duration::from_micros(1_000);
 
 impl Task {
     pub const fn new(level: u8, period_ns: u32, duration_ns: u32) -> Self {
@@ -95,8 +94,8 @@ fn main() -> ! {
     );
     sprintln!(
         "Test duration: {} us ({} ns)",
-        TEST_DURATION.to_micros(),
-        TEST_DURATION.to_nanos()
+        TEST_DURATION.as_micros(),
+        TEST_DURATION.as_nanos()
     );
 
     setup_irq(Interrupt::Timer0Cmp, TASK0.level);
@@ -196,11 +195,11 @@ fn main() -> ! {
                 // end.
                 ma::assert_ge!(
                     *count,
-                    (TEST_DURATION.to_nanos() as usize / task.period_ns as usize) - 1
+                    (TEST_DURATION.as_nanos() as usize / task.period_ns as usize) - 1
                 );
                 ma::assert_le!(
                     *count,
-                    (TEST_DURATION.to_nanos() as usize / task.period_ns as usize)
+                    (TEST_DURATION.as_nanos() as usize / task.period_ns as usize)
                 );
             }
 
