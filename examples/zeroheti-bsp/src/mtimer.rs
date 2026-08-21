@@ -1,11 +1,13 @@
 use crate::{
     CPU_FREQ_HZ,
     mmap::mtimer::{
-        MTIME_CTRL_ADDR_OFS, MTIME_HIGH_ADDR_OFS, MTIME_LOW_ADDR_OFS, MTIMECMP_HIGH_ADDR_OFS,
-        MTIMECMP_LOW_ADDR_OFS, MTIMER_BASE,
+        MTIME_CTRL_ADDR_OFS, MTIME_CTRL_PS_BITS, MTIME_CTRL_PS_SBIT, MTIME_HIGH_ADDR_OFS,
+        MTIME_LOW_ADDR_OFS, MTIMECMP_HIGH_ADDR_OFS, MTIMECMP_LOW_ADDR_OFS, MTIMER_BASE,
     },
     mmio::{mask_u32, read_u32, unmask_u32, write_u32},
 };
+
+pub const PS_MASK: u32 = (1 << MTIME_CTRL_PS_BITS) - 1;
 
 /// Machine Timer
 ///
@@ -22,24 +24,28 @@ impl MTimer {
     /// Returns the global mtimer instance and sets the divider
     #[inline]
     pub fn with_clkdiv(div: u32) -> Self {
+        debug_assert!(div <= (1 << MTIME_CTRL_PS_BITS));
         let ps = div - 1;
-        debug_assert!(ps <= 255);
 
-        // Enable timer (bit 0) & set prescaler (bits 15:8)
-        write_u32(MTIMER_BASE + MTIME_CTRL_ADDR_OFS, ps << 8);
+        write_u32(MTIMER_BASE + MTIME_CTRL_ADDR_OFS, ps << MTIME_CTRL_PS_SBIT);
 
         Self {}
     }
 
     /// Starts the count
     ///
-    /// `prescaler` must be less than or equal to 255
+    /// # Arguments
+    ///
+    /// * `ps` - prescaler must be less than or equal to 1023
     #[inline]
-    pub fn enable_with_prescaler(&mut self, prescaler: u32) {
-        debug_assert!(prescaler <= 255);
+    pub fn enable_with_ps(&mut self, ps: u32) {
+        debug_assert!(ps <= PS_MASK);
 
-        // Enable timer (bit 0) & set prescaler (bits 15:8)
-        write_u32(MTIMER_BASE + MTIME_CTRL_ADDR_OFS, (prescaler << 8) | 0b1);
+        // Enable timer (bit 0) and set ps
+        write_u32(
+            MTIMER_BASE + MTIME_CTRL_ADDR_OFS,
+            (ps << MTIME_CTRL_PS_SBIT) | 0b1,
+        );
     }
 
     /// Starts the count
@@ -73,14 +79,14 @@ impl MTimer {
 
     /// Returns the current prescaler value in hardware
     #[inline]
-    pub fn prescaler(&self) -> u32 {
-        (read_u32(MTIMER_BASE + MTIME_CTRL_ADDR_OFS) >> 8) & 0xFF
+    pub fn ps(&self) -> u32 {
+        (read_u32(MTIMER_BASE + MTIME_CTRL_ADDR_OFS) >> MTIME_CTRL_PS_SBIT) & PS_MASK
     }
 
     /// Returns the current clock divider value, based on the prescaler value in hardware
     #[inline]
     pub fn clkdiv(&self) -> u32 {
-        self.prescaler() + 1
+        self.ps() + 1
     }
 
     #[inline]
@@ -146,10 +152,12 @@ pub struct MTimerLo(MTimer);
 impl MTimerLo {
     /// Starts the count
     ///
-    /// `prescaler` must be less than or equal to 255
+    /// # Arguments
+    ///
+    /// * `ps` - prescaler must be less than or equal to 1023
     #[inline]
-    pub fn enable_with_prescaler(&mut self, prescaler: u32) {
-        self.0.enable_with_prescaler(prescaler)
+    pub fn enable_with_ps(&mut self, ps: u32) {
+        self.0.enable_with_ps(ps)
     }
 
     /// Starts the count

@@ -31,13 +31,13 @@ bitflags::bitflags! {
 }
 
 impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
-    /// # Parameters
+    /// # Arguments
     ///
     /// * `ps` - prescaler value, used to set the I2C clock frequency.
     #[inline]
     pub fn init(ps: u16) -> Self {
         let mut instance = Self;
-        instance.set_prescaler(ps);
+        instance.set_ps(ps);
         instance.core_enable();
         instance
     }
@@ -56,7 +56,7 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
     }
 
     #[inline]
-    pub fn set_prescaler(&mut self, val: u16) {
+    pub fn set_ps(&mut self, val: u16) {
         // Safety: aligned on zeroHETI
         write_u16(BASE_ADDR + I2C_CLK_PRESCALER_OFS, val);
     }
