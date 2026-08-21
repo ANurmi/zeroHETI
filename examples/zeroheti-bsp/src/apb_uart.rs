@@ -37,7 +37,7 @@ pub struct ApbUartHal<const BASE_ADDR: usize>;
 pub type ApbUart = ApbUartHal<UART_BASE>;
 
 impl<const BASE_ADDR: usize> ApbUartHal<BASE_ADDR> {
-    /// # Parameters
+    /// # Arguments
     ///
     /// * `freq` - SoC frequency, used to calculate BAUD rate together with a
     ///   divisor
