@@ -13,7 +13,6 @@ use bsp::{
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
     mtimer::{self, MTimer},
     riscv::{self, asm::wfi},
-    rt as riscv_rt,
     rt::entry,
     sprintln,
     tb::signal_pass,
