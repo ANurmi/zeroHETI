@@ -46,14 +46,16 @@ impl Timer {
 
     /// Starts the count
     ///
-    /// `prescaler` must be less than 7
+    /// # Arguments
+    ///
+    /// `ps` must be less than 7
     #[inline]
-    pub fn enable_with_prescaler(&mut self, prescaler: u32) {
-        debug_assert!(prescaler <= 0b111);
+    pub fn enable_with_ps(&mut self, ps: u32) {
+        debug_assert!(ps <= 0b111);
 
         write_u32p(
             unsafe { &mut (*self.0).ctrl as *mut u32 },
-            (prescaler << TIMER_CTRL_PRESCALER_BIT_IDX) | TIMER_CTRL_ENABLE_BIT,
+            (ps << TIMER_CTRL_PRESCALER_BIT_IDX) | TIMER_CTRL_ENABLE_BIT,
         );
     }
 
