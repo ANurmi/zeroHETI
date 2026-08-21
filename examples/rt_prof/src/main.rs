@@ -196,7 +196,7 @@ mod app {
         let serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
         sprintln!("\n\r### Starting rt_prof (rtic) benchmark ###\n\r");
         let i2c = I2c::init(4);
-        let (ibx, obx) = unsafe { Mailbox::instance() }.split();
+        let (ibx, mut obx) = unsafe { Mailbox::instance() }.split();
 
         let mut mtimer = MTimer::instance().into_oneshot();
 
@@ -221,9 +221,6 @@ mod app {
             .for_each(|t| t.set_period(CTRL_TASK_PER_US.micros()));
 
         timers.iter_mut().for_each(Periodic::start);
-
-        // Safety: sim and app are not yet running
-        let (_, mut obx) = unsafe { Mailbox::instance() }.split();
 
         const CMDS: &[(MbxAddr, u32)] = &[
             (MbxAddr::SimPrescaler, 10),
