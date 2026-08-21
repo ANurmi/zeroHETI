@@ -32,7 +32,7 @@ struct Task {
 }
 
 const RUN_COUNT: usize = 1;
-const TEST_DURATION: mtimer::Duration = mtimer::Duration::micros(1_000);
+const TEST_DURATION: mtimer::Duration = mtimer::Duration::from_micros(1_000);
 
 impl Task {
     pub const fn new(level: u8, period_ns: u32, duration_ns: u32) -> Self {
@@ -94,8 +94,8 @@ fn main() -> ! {
     );
     sprintln!(
         "Test duration: {} us ({} ns)",
-        TEST_DURATION.to_micros(),
-        TEST_DURATION.to_nanos()
+        TEST_DURATION.as_micros(),
+        TEST_DURATION.as_nanos()
     );
 
     setup_irq(Interrupt::Timer0Cmp, TASK0.level);
@@ -195,11 +195,11 @@ fn main() -> ! {
                 // end.
                 ma::assert_ge!(
                     *count,
-                    (TEST_DURATION.to_nanos() as usize / task.period_ns as usize) - 1
+                    (TEST_DURATION.as_nanos() as usize / task.period_ns as usize) - 1
                 );
                 ma::assert_le!(
                     *count,
-                    (TEST_DURATION.to_nanos() as usize / task.period_ns as usize)
+                    (TEST_DURATION.as_nanos() as usize / task.period_ns as usize)
                 );
             }
 
