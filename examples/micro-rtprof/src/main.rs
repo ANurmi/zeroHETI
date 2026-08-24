@@ -26,6 +26,7 @@ mod app {
     const CFG_BASE_ADDR: usize = 0x0000_4000;
     const CFG_TASK_OFFS: usize = 0x0000_0100;
 
+    #[inline]
     fn clear_perf_counters() {
         unsafe {
             minstret::write(0);
@@ -33,6 +34,22 @@ mod app {
             minstreth::write(0);
             mcycleh::write(0);
         }
+    }
+
+    #[inline]
+    fn capture_irq_ts() {
+        // Special logic to directly capture mtime into edf_ts 64-bit register
+        unsafe { core::arch::asm!("csrrwi x0, 0x367, 1") };
+    }
+
+    #[inline]
+    fn rtprof_start_task(idx: usize) {
+        mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS + (4 + 4 * idx), 1);
+    }
+
+    #[inline]
+    fn rtprof_end_task(idx: usize) {
+        mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS + (4 + 4 * idx), 0);
     }
 
     const LF: u32 = parse_u32(env!("LOAD_FACTOR"));
@@ -100,7 +117,9 @@ mod app {
         obx.send(task_dl_base + 1, TIMER1_PER_US * US_TO_CC);
         obx.send(task_dl_base + 2, TIMER2_PER_US * US_TO_CC);
 
-        MTimer::with_clkdiv(500).into_oneshot().start(RT.millis());
+        MTimer::with_clkdiv(500)
+            .into_oneshot()
+            .start(RT.millis() / 4); // HACK
 
         let timers = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),
@@ -151,9 +170,29 @@ mod app {
             Self {}
         }
         fn exec(&mut self) {
-            mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS + 4, 1);
+            // TODO: read and clear csr_edf_count
+            // csrrw rd, csr_edf_count, x0
+            let count: usize;
+            let ts_lo: usize;
+            let ts_hi: usize;
+
+            unsafe { core::arch::asm!("csrrw {0}, 0x366, x0", out(reg) count) };
+            unsafe { core::arch::asm!("csrrs {0}, 0x362, x0", out(reg) ts_lo) };
+            unsafe { core::arch::asm!("csrrs {0}, 0x363, x0", out(reg) ts_hi) };
+
+            capture_irq_ts();
+
+            rtprof_start_task(0);
+            // FUNCTIONAL ISR
+
             asm_delay(TIMER0_LOAD);
-            mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS + 4, 0);
+
+            // ISR END
+            rtprof_end_task(0);
+
+            unsafe { core::arch::asm!("csrw 0x362, {0}", in(reg) ts_lo) };
+            unsafe { core::arch::asm!("csrw 0x363, {0}", in(reg) ts_hi) };
+            unsafe { core::arch::asm!("csrw 0x366, {0}", in(reg) count) };
         }
     }
 
@@ -164,9 +203,24 @@ mod app {
             Self {}
         }
         fn exec(&mut self) {
-            mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS + 8, 1);
+            let count: usize;
+            let ts_lo: usize;
+            let ts_hi: usize;
+
+            unsafe { core::arch::asm!("csrrw {0}, 0x366, x0", out(reg) count) };
+            unsafe { core::arch::asm!("csrrs {0}, 0x362, x0", out(reg) ts_lo) };
+            unsafe { core::arch::asm!("csrrs {0}, 0x363, x0", out(reg) ts_hi) };
+
+            capture_irq_ts();
+            rtprof_start_task(1);
+
             asm_delay(TIMER1_LOAD);
-            mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS + 8, 0);
+
+            rtprof_end_task(1);
+
+            unsafe { core::arch::asm!("csrw 0x362, {0}", in(reg) ts_lo) };
+            unsafe { core::arch::asm!("csrw 0x363, {0}", in(reg) ts_hi) };
+            unsafe { core::arch::asm!("csrw 0x366, {0}", in(reg) count) };
         }
     }
 
@@ -177,9 +231,24 @@ mod app {
             Self {}
         }
         fn exec(&mut self) {
-            mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS + 12, 1);
+            let count: usize;
+            let ts_lo: usize;
+            let ts_hi: usize;
+
+            unsafe { core::arch::asm!("csrrw {0}, 0x366, x0", out(reg) count) };
+            unsafe { core::arch::asm!("csrrs {0}, 0x362, x0", out(reg) ts_lo) };
+            unsafe { core::arch::asm!("csrrs {0}, 0x363, x0", out(reg) ts_hi) };
+
+            capture_irq_ts();
+            rtprof_start_task(2);
+
             asm_delay(TIMER2_LOAD);
-            mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS + 12, 0);
+
+            rtprof_end_task(2);
+
+            unsafe { core::arch::asm!("csrw 0x362, {0}", in(reg) ts_lo) };
+            unsafe { core::arch::asm!("csrw 0x363, {0}", in(reg) ts_hi) };
+            unsafe { core::arch::asm!("csrw 0x366, {0}", in(reg) count) };
         }
     }
 }
