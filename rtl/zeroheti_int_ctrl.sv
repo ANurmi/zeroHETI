@@ -50,11 +50,12 @@ module zeroheti_int_ctrl #(
     logic [TsWidth-1:0] deadline;
     logic [7:0] dl_slice;
     logic [63:0] mtime;
-  
+
     assign mtime = (mtime_en_i) ? mtime_i : 64'h0;
 
-    // Extract top 8 bits
-    assign dl_slice = deadline[TsWidth-1:TsWidth-8];
+    // UPDATED: Extract bottom 8 bits
+    // Adjust granularity with mtime prescaler
+    assign dl_slice = deadline[7:0];
 
     assign irq_level_o = 8'd255 - dl_slice;
 

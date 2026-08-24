@@ -56,12 +56,12 @@ mod app {
     const RT: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
 
     const TIMER0_PER_US: u32 = 2 * (100 - LF);
-    const TIMER1_PER_US: u32 = 5 * (100 - LF);
-    const TIMER2_PER_US: u32 = 9 * (100 - LF);
+    const TIMER1_PER_US: u32 = 7 * (100 - LF);
+    const TIMER2_PER_US: u32 = 13 * (100 - LF);
 
     const TIMER0_LOAD: u32 = 200; // ~12 us
-    const TIMER1_LOAD: u32 = 500; // ~30 us
-    const TIMER2_LOAD: u32 = 900; // ~54 us
+    const TIMER1_LOAD: u32 = 900; // 
+    const TIMER2_LOAD: u32 = 1500; // 
 
     const US_TO_CC: u32 = 100;
 
@@ -117,9 +117,7 @@ mod app {
         obx.send(task_dl_base + 1, TIMER1_PER_US * US_TO_CC);
         obx.send(task_dl_base + 2, TIMER2_PER_US * US_TO_CC);
 
-        MTimer::with_clkdiv(500)
-            .into_oneshot()
-            .start(RT.millis() / 4); // HACK
+        MTimer::with_clkdiv(1000).into_oneshot().start(RT.millis());
 
         let timers = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),
