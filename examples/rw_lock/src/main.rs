@@ -294,10 +294,10 @@ mod app {
                 let (rl_w, rl_c) = (st.rl.worst / HZ_PER_US, st.rl.count);
                 let (w_w, w_c) = (st.w.worst / HZ_PER_US, st.w.count);
 
-                sprintln!("- ReaderHigh (0xfc): worst {rh_w:>5} us | jobs {rh_c:>4}");
-                sprintln!("- J         (0xfb): worst {j_w:>5} us | jobs {j_c:>4} | misses {j_m:>4}");
-                sprintln!("- ReaderLow (0xf9): worst {rl_w:>5} us | jobs {rl_c:>4}");
-                sprintln!("- Writer    (0xf8): worst {w_w:>5} us | jobs {w_c:>4}");
+                sprintln!("- ReaderHigh (p=0xfc): worst {rh_w:>5} us | jobs {rh_c:>4}");
+                sprintln!("- J          (p=0xfb): worst {j_w:>5} us | jobs {j_c:>4} | misses {j_m:>4}");
+                sprintln!("- ReaderLow  (p=0xf9): worst {rl_w:>5} us | jobs {rl_c:>4}");
+                sprintln!("- Writer     (p=0xf8): worst {w_w:>5} us | jobs {w_c:>4}");
 
                 if j_m > 0 {
                     sprintln!("VERDICT [{LOCK_MODE}]: J NOT schedulable -- {j_m}/{j_c} jobs missed the {DL_J_US} us deadline");
@@ -326,28 +326,17 @@ mod app {
     struct ReaderHigh {
         acc: u32,
     }
-    #[cfg(feature = "rw")]
     impl RticTask for ReaderHigh {
         fn init() -> Self {
             Self { acc: 0 }
         }
         fn exec(&mut self) {
             let start = timer_counter(0);
+            #[cfg(feature = "rw")]
             self.shared()
                 .r
                 .read_lock(|r| self.acc = read_short(r, self.acc));
-            let resp = wrap(timer_counter(0), start, PER_RH_US * HZ_PER_US);
-            unsafe { log_job(&mut RH_LOG, &mut RH_LOG_LEN, resp) };
-            self.shared().stats.lock(|st| track(&mut st.rh, resp));
-        }
-    }
-    #[cfg(not(feature = "rw"))]
-    impl RticTask for ReaderHigh {
-        fn init() -> Self {
-            Self { acc: 0 }
-        }
-        fn exec(&mut self) {
-            let start = timer_counter(0);
+            #[cfg(not(feature = "rw"))]
             self.shared().r.lock(|r| self.acc = read_short(r, self.acc));
             let resp = wrap(timer_counter(0), start, PER_RH_US * HZ_PER_US);
             unsafe { log_job(&mut RH_LOG, &mut RH_LOG_LEN, resp) };
@@ -394,28 +383,17 @@ mod app {
     struct ReaderLow {
         acc: u32,
     }
-    #[cfg(feature = "rw")]
     impl RticTask for ReaderLow {
         fn init() -> Self {
             Self { acc: 0 }
         }
         fn exec(&mut self) {
             let start = timer_counter(2);
+            #[cfg(feature = "rw")]
             self.shared()
                 .r
                 .read_lock(|r| self.acc = read_busy(r, self.acc, RL_CS_ITERS));
-            let resp = wrap(timer_counter(2), start, PER_RL_US * HZ_PER_US);
-            unsafe { log_job(&mut RL_LOG, &mut RL_LOG_LEN, resp) };
-            self.shared().stats.lock(|st| track(&mut st.rl, resp));
-        }
-    }
-    #[cfg(not(feature = "rw"))]
-    impl RticTask for ReaderLow {
-        fn init() -> Self {
-            Self { acc: 0 }
-        }
-        fn exec(&mut self) {
-            let start = timer_counter(2);
+            #[cfg(not(feature = "rw"))]
             self.shared()
                 .r
                 .lock(|r| self.acc = read_busy(r, self.acc, RL_CS_ITERS));
