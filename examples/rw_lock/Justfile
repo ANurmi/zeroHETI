@@ -2,13 +2,12 @@ runtime_ms := "20"
 fmutex := "ui-test/run-mutex.stdout"
 frw := "ui-test/run-rw.stdout"
 
-run-mutex:
-    echo "== mutex build =="
-    stdbuf -oL cargo run --release -Frtl-tb,intc-clic
+run features='':
+    @echo "extra params: {{ features }}"
+    stdbuf -oL cargo run --release -Frtl-tb,intc-clic {{ features }}
 
-run-rw:
-    echo "== rw-lock build =="
-    stdbuf -oL cargo run --release -Frtl-tb,intc-clic,rw
+trace features='':
+    just run -Fobs {{ features }} | sed -n '/\[obs\] \[TRACE_START\]/,/\[obs\] \[TRACE_END\]/{ /TRACE_START/d; /TRACE_END/d; p; }'
 
 compare:
     mkdir -p ui-test
