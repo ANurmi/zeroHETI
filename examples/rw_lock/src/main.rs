@@ -47,7 +47,8 @@ mod app {
         apb_uart::ApbUart,
         fugit::{ExtU32, ExtU64},
         mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
-        mtimer::{self, MTimer},
+        mtimer::MTimer,
+        register::{mcycle, mcycleh, minstret, minstreth},
         sprintln,
         tb::signal_pass,
         timer_group::Timer,
@@ -110,6 +111,16 @@ mod app {
         st.count += 1;
         if resp > st.worst {
             st.worst = resp;
+        }
+    }
+
+    #[inline]
+    fn clear_perf_counters() {
+        unsafe {
+            minstret::write(0);
+            mcycle::write(0);
+            minstreth::write(0);
+            mcycleh::write(0);
         }
     }
 
@@ -217,7 +228,25 @@ mod app {
         sprintln!("- RL CS iters       : {RL_CS_ITERS}");
         sprintln!("- J deadline   (us) : {DL_J_US}");
 
-        MTimer::instance().into_oneshot().start(100u64.micros());
+        sprintln!("Control::Setup");
+
+        // Setup mtimer to trigger `Finish` task
+        let mut mtimer = MTimer::instance().into_oneshot();
+        mtimer.start(RUNTIME_MS.millis());
+
+        let timers = &mut [
+            Timer::init::<TIMER0_ADDR>().into_periodic(),
+            Timer::init::<TIMER1_ADDR>().into_periodic(),
+            Timer::init::<TIMER2_ADDR>().into_periodic(),
+            Timer::init::<TIMER3_ADDR>().into_periodic(),
+        ];
+        timers[0].set_period(PER_RH_US.micros());
+        timers[1].set_period(PER_J_US.micros());
+        timers[2].set_period(PER_RL_US.micros());
+        timers[3].set_period(PER_W_US.micros());
+        timers.iter_mut().for_each(|t| t.start());
+
+        clear_perf_counters();
 
         Shared {
             r: RState {
@@ -238,75 +267,46 @@ mod app {
         priority = 0xff,
         shared = [stats]
     )]
-    struct Control {
-        mtimer: mtimer::OneShot,
-        start_time: Option<u64>,
-    }
+    struct Finish {}
 
-    impl RticTask for Control {
+    impl RticTask for Finish {
         fn init() -> Self {
-            let mtimer = MTimer::instance().into_oneshot();
-            Self {
-                mtimer,
-                start_time: None,
-            }
+            Self {}
         }
         fn exec(&mut self) {
-            match self.start_time.as_mut() {
-                None => {
-                    sprintln!("Control::Setup");
-                    self.start_time.replace(self.mtimer.counter());
-                    self.mtimer.start(RUNTIME_MS.millis());
+            let now = MTimer::instance().into_oneshot().duration().as_ticks();
+            let runtime_us = now / (HZ_PER_US as u64);
 
-                    let timers = &mut [
-                        Timer::init::<TIMER0_ADDR>().into_periodic(),
-                        Timer::init::<TIMER1_ADDR>().into_periodic(),
-                        Timer::init::<TIMER2_ADDR>().into_periodic(),
-                        Timer::init::<TIMER3_ADDR>().into_periodic(),
-                    ];
-                    timers[0].set_period(PER_RH_US.micros());
-                    timers[1].set_period(PER_J_US.micros());
-                    timers[2].set_period(PER_RL_US.micros());
-                    timers[3].set_period(PER_W_US.micros());
-                    timers.iter_mut().for_each(|t| t.start());
+            sprintln!("Control::Teardown");
+            sprintln!("- Runtime (us): {runtime_us}");
+
+            self.shared().stats.lock(|st| {
+                let (rh_w, rh_c) = (st.rh.worst / HZ_PER_US, st.rh.count);
+                let (j_w, j_c, j_m) = (
+                    st.j.worst / HZ_PER_US,
+                    st.j.count,
+                    st.j.misses,
+                );
+                let (rl_w, rl_c) = (st.rl.worst / HZ_PER_US, st.rl.count);
+                let (w_w, w_c) = (st.w.worst / HZ_PER_US, st.w.count);
+
+                sprintln!("- ReaderHigh (0xfc): worst {rh_w:>5} us | jobs {rh_c:>4}");
+                sprintln!("- J         (0xfb): worst {j_w:>5} us | jobs {j_c:>4} | misses {j_m:>4}");
+                sprintln!("- ReaderLow (0xf9): worst {rl_w:>5} us | jobs {rl_c:>4}");
+                sprintln!("- Writer    (0xf8): worst {w_w:>5} us | jobs {w_c:>4}");
+
+                if j_m > 0 {
+                    sprintln!("VERDICT [{LOCK_MODE}]: J NOT schedulable -- {j_m}/{j_c} jobs missed the {DL_J_US} us deadline");
+                } else {
+                    sprintln!("VERDICT [{LOCK_MODE}]: J schedulable -- 0/{j_c} jobs missed the {DL_J_US} us deadline");
                 }
-                Some(start_time) => {
-                    let start_ticks = *start_time;
-                    let now = MTimer::instance().into_oneshot().duration().as_ticks();
-                    let runtime_us = (now - start_ticks) / (HZ_PER_US as u64);
+            });
 
-                    sprintln!("Control::Teardown");
-                    sprintln!("- Runtime (us): {runtime_us}");
+            unsafe { dump_logs(0) };
+            #[cfg(feature = "obs")]
+            obs_trace::obs_dump!(obs_trace::TsUnit::Micros);
 
-                    self.shared().stats.lock(|st| {
-                        let (rh_w, rh_c) = (st.rh.worst / HZ_PER_US, st.rh.count);
-                        let (j_w, j_c, j_m) = (
-                            st.j.worst / HZ_PER_US,
-                            st.j.count,
-                            st.j.misses,
-                        );
-                        let (rl_w, rl_c) = (st.rl.worst / HZ_PER_US, st.rl.count);
-                        let (w_w, w_c) = (st.w.worst / HZ_PER_US, st.w.count);
-
-                        sprintln!("- ReaderHigh (0xfc): worst {rh_w:>5} us | jobs {rh_c:>4}");
-                        sprintln!("- J         (0xfb): worst {j_w:>5} us | jobs {j_c:>4} | misses {j_m:>4}");
-                        sprintln!("- ReaderLow (0xf9): worst {rl_w:>5} us | jobs {rl_c:>4}");
-                        sprintln!("- Writer    (0xf8): worst {w_w:>5} us | jobs {w_c:>4}");
-
-                        if j_m > 0 {
-                            sprintln!("VERDICT [{LOCK_MODE}]: J NOT schedulable -- {j_m}/{j_c} jobs missed the {DL_J_US} us deadline");
-                        } else {
-                            sprintln!("VERDICT [{LOCK_MODE}]: J schedulable -- 0/{j_c} jobs missed the {DL_J_US} us deadline");
-                        }
-                    });
-
-                    unsafe { dump_logs(start_ticks) };
-                    #[cfg(feature = "obs")]
-                    obs_trace::obs_dump!(obs_trace::TsUnit::Micros);
-
-                    signal_pass(None);
-                }
-            }
+            signal_pass(None);
         }
     }
 
