@@ -1,4 +1,4 @@
-//! Reusable observability trace backend for zeroHETI tests.
+//! Observability trace backend for zeroHETI tests.
 //!
 //! RTIC codegen (`rtic-core`) emits calls to four hooks on a user type named
 //! in `#[app(..., obs = <path>)]`. This crate is the generic *recording* half
@@ -82,9 +82,13 @@
 #![no_std]
 #![allow(static_mut_refs)]
 
-use bsp::{mtimer::MTimer, sprintln};
+mod print;
 
-/// Maximum number of events the trace can hold.
+use bsp::mtimer::MTimer;
+pub use print::obs_dump;
+
+/// Maximum number of events the trace can hold. Spends on-target memory (32 bits /
+/// 4 bytes per entry).
 pub const OBS_TRACE_CAP: usize = 2048;
 
 #[repr(u8)]
@@ -96,7 +100,7 @@ pub enum ObsKind {
     Rel = 3,
 }
 
-static mut OBS_TRACE_LEN: u32 = 0;
+static mut OBS_TRACE_LEN: usize = 0;
 static mut OBS_TRACE: [u32; OBS_TRACE_CAP] = [0; OBS_TRACE_CAP];
 static mut OBS_TRACE_TS: [u32; OBS_TRACE_CAP] = [0; OBS_TRACE_CAP];
 
@@ -126,44 +130,6 @@ fn obs_append(word: u32, ts: u32) {
             OBS_TRACE[idx as usize] = word;
             OBS_TRACE_TS[idx as usize] = ts;
             OBS_TRACE_LEN = OBS_TRACE_LEN.max(idx + 1);
-        }
-    }
-}
-
-/// Dumps the trace over UART.
-///
-/// `task_name` and `res_name` map an event id to a human-readable name and are
-/// supplied by the specific test (this crate has no knowledge of any app's
-/// task/resource layout).
-pub fn obs_dump(task_name: fn(u8) -> &'static str, res_name: fn(u8) -> &'static str) {
-    // Safety: run at teardown only; all pushes have completed.
-    unsafe {
-        let n = OBS_TRACE_LEN.min(OBS_TRACE_CAP as u32);
-        sprintln!("[obs] trace: {n} events @ mtimer ticks");
-        for i in 0..n {
-            let w = OBS_TRACE[i as usize];
-            let ts = OBS_TRACE_TS[i as usize];
-            let kind = (w >> 24) as u8;
-            let id = (w >> 16) as u8;
-            let prio = (w >> 8) as u8;
-            let ceiling = w as u8;
-            match kind {
-                0 => sprintln!("[obs] @{ts:>10} act  {}", task_name(id)),
-                1 => sprintln!("[obs] @{ts:>10} comp {}", task_name(id)),
-                2 => sprintln!(
-                    "[obs] @{ts:>10} acq  {} t={} c={}",
-                    res_name(id),
-                    prio,
-                    ceiling
-                ),
-                3 => sprintln!(
-                    "[obs] @{ts:>10} rel  {} t={} c={}",
-                    res_name(id),
-                    prio,
-                    ceiling
-                ),
-                _ => {}
-            }
         }
     }
 }
