@@ -12,13 +12,13 @@ A single binary covers both runs; a feature flag toggles the readers' lock type.
 
 ## Task set (C1–C5 mapping)
 
-| Task       | IRQ          | Priority π | Access to `R` | Role                                   |
-|------------|--------------|------------|---------------|----------------------------------------|
-| ReaderHigh | `Timer0Cmp`  | `0xFC`     | read          | highest-π accessor → **C2**            |
-| J          | `Timer1Cmp`  | `0xFB`     | none          | measured job → **C1**, **C3**          |
-| ReaderLow  | `Timer2Cmp`  | `0xF9`     | read, **long** CS | **C4/C5**: `B(J)` = this CS        |
-| Writer     | `Timer3Cmp`  | `0xF8`     | write (short) | → **C3**                               |
-| Control    | `MachineTimer`| `0xFF`    | none          | setup / teardown + verdict             |
+| Task       | IRQ            | Priority π | Access to `R`     | Role                          |
+| ---------- | -------------- | ---------- | ----------------- | ----------------------------- |
+| ReaderHigh | `Timer0Cmp`    | `0xFC`     | read              | highest-π accessor → **C2**   |
+| J          | `Timer1Cmp`    | `0xFB`     | none              | measured job → **C1**, **C3** |
+| ReaderLow  | `Timer2Cmp`    | `0xF9`     | read, **long** CS | **C4/C5**: `B(J)` = this CS   |
+| Writer     | `Timer3Cmp`    | `0xF8`     | write (short)     | → **C3**                      |
+| Control    | `MachineTimer` | `0xFF`     | none              | setup / teardown + verdict    |
 
 - Mutex ceiling `⌈R⌉0 = 0xFC`; read ceiling `⌈R⌉1 = 0xF8` (max priority among
   writers). Both are computed by the RTIC macro and printed at build time
@@ -67,14 +67,16 @@ just compare      # runs both and prints a compact side-by-side summary
 
 ## Expected results (representative, 20 ms runs)
 
-|                        | Mutex                | RW-lock              |
-|------------------------|----------------------|----------------------|
-| ReaderHigh worst (µs)  | ~680                 | ~29                  |
-| J worst (µs)           | ~880                 | ~70                  |
-| J deadline misses      | 6–8 / ~14            | 0 / 15               |
-| ReaderLow worst (µs)   | ~1020                | ~1020                |
-| Writer worst (µs)      | ~1490                | ~1475                |
-| Verdict                | J NOT schedulable    | J schedulable        |
+Requires `make verilate INTC=CLIC FULL_UART=1`
+
+|                       | Mutex             | RW-lock       |
+| --------------------- | ----------------- | ------------- |
+| ReaderHigh worst (µs) | ~680              | ~29           |
+| J worst (µs)          | ~880              | ~70           |
+| J deadline misses     | 6–8 / ~14         | 0 / 15        |
+| ReaderLow worst (µs)  | ~1020             | ~1020         |
+| Writer worst (µs)     | ~1490             | ~1475         |
+| Verdict               | J NOT schedulable | J schedulable |
 
 `Δ ≈ WCRT(J)_mutex − WCRT(J)_rw ≈ |ReaderLow read CS|`, matching Lemma 2.17 /
 Theorem 3.9. The residual (J worst ~70 µs in RW mode) is `J`'s own execution
