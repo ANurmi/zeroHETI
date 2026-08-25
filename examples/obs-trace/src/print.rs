@@ -12,6 +12,7 @@ pub fn obs_dump(task_name: fn(u8) -> &'static str, res_name: fn(u8) -> &'static 
     unsafe {
         let n_events = OBS_TRACE_LEN.min(OBS_TRACE_CAP);
         header(n_events);
+        sprintln!("[obs] [TRACE_START]");
         for i in 0..n_events {
             let w = OBS_TRACE[i];
             let ts = OBS_TRACE_TS[i];
@@ -37,6 +38,7 @@ pub fn obs_dump(task_name: fn(u8) -> &'static str, res_name: fn(u8) -> &'static 
                 _ => {}
             }
         }
+        sprintln!("[obs] [TRACE_END]");
     }
 }
 
