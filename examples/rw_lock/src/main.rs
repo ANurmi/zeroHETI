@@ -4,7 +4,8 @@
 
 use bsp::rt as _;
 
-#[rtic::app(device = bsp, dispatchers = [])]
+#[cfg_attr(feature = "obs", rtic::app(device = bsp, obs = obs_trace::Obs, dispatchers = []))]
+#[cfg_attr(not(feature = "obs"), rtic::app(device = bsp, dispatchers = []))]
 mod app {
     const fn parse_u32(s: &str) -> u32 {
         let mut out: u32 = 0;
@@ -300,6 +301,8 @@ mod app {
                     });
 
                     unsafe { dump_logs(start_ticks) };
+                    #[cfg(feature = "obs")]
+                    obs_trace::obs_dump!(obs_trace::TsUnit::Micros);
 
                     signal_pass(None);
                 }

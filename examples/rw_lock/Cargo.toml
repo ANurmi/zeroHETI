@@ -10,6 +10,8 @@ bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp", features = [
 # Required if riscv-macros::core_interrupt is used. riscv-rt version must align with BSP
 riscv-rt = { version = "0.18.0" }
 rtic = { version = "0.1.0", path = "../mrtic/distributions/zeroheti-rtic", features = ["rtl-tb"] }
+obs-trace = { path = "../obs-trace", optional = true }
+
 [features]
 default = []
 
@@ -22,6 +24,12 @@ rtl-tb = ["bsp/rtl-tb"]
 fpga = ["bsp/fpga"]
 # Readers use `read` locks instead of plain mutexes on the protected resource
 rw = []
+
+# RTIC observability hooks: trace every task activation/completion and resource
+# acquire/release, dumped over UART at teardown. Adds a small per-hook cost
+# (~0.7%--8% active time) and a slow UART dump (~25 s wall clock in the sim vs
+# ~3 s without).
+obs = [ "dep:obs-trace" ]
 
 [profile.dev]
 # There seems to be a problem in riscv-rt with regards to linking in default_start_trap in debug
