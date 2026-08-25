@@ -3,8 +3,8 @@
 #![allow(static_mut_refs)]
 
 use bsp::rt as _;
-#[rtic::app(device = bsp, dispatchers = [])]
 
+#[rtic::app(device = bsp, dispatchers = [])]
 mod app {
     const fn parse_u32(s: &str) -> u32 {
         let mut out: u32 = 0;
@@ -42,15 +42,15 @@ mod app {
     const LOCK_MODE: &str = "mutex";
 
     use bsp::{
+        CPU_FREQ_HZ,
         apb_uart::ApbUart,
-        mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR, TIMER_SEP},
+        fugit::{ExtU32, ExtU64},
+        mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mtimer::{self, MTimer},
         sprintln,
         tb::signal_pass,
         timer_group::Timer,
-        CPU_FREQ_HZ,
     };
-    use fugit::{ExtU32, ExtU64};
 
     /// Number of timer ticks per microsecond (prescaler 0, 1 tick == 1 CPU cycle)
     const HZ_PER_US: u32 = CPU_FREQ_HZ / 1_000_000;
@@ -101,11 +101,7 @@ mod app {
     /// Response time from the APB timer counter value, with single-wrap handling
     #[inline]
     fn wrap(resp: u32, start: u32, period: u32) -> u32 {
-        if resp < start {
-            resp + period
-        } else {
-            resp
-        }
+        if resp < start { resp + period } else { resp }
     }
 
     #[inline]
@@ -275,7 +271,7 @@ mod app {
                 }
                 Some(start_time) => {
                     let start_ticks = *start_time;
-                    let now = MTimer::instance().into_oneshot().duration().ticks();
+                    let now = MTimer::instance().into_oneshot().duration().as_ticks();
                     let runtime_us = (now - start_ticks) / (HZ_PER_US as u64);
 
                     sprintln!("Control::Teardown");
