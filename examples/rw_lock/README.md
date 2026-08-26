@@ -4,11 +4,9 @@ Cycle-accurate (Verilator, 100 MHz) demonstration on zeroHETI/RTIC that replacin
 a **mutex** on a shared resource with a **readers-writer lock** lowers the
 worst-case response time of an independent high-priority job `J`, turning an
 unschedulable system schedulable. The task set is engineered to satisfy
-Theorem 3.9's boundary conditions C1–C5 (see `2026-08-07-abstract-rw-demo-plan.md`
-at the repo root), the regime the drone controller (`../rt_prof`) does *not*
-exercise.
+Theorem 3.9's boundary conditions C1–C5.
 
-A single binary covers both runs; a feature flag toggles the readers' lock type.
+A single source covers both cases; a feature flag toggles the readers' lock type.
 
 ```sh
 # Run with mutex
@@ -26,7 +24,7 @@ RUNTIME_MS=20 cargo run --release -Frtl-tb,intc-clic,rw
 | J          | `Timer1Cmp`    | `0xFB` / `251` | none              | measured job → **C1**, **C3** |
 | ReaderLow  | `Timer2Cmp`    | `0xF9` / `249` | read, **long** CS | **C4/C5**: `B(J)` = this CS   |
 | Writer     | `Timer3Cmp`    | `0xF8` / `248` | write (short)     | → **C3**                      |
-| Control    | `MachineTimer` | `0xFF` / `255` | none              | setup / teardown + verdict    |
+| (Teardown) | `MachineTimer` | `0xFF` / `255` | none              | setup / teardown + verdict    |
 
 - Mutex ceiling $⌈R⌉_0 = 0xFC$; read ceiling $⌈R⌉_1 = 0xF8$ (max priority among
   writers). Both are computed by the RTIC macro and printed at build time
