@@ -9,6 +9,18 @@ run features='':
 trace features='':
     just run -Fobs {{ features }} | sed -n '/\[obs\] \[TRACE_START\]/,/\[obs\] \[TRACE_END\]/{ /TRACE_START/d; /TRACE_END/d; p; }'
 
+trace-mutex:
+    bash -c 'stdbuf -oL cargo run --release -Frtl-tb,intc-clic,obs \
+        | tee >(stdbuf -oL sed -n "/\[obs\] \[TRACE_START\]/,/\[obs\] \[TRACE_END\]/{ /TRACE_START/d; /TRACE_END/d; p; }" > ui-test/mutex.trace)'
+    uv run trace_to_csv_ceil.py ui-test/mutex.trace ui-test/ceil-mutex.csv
+    uv run trace_to_csv_exec.py ui-test/mutex.trace ui-test/exec-mutex.csv
+
+trace-rw:
+    bash -c 'stdbuf -oL cargo run --release -Frtl-tb,intc-clic,obs,rw \
+        | tee >(stdbuf -oL sed -n "/\[obs\] \[TRACE_START\]/,/\[obs\] \[TRACE_END\]/{ /TRACE_START/d; /TRACE_END/d; p; }" > ui-test/rw.trace)'
+    uv run trace_to_csv_ceil.py ui-test/rw.trace ui-test/ceil-rw.csv
+    uv run trace_to_csv_exec.py ui-test/rw.trace ui-test/exec-rw.csv
+
 compare:
     mkdir -p ui-test
     @: > {{ fmutex }}
