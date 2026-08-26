@@ -43,15 +43,15 @@ mod app {
     const LOCK_MODE: &str = "mutex";
 
     use bsp::{
+        CPU_FREQ_HZ,
         apb_uart::ApbUart,
         fugit::{ExtU32, ExtU64},
-        mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR, TIMER_SEP},
+        mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mtimer::MTimer,
         register::{mcycle, mcycleh, minstret, minstreth},
         sprintln,
         tb::signal_pass,
         timer_group::Timer,
-        CPU_FREQ_HZ,
     };
 
     /// Number of timer ticks per microsecond (prescaler 0, 1 tick == 1 CPU cycle)
@@ -103,11 +103,7 @@ mod app {
     /// Response time from the APB timer counter value, with single-wrap handling
     #[inline]
     fn wrap(resp: u32, start: u32, period: u32) -> u32 {
-        if resp < start {
-            resp + period
-        } else {
-            resp
-        }
+        if resp < start { resp + period } else { resp }
     }
 
     #[inline]
@@ -271,9 +267,9 @@ mod app {
         priority = 0xff,
         shared = [stats]
     )]
-    struct Finish {}
+    struct Teardown {}
 
-    impl RticTask for Finish {
+    impl RticTask for Teardown {
         fn init() -> Self {
             Self {}
         }
