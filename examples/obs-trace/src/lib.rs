@@ -85,7 +85,7 @@
 mod print;
 
 use bsp::mtimer::MTimer;
-pub use print::obs_dump;
+pub use print::{TsUnit, obs_dump};
 
 /// Maximum number of events the trace can hold. Spends on-target memory (32 bits /
 /// 4 bytes per entry).
