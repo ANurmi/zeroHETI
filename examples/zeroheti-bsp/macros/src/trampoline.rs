@@ -99,7 +99,7 @@ pub(crate) fn generate_nested_trap_entry(interrupt: &str, abi: Abi) -> proc_macr
     let store_caller_save_regs = store_trap(abi);
     let caller_save_count: usize = abi.len();
 
-    const CSR_COUNT: usize = 5;
+    const CSR_COUNT: usize = if cfg!(feature = "intc-edfic") { 5 } else { 2 };
     let enter_save_count = abi.len() + CSR_COUNT;
 
     let cause_pos: usize = caller_save_count * 4;
@@ -163,7 +163,7 @@ pub(crate) fn generate_continue_nested_trap_impl(abi: Abi) -> TokenStream {
     let load_caller_save_regs = load_trap(abi);
     let caller_save_count: usize = abi.len();
 
-    const CSR_COUNT: usize = 5;
+    const CSR_COUNT: usize = if cfg!(feature = "intc-edfic") { 5 } else { 2 };
     let exit_save_count = abi.len() + CSR_COUNT;
 
     let cause_pos: usize = caller_save_count * 4;

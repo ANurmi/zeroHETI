@@ -28,7 +28,7 @@ rt = ["dep:riscv-rt"]
 nest-continue = []
 intc-hetic = []
 intc-clic = []
-intc-edfic = []
+intc-edfic = ["zeroheti-bsp-macros/intc-edfic"]
 embedded-hal = ["dep:embedded-hal"]
 default-trap-print = []
 
