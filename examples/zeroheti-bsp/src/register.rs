@@ -345,3 +345,63 @@ pub mod mtimeh {
     read_csr_as_usize_rv32!(0x361);
 }
 
+// # EDFIC registers
+
+/// Read and clear the register in a single instruction
+#[cfg(feature = "intc-edfic")]
+#[macro_export]
+macro_rules! read_and_clear_as_usize {
+    ($csr_number:literal) => {
+        #[inline]
+        pub unsafe fn read_and_clear() -> usize {
+            let value: usize;
+            unsafe { core::arch::asm!("csrrw {0}, ", stringify!($csr_number), ", x0", out(reg) value) };
+            value
+        }
+    };
+}
+
+/// mtime ticks since release (relative)
+#[cfg(feature = "intc-edfic")]
+pub mod edf_count {
+    use riscv::{read_csr_as_usize, write_csr_as_usize};
+
+    // Supported operations
+    read_csr_as_usize!(0x366);
+    write_csr_as_usize!(0x366);
+    crate::read_and_clear_as_usize!(0x366);
+}
+
+#[cfg(feature = "intc-edfic")]
+pub mod edf_ts {
+
+    use riscv::{read_csr_as_usize, write_csr_as_usize};
+
+    // Supported operations
+    read_csr_as_usize!(0x362);
+    write_csr_as_usize!(0x362);
+    crate::read_and_clear_as_usize!(0x362);
+}
+
+#[cfg(feature = "intc-edfic")]
+pub mod edf_tsh {
+    use riscv::{read_csr_as_usize, write_csr_as_usize};
+
+    // Supported operations
+    read_csr_as_usize!(0x363);
+    write_csr_as_usize!(0x363);
+    crate::read_and_clear_as_usize!(0x363);
+}
+
+#[cfg(feature = "intc-edfic")]
+pub mod edf_ctrl {
+    //! edf_ctrl register
+
+    // Supported operations
+
+    /// Captures mtime into `edf_ts`
+    pub unsafe fn set() {
+        // Special logic to directly capture mtime into edf_ts 64-bit register
+        unsafe { core::arch::asm!("csrrwi x0, 0x367, 1") };
+    }
+}
