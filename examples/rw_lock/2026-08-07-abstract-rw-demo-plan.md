@@ -8,10 +8,9 @@ Empirically demonstrate on the cycle-accurate zeroHETI/Verilator platform that
 switching a shared resource from a **mutex** to a **readers-writer lock** lowers
 a job's worst-case response time (and can turn an unschedulable system
 schedulable) for a task set engineered to satisfy Theorem 3.9's boundary
-conditions C1-C5 -- the regime the drone controller (rt_prof) does *not*
-exercise.
+conditions C1-C5.
 
-## Background (from briefing.txt)
+## Background
 
 - Theorem 3.9 states WCRT of job `J` (Theorem 2.20 / Lemma 2.17) is lowered by
   replacing a mutex on resource `R` with a readers-writer lock **iff** C1-C5:
@@ -23,28 +22,22 @@ exercise.
   - C4: `B(J)` is determined by a lower-priority reader's read critical section of `R`.
   - C5: the second-longest critical section blocking `J` is shorter than the
     longest (or none).
-- The RTIC fork (mrtic submodule @ c738be2) already implements readers-writer
+- MRTIC implements readers-writer
   locks: `#[task(..., read = [res])]` -> `read_lock()` raises the system ceiling
   (`mintthresh`) to `read_priority` = max priority among **writers** (`⌈R⌉1`);
   `#[task(..., shared = [res])]` + `.lock()` raises it to `priority` = max
   priority among all users (`⌈R⌉0`, mutex). Both ceilings are computed in
-  `rtic-core/src/analysis/mod.rs` (`update_resource_priorities`). No example uses
-  `read = [...]` yet.
-- The drone controller (examples/rt_prof) runs RTIC on zeroHETI via a prebuilt
-  Verilator binary (`build/verilator_build/obj_dir`, built with CLIC),
-  `cargo run --release -Frtl-tb,intc-clic` -> `run-sim.sh` -> `make simv`.
-  CPU_FREQ_HZ = 10 MHz (rtl-tb). APB timer counter resets to zero at the compare
-  event (task release), so response time is readable in-task.
+  `rtic-core/src/analysis/mod.rs` (`update_resource_priorities`).
 
 ## Task set (satisfies C1-C5)
 
-| Task       | IRQ        | Priority π | Access to R             | Role                                   |
-|------------|------------|------------|-------------------------|----------------------------------------|
-| ReaderHigh | Timer0Cmp  | `0xFC`     | read (`read_lock`)      | highest-π accessor of R -> **C2**      |
-| J          | Timer1Cmp  | `0xFB`     | none                    | measured job -> **C1**, **C3**         |
-| ReaderLow  | Timer2Cmp  | `0xF9`     | read, **long** CS       | **C4/C5** (B(J) = this CS)             |
-| Writer     | Timer3Cmp  | `0xF8`     | write (`lock`), short CS| **C3**                                 |
-| Teardown   | MachineTimer| `0xFF`    | none                    | stop + print summary                   |
+| Task       | IRQ          | Priority π | Access to R              | Role                              |
+| ---------- | ------------ | ---------- | ------------------------ | --------------------------------- |
+| ReaderHigh | Timer0Cmp    | `0xFC`     | read (`read_lock`)       | highest-π accessor of R -> **C2** |
+| J          | Timer1Cmp    | `0xFB`     | none                     | measured job -> **C1**, **C3**    |
+| ReaderLow  | Timer2Cmp    | `0xF9`     | read, **long** CS        | **C4/C5** (B(J) = this CS)        |
+| Writer     | Timer3Cmp    | `0xF8`     | write (`lock`), short CS | **C3**                            |
+| Teardown   | MachineTimer | `0xFF`     | none                     | stop + print summary              |
 
 - Mutex ceiling `⌈R⌉0 = 0xFC`; read ceiling `⌈R⌉1 = 0xF8`.
 - Mutex build: ReaderLow's lock raises the system ceiling to `0xFC >= π(J)=0xFB`,
