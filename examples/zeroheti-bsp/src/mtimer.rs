@@ -9,7 +9,12 @@ use crate::{
 
 pub const PS_MASK: u32 = (1 << MTIME_CTRL_PS_BITS) - 1;
 
+const DENOM: u64 = CPU_FREQ_HZ as u64;
+pub type Duration = fugit::Duration<u64, 1, DENOM>;
+
 /// Machine Timer
+///
+/// Mostly monotonic.
 ///
 /// This timer is associated with [crate::Interrupt::MachineTimer]
 pub struct MTimer {}
@@ -133,6 +138,20 @@ impl MTimer {
         write_u32(MTIMER_BASE + MTIMECMP_LOW_ADDR_OFS, cmp as u32);
     }
 
+    /// Returns the current duration since zero as tracked by the timer
+    #[inline]
+    pub fn now(&self) -> Duration {
+        let cnt = self.counter();
+        let clkdiv = self.clkdiv();
+        Duration::from_ticks(cnt * clkdiv as u64)
+    }
+
+    #[inline]
+    pub fn wait_busy(&self, t: Duration) {
+        let start = self.now();
+        while self.now() - start < t {}
+    }
+
     #[inline]
     pub fn into_lo(self) -> MTimerLo {
         MTimerLo(self)
@@ -143,6 +162,8 @@ impl MTimer {
         OneShot(self)
     }
 }
+
+pub type Duration32 = fugit::Duration<u32, 1, DENOM>;
 
 /// Machine Timer, lower bits only
 ///
@@ -216,10 +237,21 @@ impl MTimerLo {
         write_u32(MTIMER_BASE + MTIMECMP_HIGH_ADDR_OFS, 0x0);
         write_u32(MTIMER_BASE + MTIMECMP_LOW_ADDR_OFS, cmp);
     }
-}
 
-const DENOM: u64 = CPU_FREQ_HZ as u64;
-pub type Duration = fugit::Duration<u64, 1, DENOM>;
+    /// Returns the current duration since zero as tracked by the timer
+    #[inline]
+    pub fn now(&self) -> Duration32 {
+        let cnt = self.counter();
+        let clkdiv = self.0.clkdiv();
+        Duration32::from_ticks(cnt * clkdiv)
+    }
+
+    #[inline]
+    pub fn wait_busy(&self, t: Duration32) {
+        let start = self.now();
+        while self.now() - start < t {}
+    }
+}
 
 pub struct OneShot(MTimer);
 
@@ -252,14 +284,6 @@ impl OneShot {
         let lo = read_u32(MTIMER_BASE + MTIME_LOW_ADDR_OFS);
 
         ((hi as u64) << 32) | lo as u64
-    }
-
-    /// Returns the current duration since zero as tracked by the timer
-    #[inline]
-    pub fn duration(&self) -> Duration {
-        let cnt = self.0.counter();
-        let clkdiv = self.0.clkdiv();
-        Duration::from_ticks(cnt * clkdiv as u64)
     }
 
     /// Gets the timer compare value

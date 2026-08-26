@@ -7,6 +7,9 @@ use crate::mmio::{mask_u32p, read_u32p, unmask_u32p, write_u32p};
 /// Associates with interrupts `TimerNCmp` and `TimerNOvf`.
 pub struct Timer(*mut RegisterBlock);
 
+const DENOM: u64 = CPU_FREQ_HZ as u64;
+pub type Duration = fugit::Duration<u32, 1, DENOM>;
+
 impl Timer {
     /// Initializes a timer with all values initialized to zero
     #[inline]
@@ -103,10 +106,13 @@ impl Timer {
     pub fn into_periodic(self) -> Periodic {
         Periodic(self)
     }
-}
 
-const DENOM: u64 = CPU_FREQ_HZ as u64;
-pub type Duration = fugit::Duration<u32, 1, DENOM>;
+    /// Returns the current duration since zero as tracked by the timer
+    #[inline]
+    pub fn duration(&self) -> Duration {
+        Duration::from_ticks(self.counter())
+    }
+}
 
 pub struct Periodic(Timer);
 
@@ -169,6 +175,6 @@ impl Periodic {
     /// Returns the current duration since zero as tracked by the timer
     #[inline]
     pub fn duration(&self) -> Duration {
-        Duration::from_ticks(self.0.counter())
+        self.0.duration()
     }
 }
