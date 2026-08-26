@@ -10,23 +10,31 @@ exercise.
 
 A single binary covers both runs; a feature flag toggles the readers' lock type.
 
+```sh
+# Run with mutex
+RUNTIME_MS=20 cargo run --release -Frtl-tb,intc-clic
+
+# Run with RW locks
+RUNTIME_MS=20 cargo run --release -Frtl-tb,intc-clic,rw
+```
+
 ## Task set (C1–C5 mapping)
 
-| Task       | IRQ            | Priority π | Access to `R`     | Role                          |
-| ---------- | -------------- | ---------- | ----------------- | ----------------------------- |
-| ReaderHigh | `Timer0Cmp`    | `0xFC`     | read              | highest-π accessor → **C2**   |
-| J          | `Timer1Cmp`    | `0xFB`     | none              | measured job → **C1**, **C3** |
-| ReaderLow  | `Timer2Cmp`    | `0xF9`     | read, **long** CS | **C4/C5**: `B(J)` = this CS   |
-| Writer     | `Timer3Cmp`    | `0xF8`     | write (short)     | → **C3**                      |
-| Control    | `MachineTimer` | `0xFF`     | none              | setup / teardown + verdict    |
+| Task       | IRQ            | Priority π     | Access to `R`     | Role                          |
+| ---------- | -------------- | -------------- | ----------------- | ----------------------------- |
+| ReaderHigh | `Timer0Cmp`    | `0xFC` / `252` | read              | highest-π accessor → **C2**   |
+| J          | `Timer1Cmp`    | `0xFB` / `251` | none              | measured job → **C1**, **C3** |
+| ReaderLow  | `Timer2Cmp`    | `0xF9` / `249` | read, **long** CS | **C4/C5**: `B(J)` = this CS   |
+| Writer     | `Timer3Cmp`    | `0xF8` / `248` | write (short)     | → **C3**                      |
+| Control    | `MachineTimer` | `0xFF` / `255` | none              | setup / teardown + verdict    |
 
-- Mutex ceiling `⌈R⌉0 = 0xFC`; read ceiling `⌈R⌉1 = 0xF8` (max priority among
+- Mutex ceiling $⌈R⌉_0 = 0xFC$; read ceiling $⌈R⌉_1 = 0xF8$ (max priority among
   writers). Both are computed by the RTIC macro and printed at build time
   (`[RTIC] * r @π=252`).
 - **Mutex build**: ReaderLow's `lock()` raises the system ceiling (`mintthresh`)
-  to `0xFC ≥ π(J)`, so `J` is blocked for the whole read critical section.
+  to $0xFC ≥ π(J)$, so `J` is blocked for the whole read critical section.
 - **RW build**: ReaderLow uses `read_lock()`, which only raises the ceiling to
-  `0xF8 < π(J)`, so `J` preempts the read critical section.
+  $0xF8 < π(J)$, so `J` preempts the read critical section.
 
 Periods (µs): ReaderHigh 700, J 1300, ReaderLow 1000, Writer 1500. `J`'s deadline
 is 400 µs, chosen between `WCRT(J)_mutex` and `WCRT(J)_rw`.
