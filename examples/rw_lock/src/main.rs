@@ -124,68 +124,6 @@ mod app {
         }
     }
 
-    /// Per-job record for the visualization: response time (APB ticks) and
-    /// absolute end-of-job timestamp (mtimer ticks).
-    #[derive(Clone, Copy)]
-    struct JobRec {
-        resp: u32,
-        end: u64,
-    }
-
-    /// Per-task job logs (each written by exactly one task, read at teardown).
-    const LOG_CAP: usize = 64;
-    static mut RH_LOG: [JobRec; LOG_CAP] = [JobRec { resp: 0, end: 0 }; LOG_CAP];
-    static mut J_LOG: [JobRec; LOG_CAP] = [JobRec { resp: 0, end: 0 }; LOG_CAP];
-    static mut RL_LOG: [JobRec; LOG_CAP] = [JobRec { resp: 0, end: 0 }; LOG_CAP];
-    static mut W_LOG: [JobRec; LOG_CAP] = [JobRec { resp: 0, end: 0 }; LOG_CAP];
-    static mut RH_LOG_LEN: usize = 0;
-    static mut J_LOG_LEN: usize = 0;
-    static mut RL_LOG_LEN: usize = 0;
-    static mut W_LOG_LEN: usize = 0;
-
-    #[inline]
-    fn log_job(buf: &mut [JobRec; LOG_CAP], len: &mut usize, resp: u32) {
-        let i = *len;
-        if i < LOG_CAP {
-            buf[i] = JobRec {
-                resp,
-                end: MTimer::instance().counter(),
-            };
-            *len = i + 1;
-        }
-    }
-
-    /// Prints one `JOB <task> <idx> <resp_us> <rel_us> <miss>` line per recorded
-    /// job, for the visualization. `rel_us` is the release time relative to the
-    /// run start, derived from the absolute mtimer timestamp and the response.
-    ///
-    /// # Safety
-    ///
-    /// Reads shared variables unsafely. This can only be called safely when
-    /// there's no concurrency in app (at end of program).
-    #[inline(never)]
-    unsafe fn dump_logs(start_ticks: u64) {
-        sprintln!("MODE {LOCK_MODE}");
-        let start_us = start_ticks / (HZ_PER_US as u64);
-        unsafe {
-            macro_rules! dump {
-                ($tag:expr, $log:expr, $len:expr, $dl:expr) => {{
-                    for i in 0..*$len {
-                        let rec = &$log[i];
-                        let rel_us = (rec.end - rec.resp as u64) / (HZ_PER_US as u64) - start_us;
-                        let resp_us = rec.resp / HZ_PER_US;
-                        let miss = if $dl > 0 && rec.resp > $dl { 1 } else { 0 };
-                        sprintln!("JOB {} {} {} {} {}", $tag, i, resp_us, rel_us, miss);
-                    }
-                }};
-            }
-            dump!("RH", &RH_LOG, &RH_LOG_LEN, 0);
-            dump!("J", &J_LOG, &J_LOG_LEN, DL_J_TICKS);
-            dump!("RL", &RL_LOG, &RL_LOG_LEN, 0);
-            dump!("W", &W_LOG, &W_LOG_LEN, 0);
-        }
-    }
-
     /// Long read critical section: touches `r` once, then folds a synthetic
     /// accumulation into `acc`. `iters` controls the critical-section length.
     #[inline(never)]
@@ -302,7 +240,6 @@ mod app {
                 }
             });
 
-            unsafe { dump_logs(0) };
             #[cfg(feature = "obs")]
             obs_trace::obs_dump!(obs_trace::TsUnit::Micros);
 
@@ -335,7 +272,6 @@ mod app {
             #[cfg(not(feature = "rw"))]
             self.shared().r.lock(|r| self.acc = read_short(r, self.acc));
             let resp = wrap(timer_counter(0), start, PER_RH_US * HZ_PER_US);
-            unsafe { log_job(&mut RH_LOG, &mut RH_LOG_LEN, resp) };
             self.shared().stats.lock(|st| track(&mut st.rh, resp));
         }
     }
@@ -354,7 +290,6 @@ mod app {
             let start = timer_counter(1);
             self.acc = j_work(self.acc);
             let resp = wrap(timer_counter(1), start, PER_J_TICKS);
-            unsafe { log_job(&mut J_LOG, &mut J_LOG_LEN, resp) };
             self.shared().stats.lock(|st| {
                 st.j.count += 1;
                 if resp > st.j.worst {
@@ -394,7 +329,6 @@ mod app {
                 .r
                 .lock(|r| self.acc = read_busy(r, self.acc, RL_CS_ITERS));
             let resp = wrap(timer_counter(2), start, PER_RL_US * HZ_PER_US);
-            unsafe { log_job(&mut RL_LOG, &mut RL_LOG_LEN, resp) };
             self.shared().stats.lock(|st| track(&mut st.rl, resp));
         }
     }
@@ -415,7 +349,6 @@ mod app {
                 r.wgen = r.wgen.wrapping_add(1);
             });
             let resp = wrap(timer_counter(3), start, PER_W_US * HZ_PER_US);
-            unsafe { log_job(&mut W_LOG, &mut W_LOG_LEN, resp) };
             self.shared().stats.lock(|st| track(&mut st.w, resp));
         }
     }
