@@ -48,9 +48,6 @@ to zero at the compare (= release), so the exit value is the response time
 
 ## How to run
 
-Requires the toolchain from `source .env` at the repo root (prebuilt Verilator
-binary present; no rebuild needed).
-
 ```sh
 # Mutex build (J must be unschedulable)
 RUNTIME_MS=20 cargo run --release -Frtl-tb,intc-clic
