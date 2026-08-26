@@ -14,11 +14,11 @@ use obs_trace::ObsKind;
 pub struct Obs;
 
 impl RticObservability for Obs {
-    fn on_task_act(task: TaskId) {
-        obs_trace::obs_push(ObsKind::Act, task as u8, 0, 0);
+    fn on_task_act(task: TaskId, task_prio: u16) {
+        obs_trace::obs_push(ObsKind::Act, task as u8, task_prio, 0);
     }
-    fn on_task_comp(task: TaskId) {
-        obs_trace::obs_push(ObsKind::Comp, task as u8, 0, 0);
+    fn on_task_comp(task: TaskId, task_prio: u16) {
+        obs_trace::obs_push(ObsKind::Comp, task as u8, task_prio, 0);
     }
     fn on_res_acq(res: ResourceId, task_prio: u16, ceiling: u16) {
         obs_trace::obs_push(ObsKind::Acq, res as u8, task_prio, ceiling);

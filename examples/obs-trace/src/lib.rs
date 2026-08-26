@@ -108,7 +108,8 @@ static mut OBS_TRACE_TS: [u32; OBS_TRACE_CAP] = [0; OBS_TRACE_CAP];
 /// counter.
 ///
 /// `id` is the app-generated `TaskId`/`ResourceId` discriminator cast to `u8`;
-/// `task_prio` and `ceiling` are meaningful only for acquire/release events.
+/// `task_prio` is the running task's priority (meaningful for all events);
+/// `ceiling` is meaningful only for acquire/release events.
 pub fn obs_push(kind: ObsKind, id: u8, task_prio: u16, ceiling: u16) {
     let word = (kind as u32) << 24
         | (id as u32) << 16

@@ -21,8 +21,8 @@ pub fn obs_dump(task_name: fn(u8) -> &'static str, res_name: fn(u8) -> &'static 
             let prio = (w >> 8) as u8;
             let ceiling = w as u8;
             match kind {
-                0 => sprintln!("[obs] @{ts:>10} act  {}", task_name(id)),
-                1 => sprintln!("[obs] @{ts:>10} comp {}", task_name(id)),
+                0 => sprintln!("[obs] @{ts:>10} act  {} t={}", task_name(id), prio),
+                1 => sprintln!("[obs] @{ts:>10} comp {} t={}", task_name(id), prio),
                 2 => sprintln!(
                     "[obs] @{ts:>10} acq  {} t={} c={}",
                     res_name(id),
