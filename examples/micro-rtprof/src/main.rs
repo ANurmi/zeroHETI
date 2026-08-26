@@ -37,12 +37,6 @@ mod app {
     }
 
     #[inline]
-    fn capture_irq_ts() {
-        // Special logic to directly capture mtime into edf_ts 64-bit register
-        unsafe { core::arch::asm!("csrrwi x0, 0x367, 1") };
-    }
-
-    #[inline]
     fn rtprof_start_task(idx: usize) {
         mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS + (4 + 4 * idx), 1);
     }
@@ -258,20 +252,6 @@ mod app {
             Self {}
         }
         fn exec(&mut self) {
-            //  read and clear csr_edf_count
-            // csrrw rd, csr_edf_count, x0
-            let count: usize;
-            let ts_lo: usize;
-            let ts_hi: usize;
-
-            #[cfg(feature = "intc-edfic")]
-            {
-                unsafe { core::arch::asm!("csrrw {0}, 0x366, x0", out(reg) count) };
-                unsafe { core::arch::asm!("csrrs {0}, 0x362, x0", out(reg) ts_lo) };
-                unsafe { core::arch::asm!("csrrs {0}, 0x363, x0", out(reg) ts_hi) };
-                capture_irq_ts();
-            }
-
             rtprof_start_task(0);
             // FUNCTIONAL ISR
 
@@ -279,13 +259,6 @@ mod app {
 
             // ISR END
             rtprof_end_task(0);
-
-            #[cfg(feature = "intc-edfic")]
-            {
-                unsafe { core::arch::asm!("csrw 0x362, {0}", in(reg) ts_lo) };
-                unsafe { core::arch::asm!("csrw 0x363, {0}", in(reg) ts_hi) };
-                unsafe { core::arch::asm!("csrw 0x366, {0}", in(reg) count) };
-            }
         }
     }
 
@@ -296,29 +269,11 @@ mod app {
             Self {}
         }
         fn exec(&mut self) {
-            let count: usize;
-            let ts_lo: usize;
-            let ts_hi: usize;
-            #[cfg(feature = "intc-edfic")]
-            {
-                unsafe { core::arch::asm!("csrrw {0}, 0x366, x0", out(reg) count) };
-                unsafe { core::arch::asm!("csrrs {0}, 0x362, x0", out(reg) ts_lo) };
-                unsafe { core::arch::asm!("csrrs {0}, 0x363, x0", out(reg) ts_hi) };
-                capture_irq_ts();
-            }
-
             rtprof_start_task(1);
 
             run_us(TASK_SET[1].runtime_us);
 
             rtprof_end_task(1);
-
-            #[cfg(feature = "intc-edfic")]
-            {
-                unsafe { core::arch::asm!("csrw 0x362, {0}", in(reg) ts_lo) };
-                unsafe { core::arch::asm!("csrw 0x363, {0}", in(reg) ts_hi) };
-                unsafe { core::arch::asm!("csrw 0x366, {0}", in(reg) count) };
-            }
         }
     }
 
@@ -329,28 +284,11 @@ mod app {
             Self {}
         }
         fn exec(&mut self) {
-            let count: usize;
-            let ts_lo: usize;
-            let ts_hi: usize;
-            #[cfg(feature = "intc-edfic")]
-            {
-                unsafe { core::arch::asm!("csrrw {0}, 0x366, x0", out(reg) count) };
-                unsafe { core::arch::asm!("csrrs {0}, 0x362, x0", out(reg) ts_lo) };
-                unsafe { core::arch::asm!("csrrs {0}, 0x363, x0", out(reg) ts_hi) };
-                capture_irq_ts();
-            }
             rtprof_start_task(2);
 
             run_us(TASK_SET[2].runtime_us);
 
             rtprof_end_task(2);
-
-            #[cfg(feature = "intc-edfic")]
-            {
-                unsafe { core::arch::asm!("csrw 0x362, {0}", in(reg) ts_lo) };
-                unsafe { core::arch::asm!("csrw 0x363, {0}", in(reg) ts_hi) };
-                unsafe { core::arch::asm!("csrw 0x366, {0}", in(reg) count) };
-            }
         }
     }
 }
