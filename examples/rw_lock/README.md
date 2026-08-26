@@ -34,8 +34,10 @@ RUNTIME_MS=20 cargo run --release -Frtl-tb,intc-clic,rw
 - **RW build**: ReaderLow uses `read_lock()`, which only raises the ceiling to
   $0xF8 < π(J)$, so `J` preempts the read critical section.
 
-Periods (µs): ReaderHigh 700, J 1300, ReaderLow 1000, Writer 1500. `J`'s deadline
-is 500 µs, chosen between `WCRT(J)_mutex` and `WCRT(J)_rw`.
+Periods (µs): ReaderHigh 700, J 1300, ReaderLow 1000, Writer 1500. `J`'s work is
+350 µs and its deadline is 400 µs. Under mutex, `WCRT(J) ≈ 1065 µs ≫ 400 µs`;
+under rw-lock, `WCRT(J) ≈ 365 µs < 400 µs`. The system is unschedulable under
+mutex and schedulable under rw-lock.
 
 ## Measurement
 
@@ -76,15 +78,16 @@ Requires `make verilate INTC=CLIC FULL_UART=1`
 |                       | Mutex             | RW-lock       |
 | --------------------- | ----------------- | ------------- |
 | ReaderHigh worst (µs) | ~715              | ~15           |
-| J worst (µs)          | ~746              | ~61           |
-| J deadline misses     | ≥ 1 / ~15        | 0 / 15        |
+| J worst (µs)          | ~1065             | ~365          |
+| J deadline misses     | all / ~15         | 0 / ~15       |
 | ReaderLow worst (µs)  | ~700              | ~700          |
 | Writer worst (µs)     | ~716              | ~16           |
 | Verdict               | J NOT schedulable | J schedulable |
 
 `Δ ≈ WCRT(J)_mutex − WCRT(J)_rw ≈ |ReaderLow read CS|`, matching Lemma 2.17 /
-Theorem 3.9. The residual (J worst ~61 µs in RW mode) is `J`'s own execution
-time plus ReaderHigh preemption.
+Theorem 3.9. Under mutex, J's response time is dominated by ReaderLow's 700 µs
+read critical section; under rw-lock, J preempts ReaderLow and its response time
+is its own work (350 µs) plus ReaderHigh preemption.
 
 Note: run-to-run variance of a few jobs is expected (the worst-case overlap of
 `J`'s releases with ReaderLow's critical section is what produces the misses in

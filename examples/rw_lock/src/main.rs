@@ -41,13 +41,13 @@ mod app {
     /// Duration of the critical section of `ReaderHigh`. Short.
     const CS_RHI: Duration32 = Duration32::from_micros(15);
     /// Duration of the work of `J`.
-    const WORK_J: Duration32 = Duration32::from_micros(46);
+    const WORK_J: Duration32 = Duration32::from_micros(350);
     /// Duration of the critical section of `ReaderLow`. Long.
     const CS_RLO: Duration32 = Duration32::from_micros(700);
     /// Duration of the critical section of `W`. Short.
     const CS_W: Duration32 = Duration32::from_micros(16);
 
-    const DL_J_US: u32 = 500;
+    const DL_J_US: u32 = 400;
 
     // # Global records
 

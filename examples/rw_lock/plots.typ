@@ -65,7 +65,7 @@
   J response time (release to completion) for both variants. Red crosses are
   mutex jobs exceeding the #raw("400") µs relative deadline; the mutex
   scheduler never admits them on time, while under the rw-lock the response is
-  below #raw("70") µs for every job.
+  below #raw("400") µs for every job.
 ])
 
 // ============================================================
@@ -135,7 +135,7 @@
 }, caption: [
   Job timeline: each bar spans release to completion at its release time
   (x) with length equal to its response time. Under the mutex, ReaderLow's
-  long read critical section blocks ReaderHigh and J continuously, so many J
-  jobs run late (red); under the rw-lock only the Writer is blocked by the
-  same critical section, and all jobs meet their deadlines.
+  long read critical section blocks J for ~700 µs, so every J job exceeds the
+  400 µs deadline (red); under the rw-lock J preempts the read critical section
+  and all jobs meet their deadlines.
 ])
