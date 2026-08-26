@@ -323,3 +323,25 @@ pub mod secureseed {
     // Supported operations
     read_csr_as_usize!(0x7C1);
 }
+
+pub mod mtime {
+    //! mtime register
+    //!
+    //! zeroHETI specific CSR for reading mtime from a CSR
+    use riscv::{read_composite_csr, read_csr_as_usize};
+
+    // Supported operations
+    read_csr_as_usize!(0x360);
+    read_composite_csr!(crate::register::mtimeh::read(), read());
+}
+
+pub mod mtimeh {
+    //! mtimeh register
+    //!
+    //! zeroHETI specific CSR for reading mtime from a CSR
+    use riscv::read_csr_as_usize_rv32;
+
+    // Supported operations
+    read_csr_as_usize_rv32!(0x361);
+}
+
