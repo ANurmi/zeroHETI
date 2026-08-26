@@ -11,3 +11,6 @@ quote = "1.0"
 proc-macro2 = "1.0"
 syn = { version = "1.0", features = ["extra-traits", "full"] }
 constcat = "0.6.1"
+
+[features]
+intc-edfic = []
