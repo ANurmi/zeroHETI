@@ -7,7 +7,6 @@ use bsp::rt as _;
 
 mod app {
     use bsp::{
-        CPU_FREQ_HZ,
         apb_uart::ApbUart,
         asm_delay,
         fugit::{ExtU32, ExtU64},
@@ -21,6 +20,7 @@ mod app {
         sprintln,
         tb::signal_pass,
         timer_group::{Periodic, Timer},
+        CPU_FREQ_HZ,
     };
 
     const CFG_BASE_ADDR: usize = 0x0000_4000;
