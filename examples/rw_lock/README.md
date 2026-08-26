@@ -1,6 +1,6 @@
 # rw_lock — readers-writer lock schedulability demo
 
-Cycle-accurate (Verilator, 10 MHz) demonstration on zeroHETI/RTIC that replacing
+Cycle-accurate (Verilator, 100 MHz) demonstration on zeroHETI/RTIC that replacing
 a **mutex** on a shared resource with a **readers-writer lock** lowers the
 worst-case response time of an independent high-priority job `J`, turning an
 unschedulable system schedulable. The task set is engineered to satisfy
@@ -54,7 +54,7 @@ RUNTIME_MS=20 cargo run --release -Frtl-tb,intc-clic,rw
 Optional compile-time knobs (env vars):
 
 - `RUNTIME_MS` — runtime in ms (required)
-- `RL_CS_ITERS` — ReaderLow critical-section length in busy-loop iterations (default 900)
+- `RL_CS_ITERS` — ReaderLow critical-section length in busy-loop iterations (default 9000)
 - `DL_J_US` — J's deadline in µs (default 400)
 
 Alternatively use `just`:

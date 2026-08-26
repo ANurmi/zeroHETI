@@ -23,12 +23,12 @@ mod app {
     /// Length of the ReaderLow critical section, in busy-loop iterations
     const RL_CS_ITERS: u32 = match option_env!("RL_CS_ITERS") {
         Some(s) => parse_u32(s),
-        None => 900,
+        None => 9000,
     };
     /// Deadline of the measured (non-accessing) task J, in microseconds
     const DL_J_US: u32 = match option_env!("DL_J_US") {
         Some(s) => parse_u32(s),
-        None => 400,
+        None => 500,
     };
 
     // Periods of the periodic tasks (us)
