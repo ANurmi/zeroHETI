@@ -7,13 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.1.2] - 2026-08-26
+
 ### Added
 - `rt-ibex` support for dynamic priorities
+- `rt-ibex` new custom CSRs for dynamic priority operation
 - JTAG idcode configuration at compile-time
 
 ### Fixed
 - Dynamic CPU threshold gated with config register
-- `apb_mtimer` prescaler width from 3 to 8 bits
+- `apb_mtimer` prescaler width from 3 to 10 bits
 - `rt-ibex` interrupt timing [patch](https://github.com/soc-hub-fi/rt-ibex/pull/8)
 
 ## [v0.1.1] - 2026-08-10
