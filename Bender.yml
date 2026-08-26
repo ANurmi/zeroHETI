@@ -7,7 +7,7 @@ package:
   - "Antti Nurmi <antti.nurmi@tuni.fi>"
 
 dependencies:
-  rt-ibex: { git: "https://github.com/soc-hub-fi/rt-ibex.git", rev: "670e0aebee20c226b0a3c1dfb91290966f5a3b5e" }
+  rt-ibex: { git: "https://github.com/soc-hub-fi/rt-ibex.git", rev: "357aedd21e57b9b73bdec7ed60c1ac8453589553" }
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", rev: "9afda9abb565971649c2aa0985639c096f351171" }
   riscv-dbg: { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.8.1 }
   clic: { git: "https://github.com/pulp-platform/clic.git", version: 2.0.0 }
