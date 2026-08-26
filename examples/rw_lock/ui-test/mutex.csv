@@ -1,61 +1,61 @@
-mode,task,idx,resp_us,rel_us,miss
-mutex,RH,0,15,713,0
-mutex,RH,1,527,1413,0
-mutex,RH,2,130,2813,0
-mutex,RH,3,430,3513,0
-mutex,RH,4,30,4913,0
-mutex,RH,5,327,5613,0
-mutex,RH,6,627,6313,0
-mutex,RH,7,18,7013,0
-mutex,RH,8,252,7714,0
-mutex,RH,9,552,8414,0
-mutex,RH,10,127,9814,0
-mutex,RH,11,430,10514,0
-mutex,RH,12,30,11914,0
-mutex,RH,13,330,12614,0
-mutex,RH,14,682,13314,0
-mutex,RH,15,17,14014,0
-mutex,RH,16,251,14715,0
-mutex,RH,17,551,15415,0
-mutex,RH,18,151,16815,0
-mutex,RH,19,451,17515,0
-mutex,RH,20,26,18915,0
-mutex,RH,21,326,19615,0
-mutex,J,0,681,1313,1
-mutex,J,1,385,2614,0
-mutex,J,2,85,3914,0
-mutex,J,3,782,5214,1
-mutex,J,4,482,6514,1
-mutex,J,5,207,7814,0
-mutex,J,6,882,9114,1
-mutex,J,7,585,10414,1
-mutex,J,8,285,11714,0
-mutex,J,9,47,13014,0
-mutex,J,10,707,14314,1
-mutex,J,11,407,15615,1
-mutex,J,12,107,16915,0
-mutex,J,13,782,18215,1
-mutex,J,14,482,19515,1
-mutex,RL,0,990,1015,0
-mutex,RL,1,994,2015,0
-mutex,RL,2,994,3015,0
-mutex,RL,3,938,4015,0
-mutex,RL,4,991,5016,0
-mutex,RL,5,991,6016,0
-mutex,RL,6,1016,7016,0
-mutex,RL,7,960,8016,0
-mutex,RL,8,990,9016,0
-mutex,RL,9,994,10016,0
-mutex,RL,10,994,11016,0
-mutex,RL,11,938,12016,0
-mutex,RL,12,990,13016,0
-mutex,RL,13,1015,14017,0
-mutex,RL,14,1015,15017,0
-mutex,RL,15,1015,16017,0
-mutex,RL,16,960,17017,0
-mutex,RL,17,991,18017,0
-mutex,W,0,462,4516,0
-mutex,W,1,489,4516,0
-mutex,W,2,1487,7516,0
-mutex,W,3,963,12017,0
-mutex,W,4,990,12017,0
+mode,   task,   idx,    resp_us,    rel_us, miss
+mutex,  RH,     0,      15,         713,    0
+mutex,  RH,     1,      527,        1413,   0
+mutex,  RH,     2,      130,        2813,   0
+mutex,  RH,     3,      430,        3513,   0
+mutex,  RH,     4,      30,         4913,    0
+mutex,  RH,     5,      327,        5613,   0
+mutex,  RH,     6,      627,        6313,   0
+mutex,  RH,     7,      18,         7013,    0
+mutex,  RH,     8,      252,        7714,   0
+mutex,  RH,     9,      552,        8414,   0
+mutex,  RH,     10,     127,        9814,   0
+mutex,  RH,     11,     430,        10514,  0
+mutex,  RH,     12,     30,         11914,   0
+mutex,  RH,     13,     330,        12614,  0
+mutex,  RH,     14,     682,        13314,  0
+mutex,  RH,     15,     17,         14014,   0
+mutex,  RH,     16,     251,        14715,  0
+mutex,  RH,     17,     551,        15415,  0
+mutex,  RH,     18,     151,        16815,  0
+mutex,  RH,     19,     451,        17515,  0
+mutex,  RH,     20,     26,         18915,   0
+mutex,  RH,     21,     326,        19615,  0
+mutex,  J,      0,      681,        1313,   1
+mutex,  J,      1,      385,        2614,   0
+mutex,  J,      2,      85,         3914,    0
+mutex,  J,      3,      782,        5214,   1
+mutex,  J,      4,      482,        6514,   1
+mutex,  J,      5,      207,        7814,   0
+mutex,  J,      6,      882,        9114,   1
+mutex,  J,      7,      585,        10414,  1
+mutex,  J,      8,      285,        11714,  0
+mutex,  J,      9,      47,         13014,   0
+mutex,  J,      10,     707,        14314,  1
+mutex,  J,      11,     407,        15615,  1
+mutex,  J,      12,     107,        16915,  0
+mutex,  J,      13,     782,        18215,  1
+mutex,  J,      14,     482,        19515,  1
+mutex,  RL,     0,      990,        1015,   0
+mutex,  RL,     1,      994,        2015,   0
+mutex,  RL,     2,      994,        3015,   0
+mutex,  RL,     3,      938,        4015,   0
+mutex,  RL,     4,      991,        5016,   0
+mutex,  RL,     5,      991,        6016,   0
+mutex,  RL,     6,      1016,       7016,  0
+mutex,  RL,     7,      960,        8016,   0
+mutex,  RL,     8,      990,        9016,   0
+mutex,  RL,     9,      994,        10016,  0
+mutex,  RL,     10,     994,        11016,  0
+mutex,  RL,     11,     938,        12016,  0
+mutex,  RL,     12,     990,        13016,  0
+mutex,  RL,     13,     1015,       14017, 0
+mutex,  RL,     14,     1015,       15017, 0
+mutex,  RL,     15,     1015,       16017, 0
+mutex,  RL,     16,     960,        17017,  0
+mutex,  RL,     17,     991,        18017,  0
+mutex,  W,      0,      462,        4516,   0
+mutex,  W,      1,      489,        4516,   0
+mutex,  W,      2,      1487,       7516,  0
+mutex,  W,      3,      963,        12017,  0
+mutex,  W,      4,      990,        12017,  0
