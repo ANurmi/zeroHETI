@@ -21,7 +21,7 @@ mod app {
     /// Runtime in milliseconds, read from env RUNTIME_MS (compile-time)
     const RUNTIME_MS: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
     /// Length of the ReaderLow critical section, in busy-loop iterations
-    const RL_CS_ITERS: u32 = match option_env!("RL_CS_ITERS") {
+    const RLO_CS_ITERS: u32 = match option_env!("RL_CS_ITERS") {
         Some(s) => parse_u32(s),
         None => 9000,
     };
@@ -32,10 +32,10 @@ mod app {
     };
 
     // Periods of the periodic tasks (us)
-    const PER_RH_US: u32 = 700;
-    const PER_J_US: u32 = 1300;
-    const PER_RL_US: u32 = 1000;
-    const PER_W_US: u32 = 1500;
+    const PERIOD_RHI_US: u32 = 700;
+    const PERIOD_J_US: u32 = 1300;
+    const PERIOD_RLO_US: u32 = 1000;
+    const PERIOD_W_US: u32 = 1500;
 
     #[cfg(feature = "rw")]
     const LOCK_MODE: &str = "rw-lock";
@@ -57,7 +57,7 @@ mod app {
     /// Number of timer ticks per microsecond (prescaler 0, 1 tick == 1 CPU cycle)
     const HZ_PER_US: u32 = CPU_FREQ_HZ / 1_000_000;
 
-    const PER_J_TICKS: u32 = PER_J_US * HZ_PER_US;
+    const PER_J_TICKS: u32 = PERIOD_J_US * HZ_PER_US;
     const DL_J_TICKS: u32 = DL_J_US * HZ_PER_US;
 
     /// The protected resource R: an 8-word state buffer.
@@ -163,7 +163,7 @@ mod app {
         sprintln!("\r\n### RW-lock schedulability demo (zeroHETI / RTIC) ###");
         sprintln!("- Lock mode         : {LOCK_MODE}");
         sprintln!("- RUNTIME_MS        : {RUNTIME_MS}");
-        sprintln!("- RL CS iters       : {RL_CS_ITERS}");
+        sprintln!("- RL CS iters       : {RLO_CS_ITERS}");
         sprintln!("- J deadline   (us) : {DL_J_US}");
 
         sprintln!("Control::Setup");
@@ -178,10 +178,10 @@ mod app {
             Timer::init::<TIMER2_ADDR>().into_periodic(),
             Timer::init::<TIMER3_ADDR>().into_periodic(),
         ];
-        timers[0].set_period(PER_RH_US.micros());
-        timers[1].set_period(PER_J_US.micros());
-        timers[2].set_period(PER_RL_US.micros());
-        timers[3].set_period(PER_W_US.micros());
+        timers[0].set_period(PERIOD_RHI_US.micros());
+        timers[1].set_period(PERIOD_J_US.micros());
+        timers[2].set_period(PERIOD_RLO_US.micros());
+        timers[3].set_period(PERIOD_W_US.micros());
         timers.iter_mut().for_each(|t| t.start());
 
         clear_perf_counters();
@@ -271,7 +271,7 @@ mod app {
                 .read_lock(|r| self.acc = read_short(r, self.acc));
             #[cfg(not(feature = "rw"))]
             self.shared().r.lock(|r| self.acc = read_short(r, self.acc));
-            let resp = wrap(timer_counter(0), start, PER_RH_US * HZ_PER_US);
+            let resp = wrap(timer_counter(0), start, PERIOD_RHI_US * HZ_PER_US);
             self.shared().stats.lock(|st| track(&mut st.rh, resp));
         }
     }
@@ -323,12 +323,12 @@ mod app {
             #[cfg(feature = "rw")]
             self.shared()
                 .r
-                .read_lock(|r| self.acc = read_busy(r, self.acc, RL_CS_ITERS));
+                .read_lock(|r| self.acc = read_busy(r, self.acc, RLO_CS_ITERS));
             #[cfg(not(feature = "rw"))]
             self.shared()
                 .r
-                .lock(|r| self.acc = read_busy(r, self.acc, RL_CS_ITERS));
-            let resp = wrap(timer_counter(2), start, PER_RL_US * HZ_PER_US);
+                .lock(|r| self.acc = read_busy(r, self.acc, RLO_CS_ITERS));
+            let resp = wrap(timer_counter(2), start, PERIOD_RLO_US * HZ_PER_US);
             self.shared().stats.lock(|st| track(&mut st.rl, resp));
         }
     }
@@ -348,7 +348,7 @@ mod app {
                 }
                 r.wgen = r.wgen.wrapping_add(1);
             });
-            let resp = wrap(timer_counter(3), start, PER_W_US * HZ_PER_US);
+            let resp = wrap(timer_counter(3), start, PERIOD_W_US * HZ_PER_US);
             self.shared().stats.lock(|st| track(&mut st.w, resp));
         }
     }
