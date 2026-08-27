@@ -13,6 +13,7 @@ mod app {
         asm_delay,
         fugit::{ExtU32, ExtU64},
         i2c::{self, I2c},
+        lcm,
         mailbox::Mailbox,
         mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR},
         mmio,
@@ -74,34 +75,13 @@ mod app {
         },
     ];
 
-    const HYPERPERIOD: u32 = lcm3(
+    const HYPERPERIOD: u32 = lcm!(
         TASK_SET[0].period_us,
         TASK_SET[1].period_us,
         TASK_SET[2].period_us,
     );
 
     const US_TO_CC: u32 = 100;
-
-    const fn gcd(mut a: u32, mut b: u32) -> u32 {
-        while b != 0 {
-            let r = a % b;
-            a = b;
-            b = r;
-        }
-        a
-    }
-
-    const fn lcm2(a: u32, b: u32) -> u32 {
-        if a == 0 || b == 0 {
-            0
-        } else {
-            (a / gcd(a, b)) * b
-        }
-    }
-
-    const fn lcm3(a: u32, b: u32, c: u32) -> u32 {
-        lcm2(lcm2(a, b), c)
-    }
 
     #[inline]
     fn run_us(rt: u32) {
