@@ -1,3 +1,4 @@
+#import "lib.typ": *
 #import "@preview/lilaq:0.6.0" as lq
 
 // ── Two alternating colours per task ───────────────────────
@@ -37,10 +38,6 @@
   }
   exec-intervals
 }
-
-#let unit-conversions = (
-  "us": ("ms": x => x / 1000),
-)
 
 #let gantt(fpath, title, x-units-in: "cycles", x-units-out: "cycles") = {
   let exec-intervals = parse-exec-csv(fpath)

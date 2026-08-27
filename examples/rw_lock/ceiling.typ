@@ -1,7 +1,8 @@
+#import "lib.typ": *
 #import "@preview/lilaq:0.6.0" as lq
 
-#let load-ceiling(csv-path) = {
-  let data = csv(csv-path, row-type: array)
+#let parse-ceil-csv(fpath) = {
+  let data = csv(fpath, row-type: array)
   let cycles = data.slice(1).map(row => int(row.at(0)))
   let ceilings = data
     .slice(1)
@@ -12,17 +13,25 @@
   (cycles, ceilings)
 }
 
-#let ceiling-diagram(csv-path, title) = {
-  let (cycles, ceilings) = load-ceiling(csv-path)
+#let ceiling-diagram(fpath, title, x-units-in: "cycles", x-units-out: "cycles") = {
+  let (cycles, ceilings) = parse-ceil-csv(fpath)
+
+  let convert-units = unit-conversions.at(x-units-in).at(x-units-out)
+
+  let xdata = cycles.map(convert-units)
+  let x-min = calc.min(..xdata)
+  let x-max = calc.max(..xdata)
+
   lq.diagram(
     title: title,
-    xlabel: [Cycle],
+    xlabel: x-units-out,
     ylabel: [Ceiling],
-    width: 15cm,
-    height: 5cm,
+    width: 16cm,
+    height: 3.5cm,
+    xlim: (x-min, x-max),
     ylim: (244, 256),
     lq.plot(
-      cycles,
+      xdata,
       ceilings,
       step: end,
       stroke: blue + 1.5pt,
@@ -42,6 +51,6 @@
   "W": 1500,
 )
 
-#ceiling-diagram("ui-test/ceil-mutex.csv", [Resource Ceiling Evolution (Mutex)])
+#ceiling-diagram("ui-test/ceil-mutex.csv", [Resource Ceiling Evolution (Mutex)], x-units-in: "us", x-units-out: "ms")
 
-#ceiling-diagram("ui-test/ceil-rw.csv", [Resource Ceiling Evolution (RW)])
+#ceiling-diagram("ui-test/ceil-rw.csv", [Resource Ceiling Evolution (RW)], x-units-in: "us", x-units-out: "ms")
