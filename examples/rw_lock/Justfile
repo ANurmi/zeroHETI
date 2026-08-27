@@ -37,12 +37,3 @@ compare:
     paste <(grep -E "worst|VERDICT" {{ fmutex }}) \
           <(grep -E "worst|VERDICT" {{ frw }}) \
         | column -t -s $'\t'
-
-csv:
-    mkdir -p ui-test
-    python3 parse.py {{ fmutex }} ui-test/mutex.csv
-    python3 parse.py {{ frw }} ui-test/rw.csv
-
-plots: csv
-    typst compile plots.typ ui-test/plots.svg
-    echo "ui-test/plots.svg written"
