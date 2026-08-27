@@ -121,6 +121,6 @@
 #set page(margin: 0.5cm, width: auto, height: auto)
 #set text(size: 10pt)
 
-#gantt("ui-test/exec-mutex.csv", [Mutex — Task Execution], x-units-in: "us", x-units-out: "ms")
+#gantt("../ui-test/exec-mutex.csv", [Mutex — Task Execution], x-units-in: "us", x-units-out: "ms")
 
-#gantt("ui-test/exec-rw.csv", [RW Lock — Task Execution], x-units-in: "us", x-units-out: "ms")
+#gantt("../ui-test/exec-rw.csv", [RW Lock — Task Execution], x-units-in: "us", x-units-out: "ms")

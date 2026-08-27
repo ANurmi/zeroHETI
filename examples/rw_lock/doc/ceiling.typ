@@ -51,6 +51,6 @@
   "W": 1500,
 )
 
-#ceiling-diagram("ui-test/ceil-mutex.csv", [Resource Ceiling Evolution (Mutex)], x-units-in: "us", x-units-out: "ms")
+#ceiling-diagram("../ui-test/ceil-mutex.csv", [Resource Ceiling Evolution (Mutex)], x-units-in: "us", x-units-out: "ms")
 
-#ceiling-diagram("ui-test/ceil-rw.csv", [Resource Ceiling Evolution (RW)], x-units-in: "us", x-units-out: "ms")
+#ceiling-diagram("../ui-test/ceil-rw.csv", [Resource Ceiling Evolution (RW)], x-units-in: "us", x-units-out: "ms")
