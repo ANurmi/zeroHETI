@@ -6,7 +6,7 @@
   let ceilings = data
     .slice(1)
     .map(row => {
-      let v = row.at(5)
+      let v = row.at(4)
       if v == "" { 0 } else { int(v) }
     })
   (cycles, ceilings)
@@ -20,7 +20,7 @@
     ylabel: [Ceiling],
     width: 15cm,
     height: 5cm,
-    ylim: (250, 253),
+    ylim: (244, 256),
     lq.plot(
       cycles,
       ceilings,
