@@ -108,6 +108,8 @@ unsafe fn print_irq() {
     );
 }
 
+// # Utils
+
 /// Parse a u32 from a string at compile time
 pub const fn parse_u32(s: &str) -> u32 {
     let mut out: u32 = 0;
@@ -118,4 +120,29 @@ pub const fn parse_u32(s: &str) -> u32 {
         i += 1;
     }
     out
+}
+
+/// Greatest common denominator
+pub const fn gcd(mut a: u32, mut b: u32) -> u32 {
+    while b != 0 {
+        let r = a % b;
+        a = b;
+        b = r;
+    }
+    a
+}
+
+/// Calculate least common multiplier for an arbitrary number of terms
+#[macro_export]
+macro_rules! lcm {
+    ($a:expr, $b:expr) => {
+        if $a == 0 || $b == 0 {
+            0
+        } else {
+            ($a / $crate::gcd($a, $b)) * $b
+        }
+    };
+    ($a:expr, $b:expr, $($rest:expr),+) => {
+        lcm!(lcm!($a, $b), $($rest),+)
+    };
 }
