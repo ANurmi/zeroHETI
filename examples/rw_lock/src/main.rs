@@ -11,6 +11,7 @@ mod app {
         CPU_FREQ_HZ,
         apb_uart::ApbUart,
         fugit::{ExtU32, ExtU64},
+        lcm,
         mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
         mtimer::{Duration32, MTimer},
         parse_u32, sprintln,
@@ -48,6 +49,8 @@ mod app {
     const CS_W: Duration32 = Duration32::from_micros(16);
 
     const DL_J_US: u32 = 400;
+
+    const HYPERPERIOD_US: u32 = lcm!(PERIOD_RHI_US, PERIOD_J_US, PERIOD_RLO_US, PERIOD_W_US);
 
     // # Global records
 
@@ -114,6 +117,7 @@ mod app {
         sprintln!("- RUNTIME_MS        : {RUNTIME_MS}");
         sprintln!("- RL CS        (us) : {}", CS_RLO.as_micros());
         sprintln!("- J deadline   (us) : {}", DL_J_US);
+        sprintln!("Hyperperiod    (ms) : {}", HYPERPERIOD_US / 1_000);
 
         sprintln!("Control::Setup");
 
