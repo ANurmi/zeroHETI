@@ -171,6 +171,12 @@ pub type Duration32 = fugit::Duration<u32, 1, DENOM>;
 pub struct MTimerLo(MTimer);
 
 impl MTimerLo {
+    /// Returns the global mtimer instance
+    #[inline]
+    pub fn instance() -> Self {
+        Self(MTimer::instance())
+    }
+
     /// Starts the count
     ///
     /// # Arguments
