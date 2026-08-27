@@ -21,6 +21,10 @@ trace-rw:
     uv run trace_to_csv_ceil.py ui-test/rw.trace ui-test/ceil-rw.csv
     uv run trace_to_csv_exec.py ui-test/rw.trace ui-test/exec-rw.csv
 
+trace-both:
+    just trace-mutex
+    just trace-rw
+
 compare:
     mkdir -p ui-test
     @: > {{ fmutex }}
