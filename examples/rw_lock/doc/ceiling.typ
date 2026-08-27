@@ -28,7 +28,7 @@
     ylabel: [Ceiling],
     width: 16cm,
     height: 3.5cm,
-    xlim: (x-min, x-max),
+    xlim: (0, x-max),
     ylim: (244, 256),
     lq.plot(
       xdata,

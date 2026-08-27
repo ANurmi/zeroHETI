@@ -97,7 +97,7 @@
     xlabel: x-units-out,
     width: 16cm,
     height: 3.5cm,
-    xlim: (x-min, x-max),
+    xlim: (0, x-max),
     ylim: (-0.7, task-list.len() - 0.3),
     yaxis: (
       ticks: task-list.enumerate().map(((i, t)) => (i, [#t.name])),
