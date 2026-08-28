@@ -92,6 +92,12 @@
     if iv.job + 1 > n { job-count.insert(iv.task, iv.job + 1) }
   }
 
+  // Small vertical lines for theoretical arrival times
+  let periods_ms = (0.7, 0.5, 0.3, 0.2)
+  let vline-xs = periods_ms.map(period => {
+    range(1, int(x-max / period) + 1).map(n => n * period)
+  })
+
   lq.diagram(
     title: title,
     xlabel: x-units-out,
@@ -113,6 +119,24 @@
           (i, [#n jobs])
         }),
     ),
+    ..range(0, 4)
+      .map(idx => {
+        (
+          lq.vlines(
+            ..vline-xs.at(idx).enumerate().filter(it => calc.even(it.at(0))).map(it => it.at(1)),
+            min: idx + 0.2,
+            max: idx + 0.4,
+            stroke: 0.4pt + task-colors.values().at(idx).at(0),
+          ),
+          lq.vlines(
+            ..vline-xs.at(idx).enumerate().filter(it => calc.odd(it.at(0))).map(it => it.at(1)),
+            min: idx + 0.2,
+            max: idx + 0.4,
+            stroke: stroke(0.4pt + task-colors.values().at(idx).at(1)),
+          ),
+        )
+      })
+      .flatten(),
     ..rects,
   )
 }
