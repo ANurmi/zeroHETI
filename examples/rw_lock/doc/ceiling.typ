@@ -29,14 +29,13 @@
     width: 16cm,
     height: 3.5cm,
     xlim: (0, x-max),
-    ylim: (244, 256),
+    ylim: (246, 254),
     lq.plot(
       xdata,
       ceilings,
       step: end,
       stroke: blue + 1.5pt,
       mark: none,
-      label: [ceiling],
     ),
   )
 }
