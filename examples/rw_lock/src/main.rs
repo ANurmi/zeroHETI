@@ -150,6 +150,32 @@ mod app {
             }
         }
 
+        fn filter_spurious(&mut self) -> bool {
+            let now = MTimerLo::instance().now();
+
+            // Theoretical arrival time of the job being completed
+            //
+            // `SYS_START` occurs right after setting off the periodic timers.
+            let next_arrival = unsafe { SYS_START }
+                + (self.count + if PRE_TRIGGER.is_some() { 0 } else { 1 }) * self.period;
+
+            // The periodic timer never fires before its period is completed, so
+            // any execution before the next scheduled arrival cannot belong to
+            // a new job; it is a spurious re-dispatch of the current job. Drop
+            // it instead of counting it as a new job. A genuine job always
+            // executes after its own arrival, as its work duration is non-zero.
+            //
+            // The issue is currently traced to the CLIC, which re-presents a
+            // source whose `ip` was not cleared during a simultaneous
+            // multi-source collision.
+            (now < next_arrival)
+                .then(|| {
+                    self.spurious_count += 1;
+                    self.last_spurious = now;
+                })
+                .is_some()
+        }
+
         /// Record that the job has completed
         fn report_job_complete(&mut self) {
             // Record time of job completion as early as possible
@@ -160,19 +186,6 @@ mod app {
             // `SYS_START` occurs right after setting off the periodic timers.
             let next_arrival = unsafe { SYS_START }
                 + (self.count + if PRE_TRIGGER.is_some() { 0 } else { 1 }) * self.period;
-
-            // The periodic timer never fires before its period is completed, so
-            // a completion before the next scheduled arrival cannot belong to a
-            // new job; it is a spurious re-dispatch of the current job (the CLIC
-            // re-presents a source whose `ip` was not cleared during a
-            // simultaneous multi-source collision). Drop it instead of counting
-            // it as a new job. A genuine job always completes at or after its
-            // own arrival, as its work duration is non-zero.
-            if t_complete < next_arrival {
-                self.spurious_count += 1;
-                self.last_spurious = t_complete;
-                return;
-            }
 
             // Record completion
             self.count += 1;
@@ -347,6 +360,14 @@ mod app {
             }
         }
         fn exec(&mut self) {
+            // Spurious job detection:
+            //
+            // If a job is executing before its arrival time, it is a
+            // spurious job spawned by the known hardware bug.
+            //
+            // Filter out it out as early as possible.
+            unsafe { STAT_R_HI.assume_init_read() }.filter_spurious();
+
             let mtimer = MTimerLo::instance();
 
             #[cfg(feature = "rw")]
@@ -385,16 +406,11 @@ mod app {
         fn exec(&mut self) {
             // Spurious job detection:
             //
-            // If a job is executing before its arrival time, we have seen a
+            // If a job is executing before its arrival time, it is a
             // spurious job spawned by the known hardware bug.
             //
             // Filter out it out as early as possible.
-            let stat = unsafe { STAT_J.assume_init_read() };
-            let next_arrival = unsafe { SYS_START }
-                + (stat.count + if PRE_TRIGGER.is_some() { 0 } else { 1 }) * stat.period;
-            if MTimerLo::instance().now() < next_arrival {
-                return;
-            }
+            unsafe { STAT_J.assume_init_read() }.filter_spurious();
 
             let mtimer = MTimerLo::instance();
 
@@ -431,6 +447,14 @@ mod app {
             }
         }
         fn exec(&mut self) {
+            // Spurious job detection:
+            //
+            // If a job is executing before its arrival time, it is a
+            // spurious job spawned by the known hardware bug.
+            //
+            // Filter out it out as early as possible.
+            unsafe { STAT_R_LO.assume_init_read() }.filter_spurious();
+
             let mtimer = MTimerLo::instance();
 
             #[cfg(feature = "rw")]
@@ -464,6 +488,14 @@ mod app {
             Self { cs_duration: CS_W }
         }
         fn exec(&mut self) {
+            // Spurious job detection:
+            //
+            // If a job is executing before its arrival time, it is a
+            // spurious job spawned by the known hardware bug.
+            //
+            // Filter out it out as early as possible.
+            unsafe { STAT_W.assume_init_read() }.filter_spurious();
+
             let mtimer = MTimerLo::instance();
 
             self.shared()
