@@ -151,8 +151,7 @@ static mut OBS_TRACE_LEN: usize = 0;
 static mut OBS_TRACE: [u32; OBS_TRACE_CAP] = [0; OBS_TRACE_CAP];
 static mut OBS_TRACE_TS: [u32; OBS_TRACE_CAP] = [0; OBS_TRACE_CAP];
 
-/// Appends one observability event, timestamped by the free-running `mtimer`
-/// counter.
+/// Appends one observability event, timestamped by `mtimer`
 ///
 /// `id` is the app-generated `TaskId`/`ResourceId` discriminator cast to `u8`;
 /// `task_prio` is the running task's priority (meaningful for all events);
