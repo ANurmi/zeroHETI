@@ -70,5 +70,5 @@ fn header(n_events: usize, ts_unit: TsUnit) {
     sprintln!("[obs] trace: {n_events} events @ {label}");
     let event_kind = "type";
     let rest = "name/params";
-    sprintln!("[obs] @{ts:>8} act  {event_kind} {rest}");
+    sprintln!("[obs] @{ts:>10} act  {event_kind} {rest}");
 }
