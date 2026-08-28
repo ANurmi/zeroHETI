@@ -70,7 +70,7 @@ just compare      # runs both and prints a compact side-by-side summary
 
 ## Expected results (representative, 20 ms runs)
 
-Requires `make verilate INTC=CLIC FULL_UART=1`
+Requires `make verilate INTC=CLIC`
 
 |                       | Mutex             | RW-lock       |
 | --------------------- | ----------------- | ------------- |
