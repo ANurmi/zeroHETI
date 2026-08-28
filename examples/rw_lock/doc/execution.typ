@@ -117,20 +117,22 @@
           (i, [#n jobs])
         }),
     ),
+    // Arrivals
     ..range(0, 4)
       .map(idx => {
+        let pre-trigger = true
         (
           lq.vlines(
             ..vline-xs.at(idx).enumerate().filter(it => calc.even(it.at(0))).map(it => it.at(1)),
             min: idx + 0.2,
             max: idx + 0.4,
-            stroke: 0.4pt + task-colors.values().at(idx).at(0),
+            stroke: 0.6pt + task-colors.values().at(idx).at(if pre-trigger { 1 } else { 0 }),
           ),
           lq.vlines(
             ..vline-xs.at(idx).enumerate().filter(it => calc.odd(it.at(0))).map(it => it.at(1)),
             min: idx + 0.2,
             max: idx + 0.4,
-            stroke: stroke(0.4pt + task-colors.values().at(idx).at(1)),
+            stroke: stroke(0.6pt + task-colors.values().at(idx).at(if pre-trigger { 0 } else { 1 })),
           ),
         )
       })
