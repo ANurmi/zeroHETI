@@ -100,6 +100,9 @@ impl ObsPrinter {
         let n_events = unsafe { OBS_TRACE_LEN.min(OBS_TRACE_CAP) };
         sprintln!("[obs] [TRACE_START]");
         self.header(n_events);
+        if n_events == OBS_TRACE_CAP {
+            sprintln!("[obs] warning: trace capacity reached; subsequent events were dropped");
+        }
         for i in 0..n_events {
             self.print_event(unsafe { OBS_TRACE[i] }, unsafe { OBS_TRACE_TS[i] });
         }

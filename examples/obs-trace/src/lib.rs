@@ -57,6 +57,8 @@
 //!
 //! - `OBS_TRACE_LEN` is monotonic, ≤ [`OBS_TRACE_CAP`], and every slot `< LEN`
 //!   is a fully written, well-formed event; the dump never decodes garbage.
+//! - Once the buffer is full, later events are dropped and the dump reports
+//!   that the trace is incomplete; the application continues running.
 //! - The *only* loss is one event in the rare nested-claim collision above, and
 //!   it is bounded (no cascade, no count corruption); on that collision the
 //!   slot's word and timestamp may belong to different claimants (microseconds
