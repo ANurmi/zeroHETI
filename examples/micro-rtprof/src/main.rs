@@ -19,7 +19,7 @@ mod app {
         mmio,
         mtimer::*,
         parse_u32,
-        register::{mcycle, mcycleh, minstret, minstreth},
+        register::{mcycle, minstret},
         sprintln,
         tb::signal_pass,
         timer_group::{Periodic, Timer},
