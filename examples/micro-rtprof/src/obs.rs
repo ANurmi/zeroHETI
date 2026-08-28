@@ -30,50 +30,5 @@ impl RticObservability for Obs {
 }
 
 pub fn obs_dump() {
-    obs_trace::obs_dump(task_name, res_name);
-}
-
-fn task_name(id: u8) -> &'static str {
-    // N.b., make sure to keep these updated
-    match id {
-        0 => "StartSim",
-        1 => "Ctrl0",
-        2 => "Ctrl1",
-        3 => "Ctrl2",
-        4 => "Ctrl3",
-        5 => "Mail",
-        6 => "Update0",
-        7 => "Update1",
-        8 => "Update2",
-        9 => "Update3",
-        10 => "Report0",
-        11 => "Report1",
-        12 => "Report2",
-        13 => "Report3",
-        14 => "swd-0xfb",
-        15 => "swd-0xf1",
-        _ => "?",
-    }
-}
-
-fn res_name(id: u8) -> &'static str {
-    match id {
-        0 => "serial",
-        1 => "i2c",
-        2 => "ibx",
-        3 => "obx",
-        4 => "mail_buf_0",
-        5 => "mail_buf_1",
-        6 => "mail_buf_2",
-        7 => "mail_buf_3",
-        8 => "read_buf_0",
-        9 => "read_buf_1",
-        10 => "read_buf_2",
-        11 => "read_buf_3",
-        12 => "ctrl_buf_0",
-        13 => "ctrl_buf_1",
-        14 => "ctrl_buf_2",
-        15 => "ctrl_buf_3",
-        _ => "?",
-    }
+    obs_trace::obs_dump(crate::app::task_name, crate::app::res_name, obs_trace::TsUnit::Micros);
 }
