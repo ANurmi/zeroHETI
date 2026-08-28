@@ -1,6 +1,11 @@
 #import "lib.typ": *
 #import "@preview/lilaq:0.6.0" as lq
 
+// Configurations, keep aligned with main.rs
+#let pre-trigger = true
+#let periods_ms = (0.5, 0.3, 0.2, 0.1)
+#let arrival_offset_us = 10
+
 // ── Two alternating colours per task ───────────────────────
 #let task-colors = (
   Writer: (color.hsl(210deg, 60%, 45%), color.hsl(210deg, 60%, 78%)),
@@ -91,9 +96,10 @@
   }
 
   // Small vertical lines for theoretical arrival times
-  let periods_ms = (0.5, 0.3, 0.2, 0.1)
   let vline-xs = periods_ms.map(period => {
-    range(1, int(x-max / period) + 1).map(n => n * period)
+    range(1, int(x-max / period) + 1 + if pre-trigger { 1 }).map(n => (
+      (n - if pre-trigger { 1 } else { 0 }) * period + arrival_offset_us / 1000
+    ))
   })
 
   lq.diagram(
@@ -120,19 +126,18 @@
     // Arrivals
     ..range(0, 4)
       .map(idx => {
-        let pre-trigger = true
         (
           lq.vlines(
             ..vline-xs.at(idx).enumerate().filter(it => calc.even(it.at(0))).map(it => it.at(1)),
             min: idx + 0.2,
             max: idx + 0.4,
-            stroke: 0.6pt + task-colors.values().at(idx).at(if pre-trigger { 1 } else { 0 }),
+            stroke: 0.6pt + task-colors.values().at(idx).at(0),
           ),
           lq.vlines(
             ..vline-xs.at(idx).enumerate().filter(it => calc.odd(it.at(0))).map(it => it.at(1)),
             min: idx + 0.2,
             max: idx + 0.4,
-            stroke: stroke(0.6pt + task-colors.values().at(idx).at(if pre-trigger { 0 } else { 1 })),
+            stroke: stroke(0.6pt + task-colors.values().at(idx).at(1)),
           ),
         )
       })
