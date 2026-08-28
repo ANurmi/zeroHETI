@@ -13,7 +13,12 @@ mod common;
 use crate::common::{init_intc, pend_irq};
 use riscv::InterruptNumber;
 use zeroheti_bsp::{
-    CPU_FREQ_HZ, apb_uart::ApbUart, fugit::ExtU64, interrupt::Interrupt, mtimer::MTimer, rt::entry,
+    CPU_FREQ_HZ,
+    apb_uart::ApbUart,
+    fugit::ExtU64,
+    interrupt::Interrupt,
+    mtimer::{MTimer, OneShot},
+    rt::entry,
     sprintln,
 };
 
@@ -37,7 +42,7 @@ fn main() -> ! {
     setup_irq(Interrupt::Ext1, 1);
 
     // Check results after timeout
-    let mut mtimer = MTimer::instance().into_oneshot();
+    let mut mtimer = MTimer::instance();
     let timeout = 200u64.micros();
     mtimer.start(timeout);
 

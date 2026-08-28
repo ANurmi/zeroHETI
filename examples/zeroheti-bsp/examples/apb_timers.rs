@@ -13,7 +13,7 @@ use zeroheti_bsp::{
     fugit::{ExtU32, ExtU64},
     interrupt::Interrupt,
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
-    mtimer::MTimer,
+    mtimer::{MTimer, OneShot},
     rt::entry,
     sprintln,
     timer_group::Timer,
@@ -36,7 +36,7 @@ fn main() -> ! {
     setup_irq(Interrupt::Timer3Cmp);
     setup_irq(Interrupt::MachineTimer);
 
-    let mut mtimer = MTimer::instance().into_oneshot();
+    let mut mtimer = MTimer::instance();
     let mut timers = [
         Timer::init::<TIMER0_ADDR>().into_periodic(),
         Timer::init::<TIMER1_ADDR>().into_periodic(),

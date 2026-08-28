@@ -4,8 +4,14 @@
 mod common;
 
 use zeroheti_bsp::{
-    CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, fugit::ExtU64, interrupt::Interrupt,
-    mtimer::MTimer, rt::entry, sprintln,
+    CPU_FREQ_HZ, NOPS_PER_SEC,
+    apb_uart::ApbUart,
+    asm_delay,
+    fugit::ExtU64,
+    interrupt::Interrupt,
+    mtimer::{MTimer, OneShot},
+    rt::entry,
+    sprintln,
 };
 
 use crate::common::{init_intc, setup_irq};
@@ -19,7 +25,7 @@ fn main() -> ! {
     init_intc();
     setup_irq(Interrupt::MachineTimer);
 
-    let mut mtimer = MTimer::instance().into_oneshot();
+    let mut mtimer = MTimer::instance();
 
     let timeout = 10u64.micros();
     let margin = 100u64.micros();
@@ -29,7 +35,7 @@ fn main() -> ! {
 
     // Wait for timeout, fail afterwards, if pass signal is not received from
     // interrupt
-    while mtimer.duration() < timeout + margin {}
+    while mtimer.now() < timeout + margin {}
 
     zeroheti_bsp::tb::signal_fail(Some(&mut serial));
 

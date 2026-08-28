@@ -9,7 +9,12 @@ use crate::{
 
 pub const PS_MASK: u32 = (1 << MTIME_CTRL_PS_BITS) - 1;
 
+const DENOM: u64 = CPU_FREQ_HZ as u64;
+pub type Duration = fugit::Duration<u64, 1, DENOM>;
+
 /// Machine Timer
+///
+/// Mostly monotonic.
 ///
 /// This timer is associated with [crate::Interrupt::MachineTimer]
 pub struct MTimer {}
@@ -133,16 +138,22 @@ impl MTimer {
         write_u32(MTIMER_BASE + MTIMECMP_LOW_ADDR_OFS, cmp as u32);
     }
 
+    /// Returns the current duration since zero as tracked by the timer
     #[inline]
-    pub fn into_lo(self) -> MTimerLo {
-        MTimerLo(self)
+    pub fn now(&self) -> Duration {
+        let cnt = self.counter();
+        let clkdiv = self.clkdiv();
+        Duration::from_ticks(cnt * clkdiv as u64)
     }
 
     #[inline]
-    pub fn into_oneshot(self) -> OneShot {
-        OneShot(self)
+    pub fn wait_busy(&self, t: Duration) {
+        let start = self.now();
+        while self.now() - start < t {}
     }
 }
+
+pub type Duration32 = fugit::Duration<u32, 1, DENOM>;
 
 /// Machine Timer, lower bits only
 ///
@@ -150,6 +161,12 @@ impl MTimer {
 pub struct MTimerLo(MTimer);
 
 impl MTimerLo {
+    /// Returns the global mtimer instance (low half)
+    #[inline]
+    pub fn instance() -> Self {
+        Self(MTimer::instance())
+    }
+
     /// Starts the count
     ///
     /// # Arguments
@@ -216,22 +233,42 @@ impl MTimerLo {
         write_u32(MTIMER_BASE + MTIMECMP_HIGH_ADDR_OFS, 0x0);
         write_u32(MTIMER_BASE + MTIMECMP_LOW_ADDR_OFS, cmp);
     }
+
+    /// Returns the current duration since zero as tracked by the timer
+    #[inline]
+    pub fn now(&self) -> Duration32 {
+        let cnt = self.counter();
+        let clkdiv = self.0.clkdiv();
+        Duration32::from_ticks(cnt * clkdiv)
+    }
+
+    #[inline]
+    pub fn wait_busy(&self, t: Duration32) {
+        let start = self.now();
+        while self.now() - start < t {}
+    }
 }
 
-const DENOM: u64 = CPU_FREQ_HZ as u64;
-pub type Duration = fugit::Duration<u64, 1, DENOM>;
+/// `Dur` - Duration type (`Duration` or `Duration32`)
+pub trait OneShot<Dur> {
+    /// Sets timer cmp, causing an interrupt to fire after `duration`
+    fn start(&mut self, duration: Dur);
 
-pub struct OneShot(MTimer);
+    /// Unschedules the interrupt by setting mtimecmp to maximum value
+    ///
+    /// Note that an interrupt may be pending already when this is called, which
+    /// won't be unscheduled. Call `Clic::ip(int).unpend` instead.
+    fn cancel(&mut self);
+}
 
-impl OneShot {
-    /// Schedules the `MachineTimer` interrupt to trigger after `duration`
+impl OneShot<Duration> for MTimer {
     #[inline]
-    pub fn start(&mut self, duration: Duration) {
-        let cnt = self.0.counter();
-        let clkdiv = self.0.clkdiv();
+    fn start(&mut self, duration: Duration) {
+        let cnt = self.counter();
+        let clkdiv = self.clkdiv();
 
-        self.0.set_cmp(cnt + duration.as_ticks() / clkdiv as u64);
-        self.0.enable();
+        self.set_cmp(cnt + duration.as_ticks() / clkdiv as u64);
+        self.enable();
     }
 
     /// Unschedules the `MachineTimer' interrupt by setting mtimecmp to
@@ -240,44 +277,28 @@ impl OneShot {
     /// Note that an interrupt may be pending already when this is called, which
     /// won't be unscheduled. Call `Clic::ip(int).unpend` instead.
     #[inline]
-    pub fn cancel(&mut self) {
-        self.0.set_cmp(u64::MAX);
-    }
-
-    /// N.b., you may sometimes get a disjoint value if the function gets
-    /// interrupted in the middle of the read transaction
-    #[inline]
-    pub fn counter(&self) -> u64 {
-        let hi = read_u32(MTIMER_BASE + MTIME_HIGH_ADDR_OFS);
-        let lo = read_u32(MTIMER_BASE + MTIME_LOW_ADDR_OFS);
-
-        ((hi as u64) << 32) | lo as u64
-    }
-
-    /// Returns the current duration since zero as tracked by the timer
-    #[inline]
-    pub fn duration(&self) -> Duration {
-        let cnt = self.0.counter();
-        let clkdiv = self.0.clkdiv();
-        Duration::from_ticks(cnt * clkdiv as u64)
-    }
-
-    /// Gets the timer compare value
-    ///
-    /// # Safety
-    ///
-    /// Needs to be called in an interrupt critical-section, otherwise
-    /// you risk getting interrupted in between reading the hi & low address and
-    /// getting a disjoint value
-    #[inline]
-    pub unsafe fn cmp(&mut self) -> u64 {
-        ((read_u32(MTIMER_BASE + MTIMECMP_HIGH_ADDR_OFS) as u64) << 32)
-            | read_u32(MTIMER_BASE + MTIMECMP_LOW_ADDR_OFS) as u64
+    fn cancel(&mut self) {
+        self.set_cmp(u64::MAX);
     }
 }
 
-impl From<OneShot> for MTimer {
-    fn from(value: OneShot) -> Self {
-        value.0
+impl OneShot<Duration32> for MTimerLo {
+    #[inline]
+    fn start(&mut self, duration: Duration32) {
+        let cnt = self.counter();
+        let clkdiv = self.0.clkdiv();
+
+        self.set_cmp(cnt + duration.as_ticks() / clkdiv);
+        self.enable();
+    }
+
+    /// Unschedules the `MachineTimer' interrupt by setting mtimecmp to
+    /// `u64::MAX`
+    ///
+    /// Note that an interrupt may be pending already when this is called, which
+    /// won't be unscheduled. Call `Clic::ip(int).unpend` instead.
+    #[inline]
+    fn cancel(&mut self) {
+        self.set_cmp(u32::MAX);
     }
 }

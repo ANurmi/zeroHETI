@@ -10,15 +10,16 @@ mod app {
     use bsp::{
         CPU_FREQ_HZ,
         apb_uart::ApbUart,
-        asm_delay,
+        asm_delay, clear_perf_counters,
         fugit::{ExtU32, ExtU64},
         i2c::{self, I2c},
+        lcm,
         mailbox::Mailbox,
         mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR},
         mmio,
         mtimer::*,
         parse_u32,
-        register::{mcycle, mcycleh, minstret, minstreth},
+        register::{mcycle, minstret},
         sprintln,
         tb::signal_pass,
         timer_group::{Periodic, Timer},
@@ -26,16 +27,6 @@ mod app {
 
     const CFG_BASE_ADDR: usize = 0x0000_4000;
     const CFG_TASK_OFFS: usize = 0x0000_0100;
-
-    #[inline]
-    fn clear_perf_counters() {
-        unsafe {
-            minstret::write(0);
-            mcycle::write(0);
-            minstreth::write(0);
-            mcycleh::write(0);
-        }
-    }
 
     #[inline]
     fn rtprof_start_task(idx: usize) {
@@ -74,34 +65,13 @@ mod app {
         },
     ];
 
-    const HYPERPERIOD: u32 = lcm3(
+    const HYPERPERIOD: u32 = lcm!(
         TASK_SET[0].period_us,
         TASK_SET[1].period_us,
         TASK_SET[2].period_us,
     );
 
     const US_TO_CC: u32 = 100;
-
-    const fn gcd(mut a: u32, mut b: u32) -> u32 {
-        while b != 0 {
-            let r = a % b;
-            a = b;
-            b = r;
-        }
-        a
-    }
-
-    const fn lcm2(a: u32, b: u32) -> u32 {
-        if a == 0 || b == 0 {
-            0
-        } else {
-            (a / gcd(a, b)) * b
-        }
-    }
-
-    const fn lcm3(a: u32, b: u32, c: u32) -> u32 {
-        lcm2(lcm2(a, b), c)
-    }
 
     #[inline]
     fn run_us(rt: u32) {
@@ -201,7 +171,7 @@ mod app {
         obx.send(task_dl_base + 2, TASK_SET[2].deadline_us * US_TO_CC);
 
         // 1 tick == 1 us
-        MTimer::with_clkdiv(100).into_oneshot().start(RT.millis());
+        MTimer::with_clkdiv(100).start(RT.millis());
 
         let timers = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),
@@ -233,7 +203,7 @@ mod app {
             // Scoreboard disable
             mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 0);
 
-            let now = MTimer::instance().into_oneshot().duration().as_ticks();
+            let now = MTimer::instance().now().as_ticks();
             let minstret = minstret::read64();
             let mcycle = mcycle::read64();
 
