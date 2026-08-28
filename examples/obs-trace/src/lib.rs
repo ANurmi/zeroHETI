@@ -1,24 +1,14 @@
 //! Observability trace backend for zeroHETI tests.
 //!
-//! RTIC codegen (`rtic-core`) emits calls to four hooks on a user type named
-//! in `#[app(..., obs = <path>)]`. This crate is the generic *recording* half
-//! of that wiring: a fixed-size, lock-free, timestamped ring buffer. Each test
-//! supplies the thin, app-specific *glue*:
+//! RTIC codegen (`rtic-core`) emits calls to hooks on a user type named in
+//! `#[app(..., obs = <path>)]`. This crate is the generic *recording* half of
+//! that wiring: a fixed-size, lock-free, timestamped buffer. Each test still
+//! needs to supply the thin, app-specific glue:
 //!
 //! - the marker type and `impl RticObservability` forwarding to [`obs_push`]
 //!   (the generated `TaskId`/`ResourceId` enums are cast to `u8` ids), and
 //! - the `task_name` / `res_name` id→name maps passed to [`obs_dump`], so the
 //!   dump can print human-readable names without this crate knowing them.
-//!
-//! Each event occupies two 32-bit words: a compact event word (`kind<<24 |
-//! id<<16 | task_prio<<8 | ceiling`) and the low 32 bits of the free-running
-//! `mtimer` counter sampled at the hook call. `mtimer` ticks at
-//! [`bsp::CPU_FREQ_HZ`], so 2^32 ticks is > 85 s at 50 MHz — runs are
-//! milliseconds, making the truncated value unambiguous.
-//!
-//! The buffer is dumped over UART with [`obs_dump`], which needs the serial
-//! port to have been initialized at some point during the app
-//! (`ApbUart::init(..)` — see `sprintln`'s requirement in `bsp`).
 //!
 //! # Concurrency model
 //!
@@ -51,11 +41,11 @@
 //! actually occur. A push is (compiled to plain `lw`/`sw`):
 //!
 //! ```text
-//! idx = OBS_TRACE_LEN                 // read tail
+//! idx = LEN                       // read tail
 //! if idx < CAP:
-//!     OBS_TRACE[idx] = word           // publish
-//!     OBS_TRACE_TS[idx] = ts          // publish
-//!     OBS_TRACE_LEN = max(LEN, idx+1) // commit, never regress
+//!     TRACE[idx] = word           // publish
+//!     TRACE_TS[idx] = ts          // publish
+//!     LEN = max(LEN, idx+1)       // commit, never regress
 //! ```
 //!
 //! If no preemption lands between the tail *read* and the *commit*, every
@@ -71,13 +61,13 @@
 //!   it is bounded (no cascade, no count corruption); on that collision the
 //!   slot's word and timestamp may belong to different claimants (microseconds
 //!   apart, so the timestamp stays valid either way).
-//! - Hooks never disable interrupts and add ~1.4k retired instructions over a
-//!   run (~0.7% of active time).
+//! - Hooks never disable interrupts and add ~0.7% of active time.
 //!
 //! # Runtime
 //!
-//! The teardown dump over UART dominates wall-clock time in the sim (~25 s with
-//! `obs` vs ~3 s without at `RUNTIME_MS=10`).
+//! The teardown dump over UART dominates wall-clock time in most cases, and
+//! adds around an order of magnitude in execution time, depending on how many
+//! context switches were reported.
 
 #![no_std]
 #![allow(static_mut_refs)]
