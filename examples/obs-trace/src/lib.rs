@@ -77,6 +77,9 @@ mod print;
 use bsp::mtimer::MTimer;
 pub use print::{obs_dump, TsUnit};
 
+/// Ticks per microsecond, computed at compile time from [`bsp::CPU_FREQ_HZ`].
+const TICKS_PER_US: u32 = bsp::CPU_FREQ_HZ / 1_000_000;
+
 /// Maximum number of events the trace can hold. Spends on-target memory (32 bits /
 /// 4 bytes per entry).
 pub const OBS_TRACE_CAP: usize = 2048;

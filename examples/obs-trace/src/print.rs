@@ -1,16 +1,13 @@
-use bsp::sprintln;
+use bsp::{mtimer::MTimer, sprintln};
 
-use crate::{OBS_TRACE, OBS_TRACE_CAP, OBS_TRACE_LEN, OBS_TRACE_TS};
-
-/// Ticks per microsecond, computed at compile time from [`bsp::CPU_FREQ_HZ`].
-const TICKS_PER_US: u32 = bsp::CPU_FREQ_HZ / 1_000_000;
+use crate::{OBS_TRACE, OBS_TRACE_CAP, OBS_TRACE_LEN, OBS_TRACE_TS, TICKS_PER_US};
 
 /// Selects the timestamp unit printed by [`obs_dump`].
 #[derive(Clone, Copy)]
 pub enum TsUnit {
-    /// Raw mtimer ticks (cycles).
+    /// CPU clock cycles (mtimer ticks multiplied by the clock divider).
     Cycles,
-    /// Microseconds (ticks divided by `CPU_FREQ_HZ / 1_000_000`).
+    /// Microseconds (mtimer ticks scaled to CPU cycles, then to microseconds).
     Micros,
 }
 
@@ -20,7 +17,7 @@ pub enum TsUnit {
 /// supplied by the specific test (this crate has no knowledge of any app's
 /// task/resource layout).
 ///
-/// `ts_unit` selects whether timestamps are printed as raw cycles or
+/// `ts_unit` selects whether timestamps are printed as CPU clock cycles or
 /// microseconds.
 pub fn obs_dump(
     task_name: fn(u8) -> &'static str,
@@ -30,13 +27,14 @@ pub fn obs_dump(
     // Safety: run at teardown only; all pushes have completed.
     unsafe {
         let n_events = OBS_TRACE_LEN.min(OBS_TRACE_CAP);
+        let clkdiv = MTimer::instance().clkdiv();
         header(n_events, ts_unit);
         sprintln!("[obs] [TRACE_START]");
         for i in 0..n_events {
             let w = OBS_TRACE[i];
             let ts = match ts_unit {
-                TsUnit::Cycles => OBS_TRACE_TS[i],
-                TsUnit::Micros => OBS_TRACE_TS[i] / TICKS_PER_US,
+                TsUnit::Cycles => OBS_TRACE_TS[i] * clkdiv,
+                TsUnit::Micros => OBS_TRACE_TS[i] * clkdiv / TICKS_PER_US,
             };
             let kind = (w >> 24) as u8;
             let id = (w >> 16) as u8;
@@ -66,7 +64,7 @@ pub fn obs_dump(
 
 fn header(n_events: usize, ts_unit: TsUnit) {
     let (label, ts) = match ts_unit {
-        TsUnit::Cycles => ("mtimer ticks", "ts (ticks)"),
+        TsUnit::Cycles => ("cc", "ts (cc)"),
         TsUnit::Micros => ("us", "ts (us)"),
     };
     sprintln!("[obs] trace: {n_events} events @ {label}");
