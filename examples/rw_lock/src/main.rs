@@ -34,20 +34,20 @@ mod app {
     };
 
     /// Period of `ReaderHigh`
-    const PERIOD_RHI_US: u32 = 700;
+    const PERIOD_RHI_US: u32 = 200;
     /// Period of `J`
-    const PERIOD_J_US: u32 = 1200;
+    const PERIOD_J_US: u32 = 300;
     /// Period of `ReaderLow`
-    const PERIOD_RLO_US: u32 = 1000;
+    const PERIOD_RLO_US: u32 = 500;
     /// Period of `W`
-    const PERIOD_W_US: u32 = 1500;
+    const PERIOD_W_US: u32 = 700;
 
     /// Duration of the critical section of `ReaderHigh`. Short.
     const CS_RHI: Duration32 = Duration32::from_micros(15);
     /// Duration of the work of `J`.
-    const WORK_J: Duration32 = Duration32::from_micros(350);
+    const WORK_J: Duration32 = Duration32::from_micros(50);
     /// Duration of the critical section of `ReaderLow`. Long.
-    const CS_RLO: Duration32 = Duration32::from_micros(240);
+    const CS_RLO: Duration32 = Duration32::from_micros(200);
     /// Duration of the critical section of `W`. Short.
     const CS_W: Duration32 = Duration32::from_micros(16);
 
