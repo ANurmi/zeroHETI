@@ -6,7 +6,8 @@
 //! - the marker type `Obs` and its [`RticObservability`] impl, forwarding the
 //!   generated `TaskId`/`ResourceId` enums (cast to `u8` ids) into
 //!   [`obs_trace::obs_push`], and
-//! - the [`task_name`] / [`res_name`] id→name maps for [`obs_trace::obs_dump`].
+//! - the [`task_name`] / [`res_name`] id -> name maps for
+//!   [`obs_trace::obs_dump`].
 
 use crate::app::{ResourceId, RticObservability, TaskId};
 use obs_trace::ObsKind;
@@ -33,6 +34,7 @@ pub fn obs_dump() {
 }
 
 fn task_name(id: u8) -> &'static str {
+    // N.b., make sure to keep these updated
     match id {
         0 => "StartSim",
         1 => "Ctrl0",
