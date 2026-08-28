@@ -139,20 +139,20 @@ mod app {
     const UPD_TASK_DL_US: u32 = 2000;
 
     use bsp::{
-        CPU_FREQ_HZ,
         apb_uart::ApbUart,
         clic::Clic,
         fugit::{ExtU32, ExtU64},
         i2c::{self, I2c},
         interrupt::Interrupt,
         mailbox::{Inbox, Mailbox, Outbox},
-        mmap::apb_timer::{TIMER_SEP, TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
+        mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR, TIMER_SEP},
         mtimer::*,
         parse_u32,
         register::{mcycle, mcycleh, minstret, minstreth},
         sprintln,
         tb::signal_pass,
         timer_group::{self, Periodic, Timer},
+        CPU_FREQ_HZ,
     };
     use core::{fmt::Write, mem::MaybeUninit};
 

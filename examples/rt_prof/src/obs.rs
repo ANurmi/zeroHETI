@@ -10,7 +10,7 @@
 //!   [`obs_trace::obs_dump`].
 
 use crate::app::{ResourceId, RticObservability, TaskId};
-use obs_trace::ObsKind;
+use obs_trace::{ObsKind, TsUnit};
 
 pub struct Obs;
 
@@ -29,6 +29,6 @@ impl RticObservability for Obs {
     }
 }
 
-pub fn obs_dump() {
-    obs_trace::obs_dump(crate::app::task_name, crate::app::res_name, obs_trace::TsUnit::Micros);
+pub fn obs_dump(ts_unit: TsUnit) {
+    obs_trace::obs_dump(crate::app::task_name, crate::app::res_name, ts_unit);
 }
