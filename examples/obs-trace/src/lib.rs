@@ -84,13 +84,43 @@ const TICKS_PER_US: u32 = bsp::CPU_FREQ_HZ / 1_000_000;
 /// 4 bytes per entry).
 pub const OBS_TRACE_CAP: usize = 2048;
 
+/// Bit-shift positions for packing event fields into a single `u32` word.
+///
+/// Layout: `[kind:8][id:8][prio:8][ceiling:8]`
+mod layout {
+    pub const KIND_SHIFT: u32 = 24;
+    pub const ID_SHIFT: u32 = 16;
+    pub const PRIO_SHIFT: u32 = 8;
+}
+
 #[repr(u8)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ObsKind {
     Act = 0,
     Comp = 1,
     Acq = 2,
     Rel = 3,
+}
+
+impl ObsKind {
+    pub fn from_u8(v: u8) -> Option<Self> {
+        match v {
+            0 => Some(Self::Act),
+            1 => Some(Self::Comp),
+            2 => Some(Self::Acq),
+            3 => Some(Self::Rel),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Act => "act",
+            Self::Comp => "comp",
+            Self::Acq => "acq",
+            Self::Rel => "rel",
+        }
+    }
 }
 
 static mut OBS_TRACE_LEN: usize = 0;
@@ -104,9 +134,9 @@ static mut OBS_TRACE_TS: [u32; OBS_TRACE_CAP] = [0; OBS_TRACE_CAP];
 /// `task_prio` is the running task's priority (meaningful for all events);
 /// `ceiling` is meaningful only for acquire/release events.
 pub fn obs_push(kind: ObsKind, id: u8, task_prio: u16, ceiling: u16) {
-    let word = (kind as u32) << 24
-        | (id as u32) << 16
-        | ((task_prio & 0xff) as u32) << 8
+    let word = (kind as u32) << layout::KIND_SHIFT
+        | (id as u32) << layout::ID_SHIFT
+        | ((task_prio & 0xff) as u32) << layout::PRIO_SHIFT
         | (ceiling & 0xff) as u32;
     // Safety: reads of mtimer hi/lo may be disjoint if preempted mid-read, but
     // the result is only a timestamp for tracing. This is a pure read; it does
