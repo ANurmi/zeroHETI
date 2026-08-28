@@ -21,8 +21,8 @@ ufmt = ["bsp/ufmt"]
 
 # RTIC observability hooks: trace every task activation/completion and resource
 # acquire/release, dumped over UART at teardown. Adds a small per-hook cost
-# (~0.7% active time) and a slow UART dump (~25 s wall clock in the sim vs ~3 s
-# without); leave off for quick benchmark runs.
+# (~0.7%--8% active time) and a slow UART dump (~25 s wall clock in the sim vs
+# ~3 s without).
 obs = ["dep:obs-trace"]
 
 intc-clic = ["bsp/intc-clic", "rtic/intc-clic"]

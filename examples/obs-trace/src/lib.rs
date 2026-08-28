@@ -55,7 +55,8 @@
 //!   it is bounded (no cascade, no count corruption); on that collision the
 //!   slot's word and timestamp may belong to different claimants (microseconds
 //!   apart, so the timestamp stays valid either way).
-//! - Hooks never disable interrupts and add ~0.7% of active time.
+//! - Hooks never disable interrupts and add ~0.7%--8% of active time depending
+//!   on the amount of interrupts.
 //!
 //! # Runtime
 //!
