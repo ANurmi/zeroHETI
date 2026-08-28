@@ -383,6 +383,19 @@ mod app {
             }
         }
         fn exec(&mut self) {
+            // Spurious job detection:
+            //
+            // If a job is executing before its arrival time, we have seen a
+            // spurious job spawned by the known hardware bug.
+            //
+            // Filter out it out as early as possible.
+            let stat = unsafe { STAT_J.assume_init_read() };
+            let next_arrival = unsafe { SYS_START }
+                + (stat.count + if PRE_TRIGGER.is_some() { 0 } else { 1 }) * stat.period;
+            if MTimerLo::instance().now() < next_arrival {
+                return;
+            }
+
             let mtimer = MTimerLo::instance();
 
             mtimer.wait_busy(self.work_duration);
