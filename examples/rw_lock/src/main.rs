@@ -93,7 +93,7 @@ mod app {
             }
         }
 
-        fn print_stats(runtime_actual: &Duration32, stats: &[&Self]) {
+        fn print_stats(runtime_measured: &Duration32, stats: &[&Self]) {
             // Sanity-check the recorded completions against the number of
             // releases that can actually have completed. A task release occurs
             // at `SYS_START + k*period`; `Teardown` runs at the highest priority
@@ -110,8 +110,10 @@ mod app {
             } in stats
             {
                 const TAG_WARN: &str = "[WARN]";
-                let expected = (runtime_actual.as_ticks() / period.as_ticks()) - 1;
-                if *count < expected {
+                // When `runtime_measured` is less than actual runtime, there is
+                // no need to subtract one.
+                let expected = runtime_measured.as_ticks() / period.as_ticks();
+                if *count != expected {
                     sprintln!("{TAG_WARN} {id} has {count} completions, expected {expected}",);
                 }
                 if *spurious_count != 0 {
@@ -255,22 +257,22 @@ mod app {
             Self {}
         }
         fn exec(&mut self) {
-            let runtime_actual = MTimerLo::instance().now() - unsafe { SYS_START };
+            let runtime_measured = MTimerLo::instance().now() - unsafe { SYS_START };
             let minstret = minstret::read64();
             let mcycle = mcycle::read64();
 
             sprintln!("Control::Teardown");
-            sprintln!("- Runtime      (us) : {}", runtime_actual.as_micros());
+            sprintln!("- Runtime      (us) : {}", runtime_measured.as_micros());
             sprintln!(
                 "- True CPU util.    : {}%, instr. count: {}",
-                ((mcycle * 100) / runtime_actual.as_ticks() as u64),
+                ((mcycle * 100) / runtime_measured.as_ticks() as u64),
                 minstret
             );
 
             // Print statistics for all tasks
             unsafe {
                 TaskStat::print_stats(
-                    &runtime_actual,
+                    &runtime_measured,
                     &[
                         &STAT_R_HI.assume_init_read(),
                         &STAT_J.assume_init_read(),
