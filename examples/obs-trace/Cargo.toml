@@ -9,6 +9,7 @@ path = "src/lib.rs"
 
 [dependencies]
 bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp" }
+rtic-observability = { path = "../mrtic/rtic-observability" }
 
 [features]
 default = []

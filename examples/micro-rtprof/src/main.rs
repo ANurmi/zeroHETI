@@ -5,9 +5,7 @@
 use bsp::rt as _;
 
 #[cfg(feature = "obs")]
-obs_trace::define_observer!(app);
-
-#[cfg_attr(feature = "obs", rtic::app(device = bsp, obs = crate::Obs /*, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3]*/))]
+#[cfg_attr(feature = "obs", rtic::app(device = bsp, obs = obs_trace::Obs /*, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3]*/))]
 #[cfg_attr(not(feature = "obs"), rtic::app(device = bsp /*, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3]*/))]
 mod app {
     use bsp::{
@@ -246,7 +244,11 @@ mod app {
                 minstret
             );
             #[cfg(feature = "obs")]
-            crate::obs_dump(obs_trace::TsUnit::Micros);
+            obs_trace::obs_dump(
+                crate::app::task_name,
+                crate::app::res_name,
+                obs_trace::TsUnit::Micros,
+            );
             signal_pass(None);
         }
     }
