@@ -85,7 +85,7 @@
 mod print;
 
 use bsp::mtimer::MTimer;
-pub use print::{TsUnit, obs_dump};
+pub use print::{obs_dump, TsUnit};
 
 /// Maximum number of events the trace can hold. Spends on-target memory (32 bits /
 /// 4 bytes per entry).
@@ -127,9 +127,9 @@ fn obs_append(word: u32, ts: u32) {
     // Safety: single-hart protocol above; aligned 32-bit accesses are atomic.
     unsafe {
         let idx = OBS_TRACE_LEN;
-        if (idx as usize) < OBS_TRACE_CAP {
-            OBS_TRACE[idx as usize] = word;
-            OBS_TRACE_TS[idx as usize] = ts;
+        if idx < OBS_TRACE_CAP {
+            OBS_TRACE[idx] = word;
+            OBS_TRACE_TS[idx] = ts;
             OBS_TRACE_LEN = OBS_TRACE_LEN.max(idx + 1);
         }
     }
