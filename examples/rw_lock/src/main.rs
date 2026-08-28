@@ -47,15 +47,15 @@ mod app {
     /// Duration of the work of `J`.
     const WORK_J: Duration32 = Duration32::from_micros(40);
     /// Duration of the critical section of `ReaderLow`. Long.
-    const CS_RLO: Duration32 = Duration32::from_micros(100);
+    const CS_RLO: Duration32 = Duration32::from_micros(150);
     /// Duration of the critical section of `W`. Short.
     const CS_W: Duration32 = Duration32::from_micros(10);
 
-    const DL_J_US: u32 = 400;
+    const DL_J_US: u32 = 100;
 
     /// Set to trigger all timers in given time. Timer periods are shifted in
     /// phase the same amount.
-    const PRE_TRIGGER: Option<Duration32> = Some(Duration32::from_micros(50));
+    const PRE_TRIGGER: Option<Duration32> = Some(Duration32::from_micros(10));
 
     const HYPERPERIOD_US: u32 = lcm!(PERIOD_RHI_US, PERIOD_J_US, PERIOD_RLO_US, PERIOD_W_US);
     const TICKS_PER_US: u32 = CPU_FREQ_HZ / 1_000_000;
