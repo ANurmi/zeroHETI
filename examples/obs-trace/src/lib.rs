@@ -4,6 +4,12 @@
 //! `#[app(..., obs = <path>)]`. This crate is the generic *recording* half of
 //! that wiring: a fixed-size, lock-free, timestamped buffer.
 //!
+//! Call to print the trace:
+//!
+//! ```
+//! obs_trace::obs_dump!(obs_trace::TsUnit::Micros);
+//! ```
+//!
 //! # Concurrency model
 //!
 //! The hooks are the only writers of the trace, and any of them may run in
@@ -70,7 +76,7 @@
 mod print;
 
 use bsp::mtimer::MTimer;
-pub use print::{TsUnit, obs_dump};
+pub use print::{ObsPrinter, TsUnit};
 
 /// RTIC observer that records every generated observability hook.
 pub struct Obs;

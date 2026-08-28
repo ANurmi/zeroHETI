@@ -11,7 +11,7 @@ pub enum TsUnit {
     Micros,
 }
 
-struct ObsPrinter {
+pub struct ObsPrinter {
     task_name: fn(u8) -> &'static str,
     res_name: fn(u8) -> &'static str,
     ts_unit: TsUnit,
@@ -20,7 +20,7 @@ struct ObsPrinter {
 }
 
 impl ObsPrinter {
-    fn new(
+    pub fn new(
         task_name: fn(u8) -> &'static str,
         res_name: fn(u8) -> &'static str,
         ts_unit: TsUnit,
@@ -96,7 +96,7 @@ impl ObsPrinter {
         sprintln!("[obs] @{ts_label:>10} type  name/params");
     }
 
-    fn dump(&self) {
+    pub fn dump(&self) {
         let n_events = unsafe { OBS_TRACE_LEN.min(OBS_TRACE_CAP) };
         sprintln!("[obs] [TRACE_START]");
         self.header(n_events);
@@ -115,10 +115,15 @@ impl ObsPrinter {
 ///
 /// `ts_unit` selects whether timestamps are printed as CPU clock cycles or
 /// microseconds.
-pub fn obs_dump(
-    task_name: fn(u8) -> &'static str,
-    res_name: fn(u8) -> &'static str,
-    ts_unit: TsUnit,
-) {
-    ObsPrinter::new(task_name, res_name, ts_unit).dump();
+#[macro_export]
+macro_rules! obs_dump {
+    ($unit:expr) => {
+        // Leverages RTIC generated symbols `task_name` and `res_name`
+        obs_trace::ObsPrinter::new(
+            crate::app::task_name,
+            crate::app::res_name,
+            obs_trace::TsUnit::Micros,
+        )
+        .dump()
+    };
 }

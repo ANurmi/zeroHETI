@@ -244,11 +244,7 @@ mod app {
                 minstret
             );
             #[cfg(feature = "obs")]
-            obs_trace::obs_dump(
-                crate::app::task_name,
-                crate::app::res_name,
-                obs_trace::TsUnit::Micros,
-            );
+            obs_trace::obs_dump!(obs_trace::TsUnit::Micros);
             signal_pass(None);
         }
     }
