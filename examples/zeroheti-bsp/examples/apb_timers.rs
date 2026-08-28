@@ -13,7 +13,7 @@ use zeroheti_bsp::{
     fugit::{ExtU32, ExtU64},
     interrupt::Interrupt,
     mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
-    mtimer::MTimer,
+    mtimer::{MTimer, OneShot},
     rt::entry,
     sprintln,
     timer_group::Timer,
