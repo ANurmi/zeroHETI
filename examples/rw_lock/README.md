@@ -63,8 +63,8 @@ Optional compile-time knobs (env vars):
 Alternatively use `just`:
 
 ```sh
-just run-mutex
-just run-rw
+just run          # mutex build
+just run -Frw     # rw-lock build
 just compare      # runs both and prints a compact side-by-side summary
 ```
 
