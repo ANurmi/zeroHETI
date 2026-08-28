@@ -171,7 +171,7 @@ mod app {
         obx.send(task_dl_base + 2, TASK_SET[2].deadline_us * US_TO_CC);
 
         // 1 tick == 1 us
-        MTimer::with_clkdiv(100).into_oneshot().start(RT.millis());
+        MTimer::with_clkdiv(100).start(RT.millis());
 
         let timers = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),
@@ -203,7 +203,7 @@ mod app {
             // Scoreboard disable
             mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 0);
 
-            let now = MTimer::instance().into_oneshot().duration().as_ticks();
+            let now = MTimer::instance().now().as_ticks();
             let minstret = minstret::read64();
             let mcycle = mcycle::read64();
 

@@ -118,7 +118,7 @@ fn main() -> ! {
             serial.flush().unwrap_unchecked();
         }
         // Use mtimer for timeout
-        let mut mtimer = MTimer::instance().into_oneshot();
+        let mut mtimer = MTimer::instance();
 
         let timers = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),
