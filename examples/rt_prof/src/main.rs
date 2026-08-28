@@ -3,8 +3,10 @@
 #![allow(static_mut_refs)]
 
 use bsp::rt as _;
-#[rtic::app(device = bsp, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3])]
 
+#[cfg(feature = "obs")]
+#[cfg_attr(feature = "obs", rtic::app(device = bsp, obs = obs_trace::Obs, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3]))]
+#[cfg_attr(not(feature = "obs"), rtic::app(device = bsp, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3]))]
 mod app {
     const fn to_prio(per: u32) -> u8 {
         // Shifting out lowest 8 bits makes timing granularity

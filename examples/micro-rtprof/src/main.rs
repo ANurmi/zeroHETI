@@ -3,10 +3,13 @@
 #![allow(static_mut_refs)]
 
 use bsp::rt as _;
-#[rtic::app(device = bsp /*, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3]*/)]
 
+#[cfg(feature = "obs")]
+#[cfg_attr(feature = "obs", rtic::app(device = bsp, obs = obs_trace::Obs /*, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3]*/))]
+#[cfg_attr(not(feature = "obs"), rtic::app(device = bsp /*, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3]*/))]
 mod app {
     use bsp::{
+        CPU_FREQ_HZ,
         apb_uart::ApbUart,
         asm_delay,
         fugit::{ExtU32, ExtU64},
@@ -20,7 +23,6 @@ mod app {
         sprintln,
         tb::signal_pass,
         timer_group::{Periodic, Timer},
-        CPU_FREQ_HZ,
     };
 
     const CFG_BASE_ADDR: usize = 0x0000_4000;
@@ -241,6 +243,8 @@ mod app {
                 ((mcycle * 100) / now),
                 minstret
             );
+            #[cfg(feature = "obs")]
+            obs_trace::obs_dump!(obs_trace::TsUnit::Micros);
             signal_pass(None);
         }
     }

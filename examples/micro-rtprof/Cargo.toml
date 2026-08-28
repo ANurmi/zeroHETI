@@ -9,6 +9,7 @@ bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp", features = [
 ] }
 # Required if riscv-macros::core_interrupt is used. riscv-rt version must align with BSP
 riscv-rt = { version = "0.18.0" }
+obs-trace = { path = "../obs-trace", optional = true }
 ufmt = "0.2.0"
 more-asserts = "0.3.1"
 log = { version = "0.4.29", default-features = false }
@@ -17,6 +18,12 @@ rtic = { version = "0.1.0", path = "../mrtic/distributions/zeroheti-rtic", optio
 [features]
 default = []
 ufmt = ["bsp/ufmt"]
+
+# RTIC observability hooks: trace every task activation/completion and resource
+# acquire/release, dumped over UART at teardown. Adds a small per-hook cost
+# (~0.7%--8% active time) and a slow UART dump (~25 s wall clock in the sim vs
+# ~3 s without).
+obs = [ "dep:obs-trace" ]
 
 intc-clic = ["bsp/intc-clic", "rtic/intc-clic"]
 intc-edfic = ["bsp/intc-edfic", "rtic/intc-edfic"]
