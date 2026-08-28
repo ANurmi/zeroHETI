@@ -8,11 +8,11 @@
 
 // ── Two alternating colours per task ───────────────────────
 #let task-colors = (
-  Writer: (color.hsl(210deg, 60%, 45%), color.hsl(210deg, 60%, 78%)),
-  ReaderLow: (color.hsl(140deg, 55%, 35%), color.hsl(140deg, 55%, 70%)),
-  J: (color.hsl(30deg, 80%, 45%), color.hsl(30deg, 80%, 78%)),
-  ReaderHigh: (color.hsl(0deg, 65%, 45%), color.hsl(0deg, 65%, 78%)),
-  Teardown: (color.hsl(280deg, 50%, 45%), color.hsl(280deg, 50%, 78%)),
+  Writer: (color.hsl(200deg, 60%, 45%), color.hsl(220deg, 60%, 78%)),
+  ReaderLow: (color.hsl(130deg, 55%, 35%), color.hsl(150deg, 55%, 70%)),
+  J: (color.hsl(20deg, 80%, 45%), color.hsl(40deg, 80%, 78%)),
+  ReaderHigh: (color.hsl(-10deg, 65%, 45%), color.hsl(10deg, 65%, 78%)),
+  Teardown: (color.hsl(270deg, 50%, 45%), color.hsl(290deg, 50%, 78%)),
 )
 #let fallback-palette = (
   (color.hsl(210deg, 60%, 45%), color.hsl(210deg, 60%, 78%)),
