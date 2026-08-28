@@ -10,11 +10,14 @@ mod app {
     use bsp::{
         CPU_FREQ_HZ,
         apb_uart::ApbUart,
-        fugit::{ExtU32, ExtU64},
+        clear_perf_counters,
+        fugit::ExtU32,
         lcm,
         mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR, TIMER3_ADDR},
-        mtimer::{Duration32, MTimer},
-        parse_u32, sprintln,
+        mtimer::{Duration32, MTimerLo, OneShot},
+        parse_u32,
+        register::{mcycle, minstret},
+        sprintln,
         tb::signal_pass,
         timer_group::Timer,
     };
@@ -22,8 +25,8 @@ mod app {
 
     // # Hyperparams
 
-    /// Runtime in milliseconds, read from env RUNTIME_MS (compile-time)
-    const RUNTIME_MS: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
+    /// Runtime in milliseconds, read from env `RUNTIME_MS`
+    const RUNTIME_MS: u32 = parse_u32(env!("RUNTIME_MS"));
     const LOCK_MODE: &str = if cfg!(feature = "rw") {
         "rw-lock"
     } else {
@@ -51,35 +54,128 @@ mod app {
     const DL_J_US: u32 = 400;
 
     const HYPERPERIOD_US: u32 = lcm!(PERIOD_RHI_US, PERIOD_J_US, PERIOD_RLO_US, PERIOD_W_US);
+    const TICKS_PER_US: u32 = CPU_FREQ_HZ / 1_000_000;
 
     // # Global records
 
     /// Per task job statistics
     #[derive(Clone, Copy)]
     pub struct TaskStat {
-        /// Worst observed response time
+        id: &'static str,
+        prio: u16,
+        /// Period of the associated task
+        period: Duration32,
+        /// Deadline of the task, usually same as period.
+        dl: Duration32,
+        /// Worst observed response time,
+        /// disregarding deadline overshoots
         worst: Duration32,
+        /// Has a deadline miss been observed?
+        miss_count: usize,
         /// Number of completed jobs
         count: u32,
-    }
-    impl core::default::Default for TaskStat {
-        fn default() -> TaskStat {
-            TaskStat {
-                worst: Duration32::ZERO,
-                count: 0,
-            }
-        }
+        /// Has a spurious interrupt been recorded?
+        spurious_count: usize,
+        last_spurious: Duration32,
     }
     impl TaskStat {
+        fn new(id: &'static str, prio: u16, period: Duration32, dl: Duration32) -> TaskStat {
+            TaskStat {
+                id,
+                prio,
+                period,
+                dl,
+                worst: Duration32::ZERO,
+                miss_count: 0,
+                count: 0,
+                spurious_count: 0,
+                last_spurious: Duration32::ZERO,
+            }
+        }
+
+        fn print_stats(runtime_actual: &Duration32, stats: &[&Self]) {
+            // Sanity-check the recorded completions against the number of
+            // releases that can actually have completed. A task release occurs
+            // at `SYS_START + k*period`; `Teardown` runs at the highest priority
+            // and its `MachineTimer` fires at the runtime boundary, so the
+            // release coinciding with the boundary itself never completes.
+            // Hence completions may trail the raw release count by one job.
+            for TaskStat {
+                id,
+                period,
+                count,
+                spurious_count,
+                last_spurious,
+                ..
+            } in stats
+            {
+                const TAG_WARN: &str = "[WARN]";
+                let expected = (runtime_actual.as_ticks() / period.as_ticks()) - 1;
+                if *count < expected {
+                    sprintln!("{TAG_WARN} {id} has {count} completions, expected {expected}",);
+                }
+                if *spurious_count != 0 {
+                    sprintln!(
+                        "{TAG_WARN} {id} has suffered {spurious_count} spurious interrupts. Last completed at: {} us",
+                        last_spurious.as_micros()
+                    );
+                }
+            }
+
+            for TaskStat {
+                id,
+                prio,
+                worst,
+                miss_count,
+                count,
+                ..
+            } in stats
+            {
+                let worst = worst.as_micros();
+                sprintln!(
+                    "- {id:>10} (p={prio:#x}): worst {worst:>5} us | n_complete {count:>4} | misses {miss_count:>4}"
+                );
+            }
+        }
+
         /// Record that the job has completed
-        ///
-        /// # Arguments
-        ///
-        /// * `t_resp` - response time
-        fn report_job_complete(&mut self, t_resp: Duration32) {
+        fn report_job_complete(&mut self) {
+            // Record time of job completion as early as possible
+            let t_complete = MTimerLo::instance().now();
+
+            // Theoretical arrival time of the job being completed
+            //
+            // `SYS_START` occurs right after setting off the periodic timers.
+            let next_arrival = unsafe { SYS_START } + (self.count + 1) as u32 * self.period;
+
+            // The periodic timer never fires before its period is completed, so
+            // a completion before the next scheduled arrival cannot belong to a
+            // new job; it is a spurious re-dispatch of the current job (the CLIC
+            // re-presents a source whose `ip` was not cleared during a
+            // simultaneous multi-source collision). Drop it instead of counting
+            // it as a new job. A genuine job always completes at or after its
+            // own arrival, as its work duration is non-zero.
+            if t_complete < next_arrival {
+                self.spurious_count += 1;
+                self.last_spurious = t_complete;
+                return;
+            }
+
+            // Record completion
             self.count += 1;
-            if t_resp > self.worst {
-                self.worst = t_resp;
+
+            // If completed late, record deadline miss
+            if t_complete > next_arrival + self.dl {
+                self.miss_count += 1;
+            }
+            // If completed on time, record worst response time
+            else {
+                // `t_resp` may slightly underreport, as arrival times
+                // are based on calculated periods.
+                let t_resp = t_complete - next_arrival;
+                if t_resp > self.worst {
+                    self.worst = t_resp;
+                }
             }
         }
     }
@@ -87,7 +183,6 @@ mod app {
     static mut STAT_J: MaybeUninit<TaskStat> = MaybeUninit::uninit();
     static mut STAT_R_LO: MaybeUninit<TaskStat> = MaybeUninit::uninit();
     static mut STAT_W: MaybeUninit<TaskStat> = MaybeUninit::uninit();
-    static mut J_MISSES: usize = 0;
     static mut SYS_START: Duration32 = Duration32::ZERO;
 
     #[shared]
@@ -110,20 +205,27 @@ mod app {
         assert!(CS_RLO.as_nanos() >= mtimer_res_ns);
         assert!(CS_W.as_nanos() >= mtimer_res_ns);
 
+        // Calculate theoretical load percent
+        let u_pc: u32 = CS_RHI.as_ticks() * 100 / (PERIOD_RHI_US * TICKS_PER_US)
+            + WORK_J.as_ticks() * 100 / (PERIOD_J_US * TICKS_PER_US)
+            + CS_RLO.as_ticks() * 100 / (PERIOD_RLO_US * TICKS_PER_US)
+            + CS_W.as_ticks() * 100 / (PERIOD_W_US * TICKS_PER_US);
+
         sprintln!("\r\n### RW-lock schedulability demo (zeroHETI / RTIC) ###");
         sprintln!("- Timer res.   (ns) : {mtimer_res_ns:?}",);
         sprintln!("- Timer max.   (ms) : {mtimer_max_ms:?}",);
         sprintln!("- Lock mode         : {LOCK_MODE}");
         sprintln!("- RUNTIME_MS        : {RUNTIME_MS}");
-        sprintln!("- RL CS        (us) : {}", CS_RLO.as_micros());
+        sprintln!("Task set:");
+        sprintln!("- Hyperperiod  (ms) : {}", HYPERPERIOD_US / 1_000);
+        sprintln!("- Theoretical load  : {u_pc}%");
+        sprintln!("- ReaderLow CS (us) : {}", CS_RLO.as_micros());
         sprintln!("- J deadline   (us) : {}", DL_J_US);
-        sprintln!("Hyperperiod    (ms) : {}", HYPERPERIOD_US / 1_000);
 
         sprintln!("Control::Setup");
 
-        // Setup mtimer to trigger `Finish` task
-        let mut mtimer = MTimer::instance().into_oneshot();
-        mtimer.start(RUNTIME_MS.millis());
+        // Setup mtimer to trigger the `Finish` task
+        MTimerLo::instance().start(Duration32::from_millis(RUNTIME_MS));
 
         let timers = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),
@@ -137,7 +239,8 @@ mod app {
         timers[3].set_period(PERIOD_W_US.micros());
         timers.iter_mut().for_each(|t| t.start());
 
-        unsafe { SYS_START = MTimer::instance().into_lo().now() };
+        clear_perf_counters();
+        unsafe { SYS_START = MTimerLo::instance().now() };
 
         Shared { r: 42 }
     }
@@ -152,56 +255,49 @@ mod app {
             Self {}
         }
         fn exec(&mut self) {
+            let runtime_actual = MTimerLo::instance().now() - unsafe { SYS_START };
+            let minstret = minstret::read64();
+            let mcycle = mcycle::read64();
+
             sprintln!("Control::Teardown");
+            sprintln!("- Runtime      (us) : {}", runtime_actual.as_micros());
             sprintln!(
-                "- Runtime (us): {}",
-                (MTimer::instance().now() - unsafe { SYS_START }).as_micros()
+                "- True CPU util.    : {}%, instr. count: {}",
+                ((mcycle * 100) / runtime_actual.as_ticks() as u64),
+                minstret
             );
 
-            struct AllStats {
-                r_hi: TaskStat,
-                j: TaskStat,
-                r_lo: TaskStat,
-                w: TaskStat,
-            }
-            let stat = unsafe {
-                AllStats {
-                    r_hi: STAT_R_HI.assume_init_read(),
-                    j: STAT_J.assume_init_read(),
-                    r_lo: STAT_R_LO.assume_init_read(),
-                    w: STAT_W.assume_init_read(),
-                }
+            // Print statistics for all tasks
+            unsafe {
+                TaskStat::print_stats(
+                    &runtime_actual,
+                    &[
+                        &STAT_R_HI.assume_init_read(),
+                        &STAT_J.assume_init_read(),
+                        &STAT_R_LO.assume_init_read(),
+                        &STAT_W.assume_init_read(),
+                    ],
+                )
             };
 
-            let (rh_w, rh_c) = (stat.r_hi.worst.as_micros(), stat.r_hi.count);
-            let (j_w, j_c, j_m) = (stat.j.worst.as_micros(), stat.j.count, unsafe { J_MISSES });
-            let (rl_w, rl_c) = (stat.r_lo.worst.as_micros(), stat.r_lo.count);
-            let (w_w, w_c) = (stat.w.worst.as_micros(), stat.w.count);
-
-            sprintln!("- ReaderHigh (p=0xfc): worst {rh_w:>5} us | n_complete {rh_c:>4}");
+            // Report job J, which is of special interest
+            let TaskStat {
+                dl,
+                miss_count,
+                count,
+                ..
+            } = unsafe { STAT_J.assume_init_read() };
             sprintln!(
-                "- J          (p=0xfb): worst {j_w:>5} us | n_complete {j_c:>4} | misses {j_m:>4}"
+                "VERDICT [{LOCK_MODE}]: J{} schedulable -- {miss_count}/{count} jobs missed the {} us deadline",
+                if miss_count > 0 { " NOT" } else { "" },
+                dl.as_micros()
             );
-            sprintln!("- ReaderLow  (p=0xf9): worst {rl_w:>5} us | n_complete {rl_c:>4}");
-            sprintln!("- Writer     (p=0xf8): worst {w_w:>5} us | n_complete {w_c:>4}");
-
-            if j_m > 0 {
-                sprintln!(
-                    "VERDICT [{LOCK_MODE}]: J NOT schedulable -- {j_m}/{j_c} jobs missed the {DL_J_US} us deadline",
-                );
-            } else {
-                sprintln!(
-                    "VERDICT [{LOCK_MODE}]: J schedulable -- 0/{j_c} jobs missed the {DL_J_US} us deadline"
-                );
-            }
 
             #[cfg(feature = "obs")]
             obs_trace::obs_dump!(obs_trace::TsUnit::Micros);
 
             // HACK: wait for prints to complete
-            MTimer::instance()
-                .into_lo()
-                .wait_busy(Duration32::from_millis(1));
+            MTimerLo::instance().wait_busy(Duration32::from_millis(1));
             signal_pass(None);
         }
     }
@@ -220,14 +316,20 @@ mod app {
     }
     impl RticTask for ReaderHigh {
         fn init() -> Self {
-            unsafe { STAT_R_HI.write(TaskStat::default()) };
+            unsafe {
+                STAT_R_HI.write(TaskStat::new(
+                    "ReaderHigh",
+                    0xfc,
+                    Duration32::from_micros(PERIOD_RHI_US),
+                    Duration32::from_micros(PERIOD_RHI_US),
+                ))
+            };
             Self {
                 cs_duration: CS_RHI,
             }
         }
         fn exec(&mut self) {
-            let timer = unsafe { Timer::instance::<TIMER0_ADDR>() };
-            let mtimer = MTimer::instance().into_lo();
+            let mtimer = MTimerLo::instance();
 
             #[cfg(feature = "rw")]
             self.shared()
@@ -238,10 +340,7 @@ mod app {
                 .r
                 .lock(|_r| mtimer.wait_busy(self.cs_duration));
 
-            // APB Timer reset coincides with task release time =>
-            // timer.duration() returns response time
-            let t_resp = timer.duration();
-            unsafe { STAT_R_HI.assume_init_mut() }.report_job_complete(t_resp);
+            unsafe { STAT_R_HI.assume_init_mut() }.report_job_complete();
         }
     }
 
@@ -253,24 +352,24 @@ mod app {
     }
     impl RticTask for J {
         fn init() -> Self {
-            unsafe { STAT_J.write(TaskStat::default()) };
+            unsafe {
+                STAT_J.write(TaskStat::new(
+                    "J",
+                    0xfb,
+                    Duration32::from_micros(PERIOD_J_US),
+                    Duration32::from_micros(DL_J_US),
+                ))
+            };
             Self {
                 work_duration: WORK_J,
             }
         }
         fn exec(&mut self) {
-            let timer = unsafe { Timer::instance::<TIMER1_ADDR>() };
-            let mtimer = MTimer::instance().into_lo();
+            let mtimer = MTimerLo::instance();
 
             mtimer.wait_busy(self.work_duration);
 
-            // APB Timer reset coincides with task release time =>
-            // timer.duration() returns response time
-            let t_resp = timer.duration();
-            unsafe { STAT_J.assume_init_mut() }.report_job_complete(t_resp);
-            if t_resp > Duration32::from_micros(DL_J_US) {
-                unsafe { J_MISSES += 1 };
-            }
+            unsafe { STAT_J.assume_init_mut() }.report_job_complete();
         }
     }
 
@@ -288,14 +387,20 @@ mod app {
     }
     impl RticTask for ReaderLow {
         fn init() -> Self {
-            unsafe { STAT_R_LO.write(TaskStat::default()) };
+            unsafe {
+                STAT_R_LO.write(TaskStat::new(
+                    "ReaderLow",
+                    0xf9,
+                    Duration32::from_micros(PERIOD_RLO_US),
+                    Duration32::from_micros(PERIOD_RLO_US),
+                ))
+            };
             Self {
                 cs_duration: CS_RLO,
             }
         }
         fn exec(&mut self) {
-            let timer = unsafe { Timer::instance::<TIMER2_ADDR>() };
-            let mtimer = MTimer::instance().into_lo();
+            let mtimer = MTimerLo::instance();
 
             #[cfg(feature = "rw")]
             self.shared()
@@ -306,10 +411,7 @@ mod app {
                 .r
                 .lock(|_r| mtimer.wait_busy(self.cs_duration));
 
-            // APB Timer reset coincides with task release time =>
-            // timer.duration() returns response time
-            let t_resp = timer.duration();
-            unsafe { STAT_R_LO.assume_init_mut() }.report_job_complete(t_resp);
+            unsafe { STAT_R_LO.assume_init_mut() }.report_job_complete();
         }
     }
 
@@ -320,21 +422,24 @@ mod app {
     }
     impl RticTask for Writer {
         fn init() -> Self {
-            unsafe { STAT_W.write(TaskStat::default()) };
+            unsafe {
+                STAT_W.write(TaskStat::new(
+                    "Writer",
+                    0xf8,
+                    Duration32::from_micros(PERIOD_W_US),
+                    Duration32::from_micros(PERIOD_W_US),
+                ))
+            };
             Self { cs_duration: CS_W }
         }
         fn exec(&mut self) {
-            let timer = unsafe { Timer::instance::<TIMER3_ADDR>() };
-            let mtimer = MTimer::instance().into_lo();
+            let mtimer = MTimerLo::instance();
 
             self.shared()
                 .r
                 .lock(|_r| mtimer.wait_busy(self.cs_duration));
 
-            // APB Timer reset coincides with task release time =>
-            // timer.duration() returns response time
-            let t_resp = timer.duration();
-            unsafe { STAT_W.assume_init_mut() }.report_job_complete(t_resp);
+            unsafe { STAT_W.assume_init_mut() }.report_job_complete();
         }
     }
 }
