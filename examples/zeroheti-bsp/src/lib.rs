@@ -146,3 +146,13 @@ macro_rules! lcm {
         lcm!(lcm!($a, $b), $($rest),+)
     };
 }
+
+/// Zero both halves of minstret, mcycle registers
+#[inline]
+pub fn clear_perf_counters() {
+    use crate::register::{mcycle, minstret};
+    unsafe {
+        minstret::write64(0);
+        mcycle::write64(0);
+    }
+}

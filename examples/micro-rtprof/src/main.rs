@@ -10,7 +10,7 @@ mod app {
     use bsp::{
         CPU_FREQ_HZ,
         apb_uart::ApbUart,
-        asm_delay,
+        asm_delay, clear_perf_counters,
         fugit::{ExtU32, ExtU64},
         i2c::{self, I2c},
         lcm,
@@ -27,16 +27,6 @@ mod app {
 
     const CFG_BASE_ADDR: usize = 0x0000_4000;
     const CFG_TASK_OFFS: usize = 0x0000_0100;
-
-    #[inline]
-    fn clear_perf_counters() {
-        unsafe {
-            minstret::write(0);
-            mcycle::write(0);
-            minstreth::write(0);
-            mcycleh::write(0);
-        }
-    }
 
     #[inline]
     fn rtprof_start_task(idx: usize) {
