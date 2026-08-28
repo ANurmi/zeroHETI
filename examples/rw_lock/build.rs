@@ -40,6 +40,7 @@ fn main() {
     );
 
     // make sure that these env variables are not changed without notice.
+    println!("cargo:rerun-if-env-changed=RUNTIME_MS");
     println!("cargo:rerun-if-env-changed=RISCV_ISA");
     println!("cargo:rerun-if-env-changed=RISCV_RT_BASE_ISA");
     println!("cargo:rerun-if-env-changed=RISCV_RT_LLVM_ARCH_PATCH");
