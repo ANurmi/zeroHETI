@@ -30,7 +30,7 @@ fn main() -> ! {
     setup_irq(Interrupt::Ext1, 1);
 
     // Check results after timeout
-    let mut mtimer = MTimer::instance().into_oneshot();
+    let mut mtimer = MTimer::instance();
     let timeout = 10u64.micros();
     mtimer.start(timeout);
 

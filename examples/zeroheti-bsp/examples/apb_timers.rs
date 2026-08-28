@@ -36,7 +36,7 @@ fn main() -> ! {
     setup_irq(Interrupt::Timer3Cmp);
     setup_irq(Interrupt::MachineTimer);
 
-    let mut mtimer = MTimer::instance().into_oneshot();
+    let mut mtimer = MTimer::instance();
     let mut timers = [
         Timer::init::<TIMER0_ADDR>().into_periodic(),
         Timer::init::<TIMER1_ADDR>().into_periodic(),

@@ -19,7 +19,7 @@ fn main() -> ! {
     init_intc();
     setup_irq(Interrupt::MachineTimer);
 
-    let mut mtimer = MTimer::instance().into_oneshot();
+    let mut mtimer = MTimer::instance();
 
     let timeout = 10u64.micros();
     let margin = 100u64.micros();
