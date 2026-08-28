@@ -41,16 +41,16 @@ pub fn obs_dump(
             let prio = (w >> 8) as u8;
             let ceiling = w as u8;
             match kind {
-                0 => sprintln!("[obs] @{ts:>10} act  {} t={}", task_name(id), prio),
-                1 => sprintln!("[obs] @{ts:>10} comp {} t={}", task_name(id), prio),
+                0 => sprintln!("[obs] @{ts:>10} act  {:<14} t={}", task_name(id), prio),
+                1 => sprintln!("[obs] @{ts:>10} comp {:<14} t={}", task_name(id), prio),
                 2 => sprintln!(
-                    "[obs] @{ts:>10} acq  {} t={} c={}",
+                    "[obs] @{ts:>10} acq  {:<14} t={} c={}",
                     res_name(id),
                     prio,
                     ceiling
                 ),
                 3 => sprintln!(
-                    "[obs] @{ts:>10} rel  {} t={} c={}",
+                    "[obs] @{ts:>10} rel  {:<14} t={} c={}",
                     res_name(id),
                     prio,
                     ceiling
@@ -70,5 +70,5 @@ fn header(n_events: usize, ts_unit: TsUnit) {
     sprintln!("[obs] trace: {n_events} events @ {label}");
     let event_kind = "type";
     let rest = "name/params";
-    sprintln!("[obs] @{ts:>10} act  {event_kind} {rest}");
+    sprintln!("[obs] @{ts:>10} act  {event_kind:<14} {rest}");
 }
