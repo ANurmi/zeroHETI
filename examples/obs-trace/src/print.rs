@@ -28,8 +28,8 @@ pub fn obs_dump(
     unsafe {
         let n_events = OBS_TRACE_LEN.min(OBS_TRACE_CAP);
         let clkdiv = MTimer::instance().clkdiv();
-        header(n_events, ts_unit);
         sprintln!("[obs] [TRACE_START]");
+        header(n_events, ts_unit);
         for i in 0..n_events {
             let w = OBS_TRACE[i];
             let ts = match ts_unit {
