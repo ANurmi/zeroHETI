@@ -53,8 +53,18 @@ mod app {
 
     const DL_J_US: u32 = 400;
 
+    /// Set to trigger all timers in given time. Timer periods are shifted in
+    /// phase the same amount.
+    const PRE_TRIGGER: Option<Duration32> = Some(Duration32::from_micros(50));
+
     const HYPERPERIOD_US: u32 = lcm!(PERIOD_RHI_US, PERIOD_J_US, PERIOD_RLO_US, PERIOD_W_US);
     const TICKS_PER_US: u32 = CPU_FREQ_HZ / 1_000_000;
+
+    // Calculate theoretical load percent
+    const UTIL_MIN_PC: u32 = CS_RHI.as_ticks() * 100 / (PERIOD_RHI_US * TICKS_PER_US)
+        + WORK_J.as_ticks() * 100 / (PERIOD_J_US * TICKS_PER_US)
+        + CS_RLO.as_ticks() * 100 / (PERIOD_RLO_US * TICKS_PER_US)
+        + CS_W.as_ticks() * 100 / (PERIOD_W_US * TICKS_PER_US);
 
     // # Global records
 
@@ -110,9 +120,9 @@ mod app {
             } in stats
             {
                 const TAG_WARN: &str = "[WARN]";
-                // When `runtime_measured` is less than actual runtime, there is
-                // no need to subtract one.
-                let expected = runtime_measured.as_ticks() / period.as_ticks();
+                // Note that `runtime_measured` is slightly less than actual runtime
+                let expected = runtime_measured.as_ticks() / period.as_ticks()
+                    + if PRE_TRIGGER.is_some() { 1 } else { 0 };
                 if *count != expected {
                     sprintln!("{TAG_WARN} {id} has {count} completions, expected {expected}",);
                 }
@@ -148,7 +158,8 @@ mod app {
             // Theoretical arrival time of the job being completed
             //
             // `SYS_START` occurs right after setting off the periodic timers.
-            let next_arrival = unsafe { SYS_START } + (self.count + 1) as u32 * self.period;
+            let next_arrival = unsafe { SYS_START }
+                + (self.count + if PRE_TRIGGER.is_some() { 0 } else { 1 }) * self.period;
 
             // The periodic timer never fires before its period is completed, so
             // a completion before the next scheduled arrival cannot belong to a
@@ -207,12 +218,6 @@ mod app {
         assert!(CS_RLO.as_nanos() >= mtimer_res_ns);
         assert!(CS_W.as_nanos() >= mtimer_res_ns);
 
-        // Calculate theoretical load percent
-        let u_pc: u32 = CS_RHI.as_ticks() * 100 / (PERIOD_RHI_US * TICKS_PER_US)
-            + WORK_J.as_ticks() * 100 / (PERIOD_J_US * TICKS_PER_US)
-            + CS_RLO.as_ticks() * 100 / (PERIOD_RLO_US * TICKS_PER_US)
-            + CS_W.as_ticks() * 100 / (PERIOD_W_US * TICKS_PER_US);
-
         sprintln!("\r\n### RW-lock schedulability demo (zeroHETI / RTIC) ###");
         sprintln!("- Timer res.   (ns) : {mtimer_res_ns:?}",);
         sprintln!("- Timer max.   (ms) : {mtimer_max_ms:?}",);
@@ -220,7 +225,7 @@ mod app {
         sprintln!("- RUNTIME_MS        : {RUNTIME_MS}");
         sprintln!("Task set:");
         sprintln!("- Hyperperiod  (ms) : {}", HYPERPERIOD_US / 1_000);
-        sprintln!("- Theoretical load  : {u_pc}%");
+        sprintln!("- Theoretical load  : {UTIL_MIN_PC}%");
         sprintln!("- ReaderLow CS (us) : {}", CS_RLO.as_micros());
         sprintln!("- J deadline   (us) : {}", DL_J_US);
 
@@ -229,16 +234,23 @@ mod app {
         // Setup mtimer to trigger the `Finish` task
         MTimerLo::instance().start(Duration32::from_millis(RUNTIME_MS));
 
-        let timers = &mut [
+        let timers: &mut [bsp::timer_group::Periodic; 4] = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),
             Timer::init::<TIMER1_ADDR>().into_periodic(),
             Timer::init::<TIMER2_ADDR>().into_periodic(),
             Timer::init::<TIMER3_ADDR>().into_periodic(),
         ];
-        timers[0].set_period(PERIOD_RHI_US.micros());
-        timers[1].set_period(PERIOD_J_US.micros());
-        timers[2].set_period(PERIOD_RLO_US.micros());
-        timers[3].set_period(PERIOD_W_US.micros());
+        if let Some(initial_delay) = PRE_TRIGGER {
+            timers[0].set_period_next(PERIOD_RHI_US.micros(), initial_delay);
+            timers[1].set_period_next(PERIOD_J_US.micros(), initial_delay);
+            timers[2].set_period_next(PERIOD_RLO_US.micros(), initial_delay);
+            timers[3].set_period_next(PERIOD_W_US.micros(), initial_delay);
+        } else {
+            timers[0].set_period(PERIOD_RHI_US.micros());
+            timers[1].set_period(PERIOD_J_US.micros());
+            timers[2].set_period(PERIOD_RLO_US.micros());
+            timers[3].set_period(PERIOD_W_US.micros());
+        }
         timers.iter_mut().for_each(|t| t.start());
 
         clear_perf_counters();
@@ -263,11 +275,15 @@ mod app {
 
             sprintln!("Control::Teardown");
             sprintln!("- Runtime      (us) : {}", runtime_measured.as_micros());
+            let cpu_util_pc = (mcycle * 100) / runtime_measured.as_ticks() as u64;
             sprintln!(
                 "- True CPU util.    : {}%, instr. count: {}",
-                ((mcycle * 100) / runtime_measured.as_ticks() as u64),
+                cpu_util_pc,
                 minstret
             );
+            if cpu_util_pc < UTIL_MIN_PC as u64 {
+                sprintln!("[WARN] CPU util less than minimum. Less than expected jobs were run.")
+            }
 
             // Print statistics for all tasks
             unsafe {
