@@ -13,8 +13,8 @@ LOAD_FACTOR=50 RUNTIME_MS=10 cargo run --release -Frtl-tb -Fintc-clic -Fobs
 ```
 
 `obs` wires the RTIC observability hooks (`on_task_act` / `on_task_comp` /
-`on_res_acq` / `on_res_rel`, see `rtic-core`) to a ring-buffer backend in
-`src/obs.rs`. Every task activation/completion and resource acquire/release is
+`on_res_acq` / `on_res_rel`, see `rtic-core`) to the ring-buffer backend in
+`obs-trace`. Every task activation/completion and resource acquire/release is
 recorded and dumped over UART during teardown, e.g.:
 
 ```
@@ -40,8 +40,8 @@ higher-priority task) instead of masking interrupts. Task handlers run with
 `mstatus.MIE` set and preemption gated by the CLIC level threshold, so a
 critical section would perturb the timing the hooks exist to observe. Appends
 commit the tail index with `max`, so a nested claim can drop at most one event
-and never corrupts the buffer. See the module docs in `src/obs.rs` for the
-full concurrency model.
+and never corrupts the buffer. See the module docs in `obs-trace/src/lib.rs`
+for the full concurrency model.
 
 Runtime: the hooks add only ~1.4k retired instructions / ~0.7% of active time,
 but the teardown UART dump dominates wall-clock time in the sim (~25 s with
