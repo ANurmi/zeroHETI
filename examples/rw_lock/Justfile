@@ -1,4 +1,4 @@
-runtime_ms := "24"
+runtime_ms := "3"
 fmutex := "ui-test/run-mutex.stdout"
 frw := "ui-test/run-rw.stdout"
 

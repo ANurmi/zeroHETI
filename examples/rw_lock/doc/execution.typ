@@ -93,7 +93,7 @@
   }
 
   // Small vertical lines for theoretical arrival times
-  let periods_ms = (0.7, 0.5, 0.3, 0.2)
+  let periods_ms = (0.5, 0.3, 0.2, 0.1)
   let vline-xs = periods_ms.map(period => {
     range(1, int(x-max / period) + 1).map(n => n * period)
   })
@@ -103,7 +103,7 @@
     xlabel: x-units-out,
     width: 16cm,
     height: 3.5cm,
-    xlim: (0, x-max),
+    xlim: (0, 3.0),
     ylim: (-0.7, task-list.len() - 0.3),
     yaxis: (
       ticks: task-list.enumerate().map(((i, t)) => (i, [#t.name])),
