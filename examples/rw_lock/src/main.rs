@@ -120,8 +120,10 @@ mod app {
             } in stats
             {
                 const TAG_WARN: &str = "[WARN]";
-                // Note that `runtime_measured` is slightly less than actual runtime
-                let expected = runtime_measured.as_ticks() / period.as_ticks()
+                // Note that `runtime_measured` is usually slightly less than
+                // actual runtime, but not always. Subtract a microsecond to
+                // make sure the formula for expected job count remains stable.
+                let expected = (runtime_measured.as_ticks() - 1 * TICKS_PER_US) / period.as_ticks()
                     + if PRE_TRIGGER.is_some() { 1 } else { 0 };
                 if *count != expected {
                     sprintln!("{TAG_WARN} {id} has {count} completions, expected {expected}",);
