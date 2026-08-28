@@ -142,7 +142,7 @@ macro_rules! lcm {
             ($a / $crate::gcd($a, $b)) * $b
         }
     };
-    ($a:expr, $b:expr, $($rest:expr),+) => {
+    ($a:expr, $b:expr, $($rest:expr),+ $(,)? ) => {
         lcm!(lcm!($a, $b), $($rest),+)
     };
 }
