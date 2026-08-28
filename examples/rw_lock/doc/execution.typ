@@ -80,8 +80,6 @@
       width: convert-units(iv.end - iv.start),
       height: bar-h,
       fill: col,
-      stroke: col.darken(15%) + 0.4pt,
-      radius: 1pt,
     )
   })
 
