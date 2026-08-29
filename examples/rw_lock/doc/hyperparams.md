@@ -5,7 +5,7 @@ Show that..?
 | Condition | Intuition                                                          |
 | --------- | ------------------------------------------------------------------ |
 | C1        | There must be reader concurrency to exploit                        |
-| C2        | The highest-priority accessor must be a reader       |
+| C2        | The highest-priority accessor must be a reader                     |
 | C3        | The task must be positioned so that writer blocking can be avoided |
 | C4        | Reader blocking must actually be the dominant blocking term        |
 | C5        | Removing that blocking term must change the maximum                |
