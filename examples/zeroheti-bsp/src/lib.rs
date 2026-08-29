@@ -90,6 +90,7 @@ const fn nop_mult() -> u32 {
 }
 pub const NOPS_PER_SEC: u32 = CPU_FREQ_HZ / nop_mult();
 
+#[inline]
 pub fn asm_delay(t: u32) {
     for _ in 0..t {
         unsafe { asm!("nop") }
