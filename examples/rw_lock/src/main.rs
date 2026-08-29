@@ -213,6 +213,20 @@ mod app {
     static mut STAT_W: MaybeUninit<TaskStat> = MaybeUninit::uninit();
     static mut SYS_START: Duration32 = Duration32::ZERO;
 
+    #[inline]
+    fn wait_ticks(t: u32) {
+        // One loop takes 6 cycles (3 instructions); verified from execution trace:
+        //
+        // ```
+        // addi	x0,   0
+        // addi	x10, -1
+        // bnez	x10, {}
+        // ```
+        for _ in 0..t / 6 {
+            unsafe { core::arch::asm!("nop") }
+        }
+    }
+
     #[shared]
     struct Shared {
         /// The protected readers-writer resource
@@ -370,16 +384,14 @@ mod app {
             // Filter out it out as early as possible.
             unsafe { STAT_R_HI.assume_init_read() }.filter_spurious();
 
-            let mtimer = MTimerLo::instance();
-
             #[cfg(feature = "rw")]
             self.shared()
                 .r
-                .read_lock(|_r| mtimer.wait_busy(self.cs_duration));
+                .read_lock(|_r| wait_ticks(self.cs_duration.as_ticks()));
             #[cfg(not(feature = "rw"))]
             self.shared()
                 .r
-                .lock(|_r| mtimer.wait_busy(self.cs_duration));
+                .lock(|_r| wait_ticks(self.cs_duration.as_ticks()));
 
             unsafe { STAT_R_HI.assume_init_mut() }.report_job_complete();
         }
@@ -414,9 +426,7 @@ mod app {
             // Filter out it out as early as possible.
             unsafe { STAT_J.assume_init_read() }.filter_spurious();
 
-            let mtimer = MTimerLo::instance();
-
-            mtimer.wait_busy(self.work_duration);
+            wait_ticks(self.work_duration.as_ticks());
 
             unsafe { STAT_J.assume_init_mut() }.report_job_complete();
         }
@@ -457,16 +467,14 @@ mod app {
             // Filter out it out as early as possible.
             unsafe { STAT_R_LO.assume_init_read() }.filter_spurious();
 
-            let mtimer = MTimerLo::instance();
-
             #[cfg(feature = "rw")]
             self.shared()
                 .r
-                .read_lock(|_r| mtimer.wait_busy(self.cs_duration));
+                .read_lock(|_r| wait_ticks(self.cs_duration.as_ticks()));
             #[cfg(not(feature = "rw"))]
             self.shared()
                 .r
-                .lock(|_r| mtimer.wait_busy(self.cs_duration));
+                .lock(|_r| wait_ticks(self.cs_duration.as_ticks()));
 
             unsafe { STAT_R_LO.assume_init_mut() }.report_job_complete();
         }
@@ -498,11 +506,9 @@ mod app {
             // Filter out it out as early as possible.
             unsafe { STAT_W.assume_init_read() }.filter_spurious();
 
-            let mtimer = MTimerLo::instance();
-
             self.shared()
                 .r
-                .lock(|_r| mtimer.wait_busy(self.cs_duration));
+                .lock(|_r| wait_ticks(self.cs_duration.as_ticks()));
 
             unsafe { STAT_W.assume_init_mut() }.report_job_complete();
         }
