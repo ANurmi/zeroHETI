@@ -200,7 +200,12 @@ mod app {
             else {
                 // `t_resp` may slightly underreport, as arrival times
                 // are based on calculated periods.
-                let t_resp = t_complete - next_arrival;
+                let t_resp = t_complete.checked_sub(next_arrival).unwrap_or_else(|| {
+                    panic!(
+                        "[ERROR] {}: job arrived after it was completed {next_arrival} > {t_complete}",
+                        self.id
+                    )
+                });
                 if t_resp > self.worst {
                     self.worst = t_resp;
                 }
