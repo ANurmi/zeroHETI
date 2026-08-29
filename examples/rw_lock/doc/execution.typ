@@ -11,6 +11,7 @@
 #let x-units-out = "ms"
 
 // # Styles
+#let show-thr = true
 #let show-color = true
 #let styles = (
   diagram-width: 16cm,
@@ -186,7 +187,39 @@
 
 
 // ── Build a Gantt diagram from an exec-type CSV ────────────
-#let gantt(fpath, title, x-units-in: "cycles", x-units-out: "cycles") = {
+#let ceiling-overlay(fpath, task-list, x-units-in: "cycles", x-units-out: "cycles") = {
+  let (cycles, ceilings) = parse-ceil-csv(fpath)
+  let zero-row = -1
+  let prio-to-y = (:)
+  for (index, task) in task-list.enumerate() {
+    prio-to-y.insert(str(task.prio), index)
+  }
+  prio-to-y.insert("0", zero-row)
+  let fn-convert-units = unit-conversions.at(x-units-in).at(x-units-out)
+
+  let xs = ()
+  let ys = ()
+  for (index, ceiling) in ceilings.enumerate() {
+    let threshold = if ceiling == "" { 0 } else { int(ceiling) }
+    let y = prio-to-y.at(str(threshold), default: none)
+    if y != none {
+      xs.push(fn-convert-units(cycles.at(index)))
+      ys.push(y)
+    }
+  }
+
+  if xs.len() > 0 {
+    lq.plot(
+      xs,
+      ys,
+      step: end,
+      stroke: tuni-black + 0.2pt,
+      mark: none,
+    )
+  }
+}
+
+#let gantt(fpath, title, x-units-in: "cycles", x-units-out: "cycles", ceiling-fpath: none) = {
   // Intervals: `( (start: 11, end: 26, task: "ReaderHigh", prio: 252, job: 0, ), ..., )`
   let ivs = parse-exec-csv(fpath)
   // Task list: `( (name: "Writer", prio: 248), ..., )`
@@ -228,6 +261,10 @@
     }
   }
 
+  let ceiling-plot = if ceiling-fpath != none {
+    ceiling-overlay(ceiling-fpath, task-list, x-units-in: x-units-in, x-units-out: x-units-out)
+  } else { none }
+
   // Small vertical lines for theoretical arrival times
   let timestamps-merged = (
     ivs.map(iv => fn-convert-units(iv.start)) + ivs.map(iv => fn-convert-units(iv.end))
@@ -251,13 +288,31 @@
   let dl-lines = gen-minilines(dl-xs, ts-max, -styles.arrival-tick-pos, task-count)
   */
 
+  let right-axis-ticks = task-list
+    .enumerate()
+    .map(((index, task)) => {
+      let count = task-to-job-count.at(task.name, default: 0)
+      (
+        index,
+        grid(
+          row-gutter: if ceiling-fpath != none { 0.15em } else { 0em },
+          [#count jobs],
+          if ceiling-fpath != none [π = #task.prio],
+        ),
+      )
+    })
+  if ceiling-fpath != none {
+    let zero-row = -1
+    right-axis-ticks.push((zero-row, [0]))
+  }
+
   lq.diagram(
     title: title,
     xlabel: x-units-out,
     width: styles.diagram-width,
     height: styles.diagram-height,
     xlim: xlim,
-    ylim: (-0.7, task-list.len() - 0.3),
+    ylim: (-0.7 - if ceiling-fpath != none { 0.7 } else { 0 }, task-list.len() - 0.3),
     yaxis: (
       ticks: task-list.enumerate().map(((index, task)) => (index, [#task.name])),
     ),
@@ -265,17 +320,13 @@
     lq.axis(
       kind: "y",
       position: right,
-      ticks: task-list
-        .enumerate()
-        .map(((index, task)) => {
-          let count = task-to-job-count.at(task.name, default: 0)
-          (index, [#count jobs])
-        }),
+      ticks: right-axis-ticks,
     ),
     ..arrival-lines,
     //..dl-lines,
     ..preempted-rects,
     ..active-rects,
+    ceiling-plot,
   )
 }
 
@@ -285,6 +336,18 @@
 #show lq.selector(lq.tick-label): set text(size: tuni-font-size-graph-min)
 #show lq.selector(lq.diagram): set text(size: tuni-font-size-graph-min)
 
-#gantt("../ui-test/exec-mutex.csv", [Mutex — Task Execution], x-units-in: x-units-in, x-units-out: x-units-out)
+#gantt(
+  "../ui-test/exec-mutex.csv",
+  [Mutex — Task Execution],
+  x-units-in: x-units-in,
+  x-units-out: x-units-out,
+  ceiling-fpath: if show-thr { "../ui-test/ceil-mutex.csv" },
+)
 
-#gantt("../ui-test/exec-rw.csv", [RW Lock — Task Execution], x-units-in: x-units-in, x-units-out: x-units-out)
+#gantt(
+  "../ui-test/exec-rw.csv",
+  [RW Lock — Task Execution],
+  x-units-in: x-units-in,
+  x-units-out: x-units-out,
+  ceiling-fpath: if show-thr { "../ui-test/ceil-rw.csv" },
+)
