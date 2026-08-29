@@ -1,19 +1,54 @@
 #import "lib.typ": *
 #import "@preview/lilaq:0.6.0" as lq
+#import "tuni-style.typ": *
 
-// Configurations, keep aligned with main.rs
+// Data configurations, keep aligned with main.rs
 #let pre-trigger = true
 #let periods_ms = (0.5, 0.3, 0.2, 0.1)
 #let arrival_offset_us = 10
+#let xlim = (0.0, 3.0)
+#let x-units-in = "us"
+#let x-units-out = "ms"
 
-// ── Two alternating colours per task ───────────────────────
-#let task-colors = (
-  Writer: (color.hsl(200deg, 60%, 45%), color.hsl(220deg, 60%, 78%)),
-  ReaderLow: (color.hsl(130deg, 55%, 35%), color.hsl(150deg, 55%, 70%)),
-  J: (color.hsl(20deg, 80%, 45%), color.hsl(40deg, 80%, 78%)),
-  ReaderHigh: (color.hsl(-10deg, 65%, 45%), color.hsl(10deg, 65%, 78%)),
-  Teardown: (color.hsl(270deg, 50%, 45%), color.hsl(290deg, 50%, 78%)),
+// # Styles
+#let show-color = true
+#let styles = (
+  diagram-width: 16cm,
+  diagram-height: 3.5cm,
+  arrival-tick-thickness: 0.6pt,
+  arrival-tick-pos: 0.3,
+  arrival-tick-h: 0.1,
+  // Height of the active bar sections
+  active-bar-h: 0.55,
+  // Height of the preempted bar sections
+  preempted-bar-h: 0.25,
+  task-color-base: {
+    let comp(c) = if show-color { c.components() } else { (0, 0, c.components().at(2)) }
+    (
+      oklch(40%, comp(tuni-purple).at(1), comp(tuni-purple).at(2)),
+      oklch(40%, comp(tuni-pink).at(1), comp(tuni-pink).at(2)),
+      oklch(40%, comp(tuni-blue).at(1), comp(tuni-blue).at(2)),
+      oklch(40%, comp(tuni-fuchsia).at(1), comp(tuni-fuchsia).at(2)),
+    )
+  },
 )
+#let fn-revalue-parity(parity-idx) = {
+  let dist = 30%
+  c => {
+    let l = c.components().at(0)
+    if calc.rem(parity-idx, 2) == 1 {
+      // Odd
+      c.lighten(dist)
+    } else {
+      // Even
+      c.darken(dist)
+    }
+  }
+}
+#let fn-lighten-inactive = {
+  let dist = 60%
+  c => c.lighten(dist)
+}
 
 /* Parses intervals from an execution trace format CSV, like so:
  *
@@ -64,17 +99,13 @@
 #let tasks-by-priority(intervals) = {
   let seen = (:)
   let tasks = ()
-  for interval in intervals {
-    if interval.task not in seen {
-      seen.insert(interval.task, interval.prio)
-      tasks.push((name: interval.task, prio: interval.prio))
+  for iv in intervals {
+    if iv.task not in seen {
+      seen.insert(iv.task, iv.prio)
+      tasks.push((name: iv.task, prio: iv.prio))
     }
   }
   tasks.sorted(key: task => task.prio)
-}
-
-#let task-color(interval) = {
-  task-colors.at(interval.task).at(calc.rem(interval.job, 2))
 }
 
 #let subtract-overlap(parts, blocker) = {
@@ -94,19 +125,19 @@
   remaining
 }
 
-#let active-parts(interval, intervals) = {
-  let parts = ((start: interval.start, end: interval.end),)
+#let active-parts(iv, intervals) = {
+  let parts = ((start: iv.start, end: iv.end),)
   for blocker in intervals {
-    if blocker.prio > interval.prio {
+    if blocker.prio > iv.prio {
       parts = subtract-overlap(parts, blocker)
     }
   }
   parts.filter(part => part.end - part.start > 1)
 }
 
-#let preempted-parts(interval, intervals) = {
-  let parts = ((start: interval.start, end: interval.end),)
-  for active in active-parts(interval, intervals) {
+#let preempted-parts(iv, intervals) = {
+  let parts = ((start: iv.start, end: iv.end),)
+  for active in active-parts(iv, intervals) {
     parts = subtract-overlap(parts, active)
   }
   parts.filter(part => part.end > part.start)
@@ -114,103 +145,118 @@
 
 #let draw-rects(items, convert-units, height) = {
   items.map(item => {
-    let interval = item.interval
-    let y = item.y
-    let fill = item.fill
+    let iv = item.iv
     lq.rect(
-      convert-units(interval.start),
-      y - height / 2,
-      width: convert-units(interval.end - interval.start),
+      convert-units(iv.start),
+      item.y - height / 2,
+      width: convert-units(iv.end - iv.start),
       height: height,
-      fill: fill,
+      fill: item.fill,
     )
   })
 }
 
+#let gen-minilines(xs, ts-max, ypos, line-count) = {
+  range(0, line-count)
+    .map(index => {
+      let y-min = index + ypos - styles.arrival-tick-h
+      let y-max = index + ypos + styles.arrival-tick-h
+      let (even-colors, odd-colors) = (
+        fn-revalue-parity(0)(styles.task-color-base.at(index)),
+        fn-revalue-parity(1)(styles.task-color-base.at(index)),
+      )
+      (
+        // Draw every line in one color, and every other in the other
+        lq.vlines(
+          ..xs.at(index).enumerate().filter(it => calc.even(it.at(0))).map(it => it.at(1)),
+          min: y-min,
+          max: y-max,
+          stroke: styles.arrival-tick-thickness + even-colors,
+        ),
+        lq.vlines(
+          ..xs.at(index).enumerate().filter(it => calc.odd(it.at(0))).map(it => it.at(1)),
+          min: y-min,
+          max: y-max,
+          stroke: styles.arrival-tick-thickness + odd-colors,
+        ),
+      )
+    })
+    .flatten()
+}
+
+
 // ── Build a Gantt diagram from an exec-type CSV ────────────
 #let gantt(fpath, title, x-units-in: "cycles", x-units-out: "cycles") = {
-  let exec-intervals = parse-exec-csv(fpath)
-  let task-list = tasks-by-priority(exec-intervals)
-
-  let task-y = (:)
-  for (index, task) in task-list.enumerate() {
-    task-y.insert(task.name, index)
-  }
-
-  let convert-units = unit-conversions.at(x-units-in).at(x-units-out)
-  let all-cycles = (
-    exec-intervals.map(interval => convert-units(interval.start))
-      + exec-intervals.map(interval => convert-units(interval.end))
-  )
-  let x-max = calc.max(..all-cycles)
+  // Intervals: `( (start: 11, end: 26, task: "ReaderHigh", prio: 252, job: 0, ), ..., )`
+  let ivs = parse-exec-csv(fpath)
+  // Task list: `( (name: "Writer", prio: 248), ..., )`
+  let task-list = tasks-by-priority(ivs)
 
   // Draw muted preempted pieces below the solid active pieces.
-  let preempted-bar-h = 0.25
-  let active-bar-h = 0.55
-  let preempted-items = exec-intervals
-    .map(interval => {
-      let y = task-y.at(interval.task)
-      let fill = color.mix(task-color(interval), luma(65%)).desaturate(60%)
-      preempted-parts(interval, exec-intervals).map(part => (
-        interval: part,
+  let task-ys = task-list.enumerate().map(((index, task)) => (task.name, index)).to-dict()
+  let preempted-items = ivs
+    .map(iv => {
+      let y = task-ys.at(iv.task)
+      preempted-parts(iv, ivs).map(part => (
+        iv: part,
         y: y,
-        fill: fill,
+        fill: fn-lighten-inactive(fn-revalue-parity(iv.job)(styles.task-color-base.at(y))),
       ))
     })
     .flatten()
-  let preempted-rects = draw-rects(preempted-items, convert-units, preempted-bar-h)
+  let fn-convert-units = unit-conversions.at(x-units-in).at(x-units-out)
+  let preempted-rects = draw-rects(preempted-items, fn-convert-units, styles.preempted-bar-h)
 
-  let active-items = exec-intervals
-    .map(interval => {
-      let y = task-y.at(interval.task)
-      active-parts(interval, exec-intervals).map(part => (
-        interval: part,
+  let active-items = ivs
+    .map(iv => {
+      let y = task-ys.at(iv.task)
+      active-parts(iv, ivs).map(part => (
+        iv: part,
         y: y,
-        fill: task-color(interval),
+        fill: fn-revalue-parity(iv.job)(styles.task-color-base.at(y)),
       ))
     })
     .flatten()
-  let active-rects = draw-rects(active-items, convert-units, active-bar-h)
+  let active-rects = draw-rects(active-items, fn-convert-units, styles.active-bar-h)
 
   // Count jobs per task for the right-hand axis.
-  let job-count = (:)
-  for interval in exec-intervals {
-    let count = job-count.at(interval.task, default: 0)
-    if interval.job + 1 > count {
-      job-count.insert(interval.task, interval.job + 1)
+  let task-to-job-count = (:)
+  for iv in ivs {
+    let count = task-to-job-count.at(iv.task, default: 0)
+    if iv.job + 1 > count {
+      task-to-job-count.insert(iv.task, iv.job + 1)
     }
   }
 
-  // Small vertical lines for theoretical arrival times.
-  let vline-xs = periods_ms.map(period => {
-    range(1, int(x-max / period) + 1 + if pre-trigger { 1 }).map(n => (
-      (n - if pre-trigger { 1 } else { 0 }) * period + arrival_offset_us / 1000
+  // Small vertical lines for theoretical arrival times
+  let timestamps-merged = (
+    ivs.map(iv => fn-convert-units(iv.start)) + ivs.map(iv => fn-convert-units(iv.end))
+  )
+  let offset = arrival_offset_us / 1000
+  // Maximum timestamp in range
+  let ts-max = calc.max(..timestamps-merged)
+  let task-count = task-list.len()
+  let arrival-xs = periods_ms.map(period => {
+    range(1, int(ts-max / period) + 1 + if pre-trigger { 1 }).map(n => (
+      (n - if pre-trigger { 1 } else { 0 }) * period + offset
     ))
   })
-
-  let arrival-lines = range(0, 4)
-    .map(index => (
-      lq.vlines(
-        ..vline-xs.at(index).enumerate().filter(it => calc.even(it.at(0))).map(it => it.at(1)),
-        min: index + 0.2,
-        max: index + 0.4,
-        stroke: 0.6pt + task-colors.values().at(index).at(0),
-      ),
-      lq.vlines(
-        ..vline-xs.at(index).enumerate().filter(it => calc.odd(it.at(0))).map(it => it.at(1)),
-        min: index + 0.2,
-        max: index + 0.4,
-        stroke: stroke(0.6pt + task-colors.values().at(index).at(1)),
-      ),
+  let arrival-lines = gen-minilines(arrival-xs, ts-max, styles.arrival-tick-pos, task-count)
+  /*
+  let dl-xs = periods_ms.map(period => {
+    range(1, int(ts-max / period) + 1 + if pre-trigger { 1 }).map(n => (
+      (n - if pre-trigger { 1 } else { 0 }) * period + offset + period
     ))
-    .flatten()
+  })
+  let dl-lines = gen-minilines(dl-xs, ts-max, -styles.arrival-tick-pos, task-count)
+  */
 
   lq.diagram(
     title: title,
     xlabel: x-units-out,
-    width: 16cm,
-    height: 3.5cm,
-    xlim: (0, 3.0),
+    width: styles.diagram-width,
+    height: styles.diagram-height,
+    xlim: xlim,
     ylim: (-0.7, task-list.len() - 0.3),
     yaxis: (
       ticks: task-list.enumerate().map(((index, task)) => (index, [#task.name])),
@@ -222,20 +268,23 @@
       ticks: task-list
         .enumerate()
         .map(((index, task)) => {
-          let count = job-count.at(task.name, default: 0)
+          let count = task-to-job-count.at(task.name, default: 0)
           (index, [#count jobs])
         }),
     ),
     ..arrival-lines,
+    //..dl-lines,
     ..preempted-rects,
     ..active-rects,
   )
 }
 
 // ── Page setup ─────────────────────────────────────────────
-#set page(margin: 0.5cm, width: auto, height: auto)
-#set text(size: 10pt)
+#set page(margin: 0.25cm, width: auto, height: auto)
+#set text(size: tuni-font-size)
+#show lq.selector(lq.tick-label): set text(size: tuni-font-size-graph-min)
+#show lq.selector(lq.diagram): set text(size: tuni-font-size-graph-min)
 
-#gantt("../ui-test/exec-mutex.csv", [Mutex — Task Execution], x-units-in: "us", x-units-out: "ms")
+#gantt("../ui-test/exec-mutex.csv", [Mutex — Task Execution], x-units-in: x-units-in, x-units-out: x-units-out)
 
-#gantt("../ui-test/exec-rw.csv", [RW Lock — Task Execution], x-units-in: "us", x-units-out: "ms")
+#gantt("../ui-test/exec-rw.csv", [RW Lock — Task Execution], x-units-in: x-units-in, x-units-out: x-units-out)
