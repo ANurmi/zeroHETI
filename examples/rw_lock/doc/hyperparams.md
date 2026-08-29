@@ -16,20 +16,20 @@ These hyperparams demonstrate a system that satisfies the conditions of Theorem~
 
 - Runtime:          45 ms
 - Task periods (hyperperiod = LCD = 42 ms):
-    - T(`ReaderHigh`):  700 us
-    - T(`J`):          1200 us
-    - T(`ReaderLow`):  1000 us
-    - T(`Writer`):     1500 us
+    - T(`ReaderHigh`):  100 us
+    - T(`J`):           200 us
+    - T(`ReaderLow`):   300 us
+    - T(`Writer`):      500 us
 - Interference free computation times (IRQ entry/exit overhead $<1 us$ not accounted for):
-    - C(`ReaderHigh`)    15 us
-    - C(`J`)            350 us
-    - C(`ReaderLow`)    240 us
-    - C(`Writer`)        16 us
+    - C(`ReaderHigh`)    10 us
+    - C(`J`)             40 us
+    - C(`ReaderLow`)    150 us
+    - C(`Writer`)        10 us
 - Critical section length (max. 30 ns jitter):
-    - CS(`ReaderHigh`)   15 us
+    - CS(`ReaderHigh`)   10 us
     - CS(`J`)             0 us
-    - CS(`ReaderLow`)   240 us
-    - CS(`Writer`)       16 us
+    - CS(`ReaderLow`)   150 us
+    - CS(`Writer`)       10 us
 - Deadline d(`J`):      400 us
 
 Output:
