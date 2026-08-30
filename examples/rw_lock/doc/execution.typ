@@ -6,7 +6,9 @@
 #let pre-trigger = true
 #let periods_ms = (0.5, 0.3, 0.2, 0.1)
 #let arrival_offset_us = 10
-#let xlim = (0.0, 3.0)
+#let arrival_offset_ms = arrival_offset_us / 1000
+// What part of data should be shown on X-axis?
+#let xlim = (arrival_offset_ms, 3 + arrival_offset_ms)
 #let x-units-in = "us"
 #let x-units-out = "ms"
 
