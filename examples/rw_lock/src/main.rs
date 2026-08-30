@@ -198,6 +198,13 @@ mod app {
 
             // If completed late, record deadline miss
             if t_complete > next_arrival + self.dl {
+                /*
+                panic!(
+                    "DL miss: t_complete = {} (us), dl: {} (us)",
+                    t_complete.as_micros(),
+                    (next_arrival + self.dl).as_micros()
+                );
+                */
                 self.miss_count += 1;
             }
             // If completed on time, record worst response time
