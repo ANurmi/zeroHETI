@@ -358,7 +358,7 @@
 
 #gantt(
   "../ui-test/exec-mutex.csv",
-  [Mutex — Task Execution],
+  [Task Execution (Mutex)],
   x-units-in: x-units-in,
   x-units-out: x-units-out,
   ceiling-fpath: if show-thr { "../ui-test/ceil-mutex.csv" },
@@ -366,7 +366,7 @@
 
 #gantt(
   "../ui-test/exec-rw.csv",
-  [RW Lock — Task Execution],
+  [Task Execution (RW Lock)],
   x-units-in: x-units-in,
   x-units-out: x-units-out,
   ceiling-fpath: if show-thr { "../ui-test/ceil-rw.csv" },
