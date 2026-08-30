@@ -163,7 +163,8 @@ mod app {
             //
             // `SYS_START` occurs right after setting off the periodic timers.
             let next_arrival = unsafe { SYS_START }
-                + (self.count + if PRE_TRIGGER.is_some() { 0 } else { 1 }) * self.period;
+                + (self.count + if PRE_TRIGGER.is_some() { 0 } else { 1 }) * self.period
+                + PRE_TRIGGER.unwrap_or(Duration32::ZERO);
 
             // The periodic timer never fires before its period is completed, so
             // any execution before the next scheduled arrival cannot belong to
@@ -189,7 +190,8 @@ mod app {
             //
             // `SYS_START` occurs right after setting off the periodic timers.
             let next_arrival = unsafe { SYS_START }
-                + (self.count + if PRE_TRIGGER.is_some() { 0 } else { 1 }) * self.period;
+                + (self.count + if PRE_TRIGGER.is_some() { 0 } else { 1 }) * self.period
+                + PRE_TRIGGER.unwrap_or(Duration32::ZERO);
 
             // Record completion
             self.count += 1;
