@@ -51,7 +51,7 @@ mod app {
     /// Duration of the critical section of `W`. Short.
     const CS_W: Duration32 = Duration32::from_micros(15);
 
-    const DL_J_US: u32 = 100;
+    const DL_J_US: u32 = 200;
 
     /// Set to trigger all timers in given time. Timer periods are shifted in
     /// phase the same amount.
