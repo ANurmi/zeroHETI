@@ -16,12 +16,8 @@
 //! adds around an order of magnitude in execution time, depending on how many
 //! context switches were reported.
 
-#![no_std]
-#![allow(static_mut_refs)]
-
 mod print;
 
-use bsp::mtimer::MTimer;
 pub use print::{ObsPrinter, TsUnit};
 
 /// RTIC observer that records every generated observability hook.
@@ -46,7 +42,7 @@ impl rtic_observability::RticObservability for Obs {
 }
 
 /// Ticks per microsecond, computed at compile time from [`bsp::CPU_FREQ_HZ`].
-const TICKS_PER_US: u32 = bsp::CPU_FREQ_HZ / 1_000_000;
+const TICKS_PER_US: u32 = crate::CPU_FREQ_HZ / 1_000_000;
 
 /// Maximum number of events the trace can hold. Spends on-target memory (32 bits /
 /// 4 bytes per entry).
@@ -108,14 +104,14 @@ pub fn obs_push(kind: ObsKind, id: u8, task_prio: u16, ceiling: u16) {
     // Safety: reads of mtimer hi/lo may be disjoint if preempted mid-read, but
     // the result is only a timestamp for tracing. This is a pure read; it does
     // not disturb a `OneShot` used for an app's hyperperiod runtime.
-    let ts = MTimer::instance().counter() as u32;
+    let ts = crate::mtimer::MTimer::instance().counter() as u32;
     obs_append(word, ts);
 }
 
 /// Lock-free append; see the module docs for the concurrency model.
 fn obs_append(word: u32, ts: u32) {
     // Protect access to shared data
-    use bsp::register::mintthresh::{self, Mintthresh};
+    use crate::register::mintthresh::{self, Mintthresh};
     let old_thr = mintthresh::write(Mintthresh::from(0xff));
 
     // Safety: shared access protected by above mintthresh

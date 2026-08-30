@@ -1,5 +1,0 @@
-doc:
-    cargo doc -Frtl-tb
-doc-open:
-    cargo doc -Frtl-tb --open
-

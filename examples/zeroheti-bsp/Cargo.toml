@@ -16,6 +16,7 @@ strum = { version = "0.28.0", default-features = false, features = ["derive"] }
 ufmt = { version = "0.2.0", optional = true }
 embedded-hal = { version = "1.0.0", optional = true }
 bitflags = "2.11.0"
+rtic-observability = { path = "../mrtic/rtic-observability", optional = true }
 
 [features]
 default = ["panic", "rt", "core-fmt", "nest-continue", "default-trap-print"]
@@ -31,6 +32,7 @@ intc-clic = []
 intc-edfic = ["zeroheti-bsp-macros/intc-edfic"]
 embedded-hal = ["dep:embedded-hal"]
 default-trap-print = []
+obs = ["dep:rtic-observability"]
 
 [profile.dev]
 # There seems to be a problem in riscv-rt with regards to linking in default_start_trap in debug

@@ -16,6 +16,8 @@ pub mod mailbox;
 pub mod mmap;
 pub mod mmio;
 pub mod mtimer;
+#[cfg(feature = "obs")]
+pub mod obs_trace;
 #[cfg(feature = "panic")]
 pub mod panic;
 mod peripherals;

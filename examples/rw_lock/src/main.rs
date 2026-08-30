@@ -4,7 +4,7 @@
 
 use bsp::rt as _;
 
-#[cfg_attr(feature = "obs", rtic::app(device = bsp, obs = obs_trace::Obs, dispatchers = []))]
+#[cfg_attr(feature = "obs", rtic::app(device = bsp, obs = bsp::obs_trace::Obs, dispatchers = []))]
 #[cfg_attr(not(feature = "obs"), rtic::app(device = bsp, dispatchers = []))]
 mod app {
     use bsp::{

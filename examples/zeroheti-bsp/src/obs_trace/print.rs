@@ -1,6 +1,6 @@
-use bsp::{mtimer::MTimer, sprintln};
+use crate::{mtimer::MTimer, sprintln};
 
-use crate::{OBS_TRACE, OBS_TRACE_CAP, OBS_TRACE_LEN, OBS_TRACE_TS, ObsKind, TICKS_PER_US, layout};
+use super::{OBS_TRACE, OBS_TRACE_CAP, OBS_TRACE_LEN, OBS_TRACE_TS, ObsKind, TICKS_PER_US, layout};
 
 /// Selects the timestamp unit printed by [`obs_dump`].
 #[derive(Clone, Copy)]
@@ -122,11 +122,7 @@ impl ObsPrinter {
 macro_rules! obs_dump {
     ($unit:expr) => {
         // Leverages RTIC generated symbols `task_name` and `res_name`
-        obs_trace::ObsPrinter::new(
-            crate::app::task_name,
-            crate::app::res_name,
-            obs_trace::TsUnit::Micros,
-        )
-        .dump()
+        $crate::obs_trace::ObsPrinter::new(crate::app::task_name, crate::app::res_name, $unit)
+            .dump()
     };
 }
