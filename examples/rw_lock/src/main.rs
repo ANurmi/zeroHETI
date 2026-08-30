@@ -251,7 +251,8 @@ mod app {
         sprintln!("- Timer res.   (ns) : {mtimer_res_ns:?}",);
         sprintln!("- Timer max.   (ms) : {mtimer_max_ms:?}",);
         sprintln!("- Lock mode         : {LOCK_MODE}");
-        sprintln!("- RUNTIME_MS        : {RUNTIME_MS}");
+        sprintln!("- Pre-trigger       : {PRE_TRIGGER:?}");
+        sprintln!("- Target RUNTIME_MS : {RUNTIME_MS}");
         sprintln!("Task set:");
         sprintln!("- Hyperperiod  (ms) : {}", HYPERPERIOD_US / 1_000);
         sprintln!("- Theoretical load  : {UTIL_MIN_PC}%");
@@ -326,19 +327,6 @@ mod app {
                     ],
                 )
             };
-
-            // Report job J, which is of special interest
-            let TaskStat {
-                dl,
-                miss_count,
-                count,
-                ..
-            } = unsafe { STAT_J.assume_init_read() };
-            sprintln!(
-                "VERDICT [{LOCK_MODE}]: J{} schedulable -- {miss_count}/{count} jobs missed the {} us deadline",
-                if miss_count > 0 { " NOT" } else { "" },
-                dl.as_micros()
-            );
 
             #[cfg(feature = "obs")]
             bsp::obs_dump!(bsp::obs_trace::TsUnit::Micros);
