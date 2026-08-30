@@ -1,4 +1,4 @@
-#import "lib.typ": *
+#import "util.typ": *
 #import "@preview/lilaq:0.6.0" as lq
 
 #set page(margin: 0.5cm, width: auto, height: auto)
