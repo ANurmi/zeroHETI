@@ -271,13 +271,12 @@
   let timestamps-merged = (
     ivs.map(iv => fn-convert-units(iv.start)) + ivs.map(iv => fn-convert-units(iv.end))
   )
-  let offset = arrival_offset_us / 1000
   // Maximum timestamp in range
   let ts-max = calc.max(..timestamps-merged)
   let task-count = task-list.len()
   let arrival-xs = periods_ms.map(period => {
     range(1, int(ts-max / period) + 1 + if pre-trigger { 1 }).map(n => (
-      (n - if pre-trigger { 1 } else { 0 }) * period + offset
+      (n - if pre-trigger { 1 } else { 0 }) * period + arrival_offset_ms
     ))
   })
   let arrival-lines = gen-minilines(arrival-xs, ts-max, styles.arrival-tick-pos, task-count)
@@ -307,7 +306,19 @@
     let zero-row = -1
     right-axis-ticks.push((zero-row, [0]))
   }
-
+  show: lq.set-diagram(
+    xaxis: (
+      position: bottom,
+      ticks: range(0, 31).map(i => i * 0.2 + arrival_offset_ms),
+      format-ticks: lq.tick-format.linear,
+      subticks: 0,
+      // Align x-axis with the first arrival for clarity
+      offset: arrival_offset_ms,
+    ),
+    yaxis: (
+      ticks: task-list.enumerate().map(((index, task)) => (index, [#task.name])),
+    ),
+  )
   lq.diagram(
     title: title,
     xlabel: x-units-out,
@@ -315,10 +326,6 @@
     height: styles.diagram-height,
     xlim: xlim,
     ylim: (-0.7 - if ceiling-fpath != none { 0.7 } else { 0 }, task-list.len() - 0.3),
-    yaxis: (
-      ticks: task-list.enumerate().map(((index, task)) => (index, [#task.name])),
-    ),
-    xaxis: (position: bottom),
     lq.axis(
       kind: "y",
       position: right,
