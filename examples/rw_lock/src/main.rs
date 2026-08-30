@@ -341,7 +341,7 @@ mod app {
             );
 
             #[cfg(feature = "obs")]
-            obs_trace::obs_dump!(obs_trace::TsUnit::Micros);
+            bsp::obs_dump!(bsp::obs_trace::TsUnit::Micros);
 
             // HACK: wait for prints to complete
             MTimerLo::instance().wait_busy(Duration32::from_millis(1));

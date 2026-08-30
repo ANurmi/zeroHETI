@@ -122,7 +122,6 @@ impl ObsPrinter {
 macro_rules! obs_dump {
     ($unit:expr) => {
         // Leverages RTIC generated symbols `task_name` and `res_name`
-        $crate::obs_trace::ObsPrinter::new(crate::app::task_name, crate::app::res_name, $unit)
-            .dump()
+        bsp::obs_trace::ObsPrinter::new(crate::app::task_name, crate::app::res_name, $unit).dump()
     };
 }
