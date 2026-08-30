@@ -29,6 +29,7 @@ rw = []
 # (~0.7%--8% active time) and a slow UART dump (~25 s wall clock in the sim vs
 # ~3 s without).
 obs = [ "bsp/obs" ]
+debug-expand = ["rtic/debug-expand"]
 
 [profile.dev]
 # There seems to be a problem in riscv-rt with regards to linking in default_start_trap in debug
