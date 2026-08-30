@@ -344,7 +344,7 @@
       ticks: right-axis-ticks,
     ),
     ..arrival-lines,
-    ..dl-lines,
+    //..dl-lines,
     ..preempted-rects,
     ..active-rects,
     ceiling-plot,
