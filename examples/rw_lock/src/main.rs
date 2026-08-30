@@ -47,7 +47,7 @@ mod app {
     /// Duration of the work of `J`.
     const WORK_J: Duration32 = Duration32::from_micros(40);
     /// Duration of the critical section of `ReaderLow`. Long.
-    const CS_RLO: Duration32 = Duration32::from_micros(115);
+    const CS_RLO: Duration32 = Duration32::from_micros(95);
     /// Duration of the critical section of `W`. Short.
     const CS_W: Duration32 = Duration32::from_micros(15);
 
