@@ -25,9 +25,11 @@ fpga = ["bsp/fpga"]
 rw = []
 
 # RTIC observability hooks: trace every task activation/completion and resource
-# acquire/release, dumped over UART at teardown. Adds a small per-hook cost
-# (~0.7%--8% active time) and a slow UART dump (~25 s wall clock in the sim vs
-# ~3 s without).
+# acquire/release, dumped over UART at teardown.
+#
+# Adds a small per-hook cost:
+# * for the demo runtime itself, about +4.5 % instructions.
+# * a slow UART dump at end of demo that about doubles the wall clock runtime
 obs = [ "bsp/obs" ]
 debug-expand = ["rtic/debug-expand"]
 
