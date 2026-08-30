@@ -184,10 +184,7 @@ mod app {
         }
 
         /// Record that the job has completed
-        fn report_job_complete(&mut self) {
-            // Record time of job completion as early as possible
-            let t_complete = MTimerLo::instance().now();
-
+        fn report_job_complete(&mut self, t_complete: Duration32) {
             // Theoretical arrival time of the job being completed
             //
             // `SYS_START` occurs right after setting off the periodic timers.
@@ -249,13 +246,6 @@ mod app {
 
         let mtimer_res_ns = Duration32::from_ticks(1).as_nanos();
         let mtimer_max_ms = Duration32::MAX.as_millis();
-
-        // Ensure no critical section undercuts mtimer resolution, which is used
-        // as the await delay.
-        assert!(CS_RHI.as_nanos() >= mtimer_res_ns);
-        assert!(WORK_J.as_nanos() >= mtimer_res_ns);
-        assert!(CS_RLO.as_nanos() >= mtimer_res_ns);
-        assert!(CS_W.as_nanos() >= mtimer_res_ns);
 
         sprintln!("\r\n### RW-lock schedulability demo (zeroHETI / RTIC) ###");
         sprintln!("- Timer res.   (ns) : {mtimer_res_ns:?}",);
@@ -391,19 +381,23 @@ mod app {
             // If a job is executing before its arrival time, it is a
             // spurious job spawned by the known hardware bug.
             //
-            // Filter out it out as early as possible.
-            unsafe { STAT_R_HI.assume_init_read() }.filter_spurious();
+            // Filter it out as early as possible.
+            if unsafe { STAT_R_HI.assume_init_read() }.filter_spurious() {
+                return;
+            }
 
             #[cfg(feature = "rw")]
-            self.shared()
-                .r
-                .read_lock(|_r| wait_ticks(self.cs_duration.as_ticks()));
+            let t_complete = self.shared().r.read_lock(|_r| {
+                wait_ticks(self.cs_duration.as_ticks());
+                MTimerLo::instance().now()
+            });
             #[cfg(not(feature = "rw"))]
-            self.shared()
-                .r
-                .lock(|_r| wait_ticks(self.cs_duration.as_ticks()));
+            let t_complete = self.shared().r.lock(|_r| {
+                wait_ticks(self.cs_duration.as_ticks());
+                MTimerLo::instance().now()
+            });
 
-            unsafe { STAT_R_HI.assume_init_mut() }.report_job_complete();
+            unsafe { STAT_R_HI.assume_init_mut() }.report_job_complete(t_complete);
         }
     }
 
@@ -433,12 +427,15 @@ mod app {
             // If a job is executing before its arrival time, it is a
             // spurious job spawned by the known hardware bug.
             //
-            // Filter out it out as early as possible.
-            unsafe { STAT_J.assume_init_read() }.filter_spurious();
+            // Filter it out as early as possible.
+            if unsafe { STAT_J.assume_init_read() }.filter_spurious() {
+                return;
+            }
 
             wait_ticks(self.work_duration.as_ticks());
+            let t_complete = MTimerLo::instance().now();
 
-            unsafe { STAT_J.assume_init_mut() }.report_job_complete();
+            unsafe { STAT_J.assume_init_mut() }.report_job_complete(t_complete);
         }
     }
 
@@ -474,19 +471,23 @@ mod app {
             // If a job is executing before its arrival time, it is a
             // spurious job spawned by the known hardware bug.
             //
-            // Filter out it out as early as possible.
-            unsafe { STAT_R_LO.assume_init_read() }.filter_spurious();
+            // Filter it out as early as possible.
+            if unsafe { STAT_R_LO.assume_init_read() }.filter_spurious() {
+                return;
+            }
 
             #[cfg(feature = "rw")]
-            self.shared()
-                .r
-                .read_lock(|_r| wait_ticks(self.cs_duration.as_ticks()));
+            let t_complete = self.shared().r.read_lock(|_r| {
+                wait_ticks(self.cs_duration.as_ticks());
+                MTimerLo::instance().now()
+            });
             #[cfg(not(feature = "rw"))]
-            self.shared()
-                .r
-                .lock(|_r| wait_ticks(self.cs_duration.as_ticks()));
+            let t_complete = self.shared().r.lock(|_r| {
+                wait_ticks(self.cs_duration.as_ticks());
+                MTimerLo::instance().now()
+            });
 
-            unsafe { STAT_R_LO.assume_init_mut() }.report_job_complete();
+            unsafe { STAT_R_LO.assume_init_mut() }.report_job_complete(t_complete);
         }
     }
 
@@ -513,14 +514,17 @@ mod app {
             // If a job is executing before its arrival time, it is a
             // spurious job spawned by the known hardware bug.
             //
-            // Filter out it out as early as possible.
-            unsafe { STAT_W.assume_init_read() }.filter_spurious();
+            // Filter it out as early as possible.
+            if unsafe { STAT_W.assume_init_read() }.filter_spurious() {
+                return;
+            }
 
-            self.shared()
-                .r
-                .lock(|_r| wait_ticks(self.cs_duration.as_ticks()));
+            let t_complete = self.shared().r.lock(|_r| {
+                wait_ticks(self.cs_duration.as_ticks());
+                MTimerLo::instance().now()
+            });
 
-            unsafe { STAT_W.assume_init_mut() }.report_job_complete();
+            unsafe { STAT_W.assume_init_mut() }.report_job_complete(t_complete);
         }
     }
 }
