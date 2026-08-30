@@ -315,19 +315,20 @@
   show: lq.set-grid(
     kind: "x",
     stroke: stroke(dash: "dotted", paint: luma(150)),
-    stroke-sub: none,
+    stroke-sub: stroke(dash: "dotted", thickness: 0.25pt, paint: luma(150)),
   )
   show: lq.set-diagram(
     xaxis: (
       position: bottom,
       ticks: range(0, 31).map(i => i * 0.2 + arrival_offset_ms),
       format-ticks: lq.tick-format.linear,
-      subticks: 0,
+      subticks: 1,
       // Align x-axis with the first arrival for clarity
       offset: arrival_offset_ms,
     ),
     yaxis: (
       ticks: task-list.enumerate().map(((index, task)) => (index, [#task.name])),
+      subticks: 0,
     ),
   )
   lq.diagram(
