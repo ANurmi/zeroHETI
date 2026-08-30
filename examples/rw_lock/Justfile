@@ -10,15 +10,15 @@ run features='':
 trace features='':
     just run -Fobs {{ features }} | sed -n '{{ trace_range }}{ /TRACE_START/d; /TRACE_END/d; p; }'
 
-trace-mutex:
-    bash -c 'RUNTIME_MS={{ runtime_ms }} stdbuf -oL cargo run --release -Frtl-tb,intc-clic,obs \
+trace-mutex features='':
+    bash -c 'RUNTIME_MS={{ runtime_ms }} stdbuf -oL cargo run --release -Frtl-tb,intc-clic,obs {{ features }} \
         | tee >(stdbuf -oL sed -n "{{ trace_range }}{ /TRACE_START/d; /TRACE_END/d; p; }" > ui-test/mutex.trace) \
         | stdbuf -oL sed "{{ trace_range }}d"'
     uv run trace_to_csv_ceil.py ui-test/mutex.trace ui-test/ceil-mutex.csv
     uv run trace_to_csv_exec.py ui-test/mutex.trace ui-test/exec-mutex.csv
 
-trace-rw:
-    bash -c 'RUNTIME_MS={{ runtime_ms }} stdbuf -oL cargo run --release -Frtl-tb,intc-clic,obs,rw \
+trace-rw features='':
+    bash -c 'RUNTIME_MS={{ runtime_ms }} stdbuf -oL cargo run --release -Frtl-tb,intc-clic,obs,rw {{ features }} \
         | tee >(stdbuf -oL sed -n "{{ trace_range }}{ /TRACE_START/d; /TRACE_END/d; p; }" > ui-test/rw.trace) \
         | stdbuf -oL sed "{{ trace_range }}d"'
     uv run trace_to_csv_ceil.py ui-test/rw.trace ui-test/ceil-rw.csv
