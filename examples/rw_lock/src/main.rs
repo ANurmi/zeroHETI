@@ -153,6 +153,10 @@ mod app {
         }
 
         fn filter_spurious(&mut self) -> bool {
+            // Any timestamp during a job's execution can be used to positively
+            // identify a job that is executing before its own arrival. The
+            // earlier the timestamp, the more likely it is to catch an
+            // incorrect job.
             let now = MTimerLo::instance().now();
 
             // Theoretical arrival time of the job being completed
@@ -163,9 +167,10 @@ mod app {
 
             // The periodic timer never fires before its period is completed, so
             // any execution before the next scheduled arrival cannot belong to
-            // a new job; it is a spurious re-dispatch of the current job. Drop
-            // it instead of counting it as a new job. A genuine job always
-            // executes after its own arrival, as its work duration is non-zero.
+            // a new job; it is a spurious re-dispatch of the current job. Make
+            // a record of the spurious job and drop it instead of counting it
+            // as a new job. A genuine job always executes after its own
+            // arrival, as its work duration is non-zero.
             //
             // The issue is currently traced to the CLIC, which re-presents a
             // source whose `ip` was not cleared during a simultaneous
