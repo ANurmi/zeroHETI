@@ -253,7 +253,10 @@ mod app {
         sprintln!("- Timer res.   (ns) : {mtimer_res_ns:?}",);
         sprintln!("- Timer max.   (ms) : {mtimer_max_ms:?}",);
         sprintln!("- Lock mode         : {LOCK_MODE}");
-        sprintln!("- Pre-trigger       : {PRE_TRIGGER:?}");
+        sprintln!(
+            "- Pre-trigger  (us) : {:?}",
+            PRE_TRIGGER.map(|t| t.as_micros())
+        );
         sprintln!("- Target RUNTIME_MS : {RUNTIME_MS}");
         sprintln!("Task set:");
         sprintln!("- Hyperperiod  (ms) : {}", HYPERPERIOD_US / 1_000);
