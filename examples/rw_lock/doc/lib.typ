@@ -10,10 +10,27 @@
   let ceilings = data
     .slice(1)
     .map(row => {
-      let v = row.at(4)
-      if v == "" { 0 } else { int(v) }
+      let t = row.at(1)
+      // Capture only changes in resource ceiling
+      if t in ("acq", "rel") {
+        let ceil = row.at(4)
+        int(ceil)
+      } else {
+        // Task activation and completion also changes the effective ceiling,
+        // but we ignore that in the graph.
+        /*if t == "act" {
+          let prio = row.at(3)
+          int(prio)
+        } else if t == "comp" {
+          let stacked = row.at(5)
+          int(stacked)
+        } else */
+        none
+      }
     })
-  (cycles, ceilings)
+  let both = cycles.zip(ceilings).filter(((cc, ceil)) => { ceil != none })
+  import "@preview/funarray:0.4.0"
+  funarray.unzip(both)
 }
 
 #let ceiling-diagram(fpath, title, x-units-in: "cycles", x-units-out: "cycles") = {
