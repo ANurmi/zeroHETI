@@ -36,7 +36,6 @@
     lq.plot(
       xdata,
       ceilings,
-      step: end,
       stroke: blue + 1.5pt,
       mark: none,
     ),

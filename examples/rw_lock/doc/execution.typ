@@ -25,6 +25,7 @@
   active-bar-h: 0.55,
   // Height of the preempted bar sections
   preempted-bar-h: 0.25,
+  ceiling-stroke: tuni-grey + 0.5pt,
   task-color-base: {
     let comp(c) = if show-color { c.components() } else { (0, 0, c.components().at(2)) }
     (
@@ -215,7 +216,7 @@
       xs,
       ys,
       step: end,
-      stroke: tuni-black + 0.2pt,
+      stroke: styles.ceiling-stroke,
       mark: none,
     )
   }
@@ -306,6 +307,11 @@
     let zero-row = -1
     right-axis-ticks.push((zero-row, [0]))
   }
+  show: lq.set-grid(
+    kind: "x",
+    stroke: stroke(dash: "dotted", paint: luma(150)),
+    stroke-sub: none,
+  )
   show: lq.set-diagram(
     xaxis: (
       position: bottom,
