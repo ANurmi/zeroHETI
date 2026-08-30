@@ -5,6 +5,7 @@
 // Data configurations, keep aligned with main.rs
 #let pre-trigger = true
 #let periods_ms = (0.5, 0.3, 0.2, 0.1)
+#let dl_perios_ms = (none, none, 0.1, none)
 #let arrival_offset_us = 10
 #let arrival_offset_ms = arrival_offset_us / 1000
 // What part of data should be shown on X-axis?
@@ -281,14 +282,18 @@
     ))
   })
   let arrival-lines = gen-minilines(arrival-xs, ts-max, styles.arrival-tick-pos, task-count)
-  /*
-  let dl-xs = periods_ms.map(period => {
-    range(1, int(ts-max / period) + 1 + if pre-trigger { 1 }).map(n => (
-      (n - if pre-trigger { 1 } else { 0 }) * period + offset + period
-    ))
-  })
+  let dl-xs = periods_ms
+    .zip(dl_perios_ms)
+    .map(((period, dl)) => {
+      if dl != none {
+        range(1, int(ts-max / period) + 1 + if pre-trigger { 1 }).map(n => (
+          (n - if pre-trigger { 1 } else { 0 }) * period + arrival_offset_ms + dl
+        ))
+      } else {
+        range(1, int(ts-max / period) + 1 + if pre-trigger { 1 }).map(n => 0)
+      }
+    })
   let dl-lines = gen-minilines(dl-xs, ts-max, -styles.arrival-tick-pos, task-count)
-  */
 
   let right-axis-ticks = task-list
     .enumerate()
@@ -338,7 +343,7 @@
       ticks: right-axis-ticks,
     ),
     ..arrival-lines,
-    //..dl-lines,
+    ..dl-lines,
     ..preempted-rects,
     ..active-rects,
     ceiling-plot,
