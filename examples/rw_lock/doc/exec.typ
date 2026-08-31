@@ -1,4 +1,4 @@
-#import "styles.typ": *
+#import "graph-styles.typ": *
 #import "util.typ": *
 #import "ceil.typ": *
 
