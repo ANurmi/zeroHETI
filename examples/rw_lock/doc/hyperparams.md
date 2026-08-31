@@ -49,7 +49,7 @@ Exec                                                                  | Exec
 -     Writer (p=0xf8): worst   209 us | n_complete    6 | misses    0 │-     Writer (p=0xf8): worst   209 us | n_complete    6 | misses    0
 ```
 
-## Invalidate C5
+## Scenario 6, Invalidate C5
 
 - W(`Writer`) = W(`ReaderLow`) = 65 us, selected to align theoretical load with baseline system at 69%.
 - => C5 no longer applies
@@ -74,7 +74,7 @@ Exec                                                                  | Exec
 
 ## Invalidate C4
 
-- W(`Writer`) = 80 us, W(`ReaderLow`) = 15 us, flipping their magnitude order
+- W(`ReaderLow`) = 15 us, W(`Writer`) = 80 us, flipping their magnitude order.
 - CS_W > CS_RLO => C4 no longer applies
 - Total theoretical work load is reduced
 
@@ -95,7 +95,7 @@ Exec                                                                  | Exec
 
 ```
 
-## Invalidate C3
+## Invalidate C3 (to drop?)
 
 - Switch `pi(J)` and `pi(ReaderLow)` => C3 no longer applies
 
@@ -141,6 +141,8 @@ Exec                                                                  | Exec
 -     Writer (p=0xf8): worst    82 us | n_complete   30 | misses    0 │-     Writer (p=0xf8): worst    82 us | n_complete   30 | misses    0
 ```
 
+The measurement looked suspicious, and therefore it was taken twice and double checked. The difference is indeed exactly zero.
+
 ## Invalidate C1
 
 - Set either reader to non-locking => C1 no longer applies
@@ -171,17 +173,17 @@ Exec                                                                  │ Exec
 - There are two jobs for which C3 does not apply.
 
 ```sh
-- Lock mode         : mutex                                           │- Lock mode         : rw-lock
-- Pre-trigger  (us) : Some(10)                                        │- Pre-trigger  (us) : Some(10)
-- Target RUNTIME_MS : 3                                               │- Target RUNTIME_MS : 3
-Task set:                                                             |Task set:
-- Hyperperiod  (ms) : 3                                               │- Hyperperiod  (ms) : 3
-- Theoretical load  : 69%                                             │- Theoretical load  : 69%
-Exec                                                                  │ Exec
-- Runtime      (us) : 3000                                            │- Runtime      (us) : 3000
-- True CPU util.    : 82%, instr. count: 124923                       │- True CPU util.    : 82%, instr. count: 125697
-- Reader (p=0xfc)   : worst    28 us | n_complete   30 | misses     0 │- Reader (p=0xfc)   : worst    19 us | n_complete   30 | misses    0
--         J1 (p=0xfb): worst    74 us | n_complete   15 | misses    0 │-        J1 (p=0xfb): worst    65 us | n_complete   15 | misses    0
--         J2 (p=0xf9): worst   187 us | n_complete   10 | misses    0 │-        J2 (p=0xf9): worst   187 us | n_complete   10 | misses    0
-- ReaderWriter (p=0xf8): worst   208 us | n_complete    6 | misses  0 │- ReaderWriter (p=0xf8): worst   275 us | n_complete 6 | misses    0
+- Lock mode         : mutex                                             │- Lock mode         : rw-lock
+- Pre-trigger  (us) : Some(10)                                          │- Pre-trigger  (us) : Some(10)
+- Target RUNTIME_MS : 3                                                 │- Target RUNTIME_MS : 3
+Task set:                                                               |Task set:
+- Hyperperiod  (ms) : 3                                                 │- Hyperperiod  (ms) : 3
+- Theoretical load  : 69%                                               │- Theoretical load  : 69%
+Exec                                                                    │ Exec
+- Runtime      (us) : 3000                                              │- Runtime      (us) : 3000
+- True CPU util.    : 82%, instr. count: 124923                         │- True CPU util.    : 82%, instr. count: 125685
+-     Reader (p=0xfc): worst    28 us | n_complete   30 | misses    0   │-     Reader (p=0xfc): worst    19 us | n_complete   30 | misses    0
+-         J1 (p=0xfb): worst    74 us | n_complete   15 | misses    0   │-         J1 (p=0xfb): worst    65 us | n_complete   15 | misses    0
+-         J2 (p=0xf9): worst   187 us | n_complete   10 | misses    0   │-         J2 (p=0xf9): worst   187 us | n_complete   10 | misses    0
+- ReaderWriter (p=0xf8): worst   208 us | n_complete  6 | misses    0   │- ReaderWriter (p=0xf8): worst   276 us | n_complete  6 | misses    0
 ```
