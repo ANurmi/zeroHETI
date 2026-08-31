@@ -34,13 +34,21 @@ mod app {
     };
 
     /// Period of `ReaderHigh`
+    ///
+    /// With `-Fsporadic`: minimum arrival time.
     const PERIOD_RHI_US: u32 = 100;
     /// Period of `J`
     const PERIOD_J_US: u32 = 200;
+    ///
+    /// With `-Fsporadic`: minimum arrival time.
     /// Period of `ReaderLow`
     const PERIOD_RLO_US: u32 = 300;
+    ///
+    /// With `-Fsporadic`: minimum arrival time.
     /// Period of `W`
     const PERIOD_W_US: u32 = 500;
+    ///
+    /// With `-Fsporadic`: minimum arrival time.
 
     /// Duration of the critical section of `ReaderHigh`. Short.
     const CS_RHI: Duration32 = Duration32::from_micros(15);

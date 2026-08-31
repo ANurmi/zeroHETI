@@ -24,6 +24,8 @@ fpga = ["bsp/fpga"]
 # Readers use `read` locks instead of plain mutexes on the protected resource
 rw = []
 
+sporadic = []
+
 # RTIC observability hooks: trace every task activation/completion and resource
 # acquire/release, dumped over UART at teardown.
 #
