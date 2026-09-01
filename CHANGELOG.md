@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [v0.1.3] - 2026-09-01
+## [v0.1.4] - 2026-09-01
 
 ### Fixed
 - Mailbox OBI error signal X-propagation
+
+## [v0.1.3] - 2026-08-28
+- No HW updates
 
 ## [v0.1.2] - 2026-08-26
 
