@@ -13,3 +13,11 @@ config SOC_ZEROHETI
 	select GEN_IRQ_VECTOR_TABLE
 	select RISCV_HAS_CLIC
 	select INTC_CLIC_ZEROHETI
+
+config ZEROHETI_MTIME_PRESCALER
+	int "mtime prescaler"
+	depends on SOC_ZEROHETI
+	default 0
+	range 0 1023
+	help
+	  mtime advances once every (value + 1) CPU cycles.
