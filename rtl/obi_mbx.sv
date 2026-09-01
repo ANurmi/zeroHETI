@@ -47,18 +47,18 @@ module obi_mbx #(
   logic [31:0] obi_rdata_d, obi_rdata_q;
   logic [31:0] axi_rdata_d, axi_rdata_q;
 
-  assign obi_write_event  = obi_sbr.req & obi_sbr.we;
-  assign obi_read_event   = obi_sbr.req & ~obi_sbr.we;
+  assign obi_write_event    = obi_sbr.req & obi_sbr.we;
+  assign obi_read_event     = obi_sbr.req & ~obi_sbr.we;
 
-  assign status_d         = {28'h0, outbox_full, outbox_empty, inbox_full, inbox_empty};
-  assign axi_int_addr     = (axil_sbr.aw_valid) ? axil_sbr.aw_addr : waddr_q;
+  assign status_d           = {28'h0, outbox_full, outbox_empty, inbox_full, inbox_empty};
+  assign axi_int_addr       = (axil_sbr.aw_valid) ? axil_sbr.aw_addr : waddr_q;
 
-  assign axil_sbr.r_data  = axi_rdata_q;
-  assign axil_sbr.b_valid = w_valid_q;
+  assign axil_sbr.r_data    = axi_rdata_q;
+  assign axil_sbr.b_valid   = w_valid_q;
 
-  assign obi_sbr.gnt      = obi_sbr.req;
-  assign obi_sbr.rdata    = obi_rdata_q;
-  
+  assign obi_sbr.gnt        = obi_sbr.req;
+  assign obi_sbr.rdata      = obi_rdata_q;
+
   assign obi_sbr.err        = 1'b0;
   assign obi_sbr.r_optional = 1'b0;
 
