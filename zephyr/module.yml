@@ -1,4 +1,6 @@
+name: zeroheti
 build:
+  kconfig: zephyr/Kconfig
   settings:
     board_root: zephyr
     dts_root: zephyr
