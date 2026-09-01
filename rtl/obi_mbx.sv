@@ -58,6 +58,9 @@ module obi_mbx #(
 
   assign obi_sbr.gnt      = obi_sbr.req;
   assign obi_sbr.rdata    = obi_rdata_q;
+  
+  assign obi_sbr.err        = 1'b0;
+  assign obi_sbr.r_optional = 1'b0;
 
   always_ff @(posedge clk_i) begin
     if (~rst_ni) begin
