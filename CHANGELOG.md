@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Verilator lint warnings
 
+### Removed
+- HETIC interrupt controller support
+
 ## [v0.1.4] - 2026-09-01
 
 ### Fixed
