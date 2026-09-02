@@ -18,25 +18,27 @@ module obi_mb_sram_intf #(
   localparam int unsigned Latency = 1;
   localparam SimInit = "random";
 
+  localparam int unsigned SelWidth = $clog2(NrBanks);
+
   logic               rvalid_q;
   logic [NrBanks-1:0] req_mux;
   logic [NrBanks-1:0] req_q, req_d;
-  logic [        NrBanks-1:0]                we_mux;
-  logic [        NrBanks-1:0][DataWidth-1:0] rdata_mux;
-  logic [               31:0]                mem_addr;
-  logic [               29:0]                word_addr;
-  logic [$clog2(NrBanks)-1:0]                rdata_sel;
+  logic [ NrBanks-1:0]                we_mux;
+  logic [ NrBanks-1:0][DataWidth-1:0] rdata_mux;
+  logic [        31:0]                mem_addr;
+  logic [        29:0]                word_addr;
+  logic [SelWidth-1:0]                rdata_sel;
 
   assign mem_addr  = sbr.addr - BaseAddr;
   assign word_addr = mem_addr[31:2];
 
 `ifndef SYNTHESIS
   initial begin
-    if (NrBanks > 8) $fatal(1, "Maximun supported bank number is 8!");
+    if (NrBanks > 16) $fatal(1, "Maximun supported bank number is 16!");
   end
 `endif
 
-  always_ff @(posedge clk_i) begin
+  always_ff @(posedge clk_i or negedge rst_ni) begin
     if (~rst_ni) begin
       rvalid_q <= 1'b0;
       req_q    <= 'b0;
@@ -48,16 +50,23 @@ module obi_mb_sram_intf #(
 
   always_comb begin : rdata_lut
     //rdata_sel = 0;
-    unique case (req_q)
-      1: rdata_sel = 0;
-      2: rdata_sel = 1;
-      4: rdata_sel = 2;
-      8: rdata_sel = 3;
-      16: rdata_sel = 4;
-      32: rdata_sel = 5;
-      64: rdata_sel = 7;
-      128: rdata_sel = 8;
-      default: rdata_sel = 0;
+    unique case (32'(req_q))
+      32'h0001: rdata_sel = SelWidth'(0);
+      32'h0002: rdata_sel = SelWidth'(1);
+      32'h0004: rdata_sel = SelWidth'(2);
+      32'h0008: rdata_sel = SelWidth'(3);
+      32'h0010: rdata_sel = SelWidth'(4);
+      32'h0020: rdata_sel = SelWidth'(5);
+      32'h0040: rdata_sel = SelWidth'(7);
+      32'h0080: rdata_sel = SelWidth'(8);
+      32'h0100: rdata_sel = SelWidth'(9);
+      32'h0200: rdata_sel = SelWidth'(10);
+      32'h0400: rdata_sel = SelWidth'(11);
+      32'h0800: rdata_sel = SelWidth'(12);
+      32'h1000: rdata_sel = SelWidth'(13);
+      32'h2000: rdata_sel = SelWidth'(14);
+      32'h4000: rdata_sel = SelWidth'(15);
+      default:  rdata_sel = SelWidth'(0);
     endcase
   end
 
@@ -72,8 +81,8 @@ module obi_mb_sram_intf #(
     logic [29:0] local_word_addr;
     logic [LocalAddrWidth-1:0] sram_addr;
 
-    assign local_word_addr = word_addr - LocalWordBase;
-    assign sram_addr = local_word_addr[AddrWidth-1:0];
+    assign local_word_addr = word_addr - 30'(LocalWordBase);
+    assign sram_addr = local_word_addr[LocalAddrWidth-1:0];
 
     always_comb begin : addr_decode
 
@@ -81,7 +90,7 @@ module obi_mb_sram_intf #(
       we_mux[i]  = 1'b0;
       req_d[i]   = 'b0;
 
-      if (mem_addr inside {[LocalWordBase*4 : LocalWordLast*4]}) begin
+      if (mem_addr inside {[LocalWordBase * 4 : LocalWordLast * 4]}) begin
         req_mux[i] = sbr.req;
         req_d[i]   = sbr.req;
         we_mux[i]  = sbr.we;
@@ -110,15 +119,15 @@ module obi_mb_sram_intf #(
 
   end
 
-  assign sbr.gnt    = sbr.req;
-  assign sbr.rvalid = rvalid_q;
+  assign sbr.gnt        = sbr.req;
+  assign sbr.rvalid     = rvalid_q;
 
   // Tie off unused parts
-  assign sbr.gntpar = 1'b0;
-  assign sbr.rvalidpar = 1'b0;
-  assign sbr.rid = 1'b0;
+  assign sbr.gntpar     = 1'b0;
+  assign sbr.rvalidpar  = 1'b0;
+  assign sbr.rid        = 1'b0;
   assign sbr.r_optional = 1'b0;
-  assign sbr.err    = 1'b0;
+  assign sbr.err        = 1'b0;
 
 endmodule : obi_mb_sram_intf
 
