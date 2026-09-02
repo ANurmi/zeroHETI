@@ -120,8 +120,8 @@ module zeroheti_core
       .RndCnstLfsrSeed (ibex_pkg::RndCnstLfsrSeedDefault),
       .RndCnstLfsrPerm (ibex_pkg::RndCnstLfsrPermDefault),
       .DbgTriggerEn    (0),
-      .DmHaltAddr      (dm::HaltAddress),
-      .DmExceptionAddr (dm::ExceptionAddress),
+      .DmHaltAddr      (32'(dm::HaltAddress)),
+      .DmExceptionAddr (32'(dm::ExceptionAddress)),
       .MClicBaseAddr   (zeroheti_pkg::AddrMap.intc.base),
       .BranchTargetALU (Cfg.bt_alu)
   ) i_rt_ibex (

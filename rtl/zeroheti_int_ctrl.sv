@@ -21,31 +21,8 @@ module zeroheti_int_ctrl #(
     output logic                               irq_shv_o,
            OBI_BUS.Subordinate                 obi_sbr
 );
-  import zeroheti_pkg::*;
 
-  if (CoreCfg.ic == HETIC) begin : g_hetic
-
-    obi_hetic #(
-        .NrIrqLines(CoreCfg.num_irqs),
-        .NrIrqPrios(CoreCfg.num_prio)
-    ) i_hetic (
-        .clk_i,
-        .rst_ni,
-        .ext_irqs_i,
-        .irq_heti_o,
-        .irq_nest_o,
-        .irq_id_o,
-        .irq_valid_o,
-        .irq_id_i,
-        .irq_ack_i,
-        .irq_level_o,
-        .obi_sbr
-    );
-
-    assign irq_priv_o = 2'b11;
-    assign irq_shv_o  = 1'b1;
-
-  end else if (CoreCfg.ic == EDFIC) begin : g_edfic
+  if (CoreCfg.ic == zeroheti_pkg::EDFIC) begin : g_edfic
 
     logic [TsWidth-1:0] deadline;
     logic [7:0] dl_slice;
@@ -58,6 +35,10 @@ module zeroheti_int_ctrl #(
     assign dl_slice = deadline[7:0];
 
     assign irq_level_o = 8'd255 - dl_slice;
+
+    // TODO: implement
+    assign irq_heti_o = 1'b0;
+    assign irq_nest_o= 1'b0;
 
     APB ic_apb ();
 
@@ -95,7 +76,7 @@ module zeroheti_int_ctrl #(
     // EDFIC always uses selective hardware vectoring
     assign irq_shv_o  = 1'b1;
 
-  end else if (CoreCfg.ic == CLIC) begin : g_clic
+  end else if (CoreCfg.ic == zeroheti_pkg::CLIC) begin : g_clic
 
     logic [7:0] irq_level;
     logic kill;

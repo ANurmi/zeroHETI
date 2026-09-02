@@ -51,7 +51,7 @@ module zeroheti_dbg_wrapper
       .clk_i,
       .rst_ni,
       .testmode_i,
-      .ndmreset_o   (),
+      .ndmreset_o,
       .dmactive_o   (),
       .debug_req_o,
       .unavailable_i('0),

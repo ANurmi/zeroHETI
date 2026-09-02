@@ -62,7 +62,7 @@ module obi_mbx #(
   assign obi_sbr.err        = 1'b0;
   assign obi_sbr.r_optional = 1'b0;
 
-  always_ff @(posedge clk_i) begin
+  always_ff @(posedge clk_i or negedge rst_ni) begin
     if (~rst_ni) begin
       status_q         <= 32'h0;
       obi_control_q    <= 32'h0;
@@ -98,7 +98,7 @@ module obi_mbx #(
     end
   end
 
-  always_ff @(posedge clk_i) begin
+  always_ff @(posedge clk_i or negedge rst_ni) begin
     if (~rst_ni) begin
       irq_o <= 1'b0;
     end else begin
