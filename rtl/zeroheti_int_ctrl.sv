@@ -38,7 +38,7 @@ module zeroheti_int_ctrl #(
 
     // TODO: implement
     assign irq_heti_o = 1'b0;
-    assign irq_nest_o= 1'b0;
+    assign irq_nest_o = 1'b0;
 
     APB ic_apb ();
 
@@ -49,7 +49,8 @@ module zeroheti_int_ctrl #(
         .apb_o(ic_apb)
     );
 
-    assign ic_apb.pready = ic_apb.psel & ic_apb.penable;
+    assign ic_apb.pready  = ic_apb.psel & ic_apb.penable;
+    assign ic_apb.pslverr = 1'b0;
 
     edfic_top #(
         .NrIrqs (NrIrqs),

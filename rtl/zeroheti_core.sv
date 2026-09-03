@@ -18,6 +18,7 @@ module zeroheti_core
     output logic                         jtag_td_o,
     input  logic      [Cfg.num_irqs-1:0] ext_irqs_i,
        OBI_BUS.Manager                   obi_mgr,
+       OBI_BUS.Manager                   mbx_mgr,
            APB.Master                    apb_mgr,
        OBI_BUS.Subordinate               obi_sbr
 );
@@ -42,7 +43,7 @@ module zeroheti_core
   assign mtime_gated = (intc_mtime_en_i) ? mtime_i : 64'h0;
 
   zeroheti_int_ctrl #(
-.CoreCfg(Cfg),
+      .CoreCfg(Cfg),
       .TsWidth(TsWidth)
   ) i_int_ctrl (
       .clk_i,
@@ -80,8 +81,9 @@ module zeroheti_core
       .per_bus (per_bus),
       .sba_bus (sba_bus),
       .dbg_bus (dbg_bus),
-      .mbx_bus (obi_mgr),
-      .ext_sbr_bus (obi_sbr)
+      .mbx_bus (mbx_mgr),
+      .mgr_bus (obi_mgr),
+      .sbr_bus (obi_sbr)
   );
 
   logic debug_req;
