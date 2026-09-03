@@ -88,6 +88,7 @@ package zeroheti_pkg;
     addr_rule_t tg;
     addr_rule_t cfg;
     addr_rule_t mtimer;
+    addr_rule_t mbx;
     addr_rule_t ext;
   } addr_map_t;
 
@@ -103,12 +104,13 @@ package zeroheti_pkg;
       base : 32'h0000_3300,
       last : 32'h0000_3300 + (16 * TGSize)
   };
-  localparam addr_rule_t I2cAddr = '{base : 32'h0000_3200, last : 32'h0000_3218};
+  localparam addr_rule_t I2cAddr = '{base : 32'h0000_3200, last : 32'h0000_3300};
   localparam addr_rule_t CfgAddr = '{base : 32'h0000_4000, last : 32'h0000_5000};
   localparam addr_rule_t ImemAddr = '{base : 32'h0001_0000, last : (32'h0001_0000 + ImemSize)};
   localparam addr_rule_t DmemAddr = '{base : 32'h0002_0000, last : (32'h0002_0000 + DmemSize)};
-  localparam addr_rule_t ExtAddr = '{base : 32'h0003_0000, last : 32'h0010_0000};
   localparam addr_rule_t IntcAddr = '{base : 32'h0010_0000, last : 32'h0010_2000};
+  localparam addr_rule_t MbxAddr = '{base : 32'h0010_8000, last : 32'h0010_8100};
+  localparam addr_rule_t ExtAddr = '{base : 32'h0011_0000, last : 32'hFFFF_FFFF};
 
   // imem size in words
   localparam int unsigned ImemWSize = ImemSize / 4;
@@ -125,8 +127,37 @@ package zeroheti_pkg;
       cfg    : CfgAddr,
       tg     : TimerGroupAddr,
       mtimer : MtimerAddr,
+      mbx    : MbxAddr,
       ext    : ExtAddr
   };
+
+  typedef struct packed {
+    logic [31:0] addr;
+    logic        we;
+    logic [3:0]  be;
+    logic [31:0] wdata;
+    logic        aid;
+    logic        a_optional;
+  } obi_a_chan_t;
+
+  typedef struct packed {
+    logic [31:0] rdata;
+    logic rid;
+    logic err;
+    logic r_optional;
+  } obi_r_chan_t;
+
+  typedef struct packed {
+    obi_a_chan_t a;
+    logic req;
+  } obi_req_t;
+
+  typedef struct packed {
+    obi_r_chan_t r;
+    logic gnt;
+    logic rvalid;
+  } obi_rsp_t;
+
 
 
 endpackage

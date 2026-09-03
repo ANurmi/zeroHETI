@@ -3,6 +3,7 @@ module zeroheti_top
   import zeroheti_pkg::TGSize;
 #(
     parameter zeroheti_pkg::core_cfg_t CoreCfg = zeroheti_pkg::`CORE_CFG,
+    parameter int unsigned AxiUserWidth = 0,
     localparam int unsigned NumIntIrqs = 27,
     localparam int unsigned NumExtIrqs = CoreCfg.num_irqs - NumIntIrqs
 ) (
@@ -14,25 +15,44 @@ module zeroheti_top
     input  logic                  jtag_td_i,
     output logic                  jtag_td_o,
     input  logic [NumExtIrqs-1:0] ext_irq_i,
-    input  logic [          31:0] axil_aw_addr_i,
-    input  logic [           2:0] axil_aw_prot_i,
-    input  logic                  axil_aw_valid_i,
-    output logic                  axil_aw_ready_o,
-    input  logic [          31:0] axil_w_data_i,
-    input  logic [           3:0] axil_w_strb_i,
-    input  logic                  axil_w_valid_i,
-    output logic                  axil_w_ready_o,
-    output logic [           1:0] axil_b_resp_o,
-    output logic                  axil_b_valid_o,
-    input  logic                  axil_b_ready_i,
-    input  logic [          31:0] axil_ar_addr_i,
-    input  logic [           2:0] axil_ar_prot_i,
-    input  logic                  axil_ar_valid_i,
-    output logic                  axil_ar_ready_o,
-    output logic [          31:0] axil_r_data_o,
-    output logic [           1:0] axil_r_resp_o,
-    output logic                  axil_r_valid_o,
-    input  logic                  axil_r_ready_i,
+    input  logic [          31:0] sbr_axil_aw_addr_i,
+    input  logic [           2:0] sbr_axil_aw_prot_i,
+    input  logic                  sbr_axil_aw_valid_i,
+    output logic                  sbr_axil_aw_ready_o,
+    input  logic [          31:0] sbr_axil_w_data_i,
+    input  logic [           3:0] sbr_axil_w_strb_i,
+    input  logic                  sbr_axil_w_valid_i,
+    output logic                  sbr_axil_w_ready_o,
+    output logic [           1:0] sbr_axil_b_resp_o,
+    output logic                  sbr_axil_b_valid_o,
+    input  logic                  sbr_axil_b_ready_i,
+    input  logic [          31:0] sbr_axil_ar_addr_i,
+    input  logic [           2:0] sbr_axil_ar_prot_i,
+    input  logic                  sbr_axil_ar_valid_i,
+    output logic                  sbr_axil_ar_ready_o,
+    output logic [          31:0] sbr_axil_r_data_o,
+    output logic [           1:0] sbr_axil_r_resp_o,
+    output logic                  sbr_axil_r_valid_o,
+    input  logic                  sbr_axil_r_ready_i,
+    output logic [          31:0] mgr_axil_aw_addr_o,
+    output logic [           2:0] mgr_axil_aw_prot_o,
+    output logic                  mgr_axil_aw_valid_o,
+    input  logic                  mgr_axil_aw_ready_i,
+    output logic [          31:0] mgr_axil_w_data_o,
+    output logic [           3:0] mgr_axil_w_strb_o,
+    output logic                  mgr_axil_w_valid_o,
+    input  logic                  mgr_axil_w_ready_i,
+    input  logic [           1:0] mgr_axil_b_resp_i,
+    input  logic                  mgr_axil_b_valid_i,
+    output logic                  mgr_axil_b_ready_o,
+    output logic [          31:0] mgr_axil_ar_addr_o,
+    output logic [           2:0] mgr_axil_ar_prot_o,
+    output logic                  mgr_axil_ar_valid_o,
+    input  logic                  mgr_axil_ar_ready_i,
+    input  logic [          31:0] mgr_axil_r_data_i,
+    input  logic [           1:0] mgr_axil_r_resp_i,
+    input  logic                  mgr_axil_r_valid_i,
+    output logic                  mgr_axil_r_ready_o,
     input  logic                  uart_rx_i,
     output logic                  uart_tx_o,
     input  logic                  i2c_scl_pad_i,
@@ -49,17 +69,24 @@ module zeroheti_top
   localparam int unsigned NrApbPerip = 5;
   localparam int unsigned SelWidth = $clog2(NrApbPerip);
 
-  OBI_BUS mbx_obi ();
-  OBI_BUS core_sbr_obi ();
+  OBI_BUS obi_mgr ();
+  OBI_BUS mbx_mgr ();
+  OBI_BUS obi_sbr ();
 
   AXI_LITE #(
       .AXI_ADDR_WIDTH(32'd32),
       .AXI_DATA_WIDTH(DataWidth)
-  ) mbx_axi ();
+  ) axi_sbr ();
 
-  APB core_apb ();
+  AXI_LITE #(
+      .AXI_ADDR_WIDTH(32'd32),
+      .AXI_DATA_WIDTH(DataWidth)
+  ) axi_mgr ();
+
+  APB apb_mgr ();
   APB demux_apb[NrApbPerip] ();
 
+  logic                  obi_sel;
   logic [  SelWidth-1:0] demux_sel;
   logic [    NrIrqs-1:0] all_irqs;
   logic                  mtime_irq;
@@ -89,30 +116,42 @@ module zeroheti_top
   ) i_core (
       .clk_i,
       .rst_ni,
-      .testmode_i(1'b0),
-      .mtime_i   (mtime),
+      .testmode_i     (1'b0),
+      .mtime_i        (mtime),
       .jtag_tck_i,
       .jtag_tms_i,
       .jtag_trst_ni,
       .jtag_td_i,
       .jtag_td_o,
-      .intc_mtime_en_i (intc_mtime_en),
-      .ext_irqs_i         (all_irqs),
-      .obi_mgr   (mbx_obi),
-      .apb_mgr   (core_apb),
-      .obi_sbr   (core_sbr_obi)
+      .intc_mtime_en_i(intc_mtime_en),
+      .ext_irqs_i     (all_irqs),
+      .obi_mgr        (obi_mgr),
+      .mbx_mgr        (mbx_mgr),
+      .apb_mgr        (apb_mgr),
+      .obi_sbr        (obi_sbr)
+  );
+
+  obi_to_axi_lite_intf #(
+      .AxiAddrWidth(32'd32),
+      .AxiDataWidth(32'd32),
+      .AxiUserWidth(AxiUserWidth)
+  ) i_obi_to_axi (
+      .clk_i,
+      .rst_ni,
+      .obi_sbr(obi_mgr),
+      .axi_mgr(axi_mgr)
   );
 
   obi_mbx i_mbx (
       .clk_i,
       .rst_ni,
-      .irq_o(mbx_irq),
-      .obi_sbr(mbx_obi),
-      .axil_sbr(mbx_axi)
+      .irq_o   (mbx_irq),
+      .obi_sbr (mbx_mgr),
+      .axil_sbr(axi_sbr)
   );
 
   always_comb begin : apb_decode
-    unique case (core_apb.paddr) inside
+    unique case (apb_mgr.paddr) inside
       [AddrMap.cfg.base : AddrMap.cfg.last - 1]:       demux_sel = SelWidth'('d0);
       [AddrMap.tg.base : AddrMap.tg.last - 1]:         demux_sel = SelWidth'('d1);
       [AddrMap.uart.base : AddrMap.uart.last - 1]:     demux_sel = SelWidth'('d2);
@@ -120,7 +159,7 @@ module zeroheti_top
       [AddrMap.i2c.base : AddrMap.i2c.last - 1]:       demux_sel = SelWidth'('d4);
       default: begin
         demux_sel = SelWidth'('d0);
-        if (core_apb.psel & core_apb.penable) $display("Warning: APB access to unmapped region!");
+        if (apb_mgr.psel & apb_mgr.penable) $display("Warning: APB access to unmapped region!");
       end
     endcase
   end
@@ -130,90 +169,19 @@ module zeroheti_top
       .APB_DATA_WIDTH(DataWidth),
       .NoMstPorts    (NrApbPerip)
   ) i_apb_demux (
-      .slv     (core_apb),
+      .slv     (apb_mgr),
       .mst     (demux_apb),
       .select_i(demux_sel)
   );
 
-
-`ifndef FULL_UART
-  mock_uart i_mock_uart (
+  uart_wrapper #() i_uart (
       .clk_i,
       .rst_ni,
-      .penable_i(demux_apb[2].penable),
-      .pwrite_i (demux_apb[2].pwrite),
-      .paddr_i  (demux_apb[2].paddr),
-      .psel_i   (demux_apb[2].psel),
-      .pwdata_i (demux_apb[2].pwdata),
-      .pstrb_i  (demux_apb[2].pstrb),
-      .prdata_o (demux_apb[2].prdata),
-      .pready_o (demux_apb[2].pready),
-      .pslverr_o(demux_apb[2].pslverr)
+      .apb_sbr(demux_apb[2]),
+      .rx_i   (uart_rx_i),
+      .tx_o   (uart_tx_o),
+      .irq_o  (uart_irq)
   );
-  assign uart_irq  = 1'b0;
-  assign uart_tx_o = 1'b0;
-`else
-  logic [31:0] rdata_local;
-  logic [31:0] wdata_local;
-  logic [ 2:0] addr_local;
-  logic [ 2:0] addr_offs;
-
-  assign addr_local = demux_apb[2].paddr[2:0] + addr_offs;
-
-  always_comb begin
-    addr_offs           = 0;
-    wdata_local         = 0;
-    demux_apb[2].prdata = 0;
-    unique case (demux_apb[2].pstrb)
-      4'b0001: begin
-        addr_offs = 0;
-        demux_apb[2].prdata = {24'h0, rdata_local[7:0]};
-        wdata_local = {24'h0, demux_apb[2].pwdata[7:0]};
-      end
-      4'b0010: begin
-        addr_offs = 1;
-        demux_apb[2].prdata = {16'h0, rdata_local[7:0], 8'h0};
-        wdata_local = {24'h0, demux_apb[2].pwdata[15:8]};
-      end
-      4'b0100: begin
-        addr_offs = 2;
-        demux_apb[2].prdata = {8'h0, rdata_local[7:0], 16'h0};
-        wdata_local = {24'h0, demux_apb[2].pwdata[23:16]};
-      end
-      4'b1000: begin
-        addr_offs = 3;
-        demux_apb[2].prdata = {rdata_local[7:0], 24'h0};
-        wdata_local = {24'h0, demux_apb[2].pwdata[31:24]};
-      end
-      default: ;
-    endcase
-  end
-
-  apb_uart i_apb_uart (
-      .CLK    (clk_i),
-      .RSTN   (rst_ni),
-      .PSEL   (demux_apb[2].psel),
-      .PENABLE(demux_apb[2].penable),
-      .PWRITE (demux_apb[2].pwrite),
-      .PADDR  (addr_local),
-      .PWDATA (wdata_local),
-      .PRDATA (rdata_local),
-      .PREADY (demux_apb[2].pready),
-      .PSLVERR(demux_apb[2].pslverr),
-      .INT    (uart_irq),
-      .CTSN   (1'b0),
-      .DSRN   (1'b0),
-      .DCDN   (1'b0),
-      .RIN    (1'b0),
-      .RTSN   (),
-      .OUT1N  (),
-      .OUT2N  (),
-      .DTRN   (),
-      .SIN    (uart_rx_i),
-      .SOUT   (uart_tx_o)
-  );
-
-`endif
 
   apb_mtimer i_mtimer (
       .clk_i,
@@ -276,39 +244,65 @@ module zeroheti_top
       .apb_i(demux_apb[4])
   );
 
-  assign mbx_axi.aw_valid = axil_aw_valid_i;
-  assign mbx_axi.aw_addr = axil_aw_addr_i;
-  assign mbx_axi.aw_prot = axil_aw_prot_i;
-  assign axil_aw_ready_o = mbx_axi.aw_ready;
+  assign axi_sbr.aw_valid    = sbr_axil_aw_valid_i;
+  assign axi_sbr.aw_addr     = sbr_axil_aw_addr_i;
+  assign axi_sbr.aw_prot     = sbr_axil_aw_prot_i;
+  assign sbr_axil_aw_ready_o = axi_sbr.aw_ready;
 
-  assign mbx_axi.w_valid = axil_w_valid_i;
-  assign mbx_axi.w_data = axil_w_data_i;
-  assign mbx_axi.w_strb = axil_w_strb_i;
-  assign axil_w_ready_o = mbx_axi.w_ready;
+  assign axi_sbr.w_valid     = sbr_axil_w_valid_i;
+  assign axi_sbr.w_data      = sbr_axil_w_data_i;
+  assign axi_sbr.w_strb      = sbr_axil_w_strb_i;
+  assign sbr_axil_w_ready_o  = axi_sbr.w_ready;
 
-  assign axil_b_resp_o = mbx_axi.b_resp;
-  assign axil_b_valid_o = mbx_axi.b_valid;
-  assign mbx_axi.b_ready = axil_b_ready_i;
+  assign sbr_axil_b_resp_o   = axi_sbr.b_resp;
+  assign sbr_axil_b_valid_o  = axi_sbr.b_valid;
+  assign axi_sbr.b_ready     = sbr_axil_b_ready_i;
 
-  assign mbx_axi.ar_valid = axil_ar_valid_i;
-  assign mbx_axi.ar_addr = axil_ar_addr_i;
-  assign mbx_axi.ar_prot = axil_ar_prot_i;
-  assign axil_ar_ready_o = mbx_axi.ar_ready;
+  assign axi_sbr.ar_valid    = sbr_axil_ar_valid_i;
+  assign axi_sbr.ar_addr     = sbr_axil_ar_addr_i;
+  assign axi_sbr.ar_prot     = sbr_axil_ar_prot_i;
+  assign sbr_axil_ar_ready_o = axi_sbr.ar_ready;
 
-  assign axil_r_data_o = mbx_axi.r_data;
-  assign axil_r_resp_o = mbx_axi.r_resp;
-  assign axil_r_valid_o = mbx_axi.r_valid;
-  assign mbx_axi.r_ready = axil_r_ready_i;
+  assign sbr_axil_r_data_o   = axi_sbr.r_data;
+  assign sbr_axil_r_resp_o   = axi_sbr.r_resp;
+  assign sbr_axil_r_valid_o  = axi_sbr.r_valid;
+  assign axi_sbr.r_ready     = sbr_axil_r_ready_i;
 
-  assign core_sbr_obi.addr = '0;
-  assign core_sbr_obi.req = 1'b0;
-  assign core_sbr_obi.rready = 1'b0;
-  assign core_sbr_obi.wdata = '0;
-  assign core_sbr_obi.be = '0;
-  assign core_sbr_obi.we = 1'b0;
-  assign core_sbr_obi.aid = 1'b0;
-  assign core_sbr_obi.a_optional = 1'b0;
-  assign core_sbr_obi.reqpar = 1'b0;
+
+  assign mgr_axil_aw_addr_o  = axi_mgr.aw_addr;
+  assign mgr_axil_aw_valid_o = axi_mgr.aw_valid;
+  assign mgr_axil_aw_prot_o  = axi_mgr.aw_prot;
+  assign axi_mgr.aw_ready    = mgr_axil_aw_ready_i;
+
+  assign mgr_axil_ar_addr_o  = axi_mgr.ar_addr;
+  assign mgr_axil_ar_valid_o = axi_mgr.ar_valid;
+  assign mgr_axil_ar_prot_o  = axi_mgr.ar_prot;
+  assign axi_mgr.ar_ready    = mgr_axil_ar_ready_i;
+
+  assign mgr_axil_w_data_o   = axi_mgr.w_data;
+  assign mgr_axil_w_strb_o   = axi_mgr.w_strb;
+  assign mgr_axil_w_valid_o  = axi_mgr.w_valid;
+  assign axi_mgr.w_ready     = mgr_axil_w_ready_i;
+
+  assign axi_mgr.b_valid     = mgr_axil_b_valid_i;
+  assign axi_mgr.b_resp      = mgr_axil_b_resp_i;
+  assign mgr_axil_b_ready_o  = axi_mgr.b_ready;
+
+  assign axi_mgr.r_data      = mgr_axil_r_data_i;
+  assign axi_mgr.r_resp      = mgr_axil_r_resp_i;
+  assign axi_mgr.r_valid     = mgr_axil_r_valid_i;
+  assign mgr_axil_r_ready_o  = axi_mgr.r_ready;
+
+
+  assign obi_sbr.addr        = '0;
+  assign obi_sbr.req         = 1'b0;
+  assign obi_sbr.rready      = 1'b0;
+  assign obi_sbr.wdata       = '0;
+  assign obi_sbr.be          = '0;
+  assign obi_sbr.we          = 1'b0;
+  assign obi_sbr.aid         = 1'b0;
+  assign obi_sbr.a_optional  = 1'b0;
+  assign obi_sbr.reqpar      = 1'b0;
 
 `ifndef SYNTHESIS
 `ifndef TECH_MEMORY
