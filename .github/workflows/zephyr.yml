@@ -1,47 +1,57 @@
 name: zephyr workflow
 
-# Run workflow only when hardware or Zephyr changes
 on:
   pull_request:
     paths:
       - 'zephyr/**'
       - 'examples/zephyr/**'
-      - 'rtl/**'
-      - 'verilator/**'
-      - 'Bender.yml'
       - 'west.yml'
+      - '.github/workflows/zephyr.yml'
 
 jobs:
   build-zephyr:
     runs-on: ubuntu-24.04
     container:
       image: ghcr.io/zephyrproject-rtos/ci:v0.29.2
-    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: sw_edf
+            app: micro_rtprof
+            intc: CLIC
+            args: -DARM=sw_edf -DLOAD_FACTOR=30
+          - name: hw_edf
+            app: micro_rtprof
+            intc: EDFIC
+            args: -DARM=hw_edf -DLOAD_FACTOR=30
+
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: zephyr/rt-prof
           path: zeroheti
 
       - name: Fetch zephyr dependencies
         run: |
-          west init -l zeroheti    
-          west update 
-      
+          west init -l zeroheti
+          west update
+
       - name: Install zephyr SDK
         run: |
-          cd zephyr/    
-          west sdk install           
-
-      - name: build rt-prof app
-        run: | 
           cd zephyr/
-          west build -b hetiboard $GITHUB_WORKSPACE/zeroheti/examples/zephyr/rt_prof -p always
-      
+          west sdk install
+
+      - name: Build ${{ matrix.app }} (${{ matrix.name }})
+        run: |
+          cd zephyr/
+          west build -b hetiboard \
+            $GITHUB_WORKSPACE/zeroheti/examples/zephyr/${{ matrix.app }} \
+            -p always -- ${{ matrix.args }}
+
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
-          name: rt-prof-elf
+          name: elf-${{ matrix.name }}
           path: zephyr/build/zephyr/zephyr.elf
 
   build-hw:
@@ -50,31 +60,38 @@ jobs:
     container:
       image: ghcr.io/soc-hub-fi/zeroheti-ci:latest
       options: --user 0
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: sw_edf
+            intc: CLIC
+          - name: hw_edf
+            intc: EDFIC
 
-    steps:    
+    steps:
       - uses: actions/checkout@v4
         with:
-          ref: zephyr/rt-prof
           path: zeroheti
 
       - name: Fetch dependencies
         run: |
           cd zeroheti/
           bender update && bender vendor init
-      
-      - name: Build hardware
+
+      - name: Build hardware (INTC=${{ matrix.intc }})
         run: |
-          mkdir zeroheti/build && mkdir zeroheti/build/sw 
+          mkdir -p zeroheti/build/sw
           cd zeroheti/
-          make verilate INTC=CLIC
+          make verilate INTC=${{ matrix.intc }}
 
       - name: Download firmware
         uses: actions/download-artifact@v4
         with:
-          name: rt-prof-elf
+          name: elf-${{ matrix.name }}
           path: zeroheti/build/sw/
-      
-      - name: Run rt-prof ELF 
+
+      - name: Run ${{ matrix.name }}
         run: |
           cd zeroheti/
           make simv TEST=zephyr
