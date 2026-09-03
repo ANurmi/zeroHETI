@@ -15,18 +15,19 @@ module zeroheti_xbar
           OBI_BUS.Subordinate sba_bus,
           OBI_BUS.Manager     dbg_bus,
           OBI_BUS.Manager     mbx_bus,
-          OBI_BUS.Subordinate ext_sbr_bus
+          OBI_BUS.Manager     mgr_bus,
+          OBI_BUS.Subordinate sbr_bus
 );
   localparam obi_pkg::obi_cfg_t ObiCfg = obi_pkg::ObiDefaultConfig;
 
   localparam int unsigned NumMgr = 4;
-  localparam int unsigned NumSbr = 6;
+  localparam int unsigned NumSbr = 7;
 
   localparam bit [NumMgr-1:0][NumSbr-1:0] Connectivity = '{
-      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
-      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
-      '{1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1},
-      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}
+      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
+      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
+      '{1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1, 1'b1},
+      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}
   };
 
   typedef struct packed {
@@ -41,7 +42,8 @@ module zeroheti_xbar
       rule_t'{idx: 2, start_addr: AddrMap.dmem.base, end_addr: AddrMap.dmem.last},
       rule_t'{idx: 3, start_addr: AddrMap.intc.base, end_addr: AddrMap.intc.last},
       rule_t'{idx: 4, start_addr: AddrMap.dbg.last, end_addr: AddrMap.imem.base},
-      rule_t'{idx: 5, start_addr: AddrMap.ext.base, end_addr: AddrMap.ext.last}
+      rule_t'{idx: 5, start_addr: AddrMap.mbx.base, end_addr: AddrMap.mbx.last},
+      rule_t'{idx: 6, start_addr: AddrMap.ext.base, end_addr: AddrMap.ext.last}
   };
 
   OBI_BUS sbr_ports[NumMgr] ();
@@ -61,7 +63,7 @@ module zeroheti_xbar
   `OBI_ASSIGN(sbr_ports[0], sba_bus_cut, ObiCfg, ObiCfg)
   `OBI_ASSIGN(sbr_ports[1], inst_bus, ObiCfg, ObiCfg)
   `OBI_ASSIGN(sbr_ports[2], data_bus, ObiCfg, ObiCfg)
-  `OBI_ASSIGN(sbr_ports[3], ext_sbr_bus, ObiCfg, ObiCfg)
+  `OBI_ASSIGN(sbr_ports[3], sbr_bus, ObiCfg, ObiCfg)
 
   `OBI_ASSIGN(dbg_bus, mgr_ports[0], ObiCfg, ObiCfg)
   `OBI_ASSIGN(imem_bus, mgr_ports[1], ObiCfg, ObiCfg)
@@ -69,39 +71,13 @@ module zeroheti_xbar
   `OBI_ASSIGN(intc_bus, mgr_ports[3], ObiCfg, ObiCfg)
   `OBI_ASSIGN(per_bus, mgr_ports[4], ObiCfg, ObiCfg)
   `OBI_ASSIGN(mbx_bus, mgr_ports[5], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(mgr_bus, mgr_ports[6], ObiCfg, ObiCfg)
 
-  typedef struct packed {
-    logic [31:0] addr;
-    logic        we;
-    logic [3:0]  be;
-    logic [31:0] wdata;
-    logic        aid;
-    logic        a_optional;
-  } a_chan_t;
+  zeroheti_pkg::obi_req_t [NumMgr-1:0] sbr_ports_req;
+  zeroheti_pkg::obi_rsp_t [NumMgr-1:0] sbr_ports_rsp;
 
-  typedef struct packed {
-    logic [31:0] rdata;
-    logic rid;
-    logic err;
-    logic r_optional;
-  } r_chan_t;
-
-  typedef struct packed {
-    a_chan_t a;
-    logic req;
-  } req_t;
-
-  typedef struct packed {
-    r_chan_t r;
-    logic gnt;
-    logic rvalid;
-  } rsp_t;
-
-  req_t [NumMgr-1:0] sbr_ports_req;
-  rsp_t [NumMgr-1:0] sbr_ports_rsp;
-
-  req_t [NumSbr-1:0] mgr_ports_req;
-  rsp_t [NumSbr-1:0] mgr_ports_rsp;
+  zeroheti_pkg::obi_req_t [NumSbr-1:0] mgr_ports_req;
+  zeroheti_pkg::obi_rsp_t [NumSbr-1:0] mgr_ports_rsp;
 
 
   for (genvar i = 0; i < NumMgr; i++) begin : gen_sbr_ports_assign
@@ -116,12 +92,12 @@ module zeroheti_xbar
 
 
   obi_xbar #(
-      .sbr_port_obi_req_t(req_t),
-      .sbr_port_a_chan_t (a_chan_t),
-      .sbr_port_obi_rsp_t(rsp_t),
-      .sbr_port_r_chan_t (r_chan_t),
-      .mgr_port_obi_req_t(req_t),
-      .mgr_port_obi_rsp_t(rsp_t),
+      .sbr_port_obi_req_t(zeroheti_pkg::obi_req_t),
+      .sbr_port_a_chan_t (zeroheti_pkg::obi_a_chan_t),
+      .sbr_port_obi_rsp_t(zeroheti_pkg::obi_rsp_t),
+      .sbr_port_r_chan_t (zeroheti_pkg::obi_r_chan_t),
+      .mgr_port_obi_req_t(zeroheti_pkg::obi_req_t),
+      .mgr_port_obi_rsp_t(zeroheti_pkg::obi_rsp_t),
       .NumSbrPorts       (NumMgr),
       .NumMgrPorts       (NumSbr),
       .NumMaxTrans       (32'd1),

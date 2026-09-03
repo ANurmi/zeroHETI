@@ -23,6 +23,7 @@ sources:
   files:
   - rtl/zeroheti_pkg.sv
   - rtl/mock_uart.sv
+  - rtl/uart_wrapper.sv
   - rtl/i2c_master_bit_ctrl.sv
   - rtl/i2c_master_byte_ctrl.sv
   - rtl/apb_i2c.sv
@@ -35,6 +36,7 @@ sources:
   - rtl/obi_sram_intf.sv
   - rtl/obi_mb_sram_intf.sv
   - rtl/obi_connection.sv
+  - rtl/obi_to_axi_lite_intf.sv
   - rtl/obi_to_apb_intf.sv
   - rtl/irq_arbiter.sv
   - rtl/irq_gateway.sv

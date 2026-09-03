@@ -11,7 +11,12 @@ module apb_cfg_regs #(
   localparam logic IntcEdfic = (zeroheti_pkg::`INTC == zeroheti_pkg::EDFIC);
   localparam logic [7:0] ImemPow2 = 8'($clog2(`IMEM_BYTES));
   localparam logic [7:0] DmemPow2 = 8'($clog2(`DMEM_BYTES));
-  localparam logic [31:0] PlatformCfg = {8'h0, DmemPow2, ImemPow2, 7'h0, IntcEdfic};
+`ifndef FULL_UART
+  localparam logic RealUart = 1'b0;
+`else
+  localparam logic RealUart = 1'b1;
+`endif
+  localparam logic [31:0] PlatformCfg = {8'h0, DmemPow2, ImemPow2, 6'h0, RealUart, IntcEdfic};
 
   logic [11:0] local_addr;
   assign local_addr = apb_i.paddr[11:0];
