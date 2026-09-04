@@ -5,13 +5,13 @@ module vip_mbx_driver #(
           AXI_LITE.Master axi_mgr
 );
   // Assume similar address mapping from both sides of mailbox
-  localparam logic [31:0] StatAddr = 32'h0003_0000;
-  localparam logic [31:0] ObiCtrlAddr = 32'h0003_0004;
-  localparam logic [31:0] AxiCtrlAddr = 32'h0003_0008;
-  localparam logic [31:0] IboxAddrAddr = 32'h0003_000C;
-  localparam logic [31:0] IboxDataAddr = 32'h0003_0010;
-  localparam logic [31:0] OboxAddrAddr = 32'h0003_0014;
-  localparam logic [31:0] OboxDataAddr = 32'h0003_0018;
+  localparam logic [31:0] StatAddr = 32'h0010_8000;
+  localparam logic [31:0] ObiCtrlAddr = 32'h0010_8004;
+  localparam logic [31:0] AxiCtrlAddr = 32'h0010_8008;
+  localparam logic [31:0] IboxAddrAddr = 32'h0010_800C;
+  localparam logic [31:0] IboxDataAddr = 32'h0010_8010;
+  localparam logic [31:0] OboxAddrAddr = 32'h0010_8014;
+  localparam logic [31:0] OboxDataAddr = 32'h0010_8018;
 
 
   task automatic axi_read(input logic [31:0] addr, output logic [31:0] rdata);

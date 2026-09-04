@@ -5,12 +5,12 @@
 
 /* --- Hardware mailbox registers --- */
 /* If MBX_STAT [2] is true - safe to send, if [1] is true - inbox is full */
-#define MBX_STAT    0x00030000 
-#define MBX_CTRL    0x00030004
-#define MBX_IADD    0x0003000C
-#define MBX_IDAT    0x00030010
-#define MBX_OADD    0x00030014
-#define MBX_ODAT    0x00030018
+#define MBX_STAT    0x00108000 
+#define MBX_CTRL    0x00108004
+#define MBX_IADD    0x0010800C
+#define MBX_IDAT    0x00108010
+#define MBX_OADD    0x00108014
+#define MBX_ODAT    0x00108018
 
 #define MBX_CTRL_SEND       0x00000001
 #define MBX_CTRL_INBOX_ACK  0x01000000
