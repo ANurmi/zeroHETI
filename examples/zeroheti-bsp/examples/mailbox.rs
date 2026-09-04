@@ -3,19 +3,19 @@
 #![no_std]
 
 use zeroheti_bsp::{
-    CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, mmio, rt::entry, sprintln,
+    apb_uart::ApbUart, asm_delay, mmio, rt::entry, sprintln, CPU_FREQ_HZ, NOPS_PER_SEC,
 };
 
 #[entry]
 fn main() -> ! {
     let mut serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
 
-    const MBX_STAT_ADDR: usize = 0x0003_0000;
-    const MBX_CTRL_ADDR: usize = 0x0003_0004;
-    const _MBX_IADD_ADDR: usize = 0x0003_0008;
-    const _MBX_IDAT_ADDR: usize = 0x0003_000C;
-    const MBX_OADD_ADDR: usize = 0x0003_0010;
-    const MBX_ODAT_ADDR: usize = 0x0003_0014;
+    const MBX_STAT_ADDR: usize = 0x0010_8000;
+    const MBX_CTRL_ADDR: usize = 0x0010_8004;
+    const _MBX_IADD_ADDR: usize = 0x0010_8008;
+    const _MBX_IDAT_ADDR: usize = 0x0010_800C;
+    const MBX_OADD_ADDR: usize = 0x0010_8010;
+    const MBX_ODAT_ADDR: usize = 0x0010_8014;
 
     let letter_0 = 0x2b00b1e5;
 

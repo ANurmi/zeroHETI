@@ -1,4 +1,4 @@
-pub const MBX_ADDR: usize = 0x3_0000;
+pub const MBX_ADDR: usize = 0x10_8000;
 
 /// Register block for mailbox
 #[repr(C)]

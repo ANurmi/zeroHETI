@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - AXI-Lite manager port to crossbar
 - `uart_wrapper` module to cleaner hierarchy
 
+### Fixed
+- Propagate memory map updates for mbx
+
 ## [v0.1.5] - 2026-09-01
 
 ### Added
