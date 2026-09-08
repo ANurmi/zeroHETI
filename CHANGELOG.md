@@ -7,12 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.1.6] - 2026-09-08
+
 ### Added
 - AXI-Lite manager port to crossbar
 - `uart_wrapper` module to cleaner hierarchy
 
 ### Fixed
 - Propagate memory map updates for mbx
+- EDF CSR bug in rt-ibex, behaviour corrected
 
 ## [v0.1.5] - 2026-09-01
 
