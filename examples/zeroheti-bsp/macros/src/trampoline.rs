@@ -99,14 +99,12 @@ pub(crate) fn generate_nested_trap_entry(interrupt: &str, abi: Abi) -> proc_macr
     let store_caller_save_regs = store_trap(abi);
     let caller_save_count: usize = abi.len();
 
-    const CSR_COUNT: usize = if cfg!(feature = "intc-edfic") { 5 } else { 2 };
+    const CSR_COUNT: usize = if cfg!(feature = "intc-edfic") { 3 } else { 2 };
     let enter_save_count = abi.len() + CSR_COUNT;
 
     let cause_pos: usize = caller_save_count * 4;
     let epc_pos: usize = (caller_save_count + 1) * 4;
     let edf_count_pos: usize = (caller_save_count + 2) * 4;
-    let edf_ts_pos: usize = (caller_save_count + 3) * 4;
-    let edf_tsh_pos: usize = (caller_save_count + 4) * 4;
 
     let instructions = format!(
         r#"core::arch::global_asm!("
@@ -122,10 +120,8 @@ pub(crate) fn generate_nested_trap_entry(interrupt: &str, abi: Abi) -> proc_macr
                         ",
                         #[cfg(feature = "intc-edfic")]
                         "
+                        csrw 0x367, x0                              // clear block reg on entry
                         csrrw x12, 0x366, x0                        // read edf_count into x12 / a2
-                        csrrs x13, 0x362, x0                        // read edf_ts into x13 / a3
-                        csrrs x14, 0x363, x0                        // read edf_tsh into x14 / a4
-                        csrrwi x0, 0x367, 1                         // trigger hardware to capture mtime into edf_ts
                         ",
                         "
                         sw x5, {cause_pos}(sp)                      // save cause / x5 / t0
@@ -134,8 +130,6 @@ pub(crate) fn generate_nested_trap_entry(interrupt: &str, abi: Abi) -> proc_macr
                         #[cfg(feature = "intc-edfic")]
                         "
                         sw x12, {edf_count_pos}(sp)                 // save edf_count / x12 / a2
-                        sw x13, {edf_ts_pos}(sp)                    // save edf_ts / x13 / a3
-                        sw x14, {edf_tsh_pos}(sp)                   // save edf_tsh / x14 / a4
                         ",
                         "
                         csrsi mstatus, 8          // enable interrupts
@@ -163,14 +157,12 @@ pub(crate) fn generate_continue_nested_trap_impl(abi: Abi) -> TokenStream {
     let load_caller_save_regs = load_trap(abi);
     let caller_save_count: usize = abi.len();
 
-    const CSR_COUNT: usize = if cfg!(feature = "intc-edfic") { 5 } else { 2 };
+    const CSR_COUNT: usize = if cfg!(feature = "intc-edfic") { 3 } else { 2 };
     let exit_save_count = abi.len() + CSR_COUNT;
 
     let cause_pos: usize = caller_save_count * 4;
     let epc_pos: usize = (caller_save_count + 1) * 4;
     let edf_count_pos: usize = (caller_save_count + 2) * 4;
-    let edf_ts_pos: usize = (caller_save_count + 3) * 4;
-    let edf_tsh_pos: usize = (caller_save_count + 4) * 4;
 
     let instructions = format!(
         r#"
@@ -187,8 +179,6 @@ pub(crate) fn generate_continue_nested_trap_impl(abi: Abi) -> TokenStream {
                 ",
                 #[cfg(feature = "intc-edfic")]
                 "
-                lw x14, {edf_tsh_pos}(sp)                   // restore edf_tsh from stack into x14
-                lw x13, {edf_ts_pos}(sp)                    // restore edf_ts from stack into x13
                 lw x12, {edf_count_pos}(sp)                 // restore edf_count from stack into x12
                 ",
                 "
@@ -197,8 +187,8 @@ pub(crate) fn generate_continue_nested_trap_impl(abi: Abi) -> TokenStream {
                 ",
                 #[cfg(feature = "intc-edfic")]
                 "
-                csrw 0x363, x14                             // put edf_tsh back into CSR
-                csrw 0x362, x13                             // put edf_ts back into CSR
+                csrrw x14, 0x366, x0                        // swap count reg
+                csrw       0x367, x14
                 csrw 0x366, x12                             // put edf_count back into CSR
                 ",
                 "
