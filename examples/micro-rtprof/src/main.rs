@@ -50,12 +50,12 @@ mod app {
     const TASK_SET: [Task; 3] = [
         Task {
             period_us: 30,
-            deadline_us: 50,
+            deadline_us: 30,
             runtime_us: 8 * LF / 100,
         },
         Task {
             period_us: 66,
-            deadline_us: 100,
+            deadline_us: 50,
             runtime_us: 30 * LF / 100,
         },
         Task {
@@ -183,6 +183,21 @@ mod app {
         timers[1].set_period(TASK_SET[1].period_us.micros());
         timers[2].set_period(TASK_SET[2].period_us.micros());
 
+        // Deadline cannot be shorter than unblocked runtime of task
+        assert!(TASK_SET[0].deadline_us >= TASK_SET[0].runtime_us);
+        assert!(TASK_SET[1].deadline_us >= TASK_SET[1].runtime_us);
+        assert!(TASK_SET[2].deadline_us >= TASK_SET[2].runtime_us);
+
+        // Period cannot be shorter than deadline of task
+        assert!(TASK_SET[0].period_us >= TASK_SET[0].deadline_us);
+        assert!(TASK_SET[1].period_us >= TASK_SET[1].deadline_us);
+        assert!(TASK_SET[2].period_us >= TASK_SET[2].deadline_us);
+
+        // with 8 priority bits & 1 us tick deadline range is 0..255 us
+        assert!(255 >= TASK_SET[0].deadline_us);
+        assert!(255 >= TASK_SET[1].deadline_us);
+        assert!(255 >= TASK_SET[2].deadline_us);
+
         timers.iter_mut().for_each(Periodic::start);
 
         clear_perf_counters();
@@ -218,7 +233,8 @@ mod app {
         }
     }
 
-    #[task(binds = Timer0Cmp, priority = 133)]
+    // DL: 30 Prio: 255 - 30 = 225
+    #[task(binds = Timer0Cmp, priority = 225)]
     struct Timer0 {}
     impl RticTask for Timer0 {
         fn init() -> Self {
@@ -235,7 +251,8 @@ mod app {
         }
     }
 
-    #[task(binds = Timer1Cmp, priority = 100)]
+    // DL: 30 Prio: 255 - 50 = 205
+    #[task(binds = Timer1Cmp, priority = 205)]
     struct Timer1 {}
     impl RticTask for Timer1 {
         fn init() -> Self {
@@ -250,7 +267,8 @@ mod app {
         }
     }
 
-    #[task(binds = Timer2Cmp, priority = 67)]
+    // DL: 30 Prio: 255 - 150 = 225
+    #[task(binds = Timer2Cmp, priority = 105)]
     struct Timer2 {}
     impl RticTask for Timer2 {
         fn init() -> Self {

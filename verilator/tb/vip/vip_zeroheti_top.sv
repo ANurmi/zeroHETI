@@ -30,6 +30,8 @@ module vip_zeroheti_top #(
     output logic        r_ready_o
 );
 
+  localparam longint unsigned TimeoutCycles = 100_000;
+
   logic [3:0] i2c_irq;
 
   AXI_LITE #(
@@ -61,6 +63,15 @@ module vip_zeroheti_top #(
   );
 
   vip_task_scoreboard i_scb (.clk_i);
+
+  /*
+  sim_timeout #(
+      .Cycles(TimeoutCycles)
+  ) i_timeout (
+      .clk_i,
+      .rst_ni
+  );
+*/
 
   assign aw_valid_o       = drv_bus.aw_valid;
   assign aw_addr_o        = drv_bus.aw_addr;
