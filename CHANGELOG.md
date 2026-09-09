@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v1.0.0] - 2026-09-09
+
+### Added
+- Second I2C periperheral
+- Registers for SRAM access for better PPA
+
+### Changed
+- Reduce supported core configs to two (minimal, default)
+- Interrupt mapping to accomodate larger timer group
+
 ## [v0.1.7] - 2026-09-09
 
 ### Added
