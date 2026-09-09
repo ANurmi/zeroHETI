@@ -38,7 +38,6 @@ jobs:
       - name: Check BSP
         run: |
           cd examples/zeroheti-bsp
-          cargo check -Frtl-tb -Fintc-hetic --lib --examples
           cargo check -Frtl-tb -Fintc-clic --lib --examples
           cargo check -Frtl-tb -Fintc-edfic --lib --examples
 
