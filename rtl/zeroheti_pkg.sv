@@ -3,7 +3,6 @@ package zeroheti_pkg;
   localparam logic [31:0] BootAddr = 32'h0800;
 
   typedef enum integer {
-    HETIC = 0,
     CLIC  = 1,
     EDFIC = 2
   } int_ctrl_e;

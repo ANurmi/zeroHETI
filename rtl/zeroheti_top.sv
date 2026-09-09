@@ -111,6 +111,7 @@ module zeroheti_top #(
     all_irqs[16]                   = mbx_irq;
     all_irqs[18:17]                = spi_irq;
     all_irqs[20:19]                = i2c_irq;
+    all_irqs[24]                   = uart_irq;
     //all_irqs[31]                 = nmi, reserved;
     all_irqs[((2*TGSize)+32)-1:32] = apb_timer_irqs;
     all_irqs[NrIrqs-1:64]          = ext_irq_i;
@@ -211,14 +212,14 @@ module zeroheti_top #(
   ) i_apb_timer (
       .HCLK   (clk_i),
       .HRESETn(rst_ni),
-      .PENABLE(demux_apb[1].penable),
-      .PWRITE (demux_apb[1].pwrite),
-      .PADDR  (demux_apb[1].paddr),
-      .PSEL   (demux_apb[1].psel),
-      .PWDATA (demux_apb[1].pwdata),
-      .PRDATA (demux_apb[1].prdata),
-      .PREADY (demux_apb[1].pready),
-      .PSLVERR(demux_apb[1].pslverr),
+      .PENABLE(demux_apb[5].penable),
+      .PWRITE (demux_apb[5].pwrite),
+      .PADDR  (demux_apb[5].paddr),
+      .PSEL   (demux_apb[5].psel),
+      .PWDATA (demux_apb[5].pwdata),
+      .PRDATA (demux_apb[5].prdata),
+      .PREADY (demux_apb[5].pready),
+      .PSLVERR(demux_apb[5].pslverr),
       .irq_o  (apb_timer_irqs)
   );
 
@@ -276,14 +277,14 @@ module zeroheti_top #(
   apb_spi_master #() i_apb_spi (
       .HCLK    (clk_i),
       .HRESETn (rst_ni),
-      .PENABLE (demux_apb[5].penable),
-      .PWRITE  (demux_apb[5].pwrite),
-      .PADDR   (demux_apb[5].paddr[11:0]),
-      .PSEL    (demux_apb[5].psel),
-      .PWDATA  (demux_apb[5].pwdata),
-      .PRDATA  (demux_apb[5].prdata),
-      .PREADY  (demux_apb[5].pready),
-      .PSLVERR (demux_apb[5].pslverr),
+      .PENABLE (demux_apb[1].penable),
+      .PWRITE  (demux_apb[1].pwrite),
+      .PADDR   (demux_apb[1].paddr[11:0]),
+      .PSEL    (demux_apb[1].psel),
+      .PWDATA  (demux_apb[1].pwdata),
+      .PRDATA  (demux_apb[1].prdata),
+      .PREADY  (demux_apb[1].pready),
+      .PSLVERR (demux_apb[1].pslverr),
       .events_o(spi_irq),
       .spi_clk (spi_clk_o),
       .spi_csn0(spi_csn_o[0]),
