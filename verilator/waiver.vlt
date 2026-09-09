@@ -53,6 +53,9 @@ lint_off -rule LATCH -file "*/obi_*/*" -match "*"
 lint_off -rule LATCH -file "*/prim_clock_gating.v" -match "*"
 
 lint_off -rule CASEINCOMPLETE -file "*/i2c_master_byte_ctrl.sv" -match "*"
+lint_off -rule CASEINCOMPLETE -file "*/spi_master_apb_if.sv" -match "*"
+lint_off -rule CASEINCOMPLETE -file "*/spi_master_controller.sv" -match "*"
+lint_off -rule CASEINCOMPLETE -file "*/apb_spi_master.sv" -match "*"
 lint_off -rule CASEINCOMPLETE -file "*/apb_timer*/*" -match "*"
 
 lint_off -rule MULTIDRIVEN -file "*/ibex_tracer.sv" -match "*"
@@ -61,6 +64,8 @@ lint_off -rule MULTIDRIVEN -file "*/apb*/*" -match "*"
 lint_off -rule EOFNEWLINE -file "*/.bender/*" -match "*"
 
 lint_off -rule DECLFILENAME -file "*/.bender/*" -match "*"
+
+lint_off -rule WIDTHCONCAT -file "*/clic*/*" -match "*"
 
 lint_off -rule REDEFMACRO -file "*/rt-ibex*/*" -match "*"
 

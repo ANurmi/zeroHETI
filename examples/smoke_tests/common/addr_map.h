@@ -1,4 +1,4 @@
-#define HETIC_BASE 0x00100000
+#define INTC_BASE 0x00100000
 
 #define UART_BASE 0x00003000
 #define UART_RBR              UART_BASE + 0
@@ -20,9 +20,10 @@
 #define MTIMER_CMP_HI   MTIMER_BASE + 12
 #define MTIMER_CTRL     MTIMER_BASE + 16
 
-#define TIMER_GROUP_BASE 0x00003300
+#define TIMER_GROUP_BASE 0x00003400
 
-#define I2C_BASE 0x00003200
+#define I2C_0_BASE 0x00003200
+#define I2C_1_BASE 0x00003300
 #define I2C_CLK_PRESCALER I2C_BASE + 0
 #define I2C_CTRL          I2C_BASE + 4
 #define I2C_RX            I2C_BASE + 8

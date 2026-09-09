@@ -16,13 +16,20 @@ fn main() -> ! {
     let rd = mmio::read_u32(CFG_BASE_ADDR);
     let cfg = mmio::read_u32(CFG_BASE_ADDR + 4);
 
-    let intc_type = if (cfg & 0b1) == 0b1 { "EDFIC" } else { "CLIC" };
+    let intc_type = if (cfg & 0b01) == 0b01 {
+        "EDFIC"
+    } else {
+        "CLIC"
+    };
+    let uart_type = if (cfg & 0b10) == 0b10 { "Full" } else { "Mock" };
+
     let imem_bytes = 2u32.pow((cfg & 0x00FF00) >> 8);
     let dmem_bytes = 2u32.pow((cfg & 0xFF0000) >> 16);
 
     sprintln!("zeroHETI HW build from commit: {:8x}", rd);
     sprintln!("Platform config: {:08x}", cfg);
     sprintln!("- Interrupt controller       : {intc_type}");
+    sprintln!("- UART peripheral            : {uart_type}");
     sprintln!("- Instruction memory (bytes) : {imem_bytes}");
     sprintln!("- Data memory (bytes)        : {dmem_bytes}");
 

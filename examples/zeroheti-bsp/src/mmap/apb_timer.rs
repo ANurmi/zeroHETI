@@ -1,4 +1,4 @@
-pub const APB_TIMER_BASE: usize = 0x0_3300;
+pub const APB_TIMER_BASE: usize = 0x0_3400;
 
 /// Timer address separation in memory layout
 pub const TIMER_SEP: usize = 0x10;
