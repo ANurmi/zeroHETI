@@ -8,8 +8,6 @@ pub mod clic;
 mod core_sprint;
 #[cfg(feature = "intc-edfic")]
 pub mod edfic;
-#[cfg(feature = "intc-hetic")]
-pub mod hetic;
 pub mod i2c;
 pub mod interrupt;
 pub mod mailbox;

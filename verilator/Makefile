@@ -32,17 +32,11 @@ DMEM_REL_OFFS_WORDS = 16385
 
 IMEM_WORDS       = $(shell echo $$(($(IMEM_BYTES) / 4)))
 DMEM_START       = $(DMEM_REL_OFFS_WORDS)
-
 INTC             = EDFIC
+GIT_HASH         = $(shell git rev-parse --short HEAD)
+JTAG_IDCODE      = feedc0d3
 
-BASE             = E
-MULT             = M
-COMP             = C
-ISA              = RV32$(BASE)$(MULT)$(COMP)
-
-GIT_HASH = $(shell git rev-parse --short HEAD)
-
-JTAG_IDCODE = feedc0d3
+CFG              = Default
 
 VDEFS ?= \
   +define+VERILATOR=1 \
@@ -54,10 +48,18 @@ VDEFS ?= \
 	+define+INTC=$(INTC) \
 	+define+LOAD=$(LOAD) \
   +define+COMMON_CELLS_ASSERTS_OFF \
-	+define+CORE_CFG=$(ISA)Cfg \
+	+define+CORE_CFG=$(CFG)Cfg \
 
 ifdef FULL_UART
-VDEFS += +define+FULL_UART
+VDEFS += +define+FULL_UART \
+
+endif
+
+ifdef TIMEOUT
+VDEFS += \
+	+define+TIMEOUT \
+	+define+TIMEOUT_CYCLES=$(TIMEOUT) \
+
 endif
 
 VFLAGS           = \

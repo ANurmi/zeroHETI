@@ -1,8 +1,8 @@
 #![allow(unused)]
 
-#[cfg(not(any(feature = "intc-hetic", feature = "intc-clic", feature = "intc-edfic")))]
+#[cfg(not(any(feature = "intc-clic", feature = "intc-edfic")))]
 compile_error!(
-    "at least one interrupt controller feature is required, pass -Fintc-hetic, -Fintc-clic, -Fintc-edfic"
+    "at least one interrupt controller feature is required, pass -Fintc-clic, -Fintc-edfic"
 );
 
 use riscv_types::InterruptNumber;
@@ -24,9 +24,9 @@ pub fn init_intc() {
         // Set level bits to 8
         Clic::smclicconfig().set_mnlbits(8);
     }
-    #[cfg(any(feature = "intc-hetic", feature = "intc-edfic"))]
+    #[cfg(any(feature = "intc-edfic"))]
     {
-        // Hetic/EDFIC don't need global initialization
+        // EDFIC don't need global initialization
     }
 }
 
@@ -43,13 +43,6 @@ pub fn setup_irq(irq: impl InterruptNumber) {
         Clic::attr(irq).set_shv(true);
         Clic::ctl(irq).set_level(0xff);
         unsafe { Clic::ie(irq).enable() };
-    }
-    #[cfg(feature = "intc-hetic")]
-    {
-        use zeroheti_bsp::hetic::Hetic;
-
-        Hetic::line(irq.number()).set_level_prio(0xff);
-        Hetic::line(irq.number()).enable();
     }
     #[cfg(feature = "intc-edfic")]
     {
@@ -78,14 +71,6 @@ pub fn tear_irq(irq: impl InterruptNumber) {
         Clic::attr(irq).set_trig(Trig::Level);
         Clic::attr(irq).set_polarity(Polarity::Pos);
     }
-    #[cfg(feature = "intc-hetic")]
-    {
-        use zeroheti_bsp::hetic::Hetic;
-
-        Hetic::line(irq.number()).unpend();
-        Hetic::line(irq.number()).set_level_prio(0x0);
-        Hetic::line(irq.number()).disable();
-    }
     #[cfg(feature = "intc-edfic")]
     {
         use zeroheti_bsp::edfic::Edfic;
@@ -100,11 +85,6 @@ pub fn pend_irq(irq: impl InterruptNumber) {
     {
         use zeroheti_bsp::clic::CLIC;
         unsafe { CLIC::ip(irq).pend() }
-    }
-    #[cfg(feature = "intc-hetic")]
-    {
-        use zeroheti_bsp::hetic::Hetic;
-        Hetic::line(irq.number()).pend();
     }
     #[cfg(feature = "intc-edfic")]
     {

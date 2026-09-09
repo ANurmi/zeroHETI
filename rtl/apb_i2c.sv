@@ -1,11 +1,3 @@
-
-`define REG_CLK_PRESCALER 3'b000 //BASEADDR+0x00
-`define REG_CTRL 3'b001 //BASEADDR+0x04
-`define REG_RX 3'b010 //BASEADDR+0x08
-`define REG_STATUS 3'b011 //BASEADDR+0x0C
-`define REG_TX 3'b100 //BASEADDR+0x10
-`define REG_CMD 3'b101 //BASEADDR+0x14
-
 module apb_i2c #(
     parameter int unsigned APB_ADDR_WIDTH = 12  //APB slaves are 4KB by default
 ) (
@@ -27,6 +19,13 @@ module apb_i2c #(
     output logic                      sda_pad_o,
     output logic                      sda_padoen_o
 );
+
+  localparam logic [2:0] RegClkPrescaler = 3'b000;  //BASEADDR+0x00
+  localparam logic [2:0] RegCtrl = 3'b001;  // BASEADDR+0x04
+  localparam logic [2:0] RegRx = 3'b010;  // BASEADDR+0x08
+  localparam logic [2:0] RegStatus = 3'b011;  // BASEADDR+0x0C
+  localparam logic [2:0] RegTx = 3'b100;  // BASEADDR+0x10
+  localparam logic [2:0] RegCmd = 3'b101;  // BASEADDR+0x14
 
   //
   // variable declarations
@@ -76,10 +75,10 @@ module apb_i2c #(
       r_cmd[2:1] <= 2'b0;  // reserved bits
       r_cmd[0]   <= 1'b0;  // clear IRQ_ACK bit
       case (s_apb_addr)
-        `REG_CLK_PRESCALER: r_pre <= PWDATA[15:0];
-        `REG_CTRL: r_ctrl <= PWDATA[7:0];
-        `REG_TX: r_tx <= PWDATA[7:0];
-        `REG_CMD: begin
+        RegClkPrescaler: r_pre <= PWDATA[15:0];
+        RegCtrl: r_ctrl <= PWDATA[7:0];
+        RegTx: r_tx <= PWDATA[7:0];
+        RegCmd: begin
           if (s_core_en) r_cmd <= PWDATA[7:0];
         end
         default: ;
@@ -94,12 +93,12 @@ module apb_i2c #(
 
   always_comb begin
     case (s_apb_addr)
-      `REG_CLK_PRESCALER: PRDATA = {16'h0, r_pre};
-      `REG_CTRL: PRDATA = {24'h0, r_ctrl};
-      `REG_RX: PRDATA = {24'h0, s_rx};
-      `REG_STATUS: PRDATA = {24'h0, s_status};
-      `REG_TX: PRDATA = {24'h0, r_tx};
-      `REG_CMD: PRDATA = {24'h0, r_cmd};
+      RegClkPrescaler: PRDATA = {16'h0, r_pre};
+      RegCtrl: PRDATA = {24'h0, r_ctrl};
+      RegRx: PRDATA = {24'h0, s_rx};
+      RegStatus: PRDATA = {24'h0, s_status};
+      RegTx: PRDATA = {24'h0, r_tx};
+      RegCmd: PRDATA = {24'h0, r_cmd};
       default: PRDATA = 'h0;
     endcase
   end
@@ -152,7 +151,8 @@ module apb_i2c #(
       al <= i2c_al | (al & ~sta);
       rxack <= s_irxack;
       tip <= (rd | wr);
-      irq_flag <= (s_done | i2c_al | irq_flag) & ~iack; // interrupt request flag is always generated
+      // interrupt request flag is always generated
+      irq_flag <= (s_done | i2c_al | irq_flag) & ~iack;
     end
   end
 
@@ -160,7 +160,8 @@ module apb_i2c #(
   always_ff @(posedge HCLK, negedge HRESETn) begin
     if (!HRESETn) interrupt_o <= 1'b0;
     else
-      interrupt_o <= irq_flag && s_ien; // interrupt signal is only generated when IEN (interrupt enable bit is set)
+      // interrupt signal is only generated when IEN (interrupt enable bit is set)
+      interrupt_o <= irq_flag && s_ien;
   end
 
   // assign status register bits
