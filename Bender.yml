@@ -42,6 +42,8 @@ sources:
   - rtl/irq_gateway.sv
   - rtl/zeroheti_dbg_wrapper.sv
   - rtl/zeroheti_core.sv
+- target: all(rtl, not(zh_exclude_top))
+  files:
   - rtl/zeroheti_top.sv
 - target: verilator
   files:

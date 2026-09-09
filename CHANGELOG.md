@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.1.7] - 2026-09-09
+
+### Added
+- `zh_exclude_top` Bender flag to exclude `zeroheti_top` from filelists
+
 ## [v0.1.6] - 2026-09-08
 
 ### Added
