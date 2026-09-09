@@ -11,44 +11,59 @@ pub enum Interrupt {
     // NC: SupervisorTimer = 5,
     MachineTimer = 7,
     // NC: SupervisorExternal = 9,
-    // ???(BUG): MachineExternal broken on HETIC
-    // Attempting to pend MachineExternal (line 11) on HETIC will freeze the
-    // simulation or the application
-    #[cfg(not(feature = "intc-hetic"))]
     MachineExternal = 11,
-    /// Timer 0 overflow
-    Timer0Ovf = 16,
-    /// Timer 0 compare
-    Timer0Cmp = 17,
-    /// Timer1 overflow
-    Timer1Ovf = 18,
-    /// Timer1 compare
-    Timer1Cmp = 19,
-    /// Timer2 overflow
-    Timer2Ovf = 20,
-    /// Timer2 compare
-    Timer2Cmp = 21,
-    /// Timer3 overflow
-    Timer3Ovf = 22,
-    /// Timer3 compare
-    Timer3Cmp = 23,
-    Uart = 24,
-    I2c = 25,
     /// Mailbox
-    Mbx = 26,
+    Mbx = 16,
+    SpiEvent0 = 17,
+    SpiEvent1 = 18,
+    I2c0 = 19,
+    I2c1 = 20,
+    Uart = 24,
+    // Non-maskable interrupt, carried over from standard Ibex
+    Nmi = 31, // reserved
+    /// Timer0 overflow
+    Timer0Ovf = 32,
+    /// Timer0 compare
+    Timer0Cmp = 33,
+    Timer1Ovf = 34,
+    Timer1Cmp = 35,
+    Timer2Ovf = 36,
+    Timer2Cmp = 37,
+    Timer3Ovf = 38,
+    Timer3Cmp = 39,
+    Timer4Ovf = 40,
+    Timer4Cmp = 41,
+    Timer5Ovf = 42,
+    Timer5Cmp = 43,
+    Timer6Ovf = 44,
+    Timer6Cmp = 45,
+    Timer7Ovf = 46,
+    Timer7Cmp = 47,
+    Timer8Ovf = 48,
+    Timer8Cmp = 49,
+    Timer9Ovf = 50,
+    Timer9Cmp = 51,
+    Timer10Ovf = 52,
+    Timer10Cmp = 53,
+    Timer11Ovf = 54,
+    Timer11Cmp = 55,
+    Timer12Ovf = 56,
+    Timer12Cmp = 57,
+    Timer13Ovf = 58,
+    Timer13Cmp = 59,
+    Timer14Ovf = 60,
+    Timer14Cmp = 61,
+    Timer15Ovf = 62,
+    Timer15Cmp = 63,
+
     /// Generic external interrupt 0
-    Ext0 = 27,
+    Ext0 = 64,
     /// Generic external interrupt 1
-    Ext1 = 28,
+    Ext1 = 65,
     /// Generic external interrupt 2
-    Ext2 = 29,
+    Ext2 = 66,
     /// Generic external interrupt 3
-    Ext3 = 30,
-    /// Non-maskable interrupt, carried over from standard Ibex
-    ///
-    /// ???: Nmi doesn't seem to be working on zeroHETI (nor did it work on
-    /// Atalanta)
-    Nmi = 31,
+    Ext3 = 67,
 }
 
 unsafe impl InterruptNumber for Interrupt {
