@@ -64,6 +64,7 @@ package zeroheti_pkg;
     addr_rule_t i2c_1;
     addr_rule_t spi;
     addr_rule_t tg;
+    addr_rule_t tq;
     addr_rule_t cfg;
     addr_rule_t mtimer;
     addr_rule_t mbx;
@@ -82,6 +83,7 @@ package zeroheti_pkg;
       base : 32'h0000_3400,
       last : 32'h0000_3400 + (16 * DefaultCfg.size_tg)
   };
+  localparam addr_rule_t TqAddr = '{base: 32'h0000_3800, last: 32'h0000_3900};
   localparam addr_rule_t CfgAddr = '{base : 32'h0000_4000, last : 32'h0000_5000};
   localparam addr_rule_t SpiAddr = '{base : 32'h0000_5000, last : 32'h0000_5100};
   localparam addr_rule_t ImemAddr = '{base : 32'h0001_0000, last : (32'h0001_0000 + ImemSize)};
@@ -106,6 +108,7 @@ package zeroheti_pkg;
       cfg    : CfgAddr,
       spi    : SpiAddr,
       tg     : TimerGroupAddr,
+      tq     : TqAddr,
       mtimer : MtimerAddr,
       mbx    : MbxAddr,
       ext    : ExtAddr
