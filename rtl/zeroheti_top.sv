@@ -70,7 +70,7 @@ module zeroheti_top #(
   localparam int unsigned TGSize = CoreCfg.size_tg;
   localparam int unsigned ApbWidth = 32;
   localparam int unsigned DataWidth = 32;
-  localparam int unsigned NrApbPerip = 7;
+  localparam int unsigned NrApbPerip = 8;
   localparam int unsigned SelWidth = $clog2(NrApbPerip);
 
   OBI_BUS obi_mgr ();
@@ -165,6 +165,7 @@ module zeroheti_top #(
       [AddrMap.i2c_0.base : AddrMap.i2c_0.last - 1]:   demux_sel = SelWidth'('d4);
       [AddrMap.i2c_1.base : AddrMap.i2c_1.last - 1]:   demux_sel = SelWidth'('d5);
       [AddrMap.spi.base : AddrMap.spi.last - 1]:       demux_sel = SelWidth'('d6);
+      [AddrMap.tq.base : AddrMap.tq.last - 1]:         demux_sel = SelWidth'('d7);
       default: begin
         demux_sel = SelWidth'('d0);
         if (apb_mgr.psel & apb_mgr.penable) $display("Warning: APB access to unmapped region!");
@@ -185,7 +186,7 @@ module zeroheti_top #(
   uart_wrapper #() i_uart (
       .clk_i,
       .rst_ni,
-      .apb_sbr(demux_apb[4]),
+      .apb_sbr(demux_apb[5]),
       .rx_i   (uart_rx_i),
       .tx_o   (uart_tx_o),
       .irq_o  (uart_irq)
@@ -212,14 +213,14 @@ module zeroheti_top #(
   ) i_apb_timer (
       .HCLK   (clk_i),
       .HRESETn(rst_ni),
-      .PENABLE(demux_apb[5].penable),
-      .PWRITE (demux_apb[5].pwrite),
-      .PADDR  (demux_apb[5].paddr),
-      .PSEL   (demux_apb[5].psel),
-      .PWDATA (demux_apb[5].pwdata),
-      .PRDATA (demux_apb[5].prdata),
-      .PREADY (demux_apb[5].pready),
-      .PSLVERR(demux_apb[5].pslverr),
+      .PENABLE(demux_apb[4].penable),
+      .PWRITE (demux_apb[4].pwrite),
+      .PADDR  (demux_apb[4].paddr),
+      .PSEL   (demux_apb[4].psel),
+      .PWDATA (demux_apb[4].pwdata),
+      .PRDATA (demux_apb[4].prdata),
+      .PREADY (demux_apb[4].pready),
+      .PSLVERR(demux_apb[4].pslverr),
       .irq_o  (apb_timer_irqs)
   );
 
@@ -300,6 +301,16 @@ module zeroheti_top #(
       .spi_sdi1(spi_sdi_i[1]),
       .spi_sdi2(spi_sdi_i[2]),
       .spi_sdi3(spi_sdi_i[3])
+  );
+
+  apb_timer_queue #() i_tq (
+      .clk_i,
+      .rst_ni,
+      .mtime_i    (mtime),
+      .irq_pl_o   (),
+      .irq_full_o (),
+      .irq_nfull_o(),
+      .apb_sbr    (demux_apb[7])
   );
 
   assign axi_sbr.aw_valid    = sbr_axil_aw_valid_i;
