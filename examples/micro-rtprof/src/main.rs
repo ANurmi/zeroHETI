@@ -76,7 +76,7 @@ mod app {
     #[inline]
     fn run_us(rt: u32) {
         // Experimentally measured coefficient
-        let k = 16;
+        let k = 8;
         asm_delay(rt * k);
     }
 
