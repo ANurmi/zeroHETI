@@ -2,10 +2,10 @@ module vip_zeroheti_top #(
 ) (
     input  logic        clk_i,
     input  logic        rst_ni,
-    input  logic        sda_i,
-    output logic        sda_o,
-    input  logic        scl_i,
-    output logic        scl_o,
+    input  logic [ 1:0] sda_i,
+    output logic [ 1:0] sda_o,
+    input  logic [ 1:0] scl_i,
+    output logic [ 1:0] scl_o,
     input  logic        uart_rx_i,
     output logic        uart_tx_o,
     output logic [ 3:0] i2c_irq_o,
@@ -30,9 +30,8 @@ module vip_zeroheti_top #(
     output logic        r_ready_o
 );
 
-  localparam longint unsigned TimeoutCycles = 100_000;
 
-  logic [3:0] i2c_irq;
+  //logic [3:0] i2c_irq;
 
   AXI_LITE #(
       .AXI_ADDR_WIDTH(32),
@@ -46,14 +45,24 @@ module vip_zeroheti_top #(
       .tx_o(uart_tx_o)
   );
 
-  vip_i2c i_vip_i2c (
+  vip_i2c i_vip_i2c_0 (
       .clk_i,
       .rst_ni,
-      .scl_o,
-      .scl_i,
-      .sda_i,
-      .sda_o,
-      .irq_o(i2c_irq)
+      .scl_o(scl_o[0]),
+      .scl_i(scl_i[0]),
+      .sda_i(sda_i[0]),
+      .sda_o(sda_o[0]),
+      .irq_o()
+  );
+
+  vip_i2c i_vip_i2c_1 (
+      .clk_i,
+      .rst_ni,
+      .scl_o(scl_o[1]),
+      .scl_i(scl_i[1]),
+      .sda_i(sda_i[1]),
+      .sda_o(sda_o[1]),
+      .irq_o()
   );
 
   vip_mbx_driver i_mbx_drv (
@@ -64,14 +73,19 @@ module vip_zeroheti_top #(
 
   vip_task_scoreboard i_scb (.clk_i);
 
-  /*
+
+`ifdef TIMEOUT
+
+  localparam longint unsigned TimeoutCycles = `TIMEOUT_CYCLES;
+
   sim_timeout #(
       .Cycles(TimeoutCycles)
   ) i_timeout (
       .clk_i,
       .rst_ni
   );
-*/
+
+`endif
 
   assign aw_valid_o       = drv_bus.aw_valid;
   assign aw_addr_o        = drv_bus.aw_addr;

@@ -9,7 +9,7 @@ compile_error!(
     "at least one interrupt controller feature is required, pass -Fintc-hetic, -Fintc-clic, -Fintc-edfic"
 );
 
-use core::ptr::self;
+use core::ptr;
 use riscv_types::InterruptNumber;
 
 use crate::common::{UART_BAUD, init_intc, pend_irq, setup_irq};
@@ -34,8 +34,35 @@ const IRQS: &[Interrupt] = &[
     Interrupt::Timer2Cmp,
     Interrupt::Timer3Ovf,
     Interrupt::Timer3Cmp,
+    Interrupt::Timer4Ovf,
+    Interrupt::Timer4Cmp,
+    Interrupt::Timer5Ovf,
+    Interrupt::Timer5Cmp,
+    Interrupt::Timer6Ovf,
+    Interrupt::Timer6Cmp,
+    Interrupt::Timer7Ovf,
+    Interrupt::Timer7Cmp,
+    Interrupt::Timer8Ovf,
+    Interrupt::Timer8Cmp,
+    Interrupt::Timer9Ovf,
+    Interrupt::Timer9Cmp,
+    Interrupt::Timer10Ovf,
+    Interrupt::Timer10Cmp,
+    Interrupt::Timer11Ovf,
+    Interrupt::Timer11Cmp,
+    Interrupt::Timer12Ovf,
+    Interrupt::Timer12Cmp,
+    Interrupt::Timer13Ovf,
+    Interrupt::Timer13Cmp,
+    Interrupt::Timer14Ovf,
+    Interrupt::Timer14Cmp,
+    Interrupt::Timer15Ovf,
+    Interrupt::Timer15Cmp,
     Interrupt::Uart,
-    Interrupt::I2c,
+    Interrupt::I2c0,
+    Interrupt::I2c1,
+    Interrupt::SpiEvent0,
+    Interrupt::SpiEvent1,
     Interrupt::Mbx,
     Interrupt::Ext0,
     Interrupt::Ext1,

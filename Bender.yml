@@ -12,8 +12,10 @@ dependencies:
   riscv-dbg: { git: "https://github.com/pulp-platform/riscv-dbg.git", version: 0.8.1 }
   clic: { git: "https://github.com/pulp-platform/clic.git", version: 2.0.0 }
   apb_uart: { git: "https://github.com/pulp-platform/apb_uart.git", version: 0.2.1 }
+  apb_spi: { git: "https://github.com/soc-hub-fi/apb_spi.git", version: 0.1.0 }
   apb_timer: { git: "https://github.com/pulp-platform/apb_timer.git", rev: "03eba2e6965f5363df12621882bc70498c551a73" }
   obi: { git: "https://github.com/pulp-platform/obi.git", version: 0.1.7 }
+  tq: { path: "../tq"}
   edfic: { git: "https://github.com/ANurmi/edfic.git", version: 0.1.0 }
   vbench: { git: "https://github.com/ANurmi/vbench", rev: "main" }
   riscof_verilator: { git: "https://github.com/ANurmi/riscof_verilator.git", version: 0.1.2 }

@@ -5,7 +5,7 @@ use crate::{
 
 pub struct I2cHal<const BASE_ADDR: usize>;
 
-pub type I2c = I2cHal<I2C_BASE>;
+pub type I2c = I2cHal<I2C_0_BASE>;
 
 bitflags::bitflags! {
     struct Cmd: u8 {
