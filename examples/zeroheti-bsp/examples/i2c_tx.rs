@@ -49,8 +49,8 @@ fn main() -> ! {
 }
 
 #[allow(non_snake_case)]
-#[nested_interrupt]
-fn I2c() {
+#[zeroheti_bsp::core_interrupt(Interrupt::I2c0)]
+fn I2c0() {
     unsafe { I2c::instance() }.irq_ack();
 }
 
