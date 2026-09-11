@@ -195,14 +195,14 @@ module zeroheti_top #(
   apb_mtimer i_mtimer (
       .clk_i,
       .rst_ni,
-      .penable_i  (demux_apb[3].penable),
-      .pwrite_i   (demux_apb[3].pwrite),
-      .paddr_i    (demux_apb[3].paddr),
-      .psel_i     (demux_apb[3].psel),
-      .pwdata_i   (demux_apb[3].pwdata),
-      .prdata_o   (demux_apb[3].prdata),
-      .pready_o   (demux_apb[3].pready),
-      .pslverr_o  (demux_apb[3].pslverr),
+      .penable_i  (demux_apb[4].penable),
+      .pwrite_i   (demux_apb[4].pwrite),
+      .paddr_i    (demux_apb[4].paddr),
+      .psel_i     (demux_apb[4].psel),
+      .pwdata_i   (demux_apb[4].pwdata),
+      .prdata_o   (demux_apb[4].prdata),
+      .pready_o   (demux_apb[4].pready),
+      .pslverr_o  (demux_apb[4].pslverr),
       .mtime_o    (mtime),
       .timer_irq_o(mtime_irq)
   );
@@ -213,14 +213,14 @@ module zeroheti_top #(
   ) i_apb_timer (
       .HCLK   (clk_i),
       .HRESETn(rst_ni),
-      .PENABLE(demux_apb[4].penable),
-      .PWRITE (demux_apb[4].pwrite),
-      .PADDR  (demux_apb[4].paddr),
-      .PSEL   (demux_apb[4].psel),
-      .PWDATA (demux_apb[4].pwdata),
-      .PRDATA (demux_apb[4].prdata),
-      .PREADY (demux_apb[4].pready),
-      .PSLVERR(demux_apb[4].pslverr),
+      .PENABLE(demux_apb[6].penable),
+      .PWRITE (demux_apb[6].pwrite),
+      .PADDR  (demux_apb[6].paddr),
+      .PSEL   (demux_apb[6].psel),
+      .PWDATA (demux_apb[6].pwdata),
+      .PRDATA (demux_apb[6].prdata),
+      .PREADY (demux_apb[6].pready),
+      .PSLVERR(demux_apb[6].pslverr),
       .irq_o  (apb_timer_irqs)
   );
 
@@ -229,14 +229,14 @@ module zeroheti_top #(
   ) i_i2c_0 (
       .HCLK        (clk_i),
       .HRESETn     (rst_ni),
-      .PADDR       (demux_apb[0].paddr),
-      .PWDATA      (demux_apb[0].pwdata),
-      .PWRITE      (demux_apb[0].pwrite),
-      .PSEL        (demux_apb[0].psel),
-      .PENABLE     (demux_apb[0].penable),
-      .PRDATA      (demux_apb[0].prdata),
-      .PREADY      (demux_apb[0].pready),
-      .PSLVERR     (demux_apb[0].pslverr),
+      .PADDR       (demux_apb[3].paddr),
+      .PWDATA      (demux_apb[3].pwdata),
+      .PWRITE      (demux_apb[3].pwrite),
+      .PSEL        (demux_apb[3].psel),
+      .PENABLE     (demux_apb[3].penable),
+      .PRDATA      (demux_apb[3].prdata),
+      .PREADY      (demux_apb[3].pready),
+      .PSLVERR     (demux_apb[3].pslverr),
       .interrupt_o (i2c_irq[0]),
       .scl_pad_i   (i2c_scl_pad_i[0]),
       .scl_pad_o   (i2c_scl_pad_o[0]),
@@ -272,7 +272,7 @@ module zeroheti_top #(
       .clk_i,
       .rst_ni,
       .intc_mtime_en_o(intc_mtime_en),
-      .apb_i(demux_apb[6])
+      .apb_i(demux_apb[7])
   );
 
   apb_spi_master #() i_apb_spi (
@@ -310,7 +310,7 @@ module zeroheti_top #(
       .irq_pl_o   (),
       .irq_full_o (),
       .irq_nfull_o(),
-      .apb_sbr    (demux_apb[7])
+      .apb_sbr    (demux_apb[0])
   );
 
   assign axi_sbr.aw_valid    = sbr_axil_aw_valid_i;
