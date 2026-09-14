@@ -5,7 +5,7 @@ mod common;
 
 use zeroheti_bsp::{
     CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, i2c::I2c, interrupt::Interrupt,
-    nested_interrupt, rt::entry, sprintln,
+    rt::entry, sprintln,
 };
 
 use crate::common::{init_intc, setup_irq};
