@@ -42,8 +42,8 @@ struct rt_task {
 };
 
 static const struct rt_task task_set[NUM_TASKS] = {
-	{ .period_us =  30, .deadline_us =  50, .C_us =  8U * LOAD_FACTOR / 100U },
-	{ .period_us =  66, .deadline_us = 100, .C_us = 30U * LOAD_FACTOR / 100U },
+	{ .period_us =  30, .deadline_us =  30, .C_us =  8U * LOAD_FACTOR / 100U },
+	{ .period_us =  66, .deadline_us =  50, .C_us = 30U * LOAD_FACTOR / 100U },
 	{ .period_us = 170, .deadline_us = 150, .C_us = 50U * LOAD_FACTOR / 100U },
 };
 
