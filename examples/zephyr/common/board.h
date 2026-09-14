@@ -11,16 +11,16 @@
 #define I2C_PRESCALER   4
 
 /* --- APB Timers --- */
-#define TIMER_BASE(i) (0x3300 + (i) * 0x10)
+#define TIMER_BASE(i) (0x3400 + (i) * 0x10)
 #define TIMER_CNT(base)  ((base) + 0x0)
 #define TIMER_CTRL(base) ((base) + 0x4)
 #define TIMER_CMP(base)  ((base) + 0x8)
 
 /* --- IRQ numbers --- */
-#define IRQ_MBX          26
-#define IRQ_TIMER_OVF(i) (16 + (i) * 2)
-#define IRQ_TIMER_CMP(i) (17 + (i) * 2)
-#define IRQ_EXT(i)       (27 + (i))
+#define IRQ_MBX          16
+#define IRQ_TIMER_OVF(i) (32 + (i) * 2)
+#define IRQ_TIMER_CMP(i) (33 + (i) * 2)
+#define IRQ_EXT(i)       (64 + (i))
 
 /* --- IRQ priorities --- */
 #define PRIO_MAIL   5
