@@ -2,17 +2,13 @@
 Bender.lock
 build
 Bender.local
-rtl/vendor
 verilator/trace_core_00000000.log
 *.swp
 */.Xil
-dv/riscv-arch-test
-dv/sail_cSim/__init__.py
-dv/riscof_work
-dv/sail_cSim/__pycache__
-dv/zeroheti/__pycache__
 *.log
 rtl/vendor
+workspace_dir
+
 
 # Terminal UI testing
 **/ui-test/run*.stdout

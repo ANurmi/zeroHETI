@@ -98,7 +98,13 @@ module zeroheti_top #(
   logic [           1:0] spi_irq;
   logic                  mbx_irq;
   logic                  uart_irq;
+
+  // Timer queue intetrrupts aliased with timer group
   logic [(TGSize*2)-1:0] apb_timer_irqs;
+  logic [(TGSize*2)-1:0] tq_irqs;
+
+  logic                  tq_full;
+  logic                  tq_nfull;
 
   logic [          63:0] mtime;
   logic                  intc_mtime_en;
@@ -111,9 +117,11 @@ module zeroheti_top #(
     all_irqs[16]                   = mbx_irq;
     all_irqs[18:17]                = spi_irq;
     all_irqs[20:19]                = i2c_irq;
+    all_irqs[21]                   = tq_full;
+    all_irqs[22]                   = tq_nfull;
     all_irqs[24]                   = uart_irq;
     //all_irqs[31]                 = nmi, reserved;
-    all_irqs[((2*TGSize)+32)-1:32] = apb_timer_irqs;
+    all_irqs[((2*TGSize)+32)-1:32] = apb_timer_irqs | tq_irqs;
     all_irqs[NrIrqs-1:64]          = ext_irq_i;
   end : irq_mapping
 
@@ -303,13 +311,16 @@ module zeroheti_top #(
       .spi_sdi3(spi_sdi_i[3])
   );
 
-  apb_timer_queue #() i_tq (
+  apb_timer_queue #(
+      .NrIrqs(TGSize * 2),
+      .Depth  (TGSize * 2)
+  ) i_tq (
       .clk_i,
       .rst_ni,
       .mtime_i    (mtime),
-      .irq_pl_o   (),
-      .irq_full_o (),
-      .irq_nfull_o(),
+      .irq_pl_o   (tq_irqs),
+      .irq_full_o (tq_full),
+      .irq_nfull_o(tq_nfull),
       .apb_sbr    (demux_apb[0])
   );
 

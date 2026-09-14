@@ -63,8 +63,8 @@ global_asm!(
         .word _start_SpiEvent1_trap // 18
         .word _start_I2c0_trap      // 19
         .word _start_I2c1_trap      // 20
-        .word _start_DefaultHandler_trap // 21
-        .word _start_DefaultHandler_trap // 22
+        .word _start_TqFull_trap    // 21
+        .word _start_TqNFull_trap   // 22
         .word _start_DefaultHandler_trap // 23
         .word _start_Uart_trap      // 24
         .word _start_DefaultHandler_trap // 25

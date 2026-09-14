@@ -21,10 +21,6 @@ use zeroheti_bsp::{
 const IRQS: &[Interrupt] = &[
     Interrupt::MachineSoft,
     Interrupt::MachineTimer,
-    // ???(BUG): MachineExternal broken on HETIC
-    // Attempting to pend MachineExternal (line 11) on HETIC will freeze the
-    // simulation or the application
-    #[cfg(not(any(feature = "intc-hetic", feature = "intc-edfic")))]
     Interrupt::MachineExternal,
     Interrupt::Timer0Ovf,
     Interrupt::Timer0Cmp,

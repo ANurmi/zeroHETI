@@ -18,6 +18,8 @@ pub enum Interrupt {
     SpiEvent1 = 18,
     I2c0 = 19,
     I2c1 = 20,
+    TqFull = 21,
+    TqNFull = 22,
     Uart = 24,
     // Non-maskable interrupt, carried over from standard Ibex
     Nmi = 31, // reserved
