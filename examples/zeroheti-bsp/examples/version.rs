@@ -2,7 +2,7 @@
 #![no_std]
 
 use zeroheti_bsp::{
-    CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, mmio, rt::entry, sprintln,
+    CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, cfg_regs::CfgRegs, mmio, rt::entry, sprintln,
 };
 
 #[entry]
@@ -10,29 +10,20 @@ fn main() -> ! {
     let mut serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
 
     sprintln!("[{} ({})]", core::file!(), env!("RISCV_EXTS"));
+    let cfg_regs = CfgRegs::init();
 
-    const CFG_BASE_ADDR: usize = 0x0000_4000;
+    let hw_commit = cfg_regs.commit();
+    let intc = if cfg_regs.intc_edfic() {"edfic"} else {"clic"};
+    let uart = if cfg_regs.full_uart() {"full"} else {"mock"};
+    let imem_bytes = cfg_regs.imem_bytes();
+    let dmem_bytes = cfg_regs.dmem_bytes();
 
-    let rd = mmio::read_u32(CFG_BASE_ADDR);
-    let cfg = mmio::read_u32(CFG_BASE_ADDR + 4);
-
-    let intc_type = if (cfg & 0b01) == 0b01 {
-        "EDFIC"
-    } else {
-        "CLIC"
-    };
-    let uart_type = if (cfg & 0b10) == 0b10 { "Full" } else { "Mock" };
-
-    let imem_bytes = 2u32.pow((cfg & 0x00FF00) >> 8);
-    let dmem_bytes = 2u32.pow((cfg & 0xFF0000) >> 16);
-
-    sprintln!("zeroHETI HW build from commit: {:8x}", rd);
-    sprintln!("Platform config: {:08x}", cfg);
-    sprintln!("- Interrupt controller       : {intc_type}");
-    sprintln!("- UART peripheral            : {uart_type}");
+    sprintln!("zeroHETI HW build from commit:{:8x}", hw_commit);
+    sprintln!("- Interrupt controller       : {intc}");
+    sprintln!("- UART peripheral            : {uart}");
     sprintln!("- Instruction memory (bytes) : {imem_bytes}");
     sprintln!("- Data memory (bytes)        : {dmem_bytes}");
-
+ 
     #[cfg(feature = "rtl-tb")]
     zeroheti_bsp::tb::rtl_tb_signal_ok();
 
