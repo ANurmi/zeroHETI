@@ -2,7 +2,7 @@
 #![no_std]
 
 use zeroheti_bsp::{
-    CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, cfg_regs::CfgRegs, mmio, rt::entry, sprintln,
+    CPU_FREQ_HZ, NOPS_PER_SEC, apb_uart::ApbUart, asm_delay, cfg_regs::CfgRegs, rt::entry, sprintln,
 };
 
 #[entry]
@@ -13,8 +13,12 @@ fn main() -> ! {
     let cfg_regs = CfgRegs::init();
 
     let hw_commit = cfg_regs.commit();
-    let intc = if cfg_regs.intc_edfic() {"edfic"} else {"clic"};
-    let uart = if cfg_regs.full_uart() {"full"} else {"mock"};
+    let intc = if cfg_regs.intc_edfic() {
+        "edfic"
+    } else {
+        "clic"
+    };
+    let uart = if cfg_regs.full_uart() { "full" } else { "mock" };
     let imem_bytes = cfg_regs.imem_bytes();
     let dmem_bytes = cfg_regs.dmem_bytes();
 
@@ -23,7 +27,7 @@ fn main() -> ! {
     sprintln!("- UART peripheral            : {uart}");
     sprintln!("- Instruction memory (bytes) : {imem_bytes}");
     sprintln!("- Data memory (bytes)        : {dmem_bytes}");
- 
+
     #[cfg(feature = "rtl-tb")]
     zeroheti_bsp::tb::rtl_tb_signal_ok();
 
