@@ -9,6 +9,7 @@ mod core_sprint;
 #[cfg(feature = "intc-edfic")]
 pub mod edfic;
 pub mod i2c;
+pub mod cfg_regs;
 pub mod interrupt;
 pub mod mailbox;
 pub mod mmap;

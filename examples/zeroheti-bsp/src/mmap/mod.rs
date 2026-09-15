@@ -2,6 +2,7 @@ pub mod apb_timer;
 pub mod clic;
 pub mod edfic;
 pub mod i2c;
+pub mod cfg_regs;
 pub mod mailbox;
 pub mod mtimer;
 pub mod uart;
