@@ -1,0 +1,1 @@
+pub const TQ_BASE: usize = 0x3800;

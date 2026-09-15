@@ -13,6 +13,7 @@ pub mod cfg_regs;
 pub mod interrupt;
 pub mod mailbox;
 pub mod mmap;
+pub mod timer_queue;
 pub mod mmio;
 pub mod mtimer;
 #[cfg(feature = "panic")]
