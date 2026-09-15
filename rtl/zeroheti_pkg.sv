@@ -3,7 +3,6 @@ package zeroheti_pkg;
   localparam logic [31:0] BootAddr = 32'h0800;
 
   typedef enum integer {
-    HETIC = 0,
     CLIC  = 1,
     EDFIC = 2
   } int_ctrl_e;
@@ -16,6 +15,7 @@ package zeroheti_pkg;
     bit wb_stage;
     ibex_pkg::rv32m_e mul;
     int_ctrl_e ic;
+    int unsigned size_tg;
     int unsigned num_irqs;
     int unsigned num_prio;
     int unsigned hart_id;
@@ -23,55 +23,31 @@ package zeroheti_pkg;
   } core_cfg_t;
 
 
-  localparam core_cfg_t RV32ECCfg = '{
+  localparam core_cfg_t MinCfg = '{
       rve       : 1,
       bt_alu    : 0,
       wb_stage  : 0,
       mul       : ibex_pkg::RV32MNone,
       ic        : IntController,
-      num_irqs  : 32,
-      num_prio  : 32,
+      size_tg   : 4,
+      num_irqs  : 16,
+      num_prio  : 8,
       hart_id   : 0,
       boot_addr : BootAddr
   };
 
-  localparam core_cfg_t RV32EMCCfg = '{
+  localparam core_cfg_t DefaultCfg = '{
       rve       : 1,
-      bt_alu    : 1,
-      wb_stage  : 0,
-      mul       : ibex_pkg::RV32MSingleCycle,
-      ic        : IntController,
-      num_irqs  : 32,
-      num_prio  : 32,
-      hart_id   : 0,
-      boot_addr : BootAddr
-  };
-
-  localparam core_cfg_t RV32ICCfg = '{
-      rve       : 0,
-      bt_alu    : 0,
-      wb_stage  : 0,
-      mul       : ibex_pkg::RV32MNone,
-      ic        : IntController,
-      num_irqs  : 32,
-      num_prio  : 32,
-      hart_id   : 0,
-      boot_addr : BootAddr
-  };
-
-  localparam core_cfg_t RV32IMCCfg = '{
-      rve       : 0,
       bt_alu    : 1,
       wb_stage  : 1,
       mul       : ibex_pkg::RV32MSingleCycle,
       ic        : IntController,
-      num_irqs  : 32,
-      num_prio  : 32,
+      size_tg   : 16,
+      num_irqs  : 128,
+      num_prio  : 128,
       hart_id   : 0,
       boot_addr : BootAddr
   };
-
-  localparam core_cfg_t DefaultCfg = RV32EMCCfg;
 
   typedef struct packed {
     logic [31:0] base;
@@ -84,8 +60,11 @@ package zeroheti_pkg;
     addr_rule_t dmem;
     addr_rule_t intc;
     addr_rule_t uart;
-    addr_rule_t i2c;
+    addr_rule_t i2c_0;
+    addr_rule_t i2c_1;
+    addr_rule_t spi;
     addr_rule_t tg;
+    addr_rule_t tq;
     addr_rule_t cfg;
     addr_rule_t mtimer;
     addr_rule_t mbx;
@@ -95,17 +74,18 @@ package zeroheti_pkg;
   localparam int unsigned ImemSize = `IMEM_BYTES;
   localparam int unsigned DmemSize = `DMEM_BYTES;
 
-  localparam int unsigned TGSize = 4;
-
   localparam addr_rule_t DbgAddr = '{base : 32'h0000_0000, last : 32'h0000_1000};
   localparam addr_rule_t UartAddr = '{base : 32'h0000_3000, last : 32'h0000_3100};
   localparam addr_rule_t MtimerAddr = '{base : 32'h0000_3100, last : 32'h0000_3114};
+  localparam addr_rule_t I2c0Addr = '{base : 32'h0000_3200, last : 32'h0000_3300};
+  localparam addr_rule_t I2c1Addr = '{base : 32'h0000_3300, last : 32'h0000_3400};
   localparam addr_rule_t TimerGroupAddr = '{
-      base : 32'h0000_3300,
-      last : 32'h0000_3300 + (16 * TGSize)
+      base : 32'h0000_3400,
+      last : 32'h0000_3400 + (16 * DefaultCfg.size_tg)
   };
-  localparam addr_rule_t I2cAddr = '{base : 32'h0000_3200, last : 32'h0000_3300};
+  localparam addr_rule_t TqAddr = '{base: 32'h0000_3800, last: 32'h0000_3900};
   localparam addr_rule_t CfgAddr = '{base : 32'h0000_4000, last : 32'h0000_5000};
+  localparam addr_rule_t SpiAddr = '{base : 32'h0000_5000, last : 32'h0000_5100};
   localparam addr_rule_t ImemAddr = '{base : 32'h0001_0000, last : (32'h0001_0000 + ImemSize)};
   localparam addr_rule_t DmemAddr = '{base : 32'h0002_0000, last : (32'h0002_0000 + DmemSize)};
   localparam addr_rule_t IntcAddr = '{base : 32'h0010_0000, last : 32'h0010_2000};
@@ -123,14 +103,18 @@ package zeroheti_pkg;
       dmem   : DmemAddr,
       intc   : IntcAddr,
       uart   : UartAddr,
-      i2c    : I2cAddr,
+      i2c_0  : I2c0Addr,
+      i2c_1  : I2c1Addr,
       cfg    : CfgAddr,
+      spi    : SpiAddr,
       tg     : TimerGroupAddr,
+      tq     : TqAddr,
       mtimer : MtimerAddr,
       mbx    : MbxAddr,
       ext    : ExtAddr
   };
 
+  // Locally used OBI typedefs
   typedef struct packed {
     logic [31:0] addr;
     logic        we;
@@ -157,7 +141,6 @@ package zeroheti_pkg;
     logic gnt;
     logic rvalid;
   } obi_rsp_t;
-
 
 
 endpackage

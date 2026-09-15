@@ -45,10 +45,5 @@ debug = true
 riscv-target-parser = "0.1.3"
 
 [[example]]
-name = "hetic_pend"
-path = "examples/hetic_pend.rs"
-required-features = ["intc-hetic"]
-
-[[example]]
 name = "all_irqs"
 path = "examples/all_irqs.rs"

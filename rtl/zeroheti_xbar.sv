@@ -60,14 +60,35 @@ module zeroheti_xbar
       .obi_m(sba_bus_cut)
   );
 
+  OBI_BUS imem_bus_cut ();
+  OBI_BUS dmem_bus_cut ();
+
+  obi_connection #(
+      .Cut(1'b1)
+  ) i_cut_imem (
+      .clk_i,
+      .rst_ni,
+      .obi_s(imem_bus_cut),
+      .obi_m(imem_bus)
+  );
+
+  obi_connection #(
+      .Cut(1'b1)
+  ) i_cut_dmem (
+      .clk_i,
+      .rst_ni,
+      .obi_s(dmem_bus_cut),
+      .obi_m(dmem_bus)
+  );
+
   `OBI_ASSIGN(sbr_ports[0], sba_bus_cut, ObiCfg, ObiCfg)
   `OBI_ASSIGN(sbr_ports[1], inst_bus, ObiCfg, ObiCfg)
   `OBI_ASSIGN(sbr_ports[2], data_bus, ObiCfg, ObiCfg)
   `OBI_ASSIGN(sbr_ports[3], sbr_bus, ObiCfg, ObiCfg)
 
   `OBI_ASSIGN(dbg_bus, mgr_ports[0], ObiCfg, ObiCfg)
-  `OBI_ASSIGN(imem_bus, mgr_ports[1], ObiCfg, ObiCfg)
-  `OBI_ASSIGN(dmem_bus, mgr_ports[2], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(imem_bus_cut, mgr_ports[1], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(dmem_bus_cut, mgr_ports[2], ObiCfg, ObiCfg)
   `OBI_ASSIGN(intc_bus, mgr_ports[3], ObiCfg, ObiCfg)
   `OBI_ASSIGN(per_bus, mgr_ports[4], ObiCfg, ObiCfg)
   `OBI_ASSIGN(mbx_bus, mgr_ports[5], ObiCfg, ObiCfg)

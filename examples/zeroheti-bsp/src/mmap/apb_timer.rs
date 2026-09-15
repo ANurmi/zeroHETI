@@ -1,4 +1,4 @@
-pub const APB_TIMER_BASE: usize = 0x0_3300;
+pub const APB_TIMER_BASE: usize = 0x0_3400;
 
 /// Timer address separation in memory layout
 pub const TIMER_SEP: usize = 0x10;
@@ -6,6 +6,18 @@ pub const TIMER0_ADDR: usize = APB_TIMER_BASE;
 pub const TIMER1_ADDR: usize = APB_TIMER_BASE + 1 * TIMER_SEP;
 pub const TIMER2_ADDR: usize = APB_TIMER_BASE + 2 * TIMER_SEP;
 pub const TIMER3_ADDR: usize = APB_TIMER_BASE + 3 * TIMER_SEP;
+pub const TIMER4_ADDR: usize = APB_TIMER_BASE + 4 * TIMER_SEP;
+pub const TIMER5_ADDR: usize = APB_TIMER_BASE + 5 * TIMER_SEP;
+pub const TIMER6_ADDR: usize = APB_TIMER_BASE + 6 * TIMER_SEP;
+pub const TIMER7_ADDR: usize = APB_TIMER_BASE + 7 * TIMER_SEP;
+pub const TIMER8_ADDR: usize = APB_TIMER_BASE + 8 * TIMER_SEP;
+pub const TIMER9_ADDR: usize = APB_TIMER_BASE + 9 * TIMER_SEP;
+pub const TIMER10_ADDR: usize = APB_TIMER_BASE + 10 * TIMER_SEP;
+pub const TIMER11_ADDR: usize = APB_TIMER_BASE + 11 * TIMER_SEP;
+pub const TIMER12_ADDR: usize = APB_TIMER_BASE + 12 * TIMER_SEP;
+pub const TIMER13_ADDR: usize = APB_TIMER_BASE + 13 * TIMER_SEP;
+pub const TIMER14_ADDR: usize = APB_TIMER_BASE + 14 * TIMER_SEP;
+pub const TIMER15_ADDR: usize = APB_TIMER_BASE + 15 * TIMER_SEP;
 
 /// Timer counter
 pub const TIMER_COUNTER_OFS: usize = 0x0;

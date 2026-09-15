@@ -111,13 +111,6 @@ pub fn setup_irq(irq: impl InterruptNumber, lvl: u8) {
         Clic::ctl(irq).set_level(lvl);
         unsafe { Clic::ie(irq).enable() };
     }
-    #[cfg(feature = "intc-hetic")]
-    {
-        use zeroheti_bsp::hetic::Hetic;
-
-        Hetic::line(irq.number()).set_level_prio(lvl);
-        Hetic::line(irq.number()).enable();
-    }
     #[cfg(feature = "intc-edfic")]
     {
         use zeroheti_bsp::edfic::{Edfic, Pol, Trig};
