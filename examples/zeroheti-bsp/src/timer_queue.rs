@@ -20,7 +20,10 @@ impl<const BASE_ADDR: usize> TimerQueueHal<BASE_ADDR> {
     }
 
     pub fn push_rel(&self, irq: impl InterruptNumber, timestamp: Duration) -> u8 {
-        mmio::write_u32(BASE_ADDR, timestamp.as_ticks());
+        mmio::write_u32(BASE_ADDR+12, timestamp.as_ticks());
+        mmio::write_u32(BASE_ADDR+16, 67u32);
+        mmio::write_u32(BASE_ADDR+20, 69u32);
+        mmio::write_u32(BASE_ADDR+4, 1u32);
         0
     }
     pub fn push_abs(&self, irq: impl InterruptNumber, timestamp: Duration) -> u8 {
