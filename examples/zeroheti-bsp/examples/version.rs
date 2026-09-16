@@ -10,7 +10,7 @@ fn main() -> ! {
     let mut serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
 
     sprintln!("[{} ({})]", core::file!(), env!("RISCV_EXTS"));
-    let cfg_regs = CfgRegs::init();
+    let cfg_regs = CfgRegs::instance();
 
     let hw_commit = cfg_regs.commit();
     let intc = if cfg_regs.intc_edfic() {

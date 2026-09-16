@@ -1,3 +1,5 @@
+// Test triggering TimerCmp4 by TQ request
+
 #![no_main]
 #![no_std]
 mod common;
@@ -27,7 +29,7 @@ fn main() -> ! {
     let mut serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
 
     sprintln!("[{} ({})]", file!(), env!("RISCV_EXTS"));
-    let cfg_regs = CfgRegs::init();
+    let cfg_regs = CfgRegs::instance();
     let tq = TimerQueue::init();
 
     init_intc();
@@ -62,9 +64,7 @@ fn timer0() {
 
 #[zeroheti_bsp::core_interrupt(Interrupt::Timer4Cmp)]
 fn timer4() {
-    // Stop the corresponding timer to avoid repeated timeouts
-    unsafe { Timer::instance::<TIMER4_ADDR>() }.disable();
-    tear_irq(Interrupt::Timer4Cmp);
+    sprintln!("Tq trigger");
     zeroheti_bsp::tb::signal_pass(None);
 }
 

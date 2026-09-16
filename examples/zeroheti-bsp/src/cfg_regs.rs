@@ -5,12 +5,6 @@ pub struct CfgRegsHal<const BASE_ADDR: usize>;
 pub type CfgRegs = CfgRegsHal<CFG_BASE_ADDR>;
 
 impl<const BASE_ADDR: usize> CfgRegsHal<BASE_ADDR> {
-    pub fn init() -> Self {
-        if !Self.intc_valid() {
-            panic!("Interrupt controller mismatch! Recompile program or hardware.");
-        }
-        Self
-    }
 
     pub const fn instance() -> Self {
         Self {}
