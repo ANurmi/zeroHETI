@@ -35,13 +35,13 @@
 		ranges;
 
 		flash0: flash@10000 {
-			reg = <0x00010000 0x8000>;
+			reg = <0x00010000 0x10000>;
 			compatible = "soc-nv-flash";
 		};
 
 		ram0: memory@20000 {
 			device_type = "memory";
-			reg = <0x00020000 0x04000>;
+			reg = <0x00020000 0x08000>;
 		};
 
 		mtimer: timer@3100 {
