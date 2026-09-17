@@ -22,16 +22,12 @@ CFLAGS           = -I$(shell bender path vbench)/src
 
 LOAD            ?= READMEM
 
-IMEM_BYTES       = 32768
+IMEM_BYTES       = 65536
 DMEM_BYTES       = 32768
 
 DEBUG           ?= 0
 
-# IMEM base 0x1_0000, DMEM base 0x2_0000
-DMEM_REL_OFFS_WORDS = 16385
-
 IMEM_WORDS       = $(shell echo $$(($(IMEM_BYTES) / 4)))
-DMEM_START       = $(DMEM_REL_OFFS_WORDS)
 INTC             = EDFIC
 GIT_HASH         = $(shell git rev-parse --short HEAD)
 JTAG_IDCODE      = feedc0d3
@@ -108,7 +104,7 @@ lint:
 
 .PHONY: $(TEST)
 $(TEST): 
-	./format_elf.sh $(SW_BUILD_DIR)/$(TEST).elf $(VERIL_BUILD_DIR) $(IMEM_BYTES) 4 $(DMEM_BYTES) 2
+	./format_elf.sh $(SW_BUILD_DIR)/$(TEST).elf $(VERIL_BUILD_DIR) $(IMEM_BYTES) 16 $(DMEM_BYTES) 8
 
 .PHONY: verilate
 verilate: init

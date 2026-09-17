@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v1.0.1] - 2026-09-17
+
+### Changed
+- Increased default memory sizes to 64 KB + 32 KB
+
 ## [v1.0.0] - 2026-09-09
 
 ### Added
