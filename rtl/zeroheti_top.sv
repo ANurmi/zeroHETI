@@ -429,7 +429,7 @@ module zeroheti_top #(
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_10.hex"},
                   i_core.i_imem.g_banks[10].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_11.hex"},
-                  i_core.i_imem.g_banks[11].i_sram.sram)
+                  i_core.i_imem.g_banks[11].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_12.hex"},
                   i_core.i_imem.g_banks[12].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_13.hex"},
