@@ -15,8 +15,8 @@ IMEM_BASE=0x10000
 DMEM_BYTES=$5
 DMEM_BANKS=$6
 DMEM_BASE=0x20000
-# Same as above in dec +1
-DMEM_START=16385
+
+DMEM_SIZE=32768
 
 echo "Formatting ELF $ELF for memories:"
 echo "IMEM @$IMEM_BASE, $IMEM_BYTES bytes, $IMEM_BANKS banks"
@@ -54,8 +54,8 @@ DMEM_WORDS=$(($DMEM_BYTES/4))
 IWORDS_BANK=$(($IMEM_WORDS/$IMEM_BANKS))
 DWORDS_BANK=$(($DMEM_WORDS/$DMEM_BANKS))
 
-head -$IMEM_WORDS    $STIMS/elf.hex > $STIMS/imem.hex
-tail -n +$DMEM_START $STIMS/elf.hex > $STIMS/dmem.hex
+head -$IMEM_WORDS   $STIMS/elf.hex > $STIMS/imem.hex
+tail -n $DMEM_SIZE $STIMS/elf.hex > $STIMS/dmem.hex
 
 for i in $(seq 0 $(($IMEM_BANKS-1)));
 do
@@ -70,7 +70,7 @@ for i in $(seq 0 $(($DMEM_BANKS-1)));
 do
   BASE=$(($i * $DWORDS_BANK +1))
   RANGE=$(($BASE + DWORDS_BANK))
-  END=$(($RANGE + 1))
+  END=$(($RANGE - 1))
   sed -n "${BASE},${RANGE}p;${END}q" $STIMS/dmem.hex > $STIMS/dmem_$i.hex
 done
 
