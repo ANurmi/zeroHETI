@@ -5,18 +5,21 @@ OBJCOPY_64=riscv64-unknown-elf-objcopy
 
 OBJCOPY=$OBJCOPY_32
 
+# User-arguments
 ELF=$1
 OUTDIR=$2
 
 IMEM_BYTES=$3
 IMEM_BANKS=$4
-IMEM_BASE=0x10000
-
 DMEM_BYTES=$5
 DMEM_BANKS=$6
+
+# Fixed base addresses for memories
+IMEM_BASE=0x10000
 DMEM_BASE=0x20000
 
-DMEM_SIZE=32768
+# Start line of DMEM sections in words
+DMEM_START_WORDS=16385
 
 echo "Formatting ELF $ELF for memories:"
 echo "IMEM @$IMEM_BASE, $IMEM_BYTES bytes, $IMEM_BANKS banks"
@@ -55,7 +58,7 @@ IWORDS_BANK=$(($IMEM_WORDS/$IMEM_BANKS))
 DWORDS_BANK=$(($DMEM_WORDS/$DMEM_BANKS))
 
 head -$IMEM_WORDS   $STIMS/elf.hex > $STIMS/imem.hex
-tail -n $DMEM_SIZE $STIMS/elf.hex > $STIMS/dmem.hex
+tail -n +$DMEM_START_WORDS $STIMS/elf.hex > $STIMS/dmem.hex
 
 for i in $(seq 0 $(($IMEM_BANKS-1)));
 do

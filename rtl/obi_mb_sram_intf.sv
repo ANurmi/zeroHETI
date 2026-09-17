@@ -57,15 +57,16 @@ module obi_mb_sram_intf #(
       32'h0008: rdata_sel = SelWidth'(3);
       32'h0010: rdata_sel = SelWidth'(4);
       32'h0020: rdata_sel = SelWidth'(5);
-      32'h0040: rdata_sel = SelWidth'(7);
-      32'h0080: rdata_sel = SelWidth'(8);
-      32'h0100: rdata_sel = SelWidth'(9);
-      32'h0200: rdata_sel = SelWidth'(10);
-      32'h0400: rdata_sel = SelWidth'(11);
-      32'h0800: rdata_sel = SelWidth'(12);
-      32'h1000: rdata_sel = SelWidth'(13);
-      32'h2000: rdata_sel = SelWidth'(14);
-      32'h4000: rdata_sel = SelWidth'(15);
+      32'h0040: rdata_sel = SelWidth'(6);
+      32'h0080: rdata_sel = SelWidth'(7);
+      32'h0100: rdata_sel = SelWidth'(8);
+      32'h0200: rdata_sel = SelWidth'(9);
+      32'h0400: rdata_sel = SelWidth'(10);
+      32'h0800: rdata_sel = SelWidth'(11);
+      32'h1000: rdata_sel = SelWidth'(12);
+      32'h2000: rdata_sel = SelWidth'(13);
+      32'h4000: rdata_sel = SelWidth'(14);
+      32'h8000: rdata_sel = SelWidth'(15);
       default:  rdata_sel = SelWidth'(0);
     endcase
   end

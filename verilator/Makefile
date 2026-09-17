@@ -1,3 +1,5 @@
+include ../design_config.mk
+
 ZH_ROOT         ?= $(realpath $(CURDIR)/..)
 BUILD_DIR       ?= $(ZH_ROOT)/build
 SW_BUILD_DIR    ?= $(ZH_ROOT)/build/sw
@@ -22,15 +24,15 @@ CFLAGS           = -I$(shell bender path vbench)/src
 
 LOAD            ?= READMEM
 
-IMEM_BYTES       = 65536
-DMEM_BYTES       = 32768
+IMEM_BYTES       = $(DC_IMEM_BYTES)
+DMEM_BYTES       = $(DC_DMEM_BYTES)
+GIT_HASH         = $(DC_GIT_HASH)
+INTC             = $(DC_INTC)
+JTAG_IDCODE      = $(DC_JTAG_ID)
 
 DEBUG           ?= 0
 
 IMEM_WORDS       = $(shell echo $$(($(IMEM_BYTES) / 4)))
-INTC             = EDFIC
-GIT_HASH         = $(shell git rev-parse --short HEAD)
-JTAG_IDCODE      = feedc0d3
 
 CFG              = Default
 
@@ -104,7 +106,11 @@ lint:
 
 .PHONY: $(TEST)
 $(TEST): 
-	./format_elf.sh $(SW_BUILD_DIR)/$(TEST).elf $(VERIL_BUILD_DIR) $(IMEM_BYTES) 16 $(DMEM_BYTES) 8
+	./format_elf.sh \
+	$(SW_BUILD_DIR)/$(TEST).elf \
+	$(VERIL_BUILD_DIR) \
+	$(IMEM_BYTES) $(DC_NR_I_BANKS) \
+	$(DMEM_BYTES) $(DC_NR_D_BANKS) \
 
 .PHONY: verilate
 verilate: init
