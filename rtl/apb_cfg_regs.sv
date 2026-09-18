@@ -33,7 +33,7 @@ module apb_cfg_regs #(
 
   // General-purpose register bank
   // Useful as white-box simulation hook
-  logic [4:0][31:0] gpreg_d, gpreg_q;
+  logic [7:0][31:0] gpreg_d, gpreg_q;
 
   logic mtime_en_d, mtime_en_q;
   assign intc_mtime_en_o = mtime_en_q;
