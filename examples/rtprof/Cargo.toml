@@ -11,6 +11,7 @@ bsp = { package = "zeroheti-bsp", path = "../zeroheti-bsp", features = [
 riscv-rt = { version = "0.18.0" }
 obs-trace = { path = "../obs-trace", optional = true }
 ufmt = "0.2.0"
+libm = "0.2"
 more-asserts = "0.3.1"
 log = { version = "0.4.29", default-features = false }
 rtic = { version = "0.1.0", path = "../mrtic/distributions/zeroheti-rtic", optional = true, features = ["rtl-tb"] }
