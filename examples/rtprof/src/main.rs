@@ -10,7 +10,6 @@ mod app {
     use bsp::{
         CPU_FREQ_HZ,
         apb_uart::ApbUart,
-        asm_delay,
         cfg_regs::CfgRegs,
         clear_perf_counters,
         fugit::{ExtU32, ExtU64},
@@ -30,6 +29,8 @@ mod app {
         timer_group::{Periodic, Timer},
     };
 
+    use libm::sin;
+
     const CFG_TASK_OFFS: usize = 0x0000_0100;
 
     #[inline]
@@ -43,14 +44,9 @@ mod app {
     }
 
     #[inline]
-    fn rtprof_start_micro() {
-        mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 1);
+    fn rtprof_start_full() {
+        mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 2);
     }
-
-    //#[inline]
-    //fn rtprof_start_full() {
-    //    mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 2);
-    //}
 
     #[inline]
     fn rtprof_stop() {
@@ -85,18 +81,22 @@ mod app {
         }
     }
 
-    const TASK_SET_SIZE: usize = 3;
+    const TASK_SET_SIZE: usize = 5;
 
     const TASK_SET: [Task; TASK_SET_SIZE] = [
-        Task::new(30, 30, 8 * LF / 100),
+        Task::new(130, 30, 8 * LF / 100),
         Task::new(66, 50, 30 * LF / 100),
-        Task::new(170, 150, 50 * LF / 100),
+        Task::new(270, 150, 50 * LF / 100),
+        Task::new(200, 150, 50 * LF / 100),
+        Task::new(70, 20, 1 * LF / 100),
     ];
 
     const HYPERPERIOD: u32 = lcm!(
         TASK_SET[0].period_us,
         TASK_SET[1].period_us,
         TASK_SET[2].period_us,
+        TASK_SET[3].period_us,
+        TASK_SET[4].period_us,
     );
 
     // Frequency within hyperperiod
@@ -104,24 +104,21 @@ mod app {
         HYPERPERIOD / TASK_SET[0].period_us,
         HYPERPERIOD / TASK_SET[1].period_us,
         HYPERPERIOD / TASK_SET[2].period_us,
+        HYPERPERIOD / TASK_SET[3].period_us,
+        HYPERPERIOD / TASK_SET[4].period_us,
     ];
 
     const TASK_RT: [u32; TASK_SET_SIZE] = [
         TASK_FREQ[0] * TASK_SET[0].runtime_us,
         TASK_FREQ[1] * TASK_SET[1].runtime_us,
         TASK_FREQ[2] * TASK_SET[2].runtime_us,
+        TASK_FREQ[3] * TASK_SET[3].runtime_us,
+        TASK_FREQ[4] * TASK_SET[4].runtime_us,
     ];
 
     const TASK_RT_TOT: u32 = TASK_RT[0] + TASK_RT[1] + TASK_RT[2];
     const CPU_UTIL: u32 = (TASK_RT_TOT * 100) / HYPERPERIOD;
     const US_TO_CC: u32 = 100;
-
-    #[inline]
-    fn run_us(rt: u32) {
-        // Experimentally measured coefficient
-        let k = 8;
-        asm_delay(rt * k);
-    }
 
     #[shared]
     struct Shared {
@@ -149,7 +146,7 @@ mod app {
             cfg.enable_dynamic_intc();
         }
 
-        sprintln!("[micro-rtprof] interrupt controller microbenchmark");
+        sprintln!("[rtprof] interrupt controller benchmark");
         sprintln!(
             "Platform - HW commit   : {:x}, intc: {},        CPU Frequency (MHz): {}",
             commit,
@@ -178,7 +175,7 @@ mod app {
             CPU_UTIL
         );
 
-        let task_dl_base = 0x1_0000;
+        let task_dl_base = 0x2_0000;
 
         for i in 0..TASK_SET_SIZE {
             obx.send(task_dl_base + i as u32, TASK_SET[i].deadline_us * US_TO_CC);
@@ -189,18 +186,19 @@ mod app {
 
         let timers = &mut [
             Timer::init::<TIMER0_ADDR>().into_periodic(),
-            Timer::init::<TIMER1_ADDR>().into_periodic(),
-            Timer::init::<TIMER2_ADDR>().into_periodic(),
+            //Timer::init::<TIMER1_ADDR>().into_periodic(),
+            //Timer::init::<TIMER2_ADDR>().into_periodic(),
         ];
 
-        for i in 0..TASK_SET_SIZE {
+        for i in 0..1 {
+            //TASK_SET_SIZE {
             timers[i].set_period(TASK_SET[i].period_us.micros());
         }
 
         timers.iter_mut().for_each(Periodic::start);
 
         clear_perf_counters();
-        rtprof_start_micro();
+        rtprof_start_full();
 
         Shared { i2c }
     }
@@ -230,7 +228,7 @@ mod app {
     }
 
     // DL: 30 Prio: 255 - 30 = 225
-    #[task(binds = Timer0Cmp, priority = 225)]
+    #[task(binds = Timer0Cmp, priority = 225, shared = [i2c])]
     struct Timer0 {}
     impl RticTask for Timer0 {
         fn init() -> Self {
@@ -238,11 +236,13 @@ mod app {
         }
         fn exec(&mut self) {
             rtprof_start_task(0);
-            // FUNCTIONAL ISR
 
-            run_us(TASK_SET[0].runtime_us);
+            let mut rbuf:[u8; 4] = [0, 0,0,0];
+            self.shared().i2c.lock(|i2c| {
+                i2c.read(0b1 as u8, &mut rbuf);
+            });
+            sprintln!("{}", u32::from_le_bytes(rbuf));
 
-            // ISR END
             rtprof_end_task(0);
         }
     }
@@ -257,7 +257,7 @@ mod app {
         fn exec(&mut self) {
             rtprof_start_task(1);
 
-            run_us(TASK_SET[1].runtime_us);
+            //run_us(TASK_SET[1].runtime_us);
 
             rtprof_end_task(1);
         }
@@ -273,7 +273,7 @@ mod app {
         fn exec(&mut self) {
             rtprof_start_task(2);
 
-            run_us(TASK_SET[2].runtime_us);
+            //run_us(TASK_SET[2].runtime_us);
 
             rtprof_end_task(2);
         }
