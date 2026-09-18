@@ -2,22 +2,25 @@ module vip_task_scoreboard #(
 ) (
     input logic clk_i
 );
-  localparam int unsigned NrTasks = 3;
+  localparam int unsigned MicroNrTasks = 3;
+  localparam int unsigned FullNrTasks = 4;
 
+  localparam int unsigned MicroTaskWidth = $clog2(MicroNrTasks);
+  localparam int unsigned FullTaskWidth = $clog2(FullNrTasks);
 
   // verilator lint_off UNOPTFLAT
-  rt_prof_pkg::task_t ts[NrTasks];
+  rt_prof_pkg::task_t ts[MicroNrTasks];
+  rt_prof_pkg::task_t full_ts[FullNrTasks];
   // verilator lint_on UNOPTFLAT
+
   longint unsigned g_counter = 0;
-
-
 
   always_ff @(posedge clk_i) begin : mbx_poll
 
     automatic bit mbx_empty;
     automatic rt_prof_pkg::letter_t letter;
 
-    if (~scb_enable) begin
+    if (~micro_enable) begin
       i_vip.i_mbx_drv.is_empty(mbx_empty);
 
       while (~mbx_empty) begin
@@ -29,16 +32,14 @@ module vip_task_scoreboard #(
 
   end
 
-
   always_ff @(posedge clk_i) begin : global_counter
     g_counter += 1;
-    for (int i = 0; i < NrTasks; i++) begin
+    for (int i = 0; i < MicroNrTasks; i++) begin
       if (ts[i].available) ts[i].dl_cc += -1;
     end
   end
 
-
-  for (genvar i = 0; i < NrTasks; i++) begin : g_retire
+  for (genvar i = 0; i < MicroNrTasks; i++) begin : g_retire
     always @(negedge ts[i].started) begin
 
       automatic int ret_last = ts[i].dl_cc;
@@ -52,7 +53,8 @@ module vip_task_scoreboard #(
         if (ret_last < ts[i].ret_worst_cc) begin
           ts[i].ret_worst_cc = ret_last;
         end
-        ts[i].ret_avg_cc = ((ts[i].ret_avg_cc * ts[i].count_total) + ret_last) / (ts[i].count_total + 1);
+        ts[i].ret_avg_cc = ((ts[i].ret_avg_cc * ts[i].count_total) + ret_last)
+          / (ts[i].count_total + 1);
       end
 
       if (ts[i].dl_cc < 0) begin
@@ -68,18 +70,21 @@ module vip_task_scoreboard #(
 
 
   // Hook into mmio regs in DUT
-  bit scb_enable;
-  assign scb_enable = i_dut.i_cfg_regs.gpreg_q[0][0];
+  bit micro_enable;
+  bit rtprof_enable;
 
-  for (genvar i = 0; i < NrTasks; i++) begin : g_sim_hook
+  assign micro_enable  = i_dut.i_cfg_regs.gpreg_q[0][0];
+  assign rtprof_enable = i_dut.i_cfg_regs.gpreg_q[0][1];
+
+  for (genvar i = 0; i < MicroNrTasks; i++) begin : g_sim_hook
     assign ts[i].available = (ts[i].available) ? 1'b1 : i_dut.i_apb_timer.irq_o[(2*i)+1];
     assign ts[i].started   = i_dut.i_cfg_regs.gpreg_q[i+1][0];
   end
 
 
-  always @(negedge scb_enable) begin
-    $display("Task Scoreboard Log:");
-    for (int i = 0; i < NrTasks; i++) begin
+  always @(negedge micro_enable) begin
+    $display("[micro-rtprof] Task Scoreboard Log:");
+    for (int i = 0; i < MicroNrTasks; i++) begin
       $display("T%0d: total %5d, miss-%%:%3d, worst (cc): %5d, avg (cc): %5d", i,
                ts[i].count_total, (ts[i].count_misses * 100 / ts[i].count_total),
                ts[i].ret_worst_cc, ts[i].ret_avg_cc);
