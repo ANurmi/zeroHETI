@@ -43,14 +43,9 @@ mod app {
     }
 
     #[inline]
-    fn rtprof_start_micro() {
-        mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 1);
+    fn rtprof_start_full() {
+        mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 2);
     }
-
-    //#[inline]
-    //fn rtprof_start_full() {
-    //    mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 2);
-    //}
 
     #[inline]
     fn rtprof_stop() {
@@ -149,7 +144,7 @@ mod app {
             cfg.enable_dynamic_intc();
         }
 
-        sprintln!("[micro-rtprof] interrupt controller microbenchmark");
+        sprintln!("[rtprof] interrupt controller benchmark");
         sprintln!(
             "Platform - HW commit   : {:x}, intc: {},        CPU Frequency (MHz): {}",
             commit,
@@ -200,7 +195,7 @@ mod app {
         timers.iter_mut().for_each(Periodic::start);
 
         clear_perf_counters();
-        rtprof_start_micro();
+        rtprof_start_full();
 
         Shared { i2c }
     }
