@@ -3,7 +3,7 @@ module vip_task_scoreboard #(
     input logic clk_i
 );
   localparam int unsigned MicroNrTasks = 3;
-  localparam int unsigned FullNrTasks = 4;
+  localparam int unsigned FullNrTasks = 5;
 
   localparam int unsigned MicroTaskWidth = $clog2(MicroNrTasks);
   localparam int unsigned FullTaskWidth = $clog2(FullNrTasks);
