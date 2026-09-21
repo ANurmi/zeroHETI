@@ -8,82 +8,70 @@ module vip_i2c #(
     output logic       scl_o,
     output logic [3:0] irq_o
 );
+  typedef struct packed {
+    bit          active;
+    bit          frame_active;
+    bit          byte_active;
+    bit          addr_valid;
+    bit          write;
+    int unsigned bitcount;
+    logic [7:0]  addr;
+    logic [7:0]  rdata;
+    logic [7:0]  wdata;
+  } i2c_transaction_t;
 
-  rt_prof_pkg::i2c_transaction_t tx_state = '{default: 0};
-
-  localparam logic [7:0] TestData = 8'h0A;
-
-  assign scl_o = scl_i;
+  i2c_transaction_t tx_state = '{default: 0};
 
   initial begin
     sda_o = 1'b1;
   end
+
+  assign scl_o = scl_i;
 
   always @(posedge scl_i) begin : bit_counter
     if (tx_state.active) tx_state.bitcount++;
     else tx_state.bitcount = 0;
   end : bit_counter
 
-  // verilator lint_off LATCH
   always @(tx_state.bitcount) begin
 
-    tx_state.frame_active = 1;
-
+    tx_state.frame_active = 1'b1;
     @(negedge scl_i);
 
-    // Address
-    if (!tx_state.addr_valid) begin
+    if (tx_state.bitcount < 9) begin
 
-      if (tx_state.bitcount < 9) begin
-        tx_state.data[8-tx_state.bitcount] = sda_i;
-        if (tx_state.bitcount == 8) sda_o = 0;
-      end else begin
-        sda_o                 = 1;
-        tx_state.addr_valid   = 1;
-        tx_state.bitcount     = 0;
-        tx_state.frame_active = 0;
-        tx_state.is_write     = tx_state.data[0];
-        //vip_req_o.write       = tx_state.data[0];
-        //vip_req_o.addr        = tx_state.data[7:1];
-        @(posedge clk_i);
-        if (!tx_state.is_write) begin
-          sda_o = 0;  //vip_rsp_i.rdata[7];
-        end
-        tx_state.data = 0;
-      end
+      tx_state.byte_active = 1'b1;
 
-    end else begin
-      // Data
-      //vip_req_o.valid = 0;
-      if (tx_state.is_write) begin : write
-        if (tx_state.bitcount < 9) begin
-          tx_state.data[8-tx_state.bitcount] = sda_i;
-          if (tx_state.bitcount == 8) sda_o = 0;
-        end else begin
-          //vip_req_o.valid = 1;
-          //vip_req_o.wdata = tx_state.data;
-          tx_state.bitcount = 0;
-          sda_o = 1'b1;
-        end
+      if (!tx_state.addr_valid) begin : addr
+        tx_state.addr[8-tx_state.bitcount] = sda_i;
+        if (tx_state.bitcount == 8) sda_o = 1'b0;
+      end : addr
+
+      else if (tx_state.write) begin : write
+        tx_state.wdata[8-tx_state.bitcount] = sda_i;
+        if (tx_state.bitcount == 8) sda_o = 1'b0;
       end : write
 
       else begin : read
-        if (tx_state.bitcount < 9) begin
-          sda_o = TestData[7-tx_state.bitcount];  //vip_rsp_i.rdata[7-tx_state.bitcount];
-        end else begin
-          //vip_req_o.valid = 1;
-          sda_o = 1'b1;
-          tx_state.bitcount = 0;
-          @(posedge clk_i);
-          if (!tx_state.is_write) begin
-            sda_o = TestData[7];  //vip_rsp_i.rdata[7];
-          end
-        end
+        sda_o = tx_state.rdata[7-tx_state.bitcount];
       end : read
-    end
 
+    end else begin
+      sda_o                 = 1'b1;
+      tx_state.byte_active  = 1'b0;
+      tx_state.addr_valid   = 1'b1;
+      tx_state.bitcount     = '0;
+      tx_state.frame_active = 1'b0;
+      tx_state.write        = tx_state.addr[0];
+      if (tx_state.write) begin
+        // TODO: scoreboard hook here
+      end
+      @(posedge clk_i);
+      if (!tx_state.write) begin
+        sda_o = tx_state.rdata[7];
+      end
+    end
   end
-  // verilator lint_on LATCH
 
   always @(negedge scl_i) begin : start_condition
     if (!sda_i) begin
@@ -94,12 +82,27 @@ module vip_i2c #(
 
   always @(posedge sda_i) begin : stop_condition
     if (tx_state.active & scl_i) begin
-      tx_state = '{default: 0};
-      //vip_req_o.write = 0;
-      //vip_req_o.valid = 0;
-      sda_o    = 1'b1;
+      tx_state.active       = 0;
+      tx_state.frame_active = 0;
+      tx_state.byte_active  = 0;
+      tx_state.addr_valid   = 0;
+      tx_state.write        = 0;
+      tx_state.bitcount     = 0;
+      sda_o                 = 1'b1;
     end
   end : stop_condition
+
+  function automatic logic [6:0] get_addr();
+    return tx_state.addr[7:1];
+  endfunction
+
+  function automatic void set_rdata_byte(input logic [7:0] data);
+    tx_state.rdata = data;
+  endfunction
+
+  function automatic logic [7:0] get_wdata_byte();
+    return tx_state.wdata;
+  endfunction
 
 endmodule : vip_i2c
 
