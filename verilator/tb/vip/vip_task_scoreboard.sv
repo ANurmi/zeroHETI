@@ -20,11 +20,11 @@ module vip_task_scoreboard #(
     automatic rt_prof_pkg::letter_t letter;
 
     if (~scb_enable) begin
-      i_vip.i_mbx_drv.is_empty(mbx_empty);
+      i_vip.mbx_drv.is_empty(mbx_empty);
       while (~mbx_empty) begin
-        i_vip.i_mbx_drv.get_letter(letter);
+        i_vip.mbx_drv.get_letter(letter);
         read_letter(letter);
-        i_vip.i_mbx_drv.is_empty(mbx_empty);
+        i_vip.mbx_drv.is_empty(mbx_empty);
       end
     end
   end
@@ -97,6 +97,30 @@ module vip_task_scoreboard #(
   for (genvar i = 0; i < FullNrTasks; i++) begin : g_sim_hook_full
     assign ts_full[i].available = (ts_full[i].available) ? 1'b1 : i_dut.i_apb_timer.irq_o[(2*i)+1];
     assign ts_full[i].started   = i_dut.i_cfg_regs.gpreg_q[i+1][0];
+  end
+
+  // Drive I2C VIP
+  localparam logic [3:0][7:0] TestWord = 32'hDEADBEEF;
+  int unsigned test_idx = 0;
+
+  always @(negedge i_vip.i2c_0.tx_state.byte_active) begin : i2c_read
+    if (i_vip.i2c_0.tx_state.addr_valid) begin
+      if (~i_vip.i2c_0.we()) begin
+        i_vip.i2c_0.set_rdata(TestWord[test_idx]);
+        if (test_idx == 4) test_idx = 0;
+        else test_idx++;
+      end
+    end
+  end
+
+  int unsigned wr_count = 0;
+  always @(negedge i_vip.i2c_0.tx_state.active) wr_count = 0;
+
+  always @(negedge i_vip.i2c_0.tx_state.byte_active) begin : i2c_write
+    if (i_vip.i2c_0.addr_valid() & i_vip.i2c_0.we()) begin
+      if (wr_count > 32'h0) $display("Y");
+      wr_count++;
+    end
   end
 
 
