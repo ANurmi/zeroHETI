@@ -39,13 +39,13 @@ module vip_zeroheti_top #(
   ) drv_bus ();
 
 
-  vip_uart #() i_vip_uart (
+  vip_uart #() uart (
       .clk_i,
       .rx_i(uart_rx_i),
       .tx_o(uart_tx_o)
   );
 
-  vip_i2c i_vip_i2c_0 (
+  vip_i2c i2c_0 (
       .clk_i,
       .rst_ni,
       .scl_o(scl_o[0]),
@@ -55,7 +55,7 @@ module vip_zeroheti_top #(
       .irq_o()
   );
 
-  vip_i2c i_vip_i2c_1 (
+  vip_i2c i2c_1 (
       .clk_i,
       .rst_ni,
       .scl_o(scl_o[1]),
@@ -65,7 +65,7 @@ module vip_zeroheti_top #(
       .irq_o()
   );
 
-  vip_mbx_driver i_mbx_drv (
+  vip_mbx_driver mbx_drv (
       .clk_i,
       .rst_ni,
       .axi_mgr(drv_bus)
@@ -80,7 +80,7 @@ module vip_zeroheti_top #(
 
   sim_timeout #(
       .Cycles(TimeoutCycles)
-  ) i_timeout (
+  ) timeout (
       .clk_i,
       .rst_ni
   );

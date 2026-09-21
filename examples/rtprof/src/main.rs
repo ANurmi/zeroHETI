@@ -237,12 +237,19 @@ mod app {
         fn exec(&mut self) {
             rtprof_start_task(0);
 
-            let mut rbuf:[u8; 4] = [0, 0,0,0];
+            let mut rbuf: [u8; 4] = [0, 0, 0, 0];
             self.shared().i2c.lock(|i2c| {
                 i2c.read(0b1 as u8, &mut rbuf);
             });
+            sprintln!("{:X}", rbuf[0]);
+            sprintln!("{:X}", rbuf[1]);
+            sprintln!("{:X}", rbuf[2]);
+            sprintln!("{:X}", rbuf[3]);
             sprintln!("{}", u32::from_le_bytes(rbuf));
 
+            self.shared().i2c.lock(|i2c| {
+                i2c.write(0b1 as u8, &[0xAB, 0x67]);
+            });
             rtprof_end_task(0);
         }
     }
