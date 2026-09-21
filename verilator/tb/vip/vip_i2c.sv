@@ -42,10 +42,10 @@ module vip_i2c #(
 
       tx_state.byte_active = 1'b1;
 
-      if (!tx_state.addr_valid) begin : addr
+      if (!tx_state.addr_valid) begin : address
         tx_state.addr[8-tx_state.bitcount] = sda_i;
         if (tx_state.bitcount == 8) sda_o = 1'b0;
-      end : addr
+      end : address
 
       else if (tx_state.write) begin : write
         tx_state.wdata[8-tx_state.bitcount] = sda_i;
@@ -58,8 +58,8 @@ module vip_i2c #(
 
     end else begin
       sda_o                 = 1'b1;
-      tx_state.byte_active  = 1'b0;
       tx_state.addr_valid   = 1'b1;
+      tx_state.byte_active  = 1'b0;
       tx_state.bitcount     = '0;
       tx_state.frame_active = 1'b0;
       tx_state.write        = tx_state.addr[0];
@@ -92,15 +92,28 @@ module vip_i2c #(
     end
   end : stop_condition
 
-  function automatic logic [6:0] get_addr();
+  /* Access functions */
+  function automatic logic [6:0] addr();
     return tx_state.addr[7:1];
   endfunction
 
-  function automatic void set_rdata_byte(input logic [7:0] data);
+  function automatic bit addr_valid();
+    return tx_state.addr_valid;
+  endfunction
+
+  function automatic bit we();
+    return tx_state.write;
+  endfunction
+
+  function automatic tx_active();
+    return tx_state.active;
+  endfunction
+
+  function automatic void set_rdata(input logic [7:0] data);
     tx_state.rdata = data;
   endfunction
 
-  function automatic logic [7:0] get_wdata_byte();
+  function automatic logic [7:0] wdata();
     return tx_state.wdata;
   endfunction
 
