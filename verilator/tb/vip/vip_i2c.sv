@@ -11,6 +11,8 @@ module vip_i2c #(
 
   rt_prof_pkg::i2c_transaction_t tx_state = '{default: 0};
 
+  localparam logic [7:0] TestData = 8'h0A;
+
   assign scl_o = scl_i;
 
   initial begin
@@ -45,7 +47,7 @@ module vip_i2c #(
         //vip_req_o.addr        = tx_state.data[7:1];
         @(posedge clk_i);
         if (!tx_state.is_write) begin
-          sda_o = 0;//vip_rsp_i.rdata[7];
+          sda_o = 0;  //vip_rsp_i.rdata[7];
         end
         tx_state.data = 0;
       end
@@ -67,11 +69,15 @@ module vip_i2c #(
 
       else begin : read
         if (tx_state.bitcount < 9) begin
-          sda_o = 0;  //vip_rsp_i.rdata[7-tx_state.bitcount];
+          sda_o = TestData[7-tx_state.bitcount];  //vip_rsp_i.rdata[7-tx_state.bitcount];
         end else begin
           //vip_req_o.valid = 1;
           sda_o = 1'b1;
           tx_state.bitcount = 0;
+          @(posedge clk_i);
+          if (!tx_state.is_write) begin
+            sda_o = TestData[7];  //vip_rsp_i.rdata[7];
+          end
         end
       end : read
     end
