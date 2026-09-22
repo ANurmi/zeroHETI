@@ -4,6 +4,7 @@ use crate::{
 };
 
 pub struct I2cHal<const BASE_ADDR: usize>;
+pub struct I2cWfHal<const BASE_ADDR: usize>;
 
 pub type I2c = I2cHal<I2C_0_BASE>;
 
@@ -143,6 +144,31 @@ impl<const BASE_ADDR: usize> I2cHal<BASE_ADDR> {
         self.send_addr_frame(address, We::WRITE);
         self.send_data_frames(write);
     }
+
+    pub fn wf_read_addr(&mut self, address: u8) {
+        self.send_addr_frame(address, We::READ);
+    }
+
+    pub fn wf_addr_write(&mut self, address: u8) {
+        self.send_addr_frame(address, We::READ);
+    }
+
+    #[inline]
+    pub fn wf_read_cmd(&mut self, last: bool) {
+        while self.get_tip() != 0 {}
+        if last {
+            self.set_cmd(Cmd::RD | Cmd::STO);
+        } else {
+            self.set_cmd(Cmd::RD);
+        }
+    }
+
+    #[inline]
+    pub fn wf_read_rsp(&mut self, read: &mut [u8]) {
+        read[0] = read_u8(BASE_ADDR + I2C_RX_OFS);
+    }
+
+    pub fn wf_write_req(&mut self, address: u8, write: &[u8], last: bool) {}
 }
 
 #[cfg(feature = "embedded-hal")]
