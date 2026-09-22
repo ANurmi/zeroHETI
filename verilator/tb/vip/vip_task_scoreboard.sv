@@ -100,29 +100,25 @@ module vip_task_scoreboard #(
   end
 
   // Drive I2C VIP
-  localparam logic [3:0][7:0] TestWord = 32'hDEADBEEF;
+  localparam logic [5:0][7:0] TestWord = 48'hDEADBEEFB00B;
   int unsigned test_idx = 0;
+  int unsigned wr_count = 0;
+
+  always @(negedge i_vip.i2c_0.tx_state.active) wr_count = 0;
 
   always @(negedge i_vip.i2c_0.tx_state.byte_active) begin : i2c_read
     if (i_vip.i2c_0.tx_state.addr_valid) begin
-      if (~i_vip.i2c_0.we()) begin
+      if (~i_vip.i2c_0.we()) begin : read
         i_vip.i2c_0.set_rdata(TestWord[test_idx]);
-        if (test_idx == 4) test_idx = 0;
+        if (test_idx == 6) test_idx = 0;
         else test_idx++;
-      end
+      end : read
+      else begin : write
+        if (wr_count > 32'h0) $display("[i2c]: %h", i_vip.i2c_0.wdata());
+        wr_count++;
+      end : write
     end
   end
-
-  int unsigned wr_count = 0;
-  always @(negedge i_vip.i2c_0.tx_state.active) wr_count = 0;
-
-  always @(negedge i_vip.i2c_0.tx_state.byte_active) begin : i2c_write
-    if (i_vip.i2c_0.addr_valid() & i_vip.i2c_0.we()) begin
-      if (wr_count > 32'h0) $display("Y");
-      wr_count++;
-    end
-  end
-
 
   always @(negedge micro_enable) begin
     $display("[micro-rtprof] Task Scoreboard Log:");
