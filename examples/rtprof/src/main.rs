@@ -7,6 +7,8 @@ use bsp::rt as _;
 #[cfg_attr(feature = "obs", rtic::app(device = bsp, obs = obs_trace::Obs /*, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3]*/))]
 #[cfg_attr(not(feature = "obs"), rtic::app(device = bsp /*, dispatchers = [Timer0Ovf, Timer1Ovf, Timer2Ovf, Timer3Ovf, Ext0, Ext1, Ext2, Ext3]*/))]
 mod app {
+    use core::task;
+
     use bsp::{
         CPU_FREQ_HZ,
         apb_uart::ApbUart,
@@ -14,6 +16,7 @@ mod app {
         clear_perf_counters,
         fugit::{ExtU32, ExtU64},
         i2c::{self, I2c},
+        interrupt::Interrupt,
         lcm,
         mailbox::Mailbox,
         mmap::{
@@ -27,6 +30,7 @@ mod app {
         sprintln,
         tb::signal_pass,
         timer_group::{Periodic, Timer},
+        timer_queue::TimerQueue,
     };
 
     use libm::sin;
@@ -84,7 +88,7 @@ mod app {
     const TASK_SET_SIZE: usize = 5;
 
     const TASK_SET: [Task; TASK_SET_SIZE] = [
-        Task::new(130, 30, 8 * LF / 100),
+        Task::new(200, 30, 8 * LF / 100),
         Task::new(66, 50, 30 * LF / 100),
         Task::new(270, 150, 50 * LF / 100),
         Task::new(200, 150, 50 * LF / 100),
@@ -128,7 +132,7 @@ mod app {
     #[init]
     fn init() -> Shared {
         let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
-        let i2c = I2c::init(4);
+        let i2c = I2c::init(100);
         let cfg = CfgRegs::init();
         let (_ibx, mut obx) = unsafe { Mailbox::instance() }.split();
 
@@ -229,28 +233,63 @@ mod app {
 
     // DL: 30 Prio: 255 - 30 = 225
     #[task(binds = Timer0Cmp, priority = 225, shared = [i2c])]
-    struct Timer0 {}
-    impl RticTask for Timer0 {
+    struct I2cReq {
+        byte_count: u32,
+    }
+    impl RticTask for I2cReq {
         fn init() -> Self {
-            Self {}
+            Self { byte_count: 0 }
         }
         fn exec(&mut self) {
             rtprof_start_task(0);
 
-            let mut rbuf: [u8; 4] = [0, 0, 0, 0];
-            self.shared().i2c.lock(|i2c| {
-                i2c.read(0b1 as u8, &mut rbuf);
-            });
-            sprintln!("{:X}", rbuf[0]);
-            sprintln!("{:X}", rbuf[1]);
-            sprintln!("{:X}", rbuf[2]);
-            sprintln!("{:X}", rbuf[3]);
-            sprintln!("{}", u32::from_le_bytes(rbuf));
+            const I2C_ADDR: u8 = 0x1;
+
+            let mut rbuf: [u8; 1] = [0; 1];
+            let mut last = true;
+
+            if self.byte_count < 6 {}
 
             self.shared().i2c.lock(|i2c| {
-                i2c.write(0b1 as u8, &[0xAB, 0x67]);
+                i2c.wf_read_addr(I2C_ADDR);
             });
+
+            TimerQueue::instance().push_rel(Interrupt::Timer0Ovf, 610u32.nanos());
+
             rtprof_end_task(0);
+        }
+    }
+
+    #[task(binds = Timer0Ovf, priority = 225, shared = [i2c])]
+    struct I2cRsp {
+        byte_count: u32,
+        cmd_sent: bool,
+    }
+    impl RticTask for I2cRsp {
+        fn init() -> Self {
+            Self {
+                byte_count: 0,
+                cmd_sent: false,
+            }
+        }
+        fn exec(&mut self) {
+            let mut rbuf: [u8; 1] = [0; 1];
+
+            let last = true;
+
+            if self.cmd_sent {
+                self.shared().i2c.lock(|i2c| {
+                    i2c.wf_read_rsp(&mut rbuf);
+                });
+                sprintln!("{:02X}", rbuf[0]);
+                self.cmd_sent = false;
+            } else {
+                self.shared().i2c.lock(|i2c| {
+                    i2c.wf_read_cmd(last);
+                });
+                TimerQueue::instance().push_rel(Interrupt::Timer0Ovf, 610u32.nanos());
+                self.cmd_sent = true;
+            }
         }
     }
 
