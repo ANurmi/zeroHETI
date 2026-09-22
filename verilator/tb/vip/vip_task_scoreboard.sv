@@ -95,9 +95,13 @@ module vip_task_scoreboard #(
     assign ts_micro[i].started = i_dut.i_cfg_regs.gpreg_q[i+1][0];
   end
   for (genvar i = 0; i < FullNrTasks; i++) begin : g_sim_hook_full
-    assign ts_full[i].available = (ts_full[i].available) ? 1'b1 : i_dut.i_apb_timer.irq_o[(2*i)+1];
-    assign ts_full[i].started   = i_dut.i_cfg_regs.gpreg_q[i+1][0];
+    assign ts_full[i].started = i_dut.i_cfg_regs.gpreg_q[i+1][0];
   end
+
+  // Manual bindings of hardware irq lines to scoreboard tasks
+  assign ts_full[0].available = (ts_full[0].available) ? 1'b1 : i_dut.all_irqs[33];  // Timer0Cmp
+  assign ts_full[1].available = (ts_full[1].available) ? 1'b1 : i_dut.all_irqs[32];  // Timer0Ovf
+  assign ts_full[2].available = (ts_full[2].available) ? 1'b1 : i_dut.all_irqs[34];  // Timer1Ovf
 
   // Drive I2C VIP
   localparam logic [5:0][7:0] TestWord = 48'hDEADBEEFB00B;

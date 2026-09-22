@@ -87,8 +87,10 @@ mod app {
 
     const TASK_SET_SIZE: usize = 5;
 
+    const I2C_BYTE_DURATION: u32 = 600;
+
     const TASK_SET: [Task; TASK_SET_SIZE] = [
-        Task::new(200, 30, 8 * LF / 100),
+        Task::new(800, 30, 8 * LF / 100),
         Task::new(66, 50, 30 * LF / 100),
         Task::new(270, 150, 50 * LF / 100),
         Task::new(200, 150, 50 * LF / 100),
@@ -127,6 +129,7 @@ mod app {
     #[shared]
     struct Shared {
         i2c: i2c::I2c,
+        i2c_byte_count: u8,
     }
 
     #[init]
@@ -204,7 +207,10 @@ mod app {
         clear_perf_counters();
         rtprof_start_full();
 
-        Shared { i2c }
+        Shared {
+            i2c,
+            i2c_byte_count: 0,
+        }
     }
 
     #[task(binds = MachineTimer, priority = 0xff)]
@@ -233,12 +239,10 @@ mod app {
 
     // DL: 30 Prio: 255 - 30 = 225
     #[task(binds = Timer0Cmp, priority = 225, shared = [i2c])]
-    struct I2cReq {
-        byte_count: u32,
-    }
+    struct I2cReq {}
     impl RticTask for I2cReq {
         fn init() -> Self {
-            Self { byte_count: 0 }
+            Self {}
         }
         fn exec(&mut self) {
             rtprof_start_task(0);
@@ -246,53 +250,73 @@ mod app {
             const I2C_ADDR: u8 = 0x1;
 
             let mut rbuf: [u8; 1] = [0; 1];
-            let mut last = true;
-
-            if self.byte_count < 6 {}
+            let mut last = false;
 
             self.shared().i2c.lock(|i2c| {
                 i2c.wf_read_addr(I2C_ADDR);
             });
 
-            TimerQueue::instance().push_rel(Interrupt::Timer0Ovf, 610u32.nanos());
-
+            TimerQueue::instance().push_rel(Interrupt::Timer0Ovf, I2C_BYTE_DURATION.nanos());
             rtprof_end_task(0);
         }
     }
-
-    #[task(binds = Timer0Ovf, priority = 225, shared = [i2c])]
-    struct I2cRsp {
-        byte_count: u32,
-        cmd_sent: bool,
-    }
-    impl RticTask for I2cRsp {
+    const NUM_BYTES: u8 = 3;
+    #[task(binds = Timer0Ovf, priority = 225, shared = [i2c, i2c_byte_count])]
+    struct I2cCmd {}
+    impl RticTask for I2cCmd {
         fn init() -> Self {
-            Self {
-                byte_count: 0,
-                cmd_sent: false,
-            }
+            Self {}
         }
         fn exec(&mut self) {
+            rtprof_start_task(1);
+
+            let mut last = false;
+
+            let count = self.shared().i2c_byte_count.lock(|buf| *buf);
+
+            if count == NUM_BYTES - 1 {
+                last = true;
+            }
+
+            self.shared().i2c.lock(|i2c| {
+                i2c.wf_read_cmd(last);
+            });
+
+            TimerQueue::instance().push_rel(Interrupt::Timer1Ovf, I2C_BYTE_DURATION.nanos());
+            rtprof_end_task(1);
+        }
+    }
+    #[task(binds = Timer1Ovf, priority = 225, shared = [i2c, i2c_byte_count])]
+    struct I2cRsp {}
+    impl RticTask for I2cRsp {
+        fn init() -> Self {
+            Self {}
+        }
+        fn exec(&mut self) {
+            rtprof_start_task(2);
+
             let mut rbuf: [u8; 1] = [0; 1];
 
-            let last = true;
+            self.shared().i2c.lock(|i2c| {
+                i2c.wf_read_rsp(&mut rbuf);
+            });
 
-            if self.cmd_sent {
-                self.shared().i2c.lock(|i2c| {
-                    i2c.wf_read_rsp(&mut rbuf);
-                });
-                sprintln!("{:02X}", rbuf[0]);
-                self.cmd_sent = false;
+            let count = self.shared().i2c_byte_count.lock(|buf| *buf);
+            sprintln!("{:02X}", rbuf[0]);
+
+            rtprof_end_task(2);
+
+            if count < NUM_BYTES - 1 {
+                // Repend I2cCmd until bytecount met
+                self.shared().i2c_byte_count.lock(|buf| *buf += 1);
+                TimerQueue::instance().push_now(Interrupt::Timer0Ovf);
             } else {
-                self.shared().i2c.lock(|i2c| {
-                    i2c.wf_read_cmd(last);
-                });
-                TimerQueue::instance().push_rel(Interrupt::Timer0Ovf, 610u32.nanos());
-                self.cmd_sent = true;
+                self.shared().i2c_byte_count.lock(|buf| *buf = 0);
             }
         }
     }
 
+    /*
     // DL: 30 Prio: 255 - 50 = 205
     #[task(binds = Timer1Cmp, priority = 205)]
     struct Timer1 {}
@@ -323,5 +347,5 @@ mod app {
 
             rtprof_end_task(2);
         }
-    }
+    } */
 }
