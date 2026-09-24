@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v1.0.2] - 2026-09-24
+
+### Changed
+- Added cuts to `dbg_bus` and `intc_bus`
+- Remove `inst_bus` access to peripherals
+
 ## [v1.0.1] - 2026-09-17
 
 ### Changed
