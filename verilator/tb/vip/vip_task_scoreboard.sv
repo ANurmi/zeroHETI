@@ -102,20 +102,24 @@ module vip_task_scoreboard #(
   assign ts_full[0].available = (ts_full[0].available) ? 1'b1 : i_dut.all_irqs[33];  // Timer0Cmp
   assign ts_full[1].available = (ts_full[1].available) ? 1'b1 : i_dut.all_irqs[32];  // Timer0Ovf
   assign ts_full[2].available = (ts_full[2].available) ? 1'b1 : i_dut.all_irqs[34];  // Timer1Ovf
+  assign ts_full[3].available = (ts_full[2].available) ? 1'b1 : i_dut.all_irqs[35];  // Timer1Ovf
 
   // Drive I2C VIP
-  localparam logic [5:0][7:0] TestWord = 48'hDEADBEEFB00B;
-  int unsigned test_idx = 0;
+  int unsigned byte_idx = 0;
   int unsigned wr_count = 0;
 
-  always @(negedge i_vip.i2c_0.tx_state.active) wr_count = 0;
-
   always @(negedge i_vip.i2c_0.tx_state.byte_active) begin : i2c_read
+
     if (i_vip.i2c_0.tx_state.addr_valid) begin
       if (~i_vip.i2c_0.we()) begin : read
-        i_vip.i2c_0.set_rdata(TestWord[test_idx]);
-        if (test_idx == 6) test_idx = 0;
-        else test_idx++;
+
+        automatic logic [3:0][7:0] data_word = 32'h12345678;
+
+        // Construct 32-bit randomized float value with small exponent
+        i_vip.i2c_0.set_rdata(data_word[byte_idx]);
+
+        if (byte_idx == 4) byte_idx = 0;
+        else byte_idx++;
       end : read
       else begin : write
         if (wr_count > 32'h0) $display("[i2c]: %h", i_vip.i2c_0.wdata());
@@ -123,6 +127,8 @@ module vip_task_scoreboard #(
       end : write
     end
   end
+
+  always @(negedge i_vip.i2c_0.tx_state.active) wr_count = 0;
 
   always @(negedge micro_enable) begin
     $display("[micro-rtprof] Task Scoreboard Log:");
