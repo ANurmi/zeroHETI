@@ -85,14 +85,29 @@ mod app {
         }
     }
 
-    const TASK_SET_SIZE: usize = 5;
+    #[derive(Clone)]
+    pub struct ImuPacket {
+        timestamp: u64,
+        ax: i32,
+        ay: i32,
+        az: i32,
+        gx: i32,
+        gy: i32,
+        gz: i32,
+    }
 
-    const I2C_BYTE_DURATION: u32 = 600;
+    const TASK_SET_SIZE: usize = 5;
+    const I2C_ADDR_DURATION: u32 = 550;
+    const I2C_DATA_DURATION: u32 = 500;
+
+    const NUM_PARAMS: u8 = 6;
+    const NUM_PARAM_BYTES: u8 = 4;
+    const I2C_NUM_BYTES: u8 = NUM_PARAMS * NUM_PARAM_BYTES;
 
     const TASK_SET: [Task; TASK_SET_SIZE] = [
-        Task::new(800, 30, 8 * LF / 100),
-        Task::new(66, 50, 30 * LF / 100),
-        Task::new(270, 150, 50 * LF / 100),
+        Task::new(2000, 3, 3),
+        Task::new(0xFFF, 4, 4),
+        Task::new(0xFFF, 6, 6),
         Task::new(200, 150, 50 * LF / 100),
         Task::new(70, 20, 1 * LF / 100),
     ];
@@ -130,6 +145,7 @@ mod app {
     struct Shared {
         i2c: i2c::I2c,
         i2c_byte_count: u8,
+        imu_packet: ImuPacket,
     }
 
     #[init]
@@ -138,6 +154,16 @@ mod app {
         let i2c = I2c::init(100);
         let cfg = CfgRegs::init();
         let (_ibx, mut obx) = unsafe { Mailbox::instance() }.split();
+
+        let imu_packet = ImuPacket {
+            timestamp: (0),
+            ax: (0),
+            ay: (0),
+            az: (0),
+            gx: (0),
+            gy: (0),
+            gz: (0),
+        };
 
         // Read platform configuration
         let commit = cfg.commit();
@@ -167,13 +193,16 @@ mod app {
             HYPERPERIOD,
         );
 
+        sprintln!("TODO: out of date, compute for updated tasks");
+
+        /*
         for i in 0..TASK_SET_SIZE {
             sprintln!(
                 "Task {i}: F (per HP): {}, Total runtime (us): {}",
                 TASK_FREQ[i],
                 TASK_RT[i]
             )
-        }
+        } */
 
         sprintln!(
             "Theoretical CPU utilization: {} us/{} us = {} % \n",
@@ -197,10 +226,8 @@ mod app {
             //Timer::init::<TIMER2_ADDR>().into_periodic(),
         ];
 
-        for i in 0..1 {
-            //TASK_SET_SIZE {
-            timers[i].set_period(TASK_SET[i].period_us.micros());
-        }
+        timers[0].set_period(TASK_SET[0].period_us.micros());
+        //timers[1].set_period(TASK_SET[3].period_us.micros());
 
         timers.iter_mut().for_each(Periodic::start);
 
@@ -210,6 +237,7 @@ mod app {
         Shared {
             i2c,
             i2c_byte_count: 0,
+            imu_packet,
         }
     }
 
@@ -248,19 +276,16 @@ mod app {
             rtprof_start_task(0);
 
             const I2C_ADDR: u8 = 0x1;
-
-            let mut rbuf: [u8; 1] = [0; 1];
             let mut last = false;
 
             self.shared().i2c.lock(|i2c| {
                 i2c.wf_read_addr(I2C_ADDR);
             });
 
-            TimerQueue::instance().push_rel(Interrupt::Timer0Ovf, I2C_BYTE_DURATION.nanos());
+            TimerQueue::instance().push_rel(Interrupt::Timer0Ovf, I2C_ADDR_DURATION.nanos());
             rtprof_end_task(0);
         }
     }
-    const NUM_BYTES: u8 = 3;
     #[task(binds = Timer0Ovf, priority = 225, shared = [i2c, i2c_byte_count])]
     struct I2cCmd {}
     impl RticTask for I2cCmd {
@@ -274,7 +299,7 @@ mod app {
 
             let count = self.shared().i2c_byte_count.lock(|buf| *buf);
 
-            if count == NUM_BYTES - 1 {
+            if count == I2C_NUM_BYTES - 1 {
                 last = true;
             }
 
@@ -282,15 +307,17 @@ mod app {
                 i2c.wf_read_cmd(last);
             });
 
-            TimerQueue::instance().push_rel(Interrupt::Timer1Ovf, I2C_BYTE_DURATION.nanos());
+            TimerQueue::instance().push_rel(Interrupt::Timer1Ovf, I2C_DATA_DURATION.nanos());
             rtprof_end_task(1);
         }
     }
-    #[task(binds = Timer1Ovf, priority = 225, shared = [i2c, i2c_byte_count])]
-    struct I2cRsp {}
+    #[task(binds = Timer1Ovf, priority = 225, shared = [i2c, i2c_byte_count, imu_packet])]
+    struct I2cRsp {
+        data_word: u32,
+    }
     impl RticTask for I2cRsp {
         fn init() -> Self {
-            Self {}
+            Self { data_word: 0 }
         }
         fn exec(&mut self) {
             rtprof_start_task(2);
@@ -301,18 +328,90 @@ mod app {
                 i2c.wf_read_rsp(&mut rbuf);
             });
 
-            let count = self.shared().i2c_byte_count.lock(|buf| *buf);
-            sprintln!("{:02X}", rbuf[0]);
+            let count: u8 = self.shared().i2c_byte_count.lock(|buf| *buf);
+            let byte_idx = count % 4;
+            let word_idx = count / 4;
 
-            rtprof_end_task(2);
+            self.data_word |= (rbuf[0] as u32) << byte_idx;
 
-            if count < NUM_BYTES - 1 {
-                // Repend I2cCmd until bytecount met
+            if count < I2C_NUM_BYTES - 1 {
+                if (byte_idx == 0) & (count != 0) {
+                    match word_idx {
+                        0 => self
+                            .shared()
+                            .imu_packet
+                            .lock(|buf| buf.ax = self.data_word as i32),
+                        1 => self
+                            .shared()
+                            .imu_packet
+                            .lock(|buf| buf.ay = self.data_word as i32),
+                        2 => self
+                            .shared()
+                            .imu_packet
+                            .lock(|buf| buf.az = self.data_word as i32),
+                        3 => self
+                            .shared()
+                            .imu_packet
+                            .lock(|buf| buf.gx = self.data_word as i32),
+                        4 => self
+                            .shared()
+                            .imu_packet
+                            .lock(|buf| buf.gy = self.data_word as i32),
+                        5 => self
+                            .shared()
+                            .imu_packet
+                            .lock(|buf| buf.gz = self.data_word as i32),
+                        _ => panic!("weird word idx"),
+                    }
+
+                    self.data_word = 0;
+                }
+
                 self.shared().i2c_byte_count.lock(|buf| *buf += 1);
+
+                rtprof_end_task(2);
+                // Repend I2cCmd until bytecount met
                 TimerQueue::instance().push_now(Interrupt::Timer0Ovf);
             } else {
                 self.shared().i2c_byte_count.lock(|buf| *buf = 0);
+                // Capture timestamp once rest of packet received
+                self.shared()
+                    .imu_packet
+                    .lock(|buf| buf.timestamp = MTimer::instance().now().as_micros());
+
+                rtprof_end_task(2);
+                TimerQueue::instance().push_now(Interrupt::Timer2Ovf);
             }
+        }
+    }
+
+    // DL: 30 Prio: 255 - 30 = 225
+    #[task(binds = Timer2Ovf, priority = 100, shared = [imu_packet])]
+    struct FloatTask {}
+    impl RticTask for FloatTask {
+        fn init() -> Self {
+            Self {}
+        }
+        fn exec(&mut self) {
+            rtprof_start_task(3);
+
+            let packet: ImuPacket = self.shared().imu_packet.lock(|buf| buf.clone());
+
+            sprintln!("{:X}", packet.timestamp);
+            sprintln!("{:X}", packet.ax);
+            sprintln!("{:X}", packet.ay);
+            sprintln!("{:X}", packet.az);
+            sprintln!("{:X}", packet.gx);
+            sprintln!("{:X}", packet.gy);
+            sprintln!("{:X}", packet.gz);
+
+            /*
+            let float1 = mmio::read_u32(0x20000) as f32;
+            let float2 = mmio::read_u32(0x20020) as f32;
+
+            sprintln!("{}", float1 - float2);
+            */
+            rtprof_end_task(3);
         }
     }
 
