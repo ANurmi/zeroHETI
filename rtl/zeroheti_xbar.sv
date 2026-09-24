@@ -24,10 +24,10 @@ module zeroheti_xbar
   localparam int unsigned NumSbr = 7;
 
   localparam bit [NumMgr-1:0][NumSbr-1:0] Connectivity = '{
-      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
-      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},
-      '{1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1, 1'b1},
-      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}
+      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},  // ext
+      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1},  // data
+      '{1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1},  // inst
+      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1}  // debug
   };
 
   typedef struct packed {
@@ -62,6 +62,8 @@ module zeroheti_xbar
 
   OBI_BUS imem_bus_cut ();
   OBI_BUS dmem_bus_cut ();
+  OBI_BUS intc_bus_cut ();
+  OBI_BUS dbg_bus_cut ();
 
   obi_connection #(
       .Cut(1'b1)
@@ -81,15 +83,33 @@ module zeroheti_xbar
       .obi_m(dmem_bus)
   );
 
+  obi_connection #(
+      .Cut(1'b1)
+  ) i_cut_intc (
+      .clk_i,
+      .rst_ni,
+      .obi_s(intc_bus_cut),
+      .obi_m(intc_bus)
+  );
+
+  obi_connection #(
+      .Cut(1'b1)
+  ) i_cut_dbg (
+      .clk_i,
+      .rst_ni,
+      .obi_s(dbg_bus_cut),
+      .obi_m(dbg_bus)
+  );
+
   `OBI_ASSIGN(sbr_ports[0], sba_bus_cut, ObiCfg, ObiCfg)
   `OBI_ASSIGN(sbr_ports[1], inst_bus, ObiCfg, ObiCfg)
   `OBI_ASSIGN(sbr_ports[2], data_bus, ObiCfg, ObiCfg)
   `OBI_ASSIGN(sbr_ports[3], sbr_bus, ObiCfg, ObiCfg)
 
-  `OBI_ASSIGN(dbg_bus, mgr_ports[0], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(dbg_bus_cut, mgr_ports[0], ObiCfg, ObiCfg)
   `OBI_ASSIGN(imem_bus_cut, mgr_ports[1], ObiCfg, ObiCfg)
   `OBI_ASSIGN(dmem_bus_cut, mgr_ports[2], ObiCfg, ObiCfg)
-  `OBI_ASSIGN(intc_bus, mgr_ports[3], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(intc_bus_cut, mgr_ports[3], ObiCfg, ObiCfg)
   `OBI_ASSIGN(per_bus, mgr_ports[4], ObiCfg, ObiCfg)
   `OBI_ASSIGN(mbx_bus, mgr_ports[5], ObiCfg, ObiCfg)
   `OBI_ASSIGN(mgr_bus, mgr_ports[6], ObiCfg, ObiCfg)
@@ -99,7 +119,6 @@ module zeroheti_xbar
 
   zeroheti_pkg::obi_req_t [NumSbr-1:0] mgr_ports_req;
   zeroheti_pkg::obi_rsp_t [NumSbr-1:0] mgr_ports_rsp;
-
 
   for (genvar i = 0; i < NumMgr; i++) begin : gen_sbr_ports_assign
     `OBI_ASSIGN_TO_REQ(sbr_ports_req[i], sbr_ports[i], ObiCfg)
