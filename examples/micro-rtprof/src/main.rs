@@ -10,12 +10,17 @@ mod app {
     use bsp::{
         CPU_FREQ_HZ,
         apb_uart::ApbUart,
-        asm_delay, clear_perf_counters,
+        asm_delay,
+        cfg_regs::CfgRegs,
+        clear_perf_counters,
         fugit::{ExtU32, ExtU64},
         i2c::{self, I2c},
         lcm,
         mailbox::Mailbox,
-        mmap::apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR},
+        mmap::{
+            apb_timer::{TIMER0_ADDR, TIMER1_ADDR, TIMER2_ADDR},
+            cfg_regs::CFG_BASE_ADDR,
+        },
         mmio,
         mtimer::*,
         parse_u32,
@@ -25,7 +30,6 @@ mod app {
         timer_group::{Periodic, Timer},
     };
 
-    const CFG_BASE_ADDR: usize = 0x0000_4000;
     const CFG_TASK_OFFS: usize = 0x0000_0100;
 
     #[inline]
@@ -38,6 +42,21 @@ mod app {
         mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS + (4 + 4 * idx), 0);
     }
 
+    #[inline]
+    fn rtprof_start_micro() {
+        mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 1);
+    }
+
+    //#[inline]
+    //fn rtprof_start_full() {
+    //    mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 2);
+    //}
+
+    #[inline]
+    fn rtprof_stop() {
+        mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 0);
+    }
+
     const LF: u32 = parse_u32(env!("LOAD_FACTOR"));
     const RT: u64 = parse_u32(env!("RUNTIME_MS")) as u64;
 
@@ -47,22 +66,31 @@ mod app {
         runtime_us: u32,
     }
 
-    const TASK_SET: [Task; 3] = [
-        Task {
-            period_us: 30,
-            deadline_us: 30,
-            runtime_us: 8 * LF / 100,
-        },
-        Task {
-            period_us: 66,
-            deadline_us: 50,
-            runtime_us: 30 * LF / 100,
-        },
-        Task {
-            period_us: 170,
-            deadline_us: 150,
-            runtime_us: 50 * LF / 100,
-        },
+    impl Task {
+        pub const fn new(period: u32, deadline: u32, runtime: u32) -> Self {
+            assert!(
+                deadline >= runtime,
+                "Deadline cannot be shorter than unblocked runtime"
+            );
+            assert!(period >= deadline, "Period cannot be shorter than deadline");
+            assert!(
+                255 >= deadline,
+                "8-bits and 1 us tick limit deadlines to 0..255 us"
+            );
+            Self {
+                period_us: (period),
+                deadline_us: (deadline),
+                runtime_us: (runtime),
+            }
+        }
+    }
+
+    const TASK_SET_SIZE: usize = 3;
+
+    const TASK_SET: [Task; TASK_SET_SIZE] = [
+        Task::new(30, 30, 8 * LF / 100),
+        Task::new(66, 50, 30 * LF / 100),
+        Task::new(170, 150, 50 * LF / 100),
     ];
 
     const HYPERPERIOD: u32 = lcm!(
@@ -71,6 +99,21 @@ mod app {
         TASK_SET[2].period_us,
     );
 
+    // Frequency within hyperperiod
+    const TASK_FREQ: [u32; TASK_SET_SIZE] = [
+        HYPERPERIOD / TASK_SET[0].period_us,
+        HYPERPERIOD / TASK_SET[1].period_us,
+        HYPERPERIOD / TASK_SET[2].period_us,
+    ];
+
+    const TASK_RT: [u32; TASK_SET_SIZE] = [
+        TASK_FREQ[0] * TASK_SET[0].runtime_us,
+        TASK_FREQ[1] * TASK_SET[1].runtime_us,
+        TASK_FREQ[2] * TASK_SET[2].runtime_us,
+    ];
+
+    const TASK_RT_TOT: u32 = TASK_RT[0] + TASK_RT[1] + TASK_RT[2];
+    const CPU_UTIL: u32 = (TASK_RT_TOT * 100) / HYPERPERIOD;
     const US_TO_CC: u32 = 100;
 
     #[inline]
@@ -89,33 +132,24 @@ mod app {
     fn init() -> Shared {
         let _serial = ApbUart::init(CPU_FREQ_HZ, 115_200);
         let i2c = I2c::init(4);
+        let cfg = CfgRegs::init();
         let (_ibx, mut obx) = unsafe { Mailbox::instance() }.split();
 
         // Read platform configuration
-        let commit = mmio::read_u32(CFG_BASE_ADDR);
-        let cfg = mmio::read_u32(CFG_BASE_ADDR + 4);
-        let is_intc_edfic = (cfg & 0b1) == 0b1;
-        let intc_name = if is_intc_edfic { "EDFIC" } else { "CLIC " };
+        let commit = cfg.commit();
+        let intc_edfic = cfg.intc_edfic();
+        let intc_name = if intc_edfic { "EDFIC" } else { "CLIC " };
 
-        #[cfg(any(feature = "intc-edfic", feature = "intc-clic"))]
-        {
-            #[cfg(feature = "intc-clic")]
-            if is_intc_edfic {
-                panic!("INTC=EDFIC, expected CLIC");
-            }
-            #[cfg(feature = "intc-edfic")]
-            {
-                // EDFIC-specific: enable mtime to interrupt controller
-                mmio::write_u32(CFG_BASE_ADDR + 8, 0x1);
+        if !cfg.intc_valid() {
+            panic!("INTC mismatch! Recompile HW or check feature flags");
+        }
 
-                if !is_intc_edfic {
-                    panic!("INTC=!EDFIC, expected EDFIC");
-                }
-            }
+        // Enable dynamic interrupt behavior when using EDFIC
+        if intc_edfic {
+            cfg.enable_dynamic_intc();
         }
 
         sprintln!("[micro-rtprof] interrupt controller microbenchmark");
-
         sprintln!(
             "Platform - HW commit   : {:x}, intc: {},        CPU Frequency (MHz): {}",
             commit,
@@ -129,46 +163,26 @@ mod app {
             HYPERPERIOD,
         );
 
-        // How often a task is run within hyperperiod
-        let f_t0 = HYPERPERIOD / TASK_SET[0].period_us;
-        let f_t1 = HYPERPERIOD / TASK_SET[1].period_us;
-        let f_t2 = HYPERPERIOD / TASK_SET[2].period_us;
-
-        let rt_t0 = f_t0 * TASK_SET[0].runtime_us;
-        let rt_t1 = f_t1 * TASK_SET[1].runtime_us;
-        let rt_t2 = f_t2 * TASK_SET[2].runtime_us;
-
-        sprintln!(
-            "Task 0: F (per HP): {}, Total runtime (us): {}",
-            f_t0,
-            rt_t0
-        );
-        sprintln!(
-            "Task 1: F (per HP): {}, Total runtime (us): {}",
-            f_t1,
-            rt_t1
-        );
-        sprintln!(
-            "Task 2: F (per HP): {}, Total runtime (us): {}",
-            f_t2,
-            rt_t2
-        );
-
-        let rt_tot = rt_t0 + rt_t1 + rt_t2;
-        let util = (rt_tot * 100) / HYPERPERIOD;
+        for i in 0..TASK_SET_SIZE {
+            sprintln!(
+                "Task {i}: F (per HP): {}, Total runtime (us): {}",
+                TASK_FREQ[i],
+                TASK_RT[i]
+            )
+        }
 
         sprintln!(
             "Theoretical CPU utilization: {} us/{} us = {} % \n",
-            rt_tot,
+            TASK_RT_TOT,
             HYPERPERIOD,
-            util
+            CPU_UTIL
         );
 
         let task_dl_base = 0x1_0000;
 
-        obx.send(task_dl_base + 0, TASK_SET[0].deadline_us * US_TO_CC);
-        obx.send(task_dl_base + 1, TASK_SET[1].deadline_us * US_TO_CC);
-        obx.send(task_dl_base + 2, TASK_SET[2].deadline_us * US_TO_CC);
+        for i in 0..TASK_SET_SIZE {
+            obx.send(task_dl_base + i as u32, TASK_SET[i].deadline_us * US_TO_CC);
+        }
 
         // 1 tick == 1 us
         MTimer::with_clkdiv(100).start(RT.millis());
@@ -179,31 +193,14 @@ mod app {
             Timer::init::<TIMER2_ADDR>().into_periodic(),
         ];
 
-        timers[0].set_period(TASK_SET[0].period_us.micros());
-        timers[1].set_period(TASK_SET[1].period_us.micros());
-        timers[2].set_period(TASK_SET[2].period_us.micros());
-
-        // Deadline cannot be shorter than unblocked runtime of task
-        assert!(TASK_SET[0].deadline_us >= TASK_SET[0].runtime_us);
-        assert!(TASK_SET[1].deadline_us >= TASK_SET[1].runtime_us);
-        assert!(TASK_SET[2].deadline_us >= TASK_SET[2].runtime_us);
-
-        // Period cannot be shorter than deadline of task
-        assert!(TASK_SET[0].period_us >= TASK_SET[0].deadline_us);
-        assert!(TASK_SET[1].period_us >= TASK_SET[1].deadline_us);
-        assert!(TASK_SET[2].period_us >= TASK_SET[2].deadline_us);
-
-        // with 8 priority bits & 1 us tick deadline range is 0..255 us
-        assert!(255 >= TASK_SET[0].deadline_us);
-        assert!(255 >= TASK_SET[1].deadline_us);
-        assert!(255 >= TASK_SET[2].deadline_us);
+        for i in 0..TASK_SET_SIZE {
+            timers[i].set_period(TASK_SET[i].period_us.micros());
+        }
 
         timers.iter_mut().for_each(Periodic::start);
 
         clear_perf_counters();
-        // Scoreboard enable
-        // TODO: Generalize for full rt-prof
-        mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 1);
+        rtprof_start_micro();
 
         Shared { i2c }
     }
@@ -215,8 +212,7 @@ mod app {
             Self {}
         }
         fn exec(&mut self) {
-            // Scoreboard disable
-            mmio::write_u32(CFG_BASE_ADDR + CFG_TASK_OFFS, 0);
+            rtprof_stop();
 
             let now = MTimer::instance().now().as_ticks();
             let minstret = minstret::read64();
