@@ -329,18 +329,21 @@ mod app {
             });
 
             let count: u8 = self.shared().i2c_byte_count.lock(|buf| *buf);
+            self.shared().i2c_byte_count.lock(|buf| *buf += 1);
+
             let byte_idx = count % 4;
             let word_idx = count / 4;
 
-            self.data_word |= (rbuf[0] as u32) << byte_idx;
+            self.data_word |= (rbuf[0] as u32) << (byte_idx * 8);
 
-            if count < I2C_NUM_BYTES - 1 {
-                if (byte_idx == 0) & (count != 0) {
+            if count < I2C_NUM_BYTES {
+                if (byte_idx == 3) {
                     match word_idx {
                         0 => self
                             .shared()
                             .imu_packet
                             .lock(|buf| buf.ax = self.data_word as i32),
+
                         1 => self
                             .shared()
                             .imu_packet
@@ -364,23 +367,26 @@ mod app {
                         _ => panic!("weird word idx"),
                     }
 
+                    // Clear after each received data word
                     self.data_word = 0;
                 }
 
-                self.shared().i2c_byte_count.lock(|buf| *buf += 1);
+                if count < I2C_NUM_BYTES - 1 {
+                    rtprof_end_task(2);
+                    // Pend I2cCmd
+                    TimerQueue::instance().push_now(Interrupt::Timer0Ovf);
+                } else {
+                    // Clear byte counter after full transaction
+                    self.shared().i2c_byte_count.lock(|buf| *buf = 0);
+                    // Capture timestamp once rest of packet received
+                    self.shared()
+                        .imu_packet
+                        .lock(|buf| buf.timestamp = MTimer::instance().now().as_micros());
+                    // Pend FloatTask
+                    rtprof_end_task(2);
 
-                rtprof_end_task(2);
-                // Repend I2cCmd until bytecount met
-                TimerQueue::instance().push_now(Interrupt::Timer0Ovf);
-            } else {
-                self.shared().i2c_byte_count.lock(|buf| *buf = 0);
-                // Capture timestamp once rest of packet received
-                self.shared()
-                    .imu_packet
-                    .lock(|buf| buf.timestamp = MTimer::instance().now().as_micros());
-
-                rtprof_end_task(2);
-                TimerQueue::instance().push_now(Interrupt::Timer2Ovf);
+                    TimerQueue::instance().push_now(Interrupt::Timer2Ovf);
+                }
             }
         }
     }
@@ -397,13 +403,22 @@ mod app {
 
             let packet: ImuPacket = self.shared().imu_packet.lock(|buf| buf.clone());
 
-            sprintln!("{:X}", packet.timestamp);
-            sprintln!("{:X}", packet.ax);
-            sprintln!("{:X}", packet.ay);
-            sprintln!("{:X}", packet.az);
-            sprintln!("{:X}", packet.gx);
-            sprintln!("{:X}", packet.gy);
-            sprintln!("{:X}", packet.gz);
+            sprintln!("Time: {}", packet.timestamp);
+            /*
+                       sprintln!("{}", packet.ax as f32 / 65536.0);
+                       sprintln!("{}", packet.ay as f32 / 65536.0);
+                       sprintln!("{}", packet.az as f32 / 65536.0);
+                       sprintln!("{}", packet.gx as f32 / 65536.0);
+                       sprintln!("{}", packet.gy as f32 / 65536.0);
+                       sprintln!("{}", packet.gz as f32 / 65536.0);
+            */
+
+            sprintln!("{:08X}", packet.ax);
+            sprintln!("{:08X}", packet.ay);
+            sprintln!("{:08X}", packet.az);
+            sprintln!("{:08X}", packet.gx);
+            sprintln!("{:08X}", packet.gy);
+            sprintln!("{:08X}", packet.gz);
 
             /*
             let float1 = mmio::read_u32(0x20000) as f32;
