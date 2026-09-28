@@ -36,6 +36,7 @@ sources:
   - rtl/zeroheti_xbar.sv
   - rtl/zeroheti_int_ctrl.sv
   - rtl/obi_sram_intf.sv
+  - rtl/bootrom.sv
   - rtl/obi_mb_sram_intf.sv
   - rtl/obi_connection.sv
   - rtl/obi_to_axi_lite_intf.sv
