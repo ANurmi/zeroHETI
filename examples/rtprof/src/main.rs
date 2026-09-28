@@ -14,6 +14,7 @@ mod app {
         apb_uart::ApbUart,
         cfg_regs::CfgRegs,
         clear_perf_counters,
+        embedded_io::Seek,
         fugit::{ExtU32, ExtU64},
         i2c::{self, I2c},
         interrupt::Interrupt,
@@ -26,7 +27,7 @@ mod app {
         mmio,
         mtimer::*,
         parse_u32,
-        register::{mcycle, minstret},
+        register::{mcycle, minstret, mstatus::set_fs},
         sprintln,
         tb::signal_pass,
         timer_group::{Periodic, Timer},
@@ -63,24 +64,27 @@ mod app {
     struct Task {
         period_us: u32,
         deadline_us: u32,
-        runtime_us: u32,
+        runtime_ns: u32,
     }
 
     impl Task {
-        pub const fn new(period: u32, deadline: u32, runtime: u32) -> Self {
+        pub const fn new(period_us: u32, deadline_us: u32, runtime_ns: u32) -> Self {
             assert!(
-                deadline >= runtime,
+                deadline_us * 1000 >= runtime_ns,
                 "Deadline cannot be shorter than unblocked runtime"
             );
-            assert!(period >= deadline, "Period cannot be shorter than deadline");
             assert!(
-                255 >= deadline,
+                period_us >= deadline_us,
+                "Period cannot be shorter than deadline"
+            );
+            assert!(
+                255 >= deadline_us,
                 "8-bits and 1 us tick limit deadlines to 0..255 us"
             );
             Self {
-                period_us: (period),
-                deadline_us: (deadline),
-                runtime_us: (runtime),
+                period_us: (period_us),
+                deadline_us: (deadline_us),
+                runtime_ns: (runtime_ns),
             }
         }
     }
@@ -88,12 +92,22 @@ mod app {
     #[derive(Clone)]
     pub struct ImuPacket {
         timestamp: u64,
-        ax: i32,
-        ay: i32,
-        az: i32,
-        gx: i32,
-        gy: i32,
-        gz: i32,
+        ax: u32,
+        ay: u32,
+        az: u32,
+        gx: u32,
+        gy: u32,
+        gz: u32,
+    }
+
+    pub struct ImuState {
+        timestamp: u64,
+        pos_x: f32,
+        pos_y: f32,
+        pos_z: f32,
+        ang_x: f32,
+        ang_y: f32,
+        ang_z: f32,
     }
 
     const TASK_SET_SIZE: usize = 5;
@@ -105,9 +119,12 @@ mod app {
     const I2C_NUM_BYTES: u8 = NUM_PARAMS * NUM_PARAM_BYTES;
 
     const TASK_SET: [Task; TASK_SET_SIZE] = [
-        Task::new(2000, 3, 3),
-        Task::new(0xFFF, 4, 4),
-        Task::new(0xFFF, 6, 6),
+        // T0 0.56 us
+        // T0 0.85 us
+        // T0 1.14 us
+        Task::new(2000, 10, 560),
+        Task::new(0xFFF, 10, 850),
+        Task::new(0xFFF, 15, 1140),
         Task::new(200, 150, 50 * LF / 100),
         Task::new(70, 20, 1 * LF / 100),
     ];
@@ -130,11 +147,11 @@ mod app {
     ];
 
     const TASK_RT: [u32; TASK_SET_SIZE] = [
-        TASK_FREQ[0] * TASK_SET[0].runtime_us,
-        TASK_FREQ[1] * TASK_SET[1].runtime_us,
-        TASK_FREQ[2] * TASK_SET[2].runtime_us,
-        TASK_FREQ[3] * TASK_SET[3].runtime_us,
-        TASK_FREQ[4] * TASK_SET[4].runtime_us,
+        TASK_FREQ[0] * TASK_SET[0].runtime_ns / 1000,
+        TASK_FREQ[1] * TASK_SET[1].runtime_ns / 1000,
+        TASK_FREQ[2] * TASK_SET[2].runtime_ns / 1000,
+        TASK_FREQ[3] * TASK_SET[3].runtime_ns / 1000,
+        TASK_FREQ[4] * TASK_SET[4].runtime_ns / 1000,
     ];
 
     const TASK_RT_TOT: u32 = TASK_RT[0] + TASK_RT[1] + TASK_RT[2];
@@ -337,33 +354,33 @@ mod app {
             self.data_word |= (rbuf[0] as u32) << (byte_idx * 8);
 
             if count < I2C_NUM_BYTES {
-                if (byte_idx == 3) {
+                if byte_idx == 3 {
                     match word_idx {
                         0 => self
                             .shared()
                             .imu_packet
-                            .lock(|buf| buf.ax = self.data_word as i32),
+                            .lock(|buf| buf.ax = self.data_word as u32),
 
                         1 => self
                             .shared()
                             .imu_packet
-                            .lock(|buf| buf.ay = self.data_word as i32),
+                            .lock(|buf| buf.ay = self.data_word as u32),
                         2 => self
                             .shared()
                             .imu_packet
-                            .lock(|buf| buf.az = self.data_word as i32),
+                            .lock(|buf| buf.az = self.data_word as u32),
                         3 => self
                             .shared()
                             .imu_packet
-                            .lock(|buf| buf.gx = self.data_word as i32),
+                            .lock(|buf| buf.gx = self.data_word as u32),
                         4 => self
                             .shared()
                             .imu_packet
-                            .lock(|buf| buf.gy = self.data_word as i32),
+                            .lock(|buf| buf.gy = self.data_word as u32),
                         5 => self
                             .shared()
                             .imu_packet
-                            .lock(|buf| buf.gz = self.data_word as i32),
+                            .lock(|buf| buf.gz = self.data_word as u32),
                         _ => panic!("weird word idx"),
                     }
 
@@ -382,6 +399,7 @@ mod app {
                     self.shared()
                         .imu_packet
                         .lock(|buf| buf.timestamp = MTimer::instance().now().as_micros());
+
                     // Pend FloatTask
                     rtprof_end_task(2);
 
@@ -393,38 +411,77 @@ mod app {
 
     // DL: 30 Prio: 255 - 30 = 225
     #[task(binds = Timer2Ovf, priority = 100, shared = [imu_packet])]
-    struct FloatTask {}
+    struct FloatTask {
+        imu_state: ImuState,
+    }
     impl RticTask for FloatTask {
         fn init() -> Self {
-            Self {}
+            Self {
+                imu_state: ImuState {
+                    timestamp: (0),
+                    pos_x: (0.0),
+                    pos_y: (0.0),
+                    pos_z: (0.0),
+                    ang_x: (0.0),
+                    ang_y: (0.0),
+                    ang_z: (0.0),
+                },
+            }
         }
         fn exec(&mut self) {
             rtprof_start_task(3);
 
             let packet: ImuPacket = self.shared().imu_packet.lock(|buf| buf.clone());
 
-            sprintln!("Time: {}", packet.timestamp);
+            let dt_us = (packet.timestamp - self.imu_state.timestamp) as f32;
+
+            let ax = packet.ax as f32 / 65536.0;
+            let ay = packet.ay as f32 / 65536.0;
+            let az = packet.az as f32 / 65536.0;
+
+            let gx = packet.gx as f32 / 65536.0;
+            let gy = packet.gy as f32 / 65536.0;
+            let gz = packet.gz as f32 / 65536.0;
+
+            sprintln!("S: {:08x}", packet.ax);
+            sprintln!("S: {:08x}", packet.ay);
+            sprintln!("S: {:08x}", packet.az);
+
+            sprintln!("S: {:08x}", packet.gx);
+            sprintln!("S: {:08x}", packet.gy);
+            sprintln!("S: {:08x}", packet.gz);
+            //sprintln!("gx {:.2}", gx);
+            //sprintln!("ang {:.2}", self.imu_state.ang_x);
             /*
-                       sprintln!("{}", packet.ax as f32 / 65536.0);
-                       sprintln!("{}", packet.ay as f32 / 65536.0);
-                       sprintln!("{}", packet.az as f32 / 65536.0);
-                       sprintln!("{}", packet.gx as f32 / 65536.0);
-                       sprintln!("{}", packet.gy as f32 / 65536.0);
-                       sprintln!("{}", packet.gz as f32 / 65536.0);
-            */
 
-            sprintln!("{:08X}", packet.ax);
-            sprintln!("{:08X}", packet.ay);
-            sprintln!("{:08X}", packet.az);
-            sprintln!("{:08X}", packet.gx);
-            sprintln!("{:08X}", packet.gy);
-            sprintln!("{:08X}", packet.gz);
+            self.imu_state.ang_x =
+                ((self.imu_state.ang_x + (gx * dt_us / 1_000_000.0)) + 360.0) % 360.0;
 
-            /*
-            let float1 = mmio::read_u32(0x20000) as f32;
-            let float2 = mmio::read_u32(0x20020) as f32;
+                     let roll =  ((self.imu_state.ang_x + (gx * dt_us / 1_000_000.0)) + 360.0) % 360.0;
+                     let pitch = ((self.imu_state.ang_y + (gy * dt_us / 1_000_000.0)) + 360.0) % 360.0;
+                     let yaw =   ((self.imu_state.ang_z + (gz * dt_us / 1_000_000.0)) + 360.0) % 360.0;
 
-            sprintln!("{}", float1 - float2);
+                     let pos_x = self.imu_state.pos_x + (ax * dt_us / 1_000_000.0);
+                     let pos_y = self.imu_state.pos_y + (ay * dt_us / 1_000_000.0);
+                     let pos_z = self.imu_state.pos_z + (az * dt_us / 1_000_000.0);
+
+                     sprintln!("Timestamp: {} ms", packet.timestamp / 1_000);
+                     sprintln!("gx: {:.2}", gx);
+                     sprintln!("gy: {:.2}", gy);
+                     sprintln!("gz: {:.2}", gz);
+                     sprintln!("Roll    : {:.2}°", roll);
+                     sprintln!("Pitch   : {:.2}°", pitch);
+                     sprintln!("Yaw     : {:.2}°", yaw);
+                     sprintln!("(x,y,z) : ({:.2}, {:.2}, {:.2})", pos_x, pos_y, pos_z);
+                     sprintln!("");
+
+                     self.imu_state.ang_x = roll;
+                     self.imu_state.ang_y = pitch;
+                     self.imu_state.ang_z = yaw;
+
+                     self.imu_state.pos_x = pos_x;
+                     self.imu_state.pos_y = pos_y;
+                     self.imu_state.pos_z = pos_z;
             */
             rtprof_end_task(3);
         }
