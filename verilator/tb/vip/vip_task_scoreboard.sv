@@ -108,18 +108,29 @@ module vip_task_scoreboard #(
   int unsigned byte_idx = 0;
   int unsigned wr_count = 0;
 
+  logic [3:0][7:0] i2c_data_word = 0;
+
+  function automatic void i2c_new_data();
+    // Randomized fixed-point 16.16 value
+    automatic logic [15:0] value = 16'($urandom_range(0, 300));
+
+    if (1'($urandom_range(0, 1))) value = -value;
+
+    i2c_data_word = {value, 16'($urandom())};
+  endfunction
+
   always @(negedge i_vip.i2c_0.tx_state.byte_active) begin : i2c_read
 
     if (i_vip.i2c_0.tx_state.addr_valid) begin
       if (~i_vip.i2c_0.we()) begin : read
 
-        automatic logic [3:0][7:0] data_word = 32'h12345678;
+        i_vip.i2c_0.set_rdata(i2c_data_word[byte_idx]);
 
-        // Construct 32-bit randomized float value with small exponent
-        i_vip.i2c_0.set_rdata(data_word[byte_idx]);
-
-        if (byte_idx == 4) byte_idx = 0;
-        else byte_idx++;
+        if (byte_idx == 3) begin
+          $display("%08H", i2c_data_word);
+          i2c_new_data();
+          byte_idx = 0;
+        end else byte_idx++;
       end : read
       else begin : write
         if (wr_count > 32'h0) $display("[i2c]: %h", i_vip.i2c_0.wdata());
