@@ -65,6 +65,7 @@ package zeroheti_pkg;
     addr_rule_t spi;
     addr_rule_t tg;
     addr_rule_t tq;
+    addr_rule_t rom;
     addr_rule_t cfg;
     addr_rule_t mtimer;
     addr_rule_t mbx;
@@ -75,19 +76,21 @@ package zeroheti_pkg;
   localparam int unsigned DmemSize = `DMEM_BYTES;
 
   localparam addr_rule_t DbgAddr = '{base : 32'h0000_0000, last : 32'h0000_1000};
-  localparam addr_rule_t UartAddr = '{base : 32'h0000_3000, last : 32'h0000_3100};
-  localparam addr_rule_t MtimerAddr = '{base : 32'h0000_3100, last : 32'h0000_3114};
-  localparam addr_rule_t I2c0Addr = '{base : 32'h0000_3200, last : 32'h0000_3300};
-  localparam addr_rule_t I2c1Addr = '{base : 32'h0000_3300, last : 32'h0000_3400};
-  localparam addr_rule_t TimerGroupAddr = '{
-      base : 32'h0000_3400,
-      last : 32'h0000_3400 + (16 * DefaultCfg.size_tg)
-  };
-  localparam addr_rule_t TqAddr = '{base: 32'h0000_3800, last: 32'h0000_3900};
-  localparam addr_rule_t CfgAddr = '{base : 32'h0000_4000, last : 32'h0000_5000};
-  localparam addr_rule_t SpiAddr = '{base : 32'h0000_5000, last : 32'h0000_5100};
+  /* 0x0000_1000 - 0x0001_0000 reserved*/
   localparam addr_rule_t ImemAddr = '{base : 32'h0001_0000, last : (32'h0001_0000 + ImemSize)};
   localparam addr_rule_t DmemAddr = '{base : 32'h0002_0000, last : (32'h0002_0000 + DmemSize)};
+  localparam addr_rule_t RomAddr = '{base : 32'h0003_0000, last : 32'h0003_3000};
+  localparam addr_rule_t UartAddr = '{base : 32'h0003_3000, last : 32'h0003_3100};
+  localparam addr_rule_t MtimerAddr = '{base : 32'h0003_3100, last : 32'h0003_3114};
+  localparam addr_rule_t I2c0Addr = '{base : 32'h0003_3200, last : 32'h0003_3300};
+  localparam addr_rule_t I2c1Addr = '{base : 32'h0003_3300, last : 32'h0003_3400};
+  localparam addr_rule_t TimerGroupAddr = '{
+      base : 32'h0003_3400,
+      last : 32'h0003_3400 + (16 * DefaultCfg.size_tg)
+  };
+  localparam addr_rule_t CfgAddr = '{base : 32'h0003_4000, last : 32'h0003_5000};
+  localparam addr_rule_t TqAddr = '{base: 32'h0003_3800, last: 32'h0003_3900};
+  localparam addr_rule_t SpiAddr = '{base : 32'h0003_5000, last : 32'h0003_5100};
   localparam addr_rule_t IntcAddr = '{base : 32'h0010_0000, last : 32'h0010_2000};
   localparam addr_rule_t MbxAddr = '{base : 32'h0010_8000, last : 32'h0010_8100};
   localparam addr_rule_t ExtAddr = '{base : 32'h0011_0000, last : 32'hFFFF_FFFF};
@@ -106,6 +109,7 @@ package zeroheti_pkg;
       i2c_0  : I2c0Addr,
       i2c_1  : I2c1Addr,
       cfg    : CfgAddr,
+      rom    : RomAddr,
       spi    : SpiAddr,
       tg     : TimerGroupAddr,
       tq     : TqAddr,

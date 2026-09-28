@@ -31,6 +31,7 @@ module zeroheti_core
   OBI_BUS per_bus ();
   OBI_BUS sba_bus ();
   OBI_BUS dbg_bus ();
+  OBI_BUS rom_bus ();
 
   logic irq_heti, irq_ack, irq_valid, irq_shv, irq_nest;
   logic [Cfg.num_irqs-1:0] core_irq;
@@ -83,7 +84,8 @@ module zeroheti_core
       .dbg_bus (dbg_bus),
       .mbx_bus (mbx_mgr),
       .mgr_bus (obi_mgr),
-      .sbr_bus (obi_sbr)
+      .sbr_bus (obi_sbr),
+      .rom_bus (rom_bus)
   );
 
   logic debug_req;
@@ -181,6 +183,12 @@ module zeroheti_core
       .alert_major_bus_o     ()
   );
 
+  bootrom #() i_bootrom (
+    .clk_i,
+    .rst_ni,
+    .sbr_bus (rom_bus)
+  );
+
   // CPU tie-offs
   assign inst_bus.reqpar = 1'b0;
   assign inst_bus.aid    = 1'b0;
@@ -192,11 +200,6 @@ module zeroheti_core
   assign data_bus.aid    = 1'b0;
   assign data_bus.a_optional = 1'b0;
 
-/*
-  assign mgr_bus[2].reqpar = 1'b0;
-  assign mgr_bus[2].aid    = 1'b0;
-  assign mgr_bus[2].a_optional = 1'b0;
-*/
   zeroheti_dbg_wrapper #() i_debug (
       .clk_i,
       .rst_ni,
