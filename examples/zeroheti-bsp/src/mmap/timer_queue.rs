@@ -1,4 +1,4 @@
-pub const TQ_BASE: usize = 0x3800;
+pub const TQ_BASE: usize = 0x3_3800;
 pub const STAT_OFFS: usize = 0x0;
 pub const CTRL_OFFS: usize = 0x4;
 pub const REL_TS_OFFS: usize = 0xC;

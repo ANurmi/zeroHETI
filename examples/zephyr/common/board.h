@@ -11,7 +11,7 @@
 #define I2C_PRESCALER   4
 
 /* --- APB Timers --- */
-#define TIMER_BASE(i) (0x3400 + (i) * 0x10)
+#define TIMER_BASE(i) (0x00033400 + (i) * 0x10)
 #define TIMER_CNT(base)  ((base) + 0x0)
 #define TIMER_CTRL(base) ((base) + 0x4)
 #define TIMER_CMP(base)  ((base) + 0x8)
