@@ -93,13 +93,12 @@ module zeroheti_xbar
     demux_sel = '0;
     unique case (demux_in_cut.addr) inside
       [AddrMap.dbg.base : AddrMap.dbg.last - 1]:   demux_sel = 0;
-      [AddrMap.intc.base : AddrMap.intc.last - 1]: demux_sel = 0;
-      [AddrMap.per.base : AddrMap.per.last - 1]:   demux_sel = 0;
-      [AddrMap.mbx.base : AddrMap.mbx.last - 1]:   demux_sel = 0;
-      [AddrMap.rom.base : AddrMap.rom.last - 1]:   demux_sel = 0;
-      [AddrMap.ext.base : AddrMap.ext.last - 1]:   demux_sel = 0;
-
-      default: ;
+      [AddrMap.dmem.last : AddrMap.intc.base - 1]: demux_sel = 1;  // Peripherals
+      [AddrMap.intc.base : AddrMap.intc.last - 1]: demux_sel = 2;
+      [AddrMap.mbx.base : AddrMap.mbx.last - 1]:   demux_sel = 3;
+      [AddrMap.ext.base : AddrMap.ext.last - 1]:   demux_sel = 4;
+      [AddrMap.rom.base : AddrMap.rom.last - 1]:   demux_sel = 5;
+      default:                                     ;
     endcase
   end : demux_assign
 

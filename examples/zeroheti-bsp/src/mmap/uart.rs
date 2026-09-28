@@ -1,8 +1,6 @@
 //! Register maps for [PULP APB UART](https://github.com/pulp-platform/apb_uart/) (v0.2.1)
 //!
-//! Some implementations of APB UART space registers with one byte offset but
-//! Atalanta uses 4 bytes as tends to be conventional.
-pub const UART_BASE: usize = 0x3000;
+pub const UART_BASE: usize = 0x3_3000;
 
 /// Receiver Buffer Register (RBR) / Transmitter Holding Register (THR) /
 /// Divisor Latch LSB (DLL)
