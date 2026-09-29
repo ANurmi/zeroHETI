@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v1.0.3] - 2026-09-29
+
 ### Changed
 - Interconnect topogoly simplified
 - Peripherals moved above memories in address mapping
