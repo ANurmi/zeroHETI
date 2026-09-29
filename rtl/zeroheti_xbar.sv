@@ -92,9 +92,8 @@ module zeroheti_xbar
   always_comb begin : demux_assign
     demux_sel = '0;
     unique case (demux_in_cut.addr) inside
-      [AddrMap.dbg.base : AddrMap.dbg.last - 1]:   demux_sel = 0;
+      [AddrMap.intc.base : AddrMap.intc.last - 1]: demux_sel = 0;
       [AddrMap.dmem.last : AddrMap.intc.base - 1]: demux_sel = 1;  // Peripherals
-      [AddrMap.intc.base : AddrMap.intc.last - 1]: demux_sel = 2;
       [AddrMap.mbx.base : AddrMap.mbx.last - 1]:   demux_sel = 3;
       [AddrMap.ext.base : AddrMap.ext.last - 1]:   demux_sel = 4;
       [AddrMap.rom.base : AddrMap.rom.last - 1]:   demux_sel = 5;
