@@ -39,7 +39,7 @@ package zeroheti_pkg;
   localparam core_cfg_t DefaultCfg = '{
       rve       : 1,
       bt_alu    : 1,
-      wb_stage  : 1,
+      wb_stage  : 0,
       mul       : ibex_pkg::RV32MSingleCycle,
       ic        : IntController,
       size_tg   : 16,
