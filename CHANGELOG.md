@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v1.0.4] - 2026-09-30
+
+### Changed
+- Disabled WB stage due to combo loop
+- Revert to dedicated APB port in core complex
+
 ## [v1.0.3] - 2026-09-29
 
 ### Changed
-- Interconnect topogoly simplified
+- Interconnect topology simplified
 - Peripherals moved above memories in address mapping
 
 ## [v1.0.2] - 2026-09-24
