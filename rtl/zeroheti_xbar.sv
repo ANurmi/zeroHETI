@@ -34,14 +34,14 @@ module zeroheti_xbar
   localparam obi_pkg::obi_cfg_t ObiCfg = obi_pkg::ObiDefaultConfig;
 
   localparam int unsigned NumMgr = 3;
-  localparam int unsigned NumSbr = 5;
-  localparam int unsigned NumDemux = 4;
+  localparam int unsigned NumSbr = 4;
+  localparam int unsigned NumDemux = 5;
   localparam int unsigned DemuxWidth = $clog2(NumDemux);
 
   localparam bit [NumMgr-1:0][NumSbr-1:0] Connectivity = '{
-      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1},  // data
-      '{1'b1, 1'b1, 1'b0, 1'b1, 1'b1},  // inst
-      '{1'b1, 1'b1, 1'b1, 1'b1, 1'b1}  // xbar_mgr
+      '{1'b1, 1'b1, 1'b1, 1'b1},  // data
+      '{1'b1, 1'b0, 1'b1, 1'b1},  // inst
+      '{1'b1, 1'b1, 1'b1, 1'b1}  // xbar_mgr
   };
 
   typedef struct packed {
@@ -54,8 +54,7 @@ module zeroheti_xbar
       rule_t'{idx: 0, start_addr: AddrMap.dbg.base, end_addr: AddrMap.dbg.last},
       rule_t'{idx: 1, start_addr: AddrMap.imem.base, end_addr: AddrMap.imem.last},
       rule_t'{idx: 2, start_addr: AddrMap.dmem.base, end_addr: AddrMap.dmem.last},
-      rule_t'{idx: 3, start_addr: AddrMap.dmem.last, end_addr: AddrMap.intc.base},
-      rule_t'{idx: 4, start_addr: AddrMap.dmem.last, end_addr: AddrMap.ext.last}
+      rule_t'{idx: 3, start_addr: AddrMap.dmem.last, end_addr: AddrMap.ext.last}
   };
 
   OBI_BUS sbr_ports[NumMgr] ();
@@ -94,9 +93,10 @@ module zeroheti_xbar
     demux_sel = '0;
     unique case (demux_in_cut.addr) inside
       [AddrMap.intc.base : AddrMap.intc.last - 1]: demux_sel = 0;
-      [AddrMap.mbx.base : AddrMap.mbx.last - 1]:   demux_sel = 1;
-      [AddrMap.ext.base : AddrMap.ext.last - 1]:   demux_sel = 2;
-      [AddrMap.rom.base : AddrMap.rom.last - 1]:   demux_sel = 3;
+      [AddrMap.dmem.last : AddrMap.intc.base - 1]: demux_sel = 1;  // Peripherals
+      [AddrMap.mbx.base : AddrMap.mbx.last - 1]:   demux_sel = 3;
+      [AddrMap.ext.base : AddrMap.ext.last - 1]:   demux_sel = 4;
+      [AddrMap.rom.base : AddrMap.rom.last - 1]:   demux_sel = 5;
       default:                                     ;
     endcase
   end : demux_assign
@@ -119,8 +119,7 @@ module zeroheti_xbar
   `OBI_ASSIGN(int_dbg, mgr_ports[0], ObiCfg, ObiCfg)
   `OBI_ASSIGN(int_imem, mgr_ports[1], ObiCfg, ObiCfg)
   `OBI_ASSIGN(int_dmem, mgr_ports[2], ObiCfg, ObiCfg)
-  `OBI_ASSIGN(per_bus, mgr_ports[3], ObiCfg, ObiCfg)
-  `OBI_ASSIGN(demux_in, mgr_ports[4], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(demux_in, mgr_ports[3], ObiCfg, ObiCfg)
 
   // Cut memory busses, assign to top-level ports
   `OBI_ASSIGN_CUT(int_imem)
@@ -134,10 +133,10 @@ module zeroheti_xbar
 
   // Assign demux ports
   `OBI_ASSIGN(intc_bus, demux_out[0], ObiCfg, ObiCfg)
-  `OBI_ASSIGN(mbx_bus, demux_out[1], ObiCfg, ObiCfg)
-  `OBI_ASSIGN(mgr_bus, demux_out[2], ObiCfg, ObiCfg)
-  `OBI_ASSIGN(rom_bus, demux_out[3], ObiCfg, ObiCfg)
-
+  `OBI_ASSIGN(per_bus, demux_out[1], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(mbx_bus, demux_out[2], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(mgr_bus, demux_out[3], ObiCfg, ObiCfg)
+  `OBI_ASSIGN(rom_bus, demux_out[4], ObiCfg, ObiCfg)
 
   zeroheti_pkg::obi_req_t [NumMgr-1:0] sbr_ports_req;
   zeroheti_pkg::obi_rsp_t [NumMgr-1:0] sbr_ports_rsp;
@@ -183,4 +182,3 @@ module zeroheti_xbar
   );
 
 endmodule : zeroheti_xbar
-
