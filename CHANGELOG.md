@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v1.0.6] - 2026-09-30
+
+### Added
+- (Untested) implementation for `obi_to_axi_lite_intf.sv`
+
 ## [v1.0.5] - 2026-09-30
 
 ### Changed
