@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v1.0.7] - 2026-10-05
+
+### Changed 
+- num_irqs value of MinCfg from 16 to 32 in zeroheti_pkg.sv, so that it matches min value required by ibex core.
+
 ## [v1.0.6] - 2026-09-30
 
 ### Added
