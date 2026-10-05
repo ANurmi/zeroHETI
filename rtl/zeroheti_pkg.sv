@@ -30,7 +30,7 @@ package zeroheti_pkg;
       mul       : ibex_pkg::RV32MNone,
       ic        : IntController,
       size_tg   : 4,
-      num_irqs  : 16,
+      num_irqs  : 32,
       num_prio  : 8,
       hart_id   : 0,
       boot_addr : BootAddr
