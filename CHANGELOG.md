@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v1.0.8] - 2026-10-08
+
+### Fixed
+- Bump timer queue version to fix FPGA latch
+
 ## [v1.0.7] - 2026-10-05
 
 ### Changed 
