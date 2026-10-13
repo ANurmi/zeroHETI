@@ -216,7 +216,7 @@ module zeroheti_core
   );
 
   obi_mb_sram_intf #(
-      .NrBanks (32'd16),
+      .NrBanks (zeroheti_pkg::ImemBanks),
       .BaseAddr(AddrMap.imem.base),
       .NumWords(zeroheti_pkg::ImemWSize)
   ) i_imem (
@@ -226,7 +226,7 @@ module zeroheti_core
   );
 
   obi_mb_sram_intf #(
-      .NrBanks (32'd8),
+      .NrBanks (zeroheti_pkg::DmemBanks),
       .BaseAddr(AddrMap.dmem.base),
       .NumWords(zeroheti_pkg::DmemWSize)
   ) i_dmem (

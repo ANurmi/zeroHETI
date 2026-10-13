@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v1.0.9] - 2026-10-13
+
+### Added
+- Expose number of IMEM and DMEM banks as compile-time configuration
+
 ## [v1.0.8] - 2026-10-08
 
 ### Fixed
