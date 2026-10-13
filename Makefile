@@ -5,8 +5,7 @@ RISCOF ?= $(shell bender path riscof_verilator)
 .PHONY: ips elf vlint verilate simv riscof_build riscof_run fpga clean_build clean_ips clean_all
 
 ips:
-	bender update
-	bender vendor init
+	bender checkout
 
 elf:
 	@$(MAKE) -C $(SW_DIR) elf --no-print-directory

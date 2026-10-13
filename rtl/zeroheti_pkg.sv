@@ -100,6 +100,9 @@ package zeroheti_pkg;
   // dmem size in words
   localparam int unsigned DmemWSize = DmemSize / 4;
 
+  localparam int unsigned ImemBanks = `IMEM_NR_BANKS;
+  localparam int unsigned DmemBanks = `DMEM_NR_BANKS;
+
   localparam addr_map_t AddrMap = '{
       dbg    : DbgAddr,
       imem   : ImemAddr,
