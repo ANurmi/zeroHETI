@@ -106,7 +106,7 @@ module obi_mb_sram_intf #(
         .NumPorts (NumPorts),
         .Latency  (Latency),
         .SimInit  (SimInit),
-        .ImplKey  ("zeroheti_lp_sram_v0")
+        .ImplKey  ("zeroheti_hp_sram_v0")
     ) i_sram (
         .clk_i,
         .rst_ni,
