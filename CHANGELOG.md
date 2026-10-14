@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Tieoffs for `ar_prot` and `aw_prot`
+
 ## [v1.0.9] - 2026-10-13
 
 ### Added
