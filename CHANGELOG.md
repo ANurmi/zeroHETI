@@ -7,8 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v1.0.10] - 2026-10-14
+
 ### Added
-- Tieoffs for `ar_prot` and `aw_prot`
+- Tieoffs for numerous undriven signals
+
+### Fixed
+- Genus elaboration fatal report
+
+### Changed
+- Technology memory implementation key
+- Bump tq dependency
 
 ## [v1.0.9] - 2026-10-13
 
