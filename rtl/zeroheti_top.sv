@@ -377,6 +377,7 @@ module zeroheti_top #(
   assign obi_sbr.addr        = '0;
   assign obi_sbr.req         = 1'b0;
   assign obi_sbr.rready      = 1'b0;
+  assign obi_sbr.rreadypar   = 1'b0;
   assign obi_sbr.wdata       = '0;
   assign obi_sbr.be          = '0;
   assign obi_sbr.we          = 1'b0;
