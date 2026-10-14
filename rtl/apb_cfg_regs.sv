@@ -24,7 +24,7 @@ module apb_cfg_regs #(
 
   // General-purpose register bank
   // Useful as white-box simulation hook
-  logic [4:0][31:0] gpreg_d, gpreg_q;
+  logic [7:0][31:0] gpreg_d, gpreg_q;
 
   logic mtime_en_d, mtime_en_q;
   assign intc_mtime_en_o = mtime_en_q;
@@ -60,6 +60,9 @@ module apb_cfg_regs #(
           12'h108: gpreg_d[2] = apb_i.pwdata;
           12'h10C: gpreg_d[3] = apb_i.pwdata;
           12'h110: gpreg_d[4] = apb_i.pwdata;
+          12'h114: gpreg_d[5] = apb_i.pwdata;
+          12'h118: gpreg_d[6] = apb_i.pwdata;
+          12'h11C: gpreg_d[7] = apb_i.pwdata;
           default: ;
         endcase
       end else begin
@@ -72,13 +75,15 @@ module apb_cfg_regs #(
           12'h108: apb_i.prdata = gpreg_q[2];
           12'h10C: apb_i.prdata = gpreg_q[3];
           12'h110: apb_i.prdata = gpreg_q[4];
+          12'h114: apb_i.prdata = gpreg_q[5];
+          12'h118: apb_i.prdata = gpreg_q[6];
+          12'h11C: apb_i.prdata = gpreg_q[7];
           default: ;
         endcase
       end
     end
   end
 
-  //assign apb_i.prdata  = short_hash;
   assign apb_i.pready  = apb_i.psel & apb_i.penable;
   assign apb_i.pslverr = 1'b0;
 
