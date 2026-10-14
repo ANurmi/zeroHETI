@@ -112,9 +112,6 @@ module zeroheti_xbar
       .sbr_port(demux_in_cut)
   );
 
-  // Hacky: fix x-propagation
-  assign mux_out_cut.aid = 1'b0;
-
   `OBI_ASSIGN(sbr_ports[0], mux_out_cut, ObiCfg, ObiCfg)
   `OBI_ASSIGN(sbr_ports[1], inst_bus, ObiCfg, ObiCfg)
   `OBI_ASSIGN(sbr_ports[2], data_bus, ObiCfg, ObiCfg)

@@ -14,6 +14,7 @@ module obi_connection #(
 
   if (Cut) begin : g_cut
     typedef struct packed {
+      logic        aid;
       logic [31:0] addr;
       logic        we;
       logic [3:0]  be;
@@ -29,11 +30,13 @@ module obi_connection #(
     a_chan_t a_mgr, a_sbr;
     r_chan_t r_mgr, r_sbr;
 
+    assign a_sbr.aid   = obi_s.aid;
     assign a_sbr.addr  = obi_s.addr;
     assign a_sbr.we    = obi_s.we;
     assign a_sbr.be    = obi_s.be;
     assign a_sbr.wdata = obi_s.wdata;
 
+    assign obi_m.aid   = a_mgr.aid;
     assign obi_m.addr  = a_mgr.addr;
     assign obi_m.we    = a_mgr.we;
     assign obi_m.be    = a_mgr.be;
