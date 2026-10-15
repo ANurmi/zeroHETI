@@ -13,6 +13,7 @@ package zeroheti_pkg;
     bit rve;
     bit bt_alu;
     bit wb_stage;
+    bit mem_lp;
     ibex_pkg::rv32m_e mul;
     int_ctrl_e ic;
     int unsigned size_tg;
@@ -27,6 +28,7 @@ package zeroheti_pkg;
       rve       : 1,
       bt_alu    : 0,
       wb_stage  : 0,
+      mem_lp    : 1,
       mul       : ibex_pkg::RV32MNone,
       ic        : IntController,
       size_tg   : 4,
@@ -40,6 +42,7 @@ package zeroheti_pkg;
       rve       : 1,
       bt_alu    : 1,
       wb_stage  : 0,
+      mem_lp    : 0,
       mul       : ibex_pkg::RV32MSingleCycle,
       ic        : IntController,
       size_tg   : 16,
