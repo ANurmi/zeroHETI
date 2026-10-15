@@ -218,6 +218,7 @@ module zeroheti_core
   obi_mb_sram_intf #(
       .NrBanks (zeroheti_pkg::ImemBanks),
       .BaseAddr(AddrMap.imem.base),
+      .UseLpMacro(Cfg.mem_lp),
       .NumWords(zeroheti_pkg::ImemWSize)
   ) i_imem (
       .clk_i,
@@ -228,6 +229,7 @@ module zeroheti_core
   obi_mb_sram_intf #(
       .NrBanks (zeroheti_pkg::DmemBanks),
       .BaseAddr(AddrMap.dmem.base),
+      .UseLpMacro(Cfg.mem_lp),
       .NumWords(zeroheti_pkg::DmemWSize)
   ) i_dmem (
       .clk_i,
