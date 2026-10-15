@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [v1.0.11] - 2026-10-15
 
+### Added
+- IMPL_KEY define to set memory macros
+
 ### Changed
 - Bump RT-Ibex version to fix undriven ALU operands
 
