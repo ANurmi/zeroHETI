@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v1.0.11] - 2026-10-15
+
+### Changed
+- Bump RT-Ibex version to fix undriven ALU operands
+
 ## [v1.0.10] - 2026-10-14
 
 ### Added
