@@ -38,6 +38,7 @@ CFG              = Default
 
 VDEFS ?= \
   +define+VERILATOR=1 \
+	+define+PKG=zeroheti_pkg \
 	+define+GIT_HASH=$(GIT_HASH) \
 	+define+ZH_ROOT=$(ZH_ROOT) \
 	+define+JTAG_IDCODE=$(JTAG_IDCODE) \

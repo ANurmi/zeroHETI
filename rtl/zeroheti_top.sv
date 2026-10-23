@@ -1,6 +1,6 @@
 module zeroheti_top #(
-    parameter zeroheti_pkg::core_cfg_t CoreCfg = zeroheti_pkg::`CORE_CFG,
-    parameter zeroheti_pkg::addr_map_t AddrMap = zeroheti_pkg::AddrMap,
+    parameter `PKG::core_cfg_t CoreCfg = `PKG::`CORE_CFG,
+    parameter `PKG::addr_map_t AddrMap = `PKG::AddrMap,
     parameter int unsigned AxiUserWidth = 0,
     localparam int unsigned NumIntIrqs = 64,
     localparam int unsigned NumExtIrqs = CoreCfg.num_irqs - NumIntIrqs

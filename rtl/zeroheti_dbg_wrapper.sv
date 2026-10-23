@@ -1,5 +1,5 @@
 module zeroheti_dbg_wrapper
-  import zeroheti_pkg::*;
+  import `PKG::*;
 #(
 ) (
     input  logic               clk_i,

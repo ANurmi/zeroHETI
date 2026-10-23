@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- Bind package references to "PKG" define
+
 ## [v1.0.11] - 2026-10-15
 
 ### Added
