@@ -1,5 +1,5 @@
 module zeroheti_int_ctrl #(
-    parameter zeroheti_pkg::core_cfg_t CoreCfg = zeroheti_pkg::DefaultCfg,
+    parameter `PKG::core_cfg_t CoreCfg = `PKG::DefaultCfg,
     localparam int unsigned NrIrqs = CoreCfg.num_irqs,
     parameter int unsigned TsWidth = 12,
     localparam int unsigned IrqWidth = $clog2(CoreCfg.num_irqs),
@@ -22,7 +22,7 @@ module zeroheti_int_ctrl #(
            OBI_BUS.Subordinate                 obi_sbr
 );
 
-  if (CoreCfg.ic == zeroheti_pkg::EDFIC) begin : g_edfic
+  if (CoreCfg.ic == `PKG::EDFIC) begin : g_edfic
 
     logic [TsWidth-1:0] deadline;
     logic [7:0] dl_slice;
@@ -77,7 +77,7 @@ module zeroheti_int_ctrl #(
     // EDFIC always uses selective hardware vectoring
     assign irq_shv_o  = 1'b1;
 
-  end else if (CoreCfg.ic == zeroheti_pkg::CLIC) begin : g_clic
+  end else if (CoreCfg.ic == `PKG::CLIC) begin : g_clic
 
     logic [7:0] irq_level;
     logic kill;

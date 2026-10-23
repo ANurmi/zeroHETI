@@ -13,7 +13,7 @@
 
 
 module zeroheti_xbar
-  import zeroheti_pkg::AddrMap;
+  import `PKG::AddrMap;
 #(
 ) (
     input logic               clk_i,
@@ -138,11 +138,11 @@ module zeroheti_xbar
   `OBI_ASSIGN(mgr_bus, demux_out[3], ObiCfg, ObiCfg)
   `OBI_ASSIGN(rom_bus, demux_out[4], ObiCfg, ObiCfg)
 
-  zeroheti_pkg::obi_req_t [NumMgr-1:0] sbr_ports_req;
-  zeroheti_pkg::obi_rsp_t [NumMgr-1:0] sbr_ports_rsp;
+  `PKG::obi_req_t [NumMgr-1:0] sbr_ports_req;
+  `PKG::obi_rsp_t [NumMgr-1:0] sbr_ports_rsp;
 
-  zeroheti_pkg::obi_req_t [NumSbr-1:0] mgr_ports_req;
-  zeroheti_pkg::obi_rsp_t [NumSbr-1:0] mgr_ports_rsp;
+  `PKG::obi_req_t [NumSbr-1:0] mgr_ports_req;
+  `PKG::obi_rsp_t [NumSbr-1:0] mgr_ports_rsp;
 
   for (genvar i = 0; i < NumMgr; i++) begin : gen_sbr_ports_assign
     `OBI_ASSIGN_TO_REQ(sbr_ports_req[i], sbr_ports[i], ObiCfg)
@@ -155,12 +155,12 @@ module zeroheti_xbar
   end
 
   obi_xbar #(
-      .sbr_port_obi_req_t(zeroheti_pkg::obi_req_t),
-      .sbr_port_a_chan_t (zeroheti_pkg::obi_a_chan_t),
-      .sbr_port_obi_rsp_t(zeroheti_pkg::obi_rsp_t),
-      .sbr_port_r_chan_t (zeroheti_pkg::obi_r_chan_t),
-      .mgr_port_obi_req_t(zeroheti_pkg::obi_req_t),
-      .mgr_port_obi_rsp_t(zeroheti_pkg::obi_rsp_t),
+      .sbr_port_obi_req_t(`PKG::obi_req_t),
+      .sbr_port_a_chan_t (`PKG::obi_a_chan_t),
+      .sbr_port_obi_rsp_t(`PKG::obi_rsp_t),
+      .sbr_port_r_chan_t (`PKG::obi_r_chan_t),
+      .mgr_port_obi_req_t(`PKG::obi_req_t),
+      .mgr_port_obi_rsp_t(`PKG::obi_rsp_t),
       .NumSbrPorts       (NumMgr),
       .NumMgrPorts       (NumSbr),
       .NumMaxTrans       (32'd1),

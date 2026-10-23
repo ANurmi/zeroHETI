@@ -1,7 +1,7 @@
 module zeroheti_core
-  import zeroheti_pkg::*;
+  import `PKG::*;
 #(
-    parameter zeroheti_pkg::core_cfg_t Cfg = zeroheti_pkg::DefaultCfg,
+    parameter `PKG::core_cfg_t Cfg = `PKG::DefaultCfg,
     localparam int unsigned IrqWidth = $clog2(Cfg.num_irqs),
     localparam int unsigned TsWidth = 9,
     localparam int unsigned PrioWidth = 8
@@ -126,7 +126,7 @@ module zeroheti_core
       .DbgTriggerEn    (0),
       .DmHaltAddr      (32'(dm::HaltAddress)),
       .DmExceptionAddr (32'(dm::ExceptionAddress)),
-      .MClicBaseAddr   (zeroheti_pkg::AddrMap.intc.base),
+      .MClicBaseAddr   (`PKG::AddrMap.intc.base),
       .BranchTargetALU (Cfg.bt_alu)
   ) i_rt_ibex (
       .clk_i,
@@ -216,10 +216,10 @@ module zeroheti_core
   );
 
   obi_mb_sram_intf #(
-      .NrBanks (zeroheti_pkg::ImemBanks),
+      .NrBanks (`PKG::ImemBanks),
       .BaseAddr(AddrMap.imem.base),
       .UseLpMacro(Cfg.mem_lp),
-      .NumWords(zeroheti_pkg::ImemWSize)
+      .NumWords(`PKG::ImemWSize)
   ) i_imem (
       .clk_i,
       .rst_ni,
@@ -227,10 +227,10 @@ module zeroheti_core
   );
 
   obi_mb_sram_intf #(
-      .NrBanks (zeroheti_pkg::DmemBanks),
+      .NrBanks (`PKG::DmemBanks),
       .BaseAddr(AddrMap.dmem.base),
       .UseLpMacro(Cfg.mem_lp),
-      .NumWords(zeroheti_pkg::DmemWSize)
+      .NumWords(`PKG::DmemWSize)
   ) i_dmem (
       .clk_i,
       .rst_ni,
