@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Register file type definition to core_cfg options
+
 ### Changed
 - Bind package references to "PKG" define
 
