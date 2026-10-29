@@ -7,12 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [v1.0.12] - 2026-10-29
+## [v1.1.0] - 2026-10-29
 ### Added
 - Register file type definition to core_cfg options
 
 ### Changed
 - Bind package references to "PKG" define
+
+### Removed
+- INTC top-level define, bound to package-defined core configs
 
 ## [v1.0.11] - 2026-10-15
 
