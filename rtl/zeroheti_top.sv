@@ -12,6 +12,7 @@ module zeroheti_top #(
     input  logic                  jtag_trst_ni,
     input  logic                  jtag_td_i,
     output logic                  jtag_td_o,
+    input  logic [          31:0] boot_addr_i,
     input  logic [NumExtIrqs-1:0] ext_irq_i,
     input  logic [          31:0] sbr_axil_aw_addr_i,
     input  logic [           2:0] sbr_axil_aw_prot_i,
@@ -132,6 +133,7 @@ module zeroheti_top #(
       .rst_ni,
       .testmode_i     (1'b0),
       .mtime_i        (mtime),
+      .boot_addr_i,
       .jtag_tck_i,
       .jtag_tms_i,
       .jtag_trst_ni,
@@ -276,7 +278,9 @@ module zeroheti_top #(
       .sda_padoen_o(i2c_sda_padoen_o[1])
   );
 
-  apb_cfg_regs #() i_cfg_regs (
+  apb_cfg_regs #(
+      .Cfg(CoreCfg)
+  ) i_cfg_regs (
       .clk_i,
       .rst_ni,
       .intc_mtime_en_o(intc_mtime_en),

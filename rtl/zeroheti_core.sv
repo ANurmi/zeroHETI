@@ -9,6 +9,7 @@ module zeroheti_core
     input  logic                         clk_i,
     input  logic                         rst_ni,
     input  logic                         testmode_i,
+    input  logic                  [31:0] boot_addr_i,
     input  logic      [            63:0] mtime_i,
     input  logic                         jtag_tck_i,
     input  logic                         jtag_tms_i,
@@ -135,7 +136,7 @@ module zeroheti_core
       .ram_cfg_i  (10'b0),
       .hart_id_i  (Cfg.hart_id),
       .test_en_i  (testmode_i),
-      .boot_addr_i(Cfg.boot_addr),
+      .boot_addr_i(boot_addr_i),
 
       .instr_req_o       (inst_bus.req),
       .instr_addr_o      (inst_bus.addr),

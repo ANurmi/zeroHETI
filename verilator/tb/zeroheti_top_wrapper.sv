@@ -41,7 +41,7 @@ module zeroheti_top_wrapper #(
       .scl_o     (i2c_scl_vip_dut),
       .uart_rx_i (uart_dut_tx),
       .uart_tx_o (uart_dut_rx),
-      .i2c_irq_o (),         /* idx 26-29*/
+      .i2c_irq_o (),                 /* idx 26-29*/
       .aw_addr_o (aw_addr),
       .aw_valid_o(aw_valid),
       .aw_ready_i(aw_ready),
@@ -71,6 +71,7 @@ module zeroheti_top_wrapper #(
       .jtag_trst_ni,
       .jtag_td_i,
       .jtag_td_o,
+      .boot_addr_i        (zeroheti_pkg::BootAddr),
       .uart_rx_i          (uart_dut_rx),
       .uart_tx_o          (uart_dut_tx),
       .sbr_axil_aw_addr_i (aw_addr),
@@ -118,11 +119,11 @@ module zeroheti_top_wrapper #(
       .i2c_sda_padoen_o   (i2c_sda_dut_vip),
       .i2c_sda_pad_o      (  /*NC*/),
       .i2c_sda_pad_i      (i2c_sda_vip_dut),
-      .spi_clk_o (),
-      .spi_mode_o (),
-      .spi_csn_o (),
-      .spi_sdo_o (),
-      .spi_sdi_i ()
+      .spi_clk_o          (),
+      .spi_mode_o         (),
+      .spi_csn_o          (),
+      .spi_sdo_o          (),
+      .spi_sdi_i          ()
   );
 
 endmodule : zeroheti_top_wrapper

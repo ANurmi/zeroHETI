@@ -7,21 +7,17 @@ package zeroheti_pkg;
     EDFIC = 2
   } int_ctrl_e;
 
-  localparam int_ctrl_e IntController = `INTC;
-
   typedef struct packed {
     bit rve;
     bit bt_alu;
     bit wb_stage;
     bit mem_lp;
     ibex_pkg::rv32m_e mul;
-    ibex_pkg::regfile_e rf;
     int_ctrl_e ic;
     int unsigned size_tg;
     int unsigned num_irqs;
     int unsigned num_prio;
     int unsigned hart_id;
-    logic [31:0] boot_addr;
   } core_cfg_t;
 
 
@@ -31,13 +27,11 @@ package zeroheti_pkg;
       wb_stage  : 0,
       mem_lp    : 1,
       mul       : ibex_pkg::RV32MNone,
-      rf        : ibex_pkg::RegFileFF,
-      ic        : IntController,
+      ic        : CLIC,
       size_tg   : 4,
       num_irqs  : 32,
       num_prio  : 8,
-      hart_id   : 0,
-      boot_addr : BootAddr
+      hart_id   : 0
   };
 
   localparam core_cfg_t DefaultCfg = '{
@@ -46,13 +40,11 @@ package zeroheti_pkg;
       wb_stage  : 0,
       mem_lp    : 0,
       mul       : ibex_pkg::RV32MSingleCycle,
-      rf        : ibex_pkg::RegFileFF,
-      ic        : IntController,
+      ic        : EDFIC,
       size_tg   : 16,
       num_irqs  : 128,
       num_prio  : 128,
-      hart_id   : 0,
-      boot_addr : BootAddr
+      hart_id   : 0
   };
 
   typedef struct packed {

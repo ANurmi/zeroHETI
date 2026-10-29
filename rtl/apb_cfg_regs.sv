@@ -1,4 +1,5 @@
 module apb_cfg_regs #(
+    parameter `PKG::core_cfg_t Cfg = `PKG::DefaultCfg
 ) (
     input logic clk_i,
     input logic rst_ni,
@@ -8,7 +9,7 @@ module apb_cfg_regs #(
   // Bake in Git version information into HW
   localparam logic [31:0] ShortHash = 32'h`GIT_HASH;
   // Static platform configuration visible to SW
-  localparam logic IntcEdfic = (`PKG::`INTC == `PKG::EDFIC);
+  localparam logic IntcEdfic = (Cfg.ic == `PKG::EDFIC);
   localparam logic [7:0] ImemPow2 = 8'($clog2(`IMEM_BYTES));
   localparam logic [7:0] DmemPow2 = 8'($clog2(`DMEM_BYTES));
 `ifndef FULL_UART
