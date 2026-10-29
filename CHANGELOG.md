@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v1.0.12] - 2026-10-29
 ### Added
 - Register file type definition to core_cfg options
 
