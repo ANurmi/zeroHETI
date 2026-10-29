@@ -47,6 +47,32 @@ package zeroheti_pkg;
       hart_id   : 0
   };
 
+  localparam core_cfg_t CLICCfg = '{
+      rve       : 1,
+      bt_alu    : 1,
+      wb_stage  : 0,
+      mem_lp    : 0,
+      mul       : ibex_pkg::RV32MSingleCycle,
+      ic        : CLIC,
+      size_tg   : 16,
+      num_irqs  : 128,
+      num_prio  : 128,
+      hart_id   : 0
+  };
+
+  localparam core_cfg_t EDFICCfg = '{
+      rve       : 1,
+      bt_alu    : 1,
+      wb_stage  : 0,
+      mem_lp    : 0,
+      mul       : ibex_pkg::RV32MSingleCycle,
+      ic        : EDFIC,
+      size_tg   : 16,
+      num_irqs  : 128,
+      num_prio  : 128,
+      hart_id   : 0
+  };
+
   typedef struct packed {
     logic [31:0] base;
     logic [31:0] last;

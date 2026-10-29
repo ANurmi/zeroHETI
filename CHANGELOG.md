@@ -13,9 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Bind package references to "PKG" define
-
-### Removed
-- INTC top-level define, bound to package-defined core configs
+- INTC top-level define effectively replaced with CFG
 
 ## [v1.0.11] - 2026-10-15
 

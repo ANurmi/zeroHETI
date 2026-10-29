@@ -51,7 +51,7 @@ jobs:
       - name: Build hardware (CLIC)
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          make verilate INTC=CLIC
+          make verilate CFG=CLIC
 
       - name: Build examples (CLIC)
         run: |

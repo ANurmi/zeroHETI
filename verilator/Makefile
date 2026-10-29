@@ -46,7 +46,6 @@ VDEFS ?= \
 	+define+DMEM_BYTES=$(DMEM_BYTES) \
 	+define+IMEM_NR_BANKS=$(DC_NR_I_BANKS) \
 	+define+DMEM_NR_BANKS=$(DC_NR_D_BANKS) \
-	+define+INTC=$(INTC) \
 	+define+LOAD=$(LOAD) \
   +define+COMMON_CELLS_ASSERTS_OFF \
 	+define+CORE_CFG=$(CFG)Cfg \
