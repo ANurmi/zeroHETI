@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Refactor configuration selection to use parameters instead of macros
 
+### Fixed
+- Hardcoded JTAG IDCODE value
+
 ## [v1.1.0] - 2026-10-29
 ### Added
 - Register file type definition to core_cfg options

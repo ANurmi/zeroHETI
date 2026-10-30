@@ -201,7 +201,9 @@ module zeroheti_core
   assign data_bus.aid    = 1'b0;
   assign data_bus.a_optional = 1'b0;
 
-  zeroheti_dbg_wrapper #() i_debug (
+  zeroheti_dbg_wrapper #(
+    .Cfg (Cfg)
+  ) i_debug (
       .clk_i,
       .rst_ni,
       .testmode_i,
