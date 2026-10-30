@@ -100,26 +100,45 @@ module obi_mb_sram_intf #(
 
     end
 
-    `define STRINGIFY(x) `"x`"
-
-    tc_sram #(
-        .NumWords (WordsBank),
-        .DataWidth(DataWidth),
-        .ByteWidth(ByteWidth),
-        .NumPorts (NumPorts),
-        .Latency  (Latency),
-        .SimInit  (SimInit),
-        .ImplKey  (`STRINGIFY(`IMPL_KEY))
-    ) i_sram (
-        .clk_i,
-        .rst_ni,
-        .req_i  (req_mux[i]),
-        .we_i   (we_mux[i]),
-        .be_i   (sbr.be),
-        .addr_i (sram_addr),
-        .wdata_i(sbr.wdata),
-        .rdata_o(rdata_mux[i])
-    );
+    if (UseLpMacro) begin : g_lp_mem
+      tc_sram #(
+          .NumWords (WordsBank),
+          .DataWidth(DataWidth),
+          .ByteWidth(ByteWidth),
+          .NumPorts (NumPorts),
+          .Latency  (Latency),
+          .SimInit  (SimInit),
+          .ImplKey  ("zeroheti_lp_sram_v0")
+      ) i_lp_sram (
+          .clk_i,
+          .rst_ni,
+          .req_i  (req_mux[i]),
+          .we_i   (we_mux[i]),
+          .be_i   (sbr.be),
+          .addr_i (sram_addr),
+          .wdata_i(sbr.wdata),
+          .rdata_o(rdata_mux[i])
+      );
+    end else begin : g_hp_mem
+      tc_sram #(
+          .NumWords (WordsBank),
+          .DataWidth(DataWidth),
+          .ByteWidth(ByteWidth),
+          .NumPorts (NumPorts),
+          .Latency  (Latency),
+          .SimInit  (SimInit),
+          .ImplKey  ("zeroheti_hp_sram_v0")
+      ) i_hp_sram (
+          .clk_i,
+          .rst_ni,
+          .req_i  (req_mux[i]),
+          .we_i   (we_mux[i]),
+          .be_i   (sbr.be),
+          .addr_i (sram_addr),
+          .wdata_i(sbr.wdata),
+          .rdata_o(rdata_mux[i])
+      );
+    end
 
   end
 
