@@ -5,21 +5,21 @@ module zeroheti_int_ctrl #(
     localparam int unsigned IrqWidth = $clog2(Cfg.irq.num_src),
     localparam int unsigned PrioWidth = 8
 ) (
-    input  logic                               clk_i,
-    input  logic                               rst_ni,
-    input  logic               [   NrIrqs-1:0] ext_irqs_i,
-    output logic                               irq_valid_o,
-    input  logic               [         63:0] mtime_i,
-    input  logic                               mtime_en_i,
-    output logic               [ IrqWidth-1:0] irq_id_o,
-    input  logic               [ IrqWidth-1:0] irq_id_i,
-    input  logic                               irq_ack_i,
-    output logic                               irq_nest_o,
-    output logic                               irq_heti_o,
-    output logic               [PrioWidth-1:0] irq_level_o,
-    output logic               [          1:0] irq_priv_o,
-    output logic                               irq_shv_o,
-           OBI_BUS.Subordinate                 obi_sbr
+    input  logic                     clk_i,
+    input  logic                     rst_ni,
+    input  logic     [   NrIrqs-1:0] ext_irqs_i,
+    output logic                     irq_valid_o,
+    input  logic     [         63:0] mtime_i,
+    input  logic                     mtime_en_i,
+    output logic     [ IrqWidth-1:0] irq_id_o,
+    input  logic     [ IrqWidth-1:0] irq_id_i,
+    input  logic                     irq_ack_i,
+    output logic                     irq_nest_o,
+    output logic                     irq_heti_o,
+    output logic     [PrioWidth-1:0] irq_level_o,
+    output logic     [          1:0] irq_priv_o,
+    output logic                     irq_shv_o,
+           APB.Slave                 apb_sbr
 );
 
   if (Cfg.irq.intc == zeroheti_pkg::EDFIC) begin : g_edfic
@@ -40,17 +40,8 @@ module zeroheti_int_ctrl #(
     assign irq_heti_o = 1'b0;
     assign irq_nest_o = 1'b0;
 
-    APB ic_apb ();
-
-    obi_to_apb_intf i_obi_to_apb (
-        .clk_i,
-        .rst_ni,
-        .obi_i(obi_sbr),
-        .apb_o(ic_apb)
-    );
-
-    assign ic_apb.pready  = ic_apb.psel & ic_apb.penable;
-    assign ic_apb.pslverr = 1'b0;
+    assign apb_sbr.pready = apb_sbr.psel & apb_sbr.penable;
+    assign apb_sbr.pslverr = 1'b0;
 
     edfic_top #(
         .NrIrqs (NrIrqs),
@@ -59,11 +50,11 @@ module zeroheti_int_ctrl #(
     ) i_edfic (
         .clk_i,
         .rst_ni,
-        .cfg_req_i  (ic_apb.psel & ic_apb.penable),
-        .cfg_we_i   (ic_apb.pwrite),
-        .cfg_addr_i (ic_apb.paddr),
-        .cfg_wdata_i(ic_apb.pwdata),
-        .cfg_rdata_o(ic_apb.prdata),
+        .cfg_req_i  (apb_sbr.psel & apb_sbr.penable),
+        .cfg_we_i   (apb_sbr.pwrite),
+        .cfg_addr_i (apb_sbr.paddr),
+        .cfg_wdata_i(apb_sbr.pwdata),
+        .cfg_rdata_o(apb_sbr.prdata),
         .irq_i      (ext_irqs_i),
         .irq_id_o,
         .irq_id_i,
@@ -83,29 +74,20 @@ module zeroheti_int_ctrl #(
     logic kill;
     assign irq_level_o = irq_level;  /*irq_level[IrqWidth-1:0];*/
 
-    APB ic_apb ();
-
-    obi_to_apb_intf i_obi_to_apb (
-        .clk_i,
-        .rst_ni,
-        .obi_i(obi_sbr),
-        .apb_o(ic_apb)
-    );
-
     clic_apb #(
         .N_SOURCE(NrIrqs)
     ) i_clic (
         .clk_i,
         .rst_ni,
         .intr_src_i    (ext_irqs_i),
-        .penable_i     (ic_apb.penable),
-        .pwrite_i      (ic_apb.pwrite),
-        .paddr_i       (ic_apb.paddr),
-        .psel_i        (ic_apb.psel),
-        .prdata_o      (ic_apb.prdata),
-        .pready_o      (ic_apb.pready),
-        .pslverr_o     (ic_apb.pslverr),
-        .pwdata_i      (ic_apb.pwdata),
+        .penable_i     (apb_sbr.penable),
+        .pwrite_i      (apb_sbr.pwrite),
+        .paddr_i       (apb_sbr.paddr),
+        .psel_i        (apb_sbr.psel),
+        .prdata_o      (apb_sbr.prdata),
+        .pready_o      (apb_sbr.pready),
+        .pslverr_o     (apb_sbr.pslverr),
+        .pwdata_i      (apb_sbr.pwdata),
         .irq_priv_o,
         .irq_shv_o,
         .irq_id_o,
@@ -116,6 +98,6 @@ module zeroheti_int_ctrl #(
         .irq_kill_req_o(kill)
     );
 
-  end else $fatal(1, "INTC not defined!");
+  end
 
 endmodule : zeroheti_int_ctrl

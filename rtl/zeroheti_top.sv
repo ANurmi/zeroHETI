@@ -140,22 +140,11 @@ module zeroheti_top #(
       .jtag_td_o,
       .intc_mtime_en_i(intc_mtime_en),
       .ext_irqs_i     (all_irqs),
-      .obi_mgr        (obi_mgr),
-      .mbx_mgr        (mbx_mgr),
-      .apb_mgr        (apb_mgr),
-      .obi_sbr        (obi_sbr)
+      .ext_mgr        (),
+      .ext_sbr        (axi_sbr)
   );
 
-  obi_to_axi_lite_intf #(
-      .AxiAddrWidth(32'd32),
-      .AxiDataWidth(32'd32),
-      .AxiUserWidth(AxiUserWidth)
-  ) i_obi_to_axi (
-      .clk_i,
-      .rst_ni,
-      .obi_sbr(obi_mgr),
-      .axi_mgr(axi_mgr)
-  );
+  /*
 
   obi_mbx i_mbx (
       .clk_i,
@@ -164,7 +153,7 @@ module zeroheti_top #(
       .obi_sbr (mbx_mgr),
       .axil_sbr(axi_sbr)
   );
-
+*/
   localparam zeroheti_pkg::addr_map_t AddrMap = Cfg.am;
 
   // Depends on configuration, resolve here
@@ -416,32 +405,31 @@ module zeroheti_top #(
 
       // Preload 8 IMEM banks
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_0.hex"},
-                  i_core.i_imem.g_banks[0].g_hp_mem.i_hp_sram.sram);
+                  i_core.i_imem.g_banks[0].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_1.hex"},
-                  i_core.i_imem.g_banks[1].g_hp_mem.i_hp_sram.sram);
+                  i_core.i_imem.g_banks[1].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_2.hex"},
-                  i_core.i_imem.g_banks[2].g_hp_mem.i_hp_sram.sram);
+                  i_core.i_imem.g_banks[2].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_3.hex"},
-                  i_core.i_imem.g_banks[3].g_hp_mem.i_hp_sram.sram);
+                  i_core.i_imem.g_banks[3].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_4.hex"},
-                  i_core.i_imem.g_banks[4].g_hp_mem.i_hp_sram.sram);
+                  i_core.i_imem.g_banks[4].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_5.hex"},
-                  i_core.i_imem.g_banks[5].g_hp_mem.i_hp_sram.sram);
+                  i_core.i_imem.g_banks[5].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_6.hex"},
-                  i_core.i_imem.g_banks[6].g_hp_mem.i_hp_sram.sram);
+                  i_core.i_imem.g_banks[6].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_7.hex"},
-                  i_core.i_imem.g_banks[7].g_hp_mem.i_hp_sram.sram);
+                  i_core.i_imem.g_banks[7].i_sram.sram);
 
       // Preload 4 DMEM banks
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_0.hex"},
-                  i_core.i_dmem.g_banks[0].g_hp_mem.i_hp_sram.sram);
+                  i_core.i_dmem.g_banks[0].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_1.hex"},
-                  i_core.i_dmem.g_banks[1].g_hp_mem.i_hp_sram.sram);
+                  i_core.i_dmem.g_banks[1].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_2.hex"},
-                  i_core.i_dmem.g_banks[2].g_hp_mem.i_hp_sram.sram);
+                  i_core.i_dmem.g_banks[2].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_3.hex"},
-                  i_core.i_dmem.g_banks[3].g_hp_mem.i_hp_sram.sram);
-
+                  i_core.i_dmem.g_banks[3].i_sram.sram);
     end
   end
 
