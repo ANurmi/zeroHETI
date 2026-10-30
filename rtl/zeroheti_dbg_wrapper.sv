@@ -1,27 +1,46 @@
 module zeroheti_dbg_wrapper #(
     parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CpssCfg
 ) (
-    input  logic               clk_i,
-    input  logic               rst_ni,
-    input  logic               testmode_i,
-    input  logic               jtag_tck_i,
-    input  logic               jtag_tms_i,
-    input  logic               jtag_trst_ni,
-    input  logic               jtag_td_i,
-    output logic               jtag_td_o,
-    output logic               ndmreset_o,
-    output logic               debug_req_o,
-           OBI_BUS.Subordinate mem_sbr,
-           OBI_BUS.Manager     sba_mgr
+    input  logic                clk_i,
+    input  logic                rst_ni,
+    input  logic                testmode_i,
+    input  logic                jtag_tck_i,
+    input  logic                jtag_tms_i,
+    input  logic                jtag_trst_ni,
+    input  logic                jtag_td_i,
+    output logic                jtag_td_o,
+    output logic                ndmreset_o,
+    output logic                debug_req_o,
+           AXI_LITE.Slave mem_sbr,
+           AXI_LITE.Master     sba_mgr
 );
 
   localparam int unsigned IdCode = Cfg.jtag_idcode;
+
+  localparam int unsigned AddrWidth = 32;
+  localparam int unsigned DataWidth = 32;
+
+  typedef logic [AddrWidth-1:0] addr_t;
+  typedef logic [DataWidth-1:0] data_t;
+  typedef logic [DataWidth/8-1:0] strb_t;
 
   logic         dmi_rst_n;
   dm::dmi_req_t dmi_req;
   logic dmi_req_ready, dmi_req_valid;
   dm::dmi_resp_t dmi_rsp;
   logic dmi_rsp_ready, dmi_rsp_valid;
+
+  // Debug Module slave memory port
+  logic dbg_req, dbg_we;
+  addr_t dbg_addr;
+  data_t dbg_wdata, dbg_rdata;
+  strb_t dbg_strb;
+
+  // Debug Module System Bus Access manager port
+  logic sba_req, sba_we, sba_gnt, sba_rvalid, sba_err;
+  addr_t sba_addr;
+  data_t sba_wdata, sba_rdata;
+  strb_t sba_strb;
 
   dmi_jtag #(
       .IdcodeValue(IdCode)
@@ -44,7 +63,7 @@ module zeroheti_dbg_wrapper #(
       .tdo_oe_o        ()
   );
 
-  dm_obi_top #(
+  dm_top #(
       .DmBaseAddress(Cfg.am.dbg.base)
   ) i_dm_obi_top (
       .clk_i,
@@ -64,37 +83,67 @@ module zeroheti_dbg_wrapper #(
       .dmi_resp_ready_i(dmi_rsp_ready),
       .dmi_resp_o      (dmi_rsp),
 
-      .slave_req_i   (mem_sbr.req),
-      .slave_gnt_o   (mem_sbr.gnt),
-      .slave_addr_i  (mem_sbr.addr),
-      .slave_we_i    (mem_sbr.we),
-      .slave_be_i    (mem_sbr.be),
-      .slave_wdata_i (mem_sbr.wdata),
-      .slave_aid_i   (mem_sbr.aid),
-      .slave_rvalid_o(mem_sbr.rvalid),
-      .slave_rdata_o (mem_sbr.rdata),
-      .slave_rid_o   (mem_sbr.rid),
+      .slave_req_i  (dbg_req),
+      .slave_we_i   (dbg_we),
+      .slave_addr_i (dbg_addr),
+      .slave_be_i   (dbg_strb),
+      .slave_wdata_i(dbg_wdata),
+      .slave_rdata_o(dbg_rdata),
 
-      .master_req_o      (sba_mgr.req),
-      .master_addr_o     (sba_mgr.addr),
-      .master_we_o       (sba_mgr.we),
-      .master_wdata_o    (sba_mgr.wdata),
-      .master_be_o       (sba_mgr.be),
-      .master_gnt_i      (sba_mgr.gnt),
-      .master_rdata_i    (sba_mgr.rdata),
-      .master_rvalid_i   (sba_mgr.rvalid),
-      .master_err_i      (sba_mgr.err),
-      .master_other_err_i(1'b0)
+      .master_req_o        (sba_req),
+      .master_add_o        (sba_addr),
+      .master_we_o         (sba_we),
+      .master_wdata_o      (sba_wdata),
+      .master_be_o         (sba_strb),
+      .master_gnt_i        (sba_gnt),
+      .master_r_valid_i    (sba_rvalid),
+      .master_r_err_i      (sba_err),
+      .master_r_other_err_i(1'b0),
+      .master_r_rdata_i    (sba_rdata)
   );
 
-  // Tie off unused members
-  assign sba_mgr.reqpar = 1'b0;
-  assign sba_mgr.aid    = 1'b0;
-  assign sba_mgr.a_optional = 1'b0;
-  assign mem_sbr.gntpar = 1'b0;
-  assign mem_sbr.rvalidpar = 1'b0;
-  assign mem_sbr.r_optional = 1'b0;
-  assign mem_sbr.err = 1'b0;
+  //////////////////////////////////////////
+  // Debug Module slave (AXI-Lite -> mem) //
+  //////////////////////////////////////////
+
+  axi_lite_to_mem #(
+      .AddrWidth(AddrWidth),
+      .DataWidth(DataWidth)
+  ) i_dbg_axi_lite_to_mem (
+      .clk_i,
+      .rst_ni,
+      .slv        (mem_sbr),
+      .mem_req_o  (dbg_req),
+      .mem_we_o   (dbg_we),
+      .mem_addr_o (dbg_addr),
+      .mem_wdata_o(dbg_wdata),
+      .mem_be_o   (dbg_strb),
+      .mem_rdata_i(dbg_rdata)
+  );
+
+  ///////////////////////////////////////////////
+  // Debug System Bus Access (mem -> AXI-Lite) //
+  ///////////////////////////////////////////////
+
+  axi_lite_from_mem_intf #(
+      .MEM_ADDR_WIDTH(AddrWidth),
+      .AXI_ADDR_WIDTH(AddrWidth),
+      .DATA_WIDTH    (DataWidth),
+      .MAX_REQUESTS  (1),          // The DM SBA keeps at most one request in flight
+      .AXI_PROT      ('0)
+  ) i_dbg_sba_axi_lite_from_mem (
+      .clk_i,
+      .rst_ni,
+      .mem_req_i      (sba_req),
+      .mem_addr_i     (sba_addr),
+      .mem_we_i       (sba_we),
+      .mem_wdata_i    (sba_wdata),
+      .mem_be_i       (sba_strb),
+      .mem_gnt_o      (sba_gnt),
+      .mem_rsp_valid_o(sba_rvalid),
+      .mem_rsp_rdata_o(sba_rdata),
+      .mem_rsp_error_o(sba_err),
+      .mst            (sba_mgr)
+  );
 
 endmodule : zeroheti_dbg_wrapper
-

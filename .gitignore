@@ -1,5 +1,4 @@
 .bender
-Bender.lock
 build
 Bender.local
 verilator/trace_core_00000000.log
