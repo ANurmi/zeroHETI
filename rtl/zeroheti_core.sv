@@ -1,8 +1,8 @@
 module zeroheti_core
-  import `PKG::*;
+  import zeroheti_pkg::*;
 #(
-    parameter `PKG::core_cfg_t Cfg = `PKG::DefaultCfg,
-    localparam int unsigned IrqWidth = $clog2(Cfg.num_irqs),
+    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CpssCfg,
+    localparam int unsigned IrqWidth = $clog2(Cfg.irq.num_src),
     localparam int unsigned TsWidth = 9,
     localparam int unsigned PrioWidth = 8
 ) (
@@ -17,7 +17,7 @@ module zeroheti_core
     input  logic                         jtag_td_i,
     input  logic                         intc_mtime_en_i,
     output logic                         jtag_td_o,
-    input  logic      [Cfg.num_irqs-1:0] ext_irqs_i,
+    input  logic   [Cfg.irq.num_src-1:0] ext_irqs_i,
        OBI_BUS.Manager                   obi_mgr,
        OBI_BUS.Manager                   mbx_mgr,
            APB.Master                    apb_mgr,
@@ -35,7 +35,7 @@ module zeroheti_core
   OBI_BUS rom_bus ();
 
   logic irq_heti, irq_ack, irq_valid, irq_shv, irq_nest;
-  logic [Cfg.num_irqs-1:0] core_irq;
+  logic [Cfg.irq.num_src-1:0] core_irq;
   logic [    IrqWidth-1:0] irq_id;
   logic [   PrioWidth-1:0] irq_level;
   logic [    IrqWidth-1:0] irq_id_claim;
@@ -45,7 +45,7 @@ module zeroheti_core
   assign mtime_gated = (intc_mtime_en_i) ? mtime_i : 64'h0;
 
   zeroheti_int_ctrl #(
-      .CoreCfg(Cfg),
+      .Cfg(Cfg),
       .TsWidth(TsWidth)
   ) i_int_ctrl (
       .clk_i,
@@ -109,11 +109,11 @@ module zeroheti_core
       .PMPNumRegions   (4),
       .MHPMCounterNum  (0),
       .MHPMCounterWidth(40),
-      .RV32E           (Cfg.rve),
-      .RV32M           (Cfg.mul),
+      .RV32E           (Cfg.core.rve),
+      .RV32M           (Cfg.core.mul),
       .RV32B           (ibex_pkg::RV32BNone),
-      .WritebackStage  (Cfg.wb_stage),
-      .RegFile         (ibex_pkg::RegFileFF),
+      .WritebackStage  (Cfg.core.wb_stage),
+      .RegFile         (Cfg.core.rf),
       .ICache          (1'b0),
       .ICacheECC       (1'b0),
       .ICacheScramble  (1'b0),
@@ -121,20 +121,20 @@ module zeroheti_core
       .SecureIbex      (1'b0),
       .CLIC            (1'b1),
       .HardwareStacking(1'b0),
-      .NumInterrupts   (Cfg.num_irqs),
+      .NumInterrupts   (Cfg.irq.num_src),
       .RndCnstLfsrSeed (ibex_pkg::RndCnstLfsrSeedDefault),
       .RndCnstLfsrPerm (ibex_pkg::RndCnstLfsrPermDefault),
       .DbgTriggerEn    (0),
       .DmHaltAddr      (32'(dm::HaltAddress)),
       .DmExceptionAddr (32'(dm::ExceptionAddress)),
-      .MClicBaseAddr   (`PKG::AddrMap.intc.base),
-      .BranchTargetALU (Cfg.bt_alu)
+      .MClicBaseAddr   (Cfg.am.intc.base),
+      .BranchTargetALU (Cfg.core.bt_alu)
   ) i_rt_ibex (
       .clk_i,
       .rst_ni,
       .scan_rst_ni(1'b0),
       .ram_cfg_i  (10'b0),
-      .hart_id_i  (Cfg.hart_id),
+      .hart_id_i  (Cfg.core.hart_id),
       .test_en_i  (testmode_i),
       .boot_addr_i(boot_addr_i),
 
@@ -217,10 +217,10 @@ module zeroheti_core
   );
 
   obi_mb_sram_intf #(
-      .NrBanks (`PKG::ImemBanks),
-      .BaseAddr(AddrMap.imem.base),
-      .UseLpMacro(Cfg.mem_lp),
-      .NumWords(`PKG::ImemWSize)
+      .NrBanks (Cfg.imem.banks),
+      .BaseAddr(Cfg.am.imem.base),
+      .UseLpMacro(Cfg.imem.lp),
+      .NumWords(Cfg.imem.bytes / 4)
   ) i_imem (
       .clk_i,
       .rst_ni,
@@ -228,10 +228,10 @@ module zeroheti_core
   );
 
   obi_mb_sram_intf #(
-      .NrBanks (`PKG::DmemBanks),
-      .BaseAddr(AddrMap.dmem.base),
-      .UseLpMacro(Cfg.mem_lp),
-      .NumWords(`PKG::DmemWSize)
+      .NrBanks (Cfg.dmem.banks),
+      .BaseAddr(Cfg.am.dmem.base),
+      .UseLpMacro(Cfg.dmem.lp),
+      .NumWords(Cfg.dmem.bytes / 4)
   ) i_dmem (
       .clk_i,
       .rst_ni,

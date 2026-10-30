@@ -1,75 +1,64 @@
 package zeroheti_pkg;
 
-  localparam logic [31:0] BootAddr = 32'h0800;
-
   typedef enum integer {
     CLIC  = 1,
     EDFIC = 2
   } int_ctrl_e;
 
   typedef struct packed {
+    int_ctrl_e   intc;
+    int unsigned num_src;
+    int unsigned num_prio;
+  } irq_t;
+
+  typedef struct packed {
     bit rve;
     bit bt_alu;
     bit wb_stage;
-    bit mem_lp;
     ibex_pkg::rv32m_e mul;
-    int_ctrl_e ic;
-    int unsigned size_tg;
-    int unsigned num_irqs;
-    int unsigned num_prio;
+    ibex_pkg::regfile_e rf;
     int unsigned hart_id;
   } core_cfg_t;
 
+  typedef struct packed {
+    int unsigned bytes;
+    int unsigned banks;
+    bit          lp;
+  } mem_t;
 
-  localparam core_cfg_t MinCfg = '{
+  localparam core_cfg_t MinCoreCfg = '{
       rve       : 1,
       bt_alu    : 0,
       wb_stage  : 0,
-      mem_lp    : 1,
       mul       : ibex_pkg::RV32MNone,
-      ic        : CLIC,
-      size_tg   : 4,
-      num_irqs  : 32,
-      num_prio  : 8,
+      rf        : ibex_pkg::RegFileFF,
       hart_id   : 0
   };
 
-  localparam core_cfg_t DefaultCfg = '{
+  localparam core_cfg_t DefaultCoreCfg = '{
       rve       : 1,
       bt_alu    : 1,
       wb_stage  : 0,
-      mem_lp    : 0,
       mul       : ibex_pkg::RV32MSingleCycle,
-      ic        : EDFIC,
-      size_tg   : 16,
-      num_irqs  : 128,
-      num_prio  : 128,
+      rf        : ibex_pkg::RegFileFF,
       hart_id   : 0
   };
 
-  localparam core_cfg_t CLICCfg = '{
+  localparam core_cfg_t BpssAsicCfg = '{
       rve       : 1,
       bt_alu    : 1,
       wb_stage  : 0,
-      mem_lp    : 0,
-      mul       : ibex_pkg::RV32MSingleCycle,
-      ic        : CLIC,
-      size_tg   : 16,
-      num_irqs  : 128,
-      num_prio  : 128,
+      mul       : ibex_pkg::RV32MNone,
+      rf        : ibex_pkg::RegFileLatch,
       hart_id   : 0
   };
 
-  localparam core_cfg_t EDFICCfg = '{
+  localparam core_cfg_t CpssAsicCfg = '{
       rve       : 1,
       bt_alu    : 1,
       wb_stage  : 0,
-      mem_lp    : 0,
       mul       : ibex_pkg::RV32MSingleCycle,
-      ic        : EDFIC,
-      size_tg   : 16,
-      num_irqs  : 128,
-      num_prio  : 128,
+      rf        : ibex_pkg::RegFileLatch,
       hart_id   : 0
   };
 
@@ -96,22 +85,20 @@ package zeroheti_pkg;
     addr_rule_t ext;
   } addr_map_t;
 
-  localparam int unsigned ImemSize = `IMEM_BYTES;
-  localparam int unsigned DmemSize = `DMEM_BYTES;
+  function static logic [31:0] get_end_addr(input logic [31:0] base, input logic [31:0] size);
+    return base + size;
+  endfunction
 
   localparam addr_rule_t DbgAddr = '{base : 32'h0000_0000, last : 32'h0000_1000};
   /* 0x0000_1000 - 0x0001_0000 reserved*/
-  localparam addr_rule_t ImemAddr = '{base : 32'h0001_0000, last : (32'h0001_0000 + ImemSize)};
-  localparam addr_rule_t DmemAddr = '{base : 32'h0002_0000, last : (32'h0002_0000 + DmemSize)};
+  localparam addr_rule_t ImemAddr = '{base : 32'h0001_0000, last : 32'h0002_0000};  // variable
+  localparam addr_rule_t DmemAddr = '{base : 32'h0002_0000, last : 32'h0003_0000};  // variable
   localparam addr_rule_t RomAddr = '{base : 32'h0003_0000, last : 32'h0003_3000};
   localparam addr_rule_t UartAddr = '{base : 32'h0003_3000, last : 32'h0003_3100};
   localparam addr_rule_t MtimerAddr = '{base : 32'h0003_3100, last : 32'h0003_3114};
   localparam addr_rule_t I2c0Addr = '{base : 32'h0003_3200, last : 32'h0003_3300};
   localparam addr_rule_t I2c1Addr = '{base : 32'h0003_3300, last : 32'h0003_3400};
-  localparam addr_rule_t TimerGroupAddr = '{
-      base : 32'h0003_3400,
-      last : 32'h0003_3400 + (16 * DefaultCfg.size_tg)
-  };
+  localparam addr_rule_t TimerGroupAddr = '{base : 32'h0003_3400, last : 32'h0003_4000};  //variable
   localparam addr_rule_t CfgAddr = '{base : 32'h0003_4000, last : 32'h0003_5000};
   localparam addr_rule_t TqAddr = '{base: 32'h0003_3800, last: 32'h0003_3900};
   localparam addr_rule_t SpiAddr = '{base : 32'h0003_5000, last : 32'h0003_5100};
@@ -119,15 +106,8 @@ package zeroheti_pkg;
   localparam addr_rule_t MbxAddr = '{base : 32'h0010_8000, last : 32'h0010_8100};
   localparam addr_rule_t ExtAddr = '{base : 32'h0011_0000, last : 32'hFFFF_FFFF};
 
-  // imem size in words
-  localparam int unsigned ImemWSize = ImemSize / 4;
-  // dmem size in words
-  localparam int unsigned DmemWSize = DmemSize / 4;
 
-  localparam int unsigned ImemBanks = `IMEM_NR_BANKS;
-  localparam int unsigned DmemBanks = `DMEM_NR_BANKS;
-
-  localparam addr_map_t AddrMap = '{
+  localparam addr_map_t ZHAddrMap = '{
       dbg    : DbgAddr,
       imem   : ImemAddr,
       dmem   : DmemAddr,
@@ -143,6 +123,88 @@ package zeroheti_pkg;
       mtimer : MtimerAddr,
       mbx    : MbxAddr,
       ext    : ExtAddr
+  };
+
+  localparam addr_map_t BpAddrMap = '{
+      dbg    : DbgAddr,
+      imem   : ImemAddr,
+      dmem   : DmemAddr,
+      intc   : IntcAddr,
+      uart   : UartAddr,
+      cfg    : CfgAddr,
+      rom    : RomAddr,
+      spi    : SpiAddr,
+      mtimer : MtimerAddr,
+      ext    : ExtAddr,
+      default: 0
+  };
+
+  localparam addr_map_t PpAddrMap = '{dbg    : DbgAddr, default: 0};
+
+  typedef struct packed {
+    mem_t        imem;
+    mem_t        dmem;
+    int unsigned size_tg;
+    irq_t        irq;
+    core_cfg_t   core;
+    addr_map_t   am;
+    logic [31:0] jtag_idcode;
+  } platform_cfg_t;
+
+  localparam mem_t BpssMem = '{bytes: 32768, banks: 4, lp: 1};
+  localparam mem_t CpssIMem = '{bytes: 65536, banks: 8, lp: 0};
+  localparam mem_t CpssDMem = '{bytes: 32768, banks: 4, lp: 0};
+  localparam mem_t PpssIMem = '{bytes: 1024, banks: 1, lp: 0};
+  localparam mem_t PpssDMem = '{bytes: 1024, banks: 1, lp: 0};
+
+  localparam irq_t IrqMin = '{intc: CLIC, num_src : 32, num_prio: 8};
+  localparam irq_t IrqClic = '{intc: CLIC, num_src : 128, num_prio: 128};
+  localparam irq_t IrqEdfic = '{intc: EDFIC, num_src : 128, num_prio: 128};
+
+  localparam platform_cfg_t BpssCfg = '{
+      imem: BpssMem,
+      dmem: BpssMem,
+      size_tg : 0,
+      core: BpssAsicCfg,
+      irq: IrqMin,
+      am: BpAddrMap,
+      jtag_idcode : 32'h0BAD_C0D3
+  };
+  localparam platform_cfg_t CpssCfg = '{
+      imem: CpssIMem,
+      dmem: CpssIMem,
+      size_tg : 16,
+      core: CpssAsicCfg,
+      irq: IrqEdfic,
+      am: ZHAddrMap,
+      jtag_idcode: 32'hFEED_C0D3
+  };
+  localparam platform_cfg_t PpssCfg = '{
+      imem: PpssIMem,
+      dmem: PpssDMem,
+      size_tg : 0,
+      core: CpssAsicCfg,
+      irq: IrqMin,
+      am: PpAddrMap,
+      jtag_idcode: 32'hF007_BA11
+  };
+  localparam platform_cfg_t EDFICCfg = '{
+      imem: CpssIMem,
+      dmem: CpssIMem,
+      size_tg    : 16,
+      core        : DefaultCoreCfg,
+      irq: IrqEdfic,
+      am: ZHAddrMap,
+      jtag_idcode: 32'hFEED_C0D3
+  };
+  localparam platform_cfg_t CLICCfg = '{
+      imem: CpssIMem,
+      dmem: CpssIMem,
+      size_tg : 16,
+      core: DefaultCoreCfg,
+      irq: IrqClic,
+      am: ZHAddrMap,
+      jtag_idcode: 32'hFEED_C0D3
   };
 
   // Locally used OBI typedefs
