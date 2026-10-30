@@ -1,6 +1,5 @@
-module zeroheti_dbg_wrapper
-  import `PKG::*;
-#(
+module zeroheti_dbg_wrapper #(
+    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CpssCfg
 ) (
     input  logic               clk_i,
     input  logic               rst_ni,
@@ -16,7 +15,7 @@ module zeroheti_dbg_wrapper
            OBI_BUS.Manager     sba_mgr
 );
 
-  localparam int unsigned IdCode = 32'h`JTAG_IDCODE;
+  localparam int unsigned IdCode = Cfg.jtag_idcode;
 
   logic         dmi_rst_n;
   dm::dmi_req_t dmi_req;
@@ -46,7 +45,7 @@ module zeroheti_dbg_wrapper
   );
 
   dm_obi_top #(
-      .DmBaseAddress(AddrMap.dbg.base)
+      .DmBaseAddress(Cfg.am.dbg.base)
   ) i_dm_obi_top (
       .clk_i,
       .rst_ni,

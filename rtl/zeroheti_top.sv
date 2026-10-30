@@ -1,9 +1,8 @@
 module zeroheti_top #(
-    parameter `PKG::core_cfg_t CoreCfg = `PKG::`CORE_CFG,
-    parameter `PKG::addr_map_t AddrMap = `PKG::AddrMap,
+    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::EDFICCfg,
     parameter int unsigned AxiUserWidth = 0,
     localparam int unsigned NumIntIrqs = 64,
-    localparam int unsigned NumExtIrqs = CoreCfg.num_irqs - NumIntIrqs
+    localparam int unsigned NumExtIrqs = Cfg.irq.num_src - NumIntIrqs
 ) (
     input  logic                  clk_i,
     input  logic                  rst_ni,
@@ -67,8 +66,8 @@ module zeroheti_top #(
     input  logic [           3:0] spi_sdi_i
 );
 
-  localparam int unsigned NrIrqs = CoreCfg.num_irqs;
-  localparam int unsigned TGSize = CoreCfg.size_tg;
+  localparam int unsigned NrIrqs = Cfg.irq.num_src;
+  localparam int unsigned TGSize = Cfg.size_tg;
   localparam int unsigned ApbWidth = 32;
   localparam int unsigned DataWidth = 32;
   localparam int unsigned NrApbPerip = 8;
@@ -127,7 +126,7 @@ module zeroheti_top #(
   end : irq_mapping
 
   zeroheti_core #(
-      .Cfg(CoreCfg)
+      .Cfg(Cfg)
   ) i_core (
       .clk_i,
       .rst_ni,
@@ -166,10 +165,15 @@ module zeroheti_top #(
       .axil_sbr(axi_sbr)
   );
 
+  localparam zeroheti_pkg::addr_map_t AddrMap = Cfg.am;
+
+  // Depends on configuration, resolve here
+  localparam int unsigned TgEndAddr = zeroheti_pkg::get_end_addr(AddrMap.tg.base, 16 * Cfg.size_tg);
+
   always_comb begin : apb_decode
     unique case (apb_mgr.paddr) inside
       [AddrMap.cfg.base : AddrMap.cfg.last - 1]:       demux_sel = SelWidth'('d0);
-      [AddrMap.tg.base : AddrMap.tg.last - 1]:         demux_sel = SelWidth'('d1);
+      [AddrMap.tg.base : TgEndAddr - 1]:               demux_sel = SelWidth'('d1);
       [AddrMap.uart.base : AddrMap.uart.last - 1]:     demux_sel = SelWidth'('d2);
       [AddrMap.mtimer.base : AddrMap.mtimer.last - 1]: demux_sel = SelWidth'('d3);
       [AddrMap.i2c_0.base : AddrMap.i2c_0.last - 1]:   demux_sel = SelWidth'('d4);
@@ -279,7 +283,7 @@ module zeroheti_top #(
   );
 
   apb_cfg_regs #(
-      .Cfg(CoreCfg)
+      .Cfg(Cfg)
   ) i_cfg_regs (
       .clk_i,
       .rst_ni,
@@ -410,7 +414,7 @@ module zeroheti_top #(
       $display("[DUT:SimLoader] Initializing program with $readmemh");
       $display("[DUT:SimLoader] APPLICABLE TO SIMULATED DESIGNS ONLY");
 
-      // Preload 16 IMEM banks
+      // Preload 8 IMEM banks
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_0.hex"},
                   i_core.i_imem.g_banks[0].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_1.hex"},
@@ -427,24 +431,8 @@ module zeroheti_top #(
                   i_core.i_imem.g_banks[6].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_7.hex"},
                   i_core.i_imem.g_banks[7].i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_8.hex"},
-                  i_core.i_imem.g_banks[8].i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_9.hex"},
-                  i_core.i_imem.g_banks[9].i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_10.hex"},
-                  i_core.i_imem.g_banks[10].i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_11.hex"},
-                  i_core.i_imem.g_banks[11].i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_12.hex"},
-                  i_core.i_imem.g_banks[12].i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_13.hex"},
-                  i_core.i_imem.g_banks[13].i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_14.hex"},
-                  i_core.i_imem.g_banks[14].i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/imem_15.hex"},
-                  i_core.i_imem.g_banks[15].i_sram.sram);
 
-      // Preload 8 DMEM banks
+      // Preload 4 DMEM banks
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_0.hex"},
                   i_core.i_dmem.g_banks[0].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_1.hex"},
@@ -453,14 +441,6 @@ module zeroheti_top #(
                   i_core.i_dmem.g_banks[2].i_sram.sram);
       $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_3.hex"},
                   i_core.i_dmem.g_banks[3].i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_4.hex"},
-                  i_core.i_dmem.g_banks[4].i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_5.hex"},
-                  i_core.i_dmem.g_banks[5].i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_6.hex"},
-                  i_core.i_dmem.g_banks[6].i_sram.sram);
-      $readmemh({zeroHetiRoot, "/build/verilator_build/stims/dmem_7.hex"},
-                  i_core.i_dmem.g_banks[7].i_sram.sram);
 
     end
   end

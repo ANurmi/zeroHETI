@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+## [v1.1.1] - 2026-10-30
+### Changed
+- Refactor configuration selection to use parameters instead of macros
 
 ## [v1.1.0] - 2026-10-29
 ### Added

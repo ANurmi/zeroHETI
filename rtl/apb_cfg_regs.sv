@@ -1,5 +1,5 @@
 module apb_cfg_regs #(
-    parameter `PKG::core_cfg_t Cfg = `PKG::DefaultCfg
+    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CpssCfg
 ) (
     input logic clk_i,
     input logic rst_ni,
@@ -9,9 +9,9 @@ module apb_cfg_regs #(
   // Bake in Git version information into HW
   localparam logic [31:0] ShortHash = 32'h`GIT_HASH;
   // Static platform configuration visible to SW
-  localparam logic IntcEdfic = (Cfg.ic == `PKG::EDFIC);
-  localparam logic [7:0] ImemPow2 = 8'($clog2(`IMEM_BYTES));
-  localparam logic [7:0] DmemPow2 = 8'($clog2(`DMEM_BYTES));
+  localparam logic IntcEdfic = (Cfg.irq.intc == zeroheti_pkg::EDFIC);
+  localparam logic [7:0] ImemPow2 = 8'($clog2(Cfg.imem.bytes));
+  localparam logic [7:0] DmemPow2 = 8'($clog2(Cfg.dmem.bytes));
 `ifndef FULL_UART
   localparam logic RealUart = 1'b0;
 `else

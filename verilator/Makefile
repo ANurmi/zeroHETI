@@ -34,21 +34,15 @@ DEBUG           ?= 0
 
 IMEM_WORDS       = $(shell echo $$(($(IMEM_BYTES) / 4)))
 
-CFG              = Default
+CFG              = CLIC
 
 VDEFS ?= \
   +define+VERILATOR=1 \
-	+define+PKG=zeroheti_pkg \
 	+define+GIT_HASH=$(GIT_HASH) \
 	+define+ZH_ROOT=$(ZH_ROOT) \
-	+define+JTAG_IDCODE=$(JTAG_IDCODE) \
-	+define+IMEM_BYTES=$(IMEM_BYTES) \
-	+define+DMEM_BYTES=$(DMEM_BYTES) \
-	+define+IMEM_NR_BANKS=$(DC_NR_I_BANKS) \
-	+define+DMEM_NR_BANKS=$(DC_NR_D_BANKS) \
 	+define+LOAD=$(LOAD) \
   +define+COMMON_CELLS_ASSERTS_OFF \
-	+define+CORE_CFG=$(CFG)Cfg \
+	+define+PLATFORM_CFG=$(CFG)Cfg \
 
 ifdef FULL_UART
 VDEFS += +define+FULL_UART \

@@ -63,7 +63,9 @@ module zeroheti_top_wrapper #(
       .r_ready_o (r_ready)
   );
 
-  zeroheti_top i_dut (
+  zeroheti_top #(
+      .Cfg(zeroheti_pkg::`PLATFORM_CFG)
+  ) i_dut (
       .clk_i,
       .rst_ni,
       .jtag_tck_i,
@@ -71,7 +73,7 @@ module zeroheti_top_wrapper #(
       .jtag_trst_ni,
       .jtag_td_i,
       .jtag_td_o,
-      .boot_addr_i        (zeroheti_pkg::BootAddr),
+      .boot_addr_i        (32'h0000_0800),
       .uart_rx_i          (uart_dut_rx),
       .uart_tx_o          (uart_dut_tx),
       .sbr_axil_aw_addr_i (aw_addr),
