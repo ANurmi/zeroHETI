@@ -1,5 +1,5 @@
 module rt_ibex_wrapper #(
-    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CpssCfg,
+    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CLICCfg,
     parameter int unsigned PrioWidth = 8,
     localparam int unsigned NumIrq = Cfg.irq.num_src,
     localparam int unsigned IrqWidth = $clog2(Cfg.irq.num_src)

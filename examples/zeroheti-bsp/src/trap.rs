@@ -58,14 +58,14 @@ global_asm!(
         .word _start_DefaultHandler_trap // 12..16
         .endr
 
-        .word _start_Mbx_trap       // 16
-        .word _start_SpiEvent0_trap // 17
-        .word _start_SpiEvent1_trap // 18
-        .word _start_I2c0_trap      // 19
-        .word _start_I2c1_trap      // 20
-        .word _start_TqFull_trap    // 21
-        .word _start_TqNFull_trap   // 22
-        .word _start_DefaultHandler_trap // 23
+        .word _start_Mbx0_trap      // 16
+        .word _start_Mbx1_trap      // 17
+        .word _start_SpiEvent0_trap // 18
+        .word _start_SpiEvent1_trap // 19
+        .word _start_I2c0_trap      // 20
+        .word _start_I2c1_trap      // 21
+        .word _start_TqFull_trap    // 22
+        .word _start_TqNFull_trap   // 23
         .word _start_Uart_trap      // 24
         .word _start_DefaultHandler_trap // 25
         .word _start_DefaultHandler_trap // 26

@@ -66,38 +66,25 @@ module zeroheti_top #(
     input  logic [           3:0] spi_sdi_i
 );
 
+  localparam int unsigned AddrWidth = 32;
+  localparam int unsigned DataWidth = 32;
+
   localparam int unsigned NrIrqs = Cfg.irq.num_src;
   localparam int unsigned TGSize = Cfg.size_tg;
-  localparam int unsigned ApbWidth = 32;
-  localparam int unsigned DataWidth = 32;
-  localparam int unsigned NrApbPerip = 8;
-  localparam int unsigned SelWidth = $clog2(NrApbPerip);
 
-  OBI_BUS obi_mgr ();
-  OBI_BUS mbx_mgr ();
-  OBI_BUS obi_sbr ();
+  // External, peripherals, mailbox
+  localparam int unsigned NumAxiDemux = 3;
+  localparam int unsigned AxiSelWidth = $clog2(NumAxiDemux);
 
-  AXI_LITE #(
-      .AXI_ADDR_WIDTH(32'd32),
-      .AXI_DATA_WIDTH(DataWidth)
-  ) axi_sbr ();
 
-  AXI_LITE #(
-      .AXI_ADDR_WIDTH(32'd32),
-      .AXI_DATA_WIDTH(DataWidth)
-  ) axi_mgr ();
+  logic [NrIrqs-1:0] all_irqs;
+  logic              mtime_irq;
+  logic [       1:0] i2c_irq;
+  logic [       1:0] spi_irq;
+  logic [       1:0] mbx_irq;
+  logic              uart_irq;
 
-  APB apb_mgr ();
-  APB demux_apb[NrApbPerip] ();
-
-  logic                  obi_sel;
-  logic [  SelWidth-1:0] demux_sel;
-  logic [    NrIrqs-1:0] all_irqs;
-  logic                  mtime_irq;
-  logic [           1:0] i2c_irq;
-  logic [           1:0] spi_irq;
-  logic                  mbx_irq;
-  logic                  uart_irq;
+  logic [AxiSelWidth-1:0] demux_ar_sel, demux_aw_sel;
 
   // Timer queue intetrrupts aliased with timer group
   logic [(TGSize*2)-1:0] apb_timer_irqs;
@@ -109,21 +96,36 @@ module zeroheti_top #(
   logic [          63:0] mtime;
   logic                  intc_mtime_en;
 
-  always_comb begin : irq_mapping
-    all_irqs                       = '0;
-    all_irqs[3]                    = 1'b0;  // legacy sw irq
-    all_irqs[7]                    = mtime_irq;  // legacy tmr irq
-    all_irqs[11]                   = 1'b0;  // legacy ext irq
-    all_irqs[16]                   = mbx_irq;
-    all_irqs[18:17]                = spi_irq;
-    all_irqs[20:19]                = i2c_irq;
-    all_irqs[21]                   = tq_full;
-    all_irqs[22]                   = tq_nfull;
-    all_irqs[24]                   = uart_irq;
-    //all_irqs[31]                 = nmi, reserved;
-    all_irqs[((2*TGSize)+32)-1:32] = apb_timer_irqs | tq_irqs;
-    all_irqs[NrIrqs-1:64]          = ext_irq_i;
-  end : irq_mapping
+
+  AXI_LITE #(
+      .AXI_ADDR_WIDTH(AddrWidth),
+      .AXI_DATA_WIDTH(DataWidth)
+  ) axi_sbr ();
+
+  AXI_LITE #(
+      .AXI_ADDR_WIDTH(AddrWidth),
+      .AXI_DATA_WIDTH(DataWidth)
+  ) axi_core ();
+
+  AXI_LITE #(
+      .AXI_ADDR_WIDTH(AddrWidth),
+      .AXI_DATA_WIDTH(DataWidth)
+  ) axi_demux[NumAxiDemux-1:0] ();
+
+  AXI_LITE #(
+      .AXI_ADDR_WIDTH(AddrWidth),
+      .AXI_DATA_WIDTH(DataWidth)
+  ) axi_mgr ();
+
+  AXI_LITE #(
+      .AXI_ADDR_WIDTH(AddrWidth),
+      .AXI_DATA_WIDTH(DataWidth)
+  ) axi_mbx[1:0] ();
+
+  AXI_LITE #(
+      .AXI_ADDR_WIDTH(AddrWidth),
+      .AXI_DATA_WIDTH(DataWidth)
+  ) axi_tieoff ();
 
   zeroheti_core #(
       .Cfg(Cfg)
@@ -140,186 +142,121 @@ module zeroheti_top #(
       .jtag_td_o,
       .intc_mtime_en_i(intc_mtime_en),
       .ext_irqs_i     (all_irqs),
-      .ext_mgr        (),
-      .ext_sbr        (axi_sbr)
+      .ext_mgr        (axi_core),
+      .ext_sbr        (axi_tieoff)
   );
 
-  /*
-
-  obi_mbx i_mbx (
+  axi_lite_demux_intf #(
+      .AxiAddrWidth(32'd32),
+      .AxiDataWidth(32'd32),
+      .NoMstPorts(NumAxiDemux),
+      .MaxTrans(32'd1)
+  ) i_demux (
       .clk_i,
       .rst_ni,
-      .irq_o   (mbx_irq),
-      .obi_sbr (mbx_mgr),
-      .axil_sbr(axi_sbr)
+      .slv_aw_select_i(demux_aw_sel),
+      .slv_ar_select_i(demux_ar_sel),
+      .test_i         (1'b0),
+      .slv            (axi_core),
+      .mst            (axi_demux)
   );
-*/
-  localparam zeroheti_pkg::addr_map_t AddrMap = Cfg.am;
 
-  // Depends on configuration, resolve here
-  localparam int unsigned TgEndAddr = zeroheti_pkg::get_end_addr(AddrMap.tg.base, 16 * Cfg.size_tg);
+  axi_lite_mailbox_intf #(
+      .MAILBOX_DEPTH (32'd8),
+      .IRQ_EDGE_TRIG (1'b1),
+      .IRQ_ACT_HIGH  (1'b1),
+      .AXI_ADDR_WIDTH(32'd32),
+      .AXI_DATA_WIDTH(32'd32)
+  ) i_mbx (
+      .clk_i,
+      .rst_ni,
+      .test_i     (1'b0),
+      .slv        (axi_mbx),
+      .irq_o      (mbx_irq),
+      .base_addr_i({Cfg.am.mbx.base, Cfg.am.mbx.base})
+  );
 
-  always_comb begin : apb_decode
-    unique case (apb_mgr.paddr) inside
-      [AddrMap.cfg.base : AddrMap.cfg.last - 1]:       demux_sel = SelWidth'('d0);
-      [AddrMap.tg.base : TgEndAddr - 1]:               demux_sel = SelWidth'('d1);
-      [AddrMap.uart.base : AddrMap.uart.last - 1]:     demux_sel = SelWidth'('d2);
-      [AddrMap.mtimer.base : AddrMap.mtimer.last - 1]: demux_sel = SelWidth'('d3);
-      [AddrMap.i2c_0.base : AddrMap.i2c_0.last - 1]:   demux_sel = SelWidth'('d4);
-      [AddrMap.i2c_1.base : AddrMap.i2c_1.last - 1]:   demux_sel = SelWidth'('d5);
-      [AddrMap.spi.base : AddrMap.spi.last - 1]:       demux_sel = SelWidth'('d6);
-      [AddrMap.tq.base : AddrMap.tq.last - 1]:         demux_sel = SelWidth'('d7);
-      default: begin
-        demux_sel = SelWidth'('d0);
-        if (apb_mgr.psel & apb_mgr.penable) $display("Warning: APB access to unmapped region!");
-      end
+  zeroheti_peripherals #(
+      .Cfg   (Cfg),
+      .TGSize(TGSize)
+  ) i_peripherals (
+      .clk_i,
+      .rst_ni,
+      .uart_rx_i,
+      .uart_tx_o,
+      .uart_irq_o (uart_irq),
+      .mtime_en_o (intc_mtime_en),
+      .mtime_irq_o(mtime_irq),
+      .timer_irq_o(apb_timer_irqs),
+      .tq_irq_o   (tq_irqs),
+      .tq_full_o  (tq_full),
+      .tq_nfull_o (tq_nfull),
+      .i2c_irq_o  (i2c_irq),
+      .i2c_scl_pad_i,
+      .i2c_scl_pad_o,
+      .i2c_scl_padoen_o,
+      .i2c_sda_pad_i,
+      .i2c_sda_pad_o,
+      .i2c_sda_padoen_o,
+      .spi_irq_o  (spi_irq),
+      .spi_clk_o,
+      .spi_csn_o,
+      .spi_mode_o,
+      .spi_sdi_i,
+      .spi_sdo_o,
+      .axi_sbr    (axi_demux[1])
+  );
+
+  axi_lite_join_intf i_join_ext (
+      .in (axi_demux[2]),
+      .out(axi_mgr)
+  );
+
+  axi_lite_join_intf i_join_mbx_core (
+      .in (axi_demux[0]),
+      .out(axi_mbx[0])
+  );
+
+  axi_lite_join_intf i_join_mbx_ext (
+      .in (axi_sbr),
+      .out(axi_mbx[1])
+  );
+
+  always_comb begin : demux_sel
+
+    // Default: external memory
+    demux_ar_sel = 2;
+    demux_aw_sel = 2;
+
+    unique case (axi_core.ar_addr) inside
+      [Cfg.am.mbx.base : Cfg.am.mbx.last - 1]:       demux_ar_sel = 0;
+      [Cfg.am.periph.base : Cfg.am.periph.last - 1]: demux_ar_sel = 1;
+      default:                                       ;
+    endcase
+
+    unique case (axi_core.aw_addr) inside
+      [Cfg.am.mbx.base : Cfg.am.mbx.last - 1]:       demux_aw_sel = 0;
+      [Cfg.am.periph.base : Cfg.am.periph.last - 1]: demux_aw_sel = 1;
+      default:                                       ;
     endcase
   end
 
-  apb_demux_intf #(
-      .APB_ADDR_WIDTH(ApbWidth),
-      .APB_DATA_WIDTH(DataWidth),
-      .NoMstPorts    (NrApbPerip)
-  ) i_apb_demux (
-      .slv     (apb_mgr),
-      .mst     (demux_apb),
-      .select_i(demux_sel)
-  );
+  always_comb begin : irq_mapping
+    all_irqs                       = '0;
+    all_irqs[3]                    = 1'b0;  // legacy sw irq
+    all_irqs[7]                    = mtime_irq;  // legacy tmr irq
+    all_irqs[11]                   = 1'b0;  // legacy ext irq
+    all_irqs[17:16]                = mbx_irq;
+    all_irqs[19:18]                = spi_irq;
+    all_irqs[21:20]                = i2c_irq;
+    all_irqs[22]                   = tq_full;
+    all_irqs[23]                   = tq_nfull;
+    all_irqs[24]                   = uart_irq;
+    //all_irqs[31]                 = nmi, reserved;
+    all_irqs[((2*TGSize)+32)-1:32] = apb_timer_irqs | tq_irqs;
+    all_irqs[NrIrqs-1:64]          = ext_irq_i;
+  end : irq_mapping
 
-  uart_wrapper #() i_uart (
-      .clk_i,
-      .rst_ni,
-      .apb_sbr(demux_apb[5]),
-      .rx_i   (uart_rx_i),
-      .tx_o   (uart_tx_o),
-      .irq_o  (uart_irq)
-  );
-
-  apb_mtimer i_mtimer (
-      .clk_i,
-      .rst_ni,
-      .penable_i  (demux_apb[4].penable),
-      .pwrite_i   (demux_apb[4].pwrite),
-      .paddr_i    (demux_apb[4].paddr),
-      .psel_i     (demux_apb[4].psel),
-      .pwdata_i   (demux_apb[4].pwdata),
-      .prdata_o   (demux_apb[4].prdata),
-      .pready_o   (demux_apb[4].pready),
-      .pslverr_o  (demux_apb[4].pslverr),
-      .mtime_o    (mtime),
-      .timer_irq_o(mtime_irq)
-  );
-
-  apb_timer #(
-      .APB_ADDR_WIDTH(ApbWidth),
-      .TIMER_CNT(TGSize)
-  ) i_apb_timer (
-      .HCLK   (clk_i),
-      .HRESETn(rst_ni),
-      .PENABLE(demux_apb[6].penable),
-      .PWRITE (demux_apb[6].pwrite),
-      .PADDR  (demux_apb[6].paddr),
-      .PSEL   (demux_apb[6].psel),
-      .PWDATA (demux_apb[6].pwdata),
-      .PRDATA (demux_apb[6].prdata),
-      .PREADY (demux_apb[6].pready),
-      .PSLVERR(demux_apb[6].pslverr),
-      .irq_o  (apb_timer_irqs)
-  );
-
-  apb_i2c #(
-      .APB_ADDR_WIDTH(32'd32)
-  ) i_i2c_0 (
-      .HCLK        (clk_i),
-      .HRESETn     (rst_ni),
-      .PADDR       (demux_apb[3].paddr),
-      .PWDATA      (demux_apb[3].pwdata),
-      .PWRITE      (demux_apb[3].pwrite),
-      .PSEL        (demux_apb[3].psel),
-      .PENABLE     (demux_apb[3].penable),
-      .PRDATA      (demux_apb[3].prdata),
-      .PREADY      (demux_apb[3].pready),
-      .PSLVERR     (demux_apb[3].pslverr),
-      .interrupt_o (i2c_irq[0]),
-      .scl_pad_i   (i2c_scl_pad_i[0]),
-      .scl_pad_o   (i2c_scl_pad_o[0]),
-      .scl_padoen_o(i2c_scl_padoen_o[0]),
-      .sda_pad_i   (i2c_sda_pad_i[0]),
-      .sda_pad_o   (i2c_sda_pad_o[0]),
-      .sda_padoen_o(i2c_sda_padoen_o[0])
-  );
-
-  apb_i2c #(
-      .APB_ADDR_WIDTH(32'd32)
-  ) i_i2c_1 (
-      .HCLK        (clk_i),
-      .HRESETn     (rst_ni),
-      .PADDR       (demux_apb[2].paddr),
-      .PWDATA      (demux_apb[2].pwdata),
-      .PWRITE      (demux_apb[2].pwrite),
-      .PSEL        (demux_apb[2].psel),
-      .PENABLE     (demux_apb[2].penable),
-      .PRDATA      (demux_apb[2].prdata),
-      .PREADY      (demux_apb[2].pready),
-      .PSLVERR     (demux_apb[2].pslverr),
-      .interrupt_o (i2c_irq[1]),
-      .scl_pad_i   (i2c_scl_pad_i[1]),
-      .scl_pad_o   (i2c_scl_pad_o[1]),
-      .scl_padoen_o(i2c_scl_padoen_o[1]),
-      .sda_pad_i   (i2c_sda_pad_i[1]),
-      .sda_pad_o   (i2c_sda_pad_o[1]),
-      .sda_padoen_o(i2c_sda_padoen_o[1])
-  );
-
-  apb_cfg_regs #(
-      .Cfg(Cfg)
-  ) i_cfg_regs (
-      .clk_i,
-      .rst_ni,
-      .intc_mtime_en_o(intc_mtime_en),
-      .apb_i(demux_apb[7])
-  );
-
-  apb_spi_master #() i_apb_spi (
-      .HCLK    (clk_i),
-      .HRESETn (rst_ni),
-      .PENABLE (demux_apb[1].penable),
-      .PWRITE  (demux_apb[1].pwrite),
-      .PADDR   (demux_apb[1].paddr[11:0]),
-      .PSEL    (demux_apb[1].psel),
-      .PWDATA  (demux_apb[1].pwdata),
-      .PRDATA  (demux_apb[1].prdata),
-      .PREADY  (demux_apb[1].pready),
-      .PSLVERR (demux_apb[1].pslverr),
-      .events_o(spi_irq),
-      .spi_clk (spi_clk_o),
-      .spi_csn0(spi_csn_o[0]),
-      .spi_csn1(spi_csn_o[1]),
-      .spi_csn2(spi_csn_o[2]),
-      .spi_csn3(spi_csn_o[3]),
-      .spi_mode(spi_mode_o),
-      .spi_sdo0(spi_sdo_o[0]),
-      .spi_sdo1(spi_sdo_o[1]),
-      .spi_sdo2(spi_sdo_o[2]),
-      .spi_sdo3(spi_sdo_o[3]),
-      .spi_sdi0(spi_sdi_i[0]),
-      .spi_sdi1(spi_sdi_i[1]),
-      .spi_sdi2(spi_sdi_i[2]),
-      .spi_sdi3(spi_sdi_i[3])
-  );
-
-  apb_timer_queue #(
-      .NrIrqs(TGSize * 2),
-      .Depth (TGSize * 2)
-  ) i_tq (
-      .clk_i,
-      .rst_ni,
-      .mtime_i    (mtime),
-      .irq_pl_o   (tq_irqs),
-      .irq_full_o (tq_full),
-      .irq_nfull_o(tq_nfull),
-      .apb_sbr    (demux_apb[0])
-  );
 
   assign axi_sbr.aw_valid    = sbr_axil_aw_valid_i;
   assign axi_sbr.aw_addr     = sbr_axil_aw_addr_i;
@@ -369,18 +306,6 @@ module zeroheti_top #(
   assign axi_mgr.r_resp      = mgr_axil_r_resp_i;
   assign axi_mgr.r_valid     = mgr_axil_r_valid_i;
   assign mgr_axil_r_ready_o  = axi_mgr.r_ready;
-
-
-  assign obi_sbr.addr        = '0;
-  assign obi_sbr.req         = 1'b0;
-  assign obi_sbr.rready      = 1'b0;
-  assign obi_sbr.rreadypar   = 1'b0;
-  assign obi_sbr.wdata       = '0;
-  assign obi_sbr.be          = '0;
-  assign obi_sbr.we          = 1'b0;
-  assign obi_sbr.aid         = 1'b0;
-  assign obi_sbr.a_optional  = 1'b0;
-  assign obi_sbr.reqpar      = 1'b0;
 
 `ifndef SYNTHESIS
 `ifndef TECH_MEMORY

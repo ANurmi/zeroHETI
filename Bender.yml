@@ -16,15 +16,18 @@ dependencies:
   apb_spi: { git: "https://github.com/soc-hub-fi/apb_spi.git", version: 0.1.0 }
   apb_timer: { git: "https://github.com/pulp-platform/apb_timer.git", rev: "03eba2e6965f5363df12621882bc70498c551a73" }
   obi: { git: "https://github.com/pulp-platform/obi.git", version: 0.1.7 }
-  tq: { git: "https://github.com/ANurmi/TimerQueue.git", version: 0.0.7 }
+  tq: { git: "https://github.com/ANurmi/TimerQueue.git", version: 0.0.8 }
   edfic: { git: "https://github.com/ANurmi/edfic.git", version: 0.1.0 }
   vbench: { git: "https://github.com/ANurmi/vbench", rev: "main" }
   riscof_verilator: { git: "https://github.com/ANurmi/riscof_verilator.git", version: 0.1.2 }
 
 sources:
+- target: zeroheti_pkg
+  files:
+  - rtl/gen/zeroheti_address_map_pkg.sv
+  - rtl/zeroheti_pkg.sv
 - target: rtl
   files:
-  - rtl/zeroheti_pkg.sv
   - rtl/mock_uart.sv
   - rtl/uart_wrapper.sv
   - rtl/i2c_master_bit_ctrl.sv
@@ -35,6 +38,7 @@ sources:
   - rtl/obi_hetic.sv
   - rtl/obi_mbx.sv
   - rtl/zeroheti_int_ctrl.sv
+  - rtl/zeroheti_peripherals.sv
   - rtl/rt_ibex_wrapper.sv
   - rtl/axi_lite_to_mem.sv
   - rtl/axi_lite_sram.sv

@@ -14,7 +14,13 @@ VERIL_TOP        = $(VERIL_DIR)/tb/$(TOP_MODULE).cc
 
 VERIL_BUILD_DIR ?= $(BUILD_DIR)/verilator_build
 
-BENDER_TARGETS   = -t rtl -t verilator -t tech_cells_generic_exclude_deprecated
+BENDER_TARGETS   = \
+	-t rtl \
+	-t verilator \
+	-t tech_cells_generic_exclude_deprecated \
+	-t zeroheti_pkg \
+
+
 SOURCES          = $(shell bender script flist $(BENDER_TARGETS))
 VBENCH           = $(shell bender path vbench)
 

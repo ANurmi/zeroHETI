@@ -1,18 +1,18 @@
 module zeroheti_dbg_wrapper #(
-    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CpssCfg
+    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CLICCfg
 ) (
-    input  logic                clk_i,
-    input  logic                rst_ni,
-    input  logic                testmode_i,
-    input  logic                jtag_tck_i,
-    input  logic                jtag_tms_i,
-    input  logic                jtag_trst_ni,
-    input  logic                jtag_td_i,
-    output logic                jtag_td_o,
-    output logic                ndmreset_o,
-    output logic                debug_req_o,
-           AXI_LITE.Slave mem_sbr,
-           AXI_LITE.Master     sba_mgr
+    input  logic           clk_i,
+    input  logic           rst_ni,
+    input  logic           testmode_i,
+    input  logic           jtag_tck_i,
+    input  logic           jtag_tms_i,
+    input  logic           jtag_trst_ni,
+    input  logic           jtag_td_i,
+    output logic           jtag_td_o,
+    output logic           ndmreset_o,
+    output logic           debug_req_o,
+           AXI_LITE.Slave  mem_sbr,
+           AXI_LITE.Master sba_mgr
 );
 
   localparam int unsigned IdCode = Cfg.jtag_idcode;
@@ -64,7 +64,7 @@ module zeroheti_dbg_wrapper #(
   );
 
   dm_top #(
-      .DmBaseAddress(Cfg.am.dbg.base)
+      .DmBaseAddress(Cfg.am.core.dbg.base)
   ) i_dm_obi_top (
       .clk_i,
       .rst_ni,

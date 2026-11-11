@@ -69,11 +69,12 @@ module vip_task_scoreboard #(
 
   // Hook into mmio regs in DUT
   bit scb_enable;
-  assign scb_enable = i_dut.i_cfg_regs.gpreg_q[0][0];
+  assign scb_enable = i_dut.i_peripherals.i_cfg_regs.gpreg_q[0][0];
 
   for (genvar i = 0; i < NrTasks; i++) begin : g_sim_hook
-    assign ts[i].available = (ts[i].available) ? 1'b1 : i_dut.i_apb_timer.irq_o[(2*i)+1];
-    assign ts[i].started   = i_dut.i_cfg_regs.gpreg_q[i+1][0];
+    assign ts[i].available = (ts[i].available) ?
+      1'b1 : i_dut.i_peripherals.i_apb_timer.irq_o[(2*i)+1];
+    assign ts[i].started = i_dut.i_peripherals.i_cfg_regs.gpreg_q[i+1][0];
   end
 
 

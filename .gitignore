@@ -7,7 +7,7 @@ verilator/trace_core_00000000.log
 *.log
 rtl/vendor
 workspace_dir
-
+**/__pycache__/**
 
 # Terminal UI testing
 **/ui-test/run*.stdout

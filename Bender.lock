@@ -119,8 +119,8 @@ packages:
     dependencies:
     - common_verification
   tq:
-    revision: f74fb12a8e3d4a14b6560d01bb4ab267e8338ebd
-    version: 0.0.7
+    revision: fc89fb3089b6ed4f7651bdaf8c2839d4966870a0
+    version: 0.0.8
     source:
       Git: https://github.com/ANurmi/TimerQueue.git
     dependencies: []

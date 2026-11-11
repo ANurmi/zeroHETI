@@ -13,13 +13,14 @@ pub enum Interrupt {
     // NC: SupervisorExternal = 9,
     MachineExternal = 11,
     /// Mailbox
-    Mbx = 16,
-    SpiEvent0 = 17,
-    SpiEvent1 = 18,
-    I2c0 = 19,
-    I2c1 = 20,
-    TqFull = 21,
-    TqNFull = 22,
+    Mbx0 = 16,
+    Mbx1 = 17,
+    SpiEvent0 = 18,
+    SpiEvent1 = 19,
+    I2c0 = 20,
+    I2c1 = 21,
+    TqFull = 22,
+    TqNFull = 23,
     Uart = 24,
     // Non-maskable interrupt, carried over from standard Ibex
     Nmi = 31, // reserved

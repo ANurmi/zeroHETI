@@ -1,5 +1,5 @@
 module zeroheti_int_ctrl #(
-    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CpssCfg,
+    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CLICCfg,
     localparam int unsigned NrIrqs = Cfg.irq.num_src,
     parameter int unsigned TsWidth = 12,
     localparam int unsigned IrqWidth = $clog2(Cfg.irq.num_src),
