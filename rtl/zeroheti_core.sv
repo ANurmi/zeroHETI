@@ -1,7 +1,7 @@
 module zeroheti_core
   import zeroheti_pkg::*;
 #(
-    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CpssCfg,
+    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CLICCfg,
     localparam int unsigned IrqWidth = $clog2(Cfg.irq.num_src),
     localparam int unsigned TsWidth = 9,
     localparam int unsigned PrioWidth = 8
@@ -30,12 +30,12 @@ module zeroheti_core
   localparam int unsigned XbarNumMgr = 3;
   localparam int unsigned XbarNumSbr = 3;
 
-  axi_lite_join i_join_mst (
+  axi_lite_join_intf i_join_mst (
       .in (ext_sbr),
       .out(mux_bus[1])
   );
 
-  axi_lite_join i_join_slv (
+  axi_lite_join_intf i_join_slv (
       .in (demux_bus[2]),
       .out(ext_mgr)
   );
@@ -121,13 +121,13 @@ module zeroheti_core
     demux_ar_sel = 2;
 
     unique case (demux_cut.aw_addr) inside
-      [Cfg.am.dbg.base : Cfg.am.dbg.last - 1]: demux_aw_sel = 0;
+      [Cfg.am.core.dbg.base : Cfg.am.core.dbg.last - 1]: demux_aw_sel = 0;
       [Cfg.am.intc.base : Cfg.am.intc.last - 1]: demux_aw_sel = 1;
       default: ;
     endcase
 
     unique case (demux_cut.ar_addr) inside
-      [Cfg.am.dbg.base : Cfg.am.dbg.last - 1]: demux_ar_sel = 0;
+      [Cfg.am.core.dbg.base : Cfg.am.core.dbg.last - 1]: demux_ar_sel = 0;
       [Cfg.am.intc.base : Cfg.am.intc.last - 1]: demux_ar_sel = 1;
       default: ;
     endcase
@@ -167,8 +167,8 @@ module zeroheti_core
   };
 
   localparam axi_pkg::xbar_rule_32_t [XbarCfg.NoAddrRules-1:0] AddrMap = '{
-      '{idx: 32'd2, start_addr: Cfg.am.dmem.base, end_addr: Cfg.am.dmem.last},
-      '{idx: 32'd1, start_addr: Cfg.am.imem.base, end_addr: Cfg.am.imem.last}
+      '{idx: 32'd2, start_addr: Cfg.am.core.dmem.base, end_addr: Cfg.am.core.dmem.last},
+      '{idx: 32'd1, start_addr: Cfg.am.core.imem.base, end_addr: Cfg.am.core.imem.last}
   };
 
   axi_lite_mux_intf #(

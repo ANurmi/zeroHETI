@@ -63,40 +63,40 @@ module mock_uart (
   assign local_addr = paddr_i[2:0] + local_ofs;
 
   always_comb begin
-    prdata_o  = 0;
+
     wdata     = 0;
     local_ofs = 0;
+    pslverr_o = 1'b0;
 
-    unique case (pstrb_i)
-      4'b0001: begin
-        local_ofs = 0;
-        prdata_o = {24'h0, rdata};
-        wdata    = pwdata_i[7:0];
-      end
-      4'b0010: begin
-        local_ofs = 1;
-        prdata_o = {16'h0, rdata, 8'h0};
-        wdata    = pwdata_i[15:8];
-      end
-      4'b0100: begin
-        local_ofs = 2;
-        prdata_o = {8'h0, rdata, 16'h0};
-        wdata    = pwdata_i[23:16];
-      end
-      4'b1000: begin
-        local_ofs = 3;
-        prdata_o = {rdata, 24'h0};
-        wdata    = pwdata_i[31:24];
-      end
-      default: begin
-        if (psel_i & penable_i) $warning(1, "Warning: Illegal UART access");
-      end
-    endcase
+    if (psel_i & penable_i & pwrite_i) begin
+      unique case (pstrb_i)
+        4'b0001: begin
+          local_ofs = 0;
+          wdata    = pwdata_i[7:0];
+        end
+        4'b0010: begin
+          local_ofs = 1;
+          wdata    = pwdata_i[15:8];
+        end
+        4'b0100: begin
+          local_ofs = 2;
+          wdata    = pwdata_i[23:16];
+        end
+        4'b1000: begin
+          local_ofs = 3;
+          wdata    = pwdata_i[31:24];
+        end
+        default: begin
+
+          pslverr_o = 1'b1;
+          $warning("Warning: Illegal UART access");
+        end
+      endcase
+    end
   end
 
-
-  assign pready_o  = 1'b1;
-  assign pslverr_o = 1'b0;
+  assign prdata_o = 32'(rdata << 8 * 32'(paddr_i[1:0]));
+  assign pready_o = 1'b1;
 
   function void uart_tx(byte ch);
     $write("%c", ch);

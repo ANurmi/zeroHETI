@@ -1,0 +1,16 @@
+version: 1
+
+figure:
+  title: "zeroHETI memory map"
+  footer: ""
+  legend: true
+
+memory:
+  address_bits: 32
+  regions:
+    - { id: bootrom, name: BootROM,                start: 0x00030000, size: 12K }
+    - { id: intc,    name: Interrupt Controller,   start: 0x00100000, size: 8K  }
+    - { id: mbx,     name: Mailbox,                start: 0x00108000, size: 36  }
+    - { id: ext,     name: External Address Space, start: 0x00110000, size: 1   }
+    - include: peripherals.yml
+    - include: core.yml

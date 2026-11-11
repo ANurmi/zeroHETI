@@ -39,6 +39,8 @@ loop:
 .p2align 8
 default_handler:
   li t0, 0x00000380
-  li t1, 0x8BADC0DE
+  csrr t1, mcause
+  li t2, 0x80000000
+  and t1, t1, t2
   sw t1, 0(t0)
   wfi
