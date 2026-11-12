@@ -529,7 +529,7 @@ mod app {
         }
     }
 
-    #[task(binds = Mbx, priority = 0xfe, shared = [mail_buf_0, mail_buf_1, mail_buf_2, mail_buf_3, ibx, obx ])]
+    #[task(binds = Mbx0, priority = 0xfe, shared = [mail_buf_0, mail_buf_1, mail_buf_2, mail_buf_3, ibx, obx ])]
     struct Mail {}
     impl RticTask for Mail {
         fn init() -> Self {
