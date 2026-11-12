@@ -37,7 +37,7 @@ package zeroheti_pkg;
   localparam core_cfg_t DefaultCoreCfg = '{
       rve       : 1,
       bt_alu    : 1,
-      wb_stage  : 1,
+      wb_stage  : 0,
       mul       : ibex_pkg::RV32MSingleCycle,
       rf        : ibex_pkg::RegFileFF,
       hart_id   : 0
