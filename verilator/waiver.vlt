@@ -35,6 +35,7 @@ lint_off -rule UNOPTFLAT -file "*/apb*/*" -match "*"
 lint_off -rule UNOPTFLAT -file "*/riscv-dbg*/*" -match "*"
 lint_off -rule UNOPTFLAT -file "*/rt-ibex*/*" -match "*"
 lint_off -rule UNOPTFLAT -file "*/axi-*/src/axi_lite_*" -match "*"
+lint_off -rule UNOPTFLAT -file "*/axi-*/src/axi_intf.sv" -match "*"
 lint_off -rule UNOPTFLAT -file "*/axi-*/src/axi_err_*" -match "*"
 
 lint_off -rule PINMISSING -file "*/ibex_core.sv" -match "*"
