@@ -1,4 +1,4 @@
-//! Proc-macros used by `atalanta_bsp`
+//! Proc-macros used by `zeroheti_bsp`
 mod archi;
 mod trampoline;
 mod validate;

@@ -34,7 +34,7 @@ pub(crate) fn validate_interrupt_handler(args: TokenStream, f: &ItemFn) -> Optio
         return Some(
             parse::Error::new(
                 f.sig.ident.span(),
-                "`#[nested_interrupt]` function must have identifier that matches with one of platform interrupts in atalanta_bsp::interrupt::Interrupt",
+                "`#[nested_interrupt]` function must have identifier that matches with one of platform interrupts in zeroheti_bsp::interrupt::Interrupt",
             )
             .to_compile_error()
             .into(),
