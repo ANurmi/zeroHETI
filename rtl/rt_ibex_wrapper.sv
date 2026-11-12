@@ -12,7 +12,6 @@ module rt_ibex_wrapper #(
     input  logic           [PrioWidth-1:0] irq_level_i,
     input  logic                           irq_shv_i,
     input  logic           [          1:0] irq_priv_i,
-    output logic           [ IrqWidth-1:0] irq_id_o,
     output logic           [ IrqWidth-1:0] irq_id_claim_o,
     input  logic           [   NumIrq-1:0] core_irq_i,
     input  logic           [         63:0] mtime_gated_i,
