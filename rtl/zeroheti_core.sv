@@ -249,7 +249,6 @@ module zeroheti_core
       .irq_id_claim_o(irq_id_claim),
       .irq_ack_o     (irq_ack),
       .irq_level_i   (irq_level),
-      .irq_id_o      (irq_id),
       .irq_shv_i     (irq_shv),
       .irq_priv_i    (irq_priv),
       .mtime_gated_i (mtime_gated),
