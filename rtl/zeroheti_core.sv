@@ -30,16 +30,6 @@ module zeroheti_core
   localparam int unsigned XbarNumMgr = 3;
   localparam int unsigned XbarNumSbr = 3;
 
-  axi_lite_join_intf i_join_mst (
-      .in (ext_sbr),
-      .out(mux_bus[1])
-  );
-
-  axi_lite_join_intf i_join_slv (
-      .in (demux_bus[2]),
-      .out(ext_mgr)
-  );
-
   AXI_LITE #(
       .AXI_ADDR_WIDTH(32'd32),
       .AXI_DATA_WIDTH(32'd32)
@@ -71,6 +61,16 @@ module zeroheti_core
   ) sbr_bus[XbarNumSbr-1:0] ();
 
   APB ic_bus ();
+
+  axi_lite_join_intf i_join_mst (
+      .in (ext_sbr),
+      .out(mux_bus[1])
+  );
+
+  axi_lite_join_intf i_join_slv (
+      .in (demux_bus[2]),
+      .out(ext_mgr)
+  );
 
   logic [DemuxWidth-1:0] demux_aw_sel, demux_ar_sel;
 
