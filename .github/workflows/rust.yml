@@ -33,7 +33,7 @@ jobs:
           submodules: "true"
 
       - name: Fetch dependencies
-        run: bender update && bender vendor init
+        run: bender checkout
 
       - name: Check BSP
         run: |
