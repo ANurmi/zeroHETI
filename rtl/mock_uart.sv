@@ -54,13 +54,14 @@ module mock_uart (
   logic read_event, write_event;
   assign write_event = penable_i & psel_i & pwrite_i;
   assign read_event  = penable_i & psel_i & ~pwrite_i;
-  byte wdata, rdata;
+  byte wdata;
   /* verilator lint_off UNOPTFLAT*/
   logic [2:0] local_ofs;
   logic [2:0] local_addr;
   /* verilator lint_on UNOPTFLAT*/
 
-  assign local_addr = paddr_i[2:0] + local_ofs;
+  // APB assued to be word-alligned
+  assign local_addr = {paddr_i[2], 2'b00} + local_ofs;
 
   always_comb begin
 
@@ -95,7 +96,6 @@ module mock_uart (
     end
   end
 
-  assign prdata_o = 32'(rdata << 8 * 32'(paddr_i[1:0]));
   assign pready_o = 1'b1;
 
   function void uart_tx(byte ch);
@@ -133,27 +133,32 @@ module mock_uart (
     end
   end
 
+  function automatic logic [7:0] reg_read(logic [2:0] addr);
+    logic [7:0] r;
+    r = 8'h0;
+    case (addr)
+      RBR: if (lcr & 'h80) r = dll;
+      IER: begin
+        if (lcr & 'h80) r = dlm;
+        else r = ier;
+      end
+      IIR: r = fifo_enabled ? 8'hc0 : 8'h00;
+      LCR: r = lcr;
+      MCR: r = mcr;
+      LSR: r = lsr | (1 << THRE) | (1 << TEMT);
+      MSR: r = msr;
+      SCR: r = scr;
+      default: ;
+    endcase
+    return r;
+  endfunction : reg_read
+
   always_comb begin
+    prdata_o = '0;
     if (read_event) begin
-      case (local_addr)
-        THR: begin
-          if (lcr & 'h80) rdata = {24'b0, dll};
-        end
-        IER: begin
-          if (lcr & 'h80) rdata = {24'b0, dlm};
-          else rdata = {24'b0, ier};
-        end
-        IIR: begin
-          if (fifo_enabled) rdata = {24'b0, 8'hc0};
-          else rdata = {24'b0, 8'b0};
-        end
-        LCR: rdata = {24'b0, lcr};
-        MCR: rdata = {24'b0, mcr};
-        LSR: rdata = {24'b0, (lsr | (1 << THRE) | (1 << TEMT))};
-        MSR: rdata = {24'b0, msr};
-        SCR: rdata = {24'b0, scr};
-        default: ;
-      endcase
+      for (int unsigned i = 0; i < 4; i++) begin
+        prdata_o[8*i+:8] = reg_read({paddr_i[2], 2'b00} + 3'(i));
+      end
     end
   end
 

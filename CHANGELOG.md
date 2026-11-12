@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+## [v1.2.0] - 2026-11-12
+
+### Added
+- Bender target to control local package use to allow for supplementation
+
+### Changed
+- Internal connectivity from OBI to AXI-Lite
+- Hardware address map defined by single source of truth YML-file
+
+### Removed
+- Different platform configuration templates
+
 ## [v1.1.1] - 2026-10-30
 
 ### Changed
