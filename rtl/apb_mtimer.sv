@@ -71,7 +71,7 @@ module apb_mtimer #(
     prdata_o    = '0;
     prescaler_d = prescaler_q;
     enable_d    = enable_q;
-    if (penable_i) begin
+    if (penable_i & psel_i) begin
       if (pwrite_i) begin  // write logic
         case (int_addr)
           MTimeAddrLow:     mtime_lo = pwdata_i;
