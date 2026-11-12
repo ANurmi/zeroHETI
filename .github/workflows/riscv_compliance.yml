@@ -23,7 +23,7 @@ jobs:
           echo $GITHUB_WORKSPACE/tmp/bin >> $GITHUB_PATH
 
       - name: Fetch dependencies
-        run: bender update && bender vendor init
+        run: bender checkout
 
       - name: Install Verilator
         run: sudo apt install verilator=5.020-1
