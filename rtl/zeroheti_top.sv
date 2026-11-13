@@ -307,6 +307,23 @@ module zeroheti_top #(
   assign axi_mgr.r_valid     = mgr_axil_r_valid_i;
   assign mgr_axil_r_ready_o  = axi_mgr.r_ready;
 
+  assign axi_tieoff.aw_addr  = 32'h0;
+  assign axi_tieoff.aw_prot  = 3'h0;
+  assign axi_tieoff.aw_valid = 1'b0;
+
+  assign axi_tieoff.w_data   = 32'h0;
+  assign axi_tieoff.w_strb   = 4'h0;
+  assign axi_tieoff.w_valid  = 1'h0;
+
+  assign axi_tieoff.b_ready  = 1'h0;
+
+  assign axi_tieoff.ar_addr  = 32'h0;
+  assign axi_tieoff.ar_prot  = 3'h0;
+  assign axi_tieoff.ar_valid = 1'b0;
+  
+  assign axi_tieoff.r_ready  = 1'h0;
+
+
 `ifndef SYNTHESIS
 `ifndef TECH_MEMORY
 
