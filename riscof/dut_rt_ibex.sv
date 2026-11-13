@@ -23,7 +23,7 @@ module riscof_dut #(
 );
 
 
-  ibex_top_tracing #() i_rt_ibex (
+  rt_ibex_top_tracing #() i_rt_ibex (
       .clk_i,
       .rst_ni,
 

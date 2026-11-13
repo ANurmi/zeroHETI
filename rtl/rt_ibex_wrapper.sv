@@ -43,9 +43,9 @@ module rt_ibex_wrapper #(
                      | data_mgr.b_resp[1] & data_mgr.b_valid;
 
   `ifndef SYNTHESIS
-  ibex_top_tracing #(
+  rt_ibex_top_tracing #(
   `else
-  ibex_top #(
+  rt_ibex_top #(
   `endif
       .PMPEnable       (0),
       .PMPGranularity  (0),
@@ -54,7 +54,7 @@ module rt_ibex_wrapper #(
       .MHPMCounterWidth(40),
       .RV32E           (Cfg.core.rve),
       .RV32M           (Cfg.core.mul),
-      .RV32B           (ibex_pkg::RV32BNone),
+      .RV32B           (rt_ibex_pkg::RV32BNone),
       .WritebackStage  (Cfg.core.wb_stage),
       .RegFile         (Cfg.core.rf),
       .ICache          (1'b0),
@@ -65,8 +65,8 @@ module rt_ibex_wrapper #(
       .CLIC            (1'b1),
       .HardwareStacking(1'b0),
       .NumInterrupts   (Cfg.irq.num_src),
-      .RndCnstLfsrSeed (ibex_pkg::RndCnstLfsrSeedDefault),
-      .RndCnstLfsrPerm (ibex_pkg::RndCnstLfsrPermDefault),
+      .RndCnstLfsrSeed (rt_ibex_pkg::RndCnstLfsrSeedDefault),
+      .RndCnstLfsrPerm (rt_ibex_pkg::RndCnstLfsrPermDefault),
       .DbgTriggerEn    (0),
       .DmHaltAddr      (32'(dm::HaltAddress)),
       .DmExceptionAddr (32'(dm::ExceptionAddress)),
