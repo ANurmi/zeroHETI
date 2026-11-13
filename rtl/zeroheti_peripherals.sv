@@ -9,6 +9,7 @@ module zeroheti_peripherals #(
     output logic                           uart_irq_o,
     output logic                           mtime_en_o,
     output logic                           mtime_irq_o,
+    output logic          [          63:0] mtime_o,
     output logic          [(TGSize*2)-1:0] timer_irq_o,
     output logic          [(TGSize*2)-1:0] tq_irq_o,
     output logic                           tq_full_o,
@@ -57,6 +58,8 @@ module zeroheti_peripherals #(
   logic [NrApbPerip-1:0][31:0] prdata;
   logic [NrApbPerip-1:0]       pready;
   logic [NrApbPerip-1:0]       pslverr;
+
+  assign mtime_o = mtime;
 
   axi_lite_to_apb_intf #(
       .NoApbSlaves(NrApbPerip),

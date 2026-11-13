@@ -187,6 +187,7 @@ module zeroheti_top #(
       .uart_irq_o (uart_irq),
       .mtime_en_o (intc_mtime_en),
       .mtime_irq_o(mtime_irq),
+      .mtime_o    (mtime),
       .timer_irq_o(apb_timer_irqs),
       .tq_irq_o   (tq_irqs),
       .tq_full_o  (tq_full),

@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+## [v1.2.1] - 2026-11-13
+### Fixed
+- Undriven mtime_i port in zeroheti_core
+
 ## [v1.2.0] - 2026-11-13
 
 ### Added
