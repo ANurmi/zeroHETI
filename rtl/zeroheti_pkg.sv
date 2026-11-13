@@ -15,8 +15,8 @@ package zeroheti_pkg;
     bit rve;
     bit bt_alu;
     bit wb_stage;
-    ibex_pkg::rv32m_e mul;
-    ibex_pkg::regfile_e rf;
+    rt_ibex_pkg::rv32m_e mul;
+    rt_ibex_pkg::regfile_e rf;
     int unsigned hart_id;
   } core_cfg_t;
 
@@ -29,8 +29,8 @@ package zeroheti_pkg;
       rve       : 1,
       bt_alu    : 0,
       wb_stage  : 0,
-      mul       : ibex_pkg::RV32MNone,
-      rf        : ibex_pkg::RegFileFF,
+      mul       : rt_ibex_pkg::RV32MNone,
+      rf        : rt_ibex_pkg::RegFileFF,
       hart_id   : 0
   };
 
@@ -38,8 +38,8 @@ package zeroheti_pkg;
       rve       : 1,
       bt_alu    : 1,
       wb_stage  : 0,
-      mul       : ibex_pkg::RV32MSingleCycle,
-      rf        : ibex_pkg::RegFileFF,
+      mul       : rt_ibex_pkg::RV32MSingleCycle,
+      rf        : rt_ibex_pkg::RegFileFF,
       hart_id   : 0
   };
 
