@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [v1.2.2] - 2026-11-16
+### Fixed
+- Residual comb loop in rt-ibex controller
+
 ## [v1.2.1] - 2026-11-13
 ### Fixed
 - Undriven mtime_i port in zeroheti_core
