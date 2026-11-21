@@ -1,5 +1,3 @@
-version: 1
-
 regions:
   - id: core
     name: Core

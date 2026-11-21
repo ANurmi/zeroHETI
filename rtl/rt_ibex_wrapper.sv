@@ -70,7 +70,7 @@ module rt_ibex_wrapper #(
       .DbgTriggerEn    (0),
       .DmHaltAddr      (32'(dm::HaltAddress)),
       .DmExceptionAddr (32'(dm::ExceptionAddress)),
-      .MClicBaseAddr   (Cfg.am.intc.base),
+      .MClicBaseAddr   (Cfg.am.intc.start_addr),
       .BranchTargetALU (Cfg.core.bt_alu)
   ) i_rt_ibex (
       .clk_i,

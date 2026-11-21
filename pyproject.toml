@@ -1,0 +1,27 @@
+[project]
+name = "zeroheti"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Antti Nurmi", email = "antti.nurmi@tuni.fi" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "mmapc",
+]
+
+[project.scripts]
+zeroheti = "zeroheti:main"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv.workspace]
+members = [
+    "mmap/mmapc",
+]
+
+[tool.uv.sources]
+mmapc = { workspace = true, editable = true }
