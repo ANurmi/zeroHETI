@@ -36,14 +36,14 @@ module zeroheti_peripherals #(
   localparam int unsigned ApbWidth = 32;
 
   localparam axi_pkg::xbar_rule_32_t [NrApbPerip-1:0] AddrMap = '{
-      '{idx: 32'd7, start_addr: PerMap.spi.base, end_addr: PerMap.spi.last},
-      '{idx: 32'd6, start_addr: PerMap.cfg.base, end_addr: PerMap.cfg.last},
-      '{idx: 32'd5, start_addr: PerMap.tq.base, end_addr: PerMap.tq.last},
-      '{idx: 32'd4, start_addr: PerMap.tg.base, end_addr: PerMap.tg.last},
-      '{idx: 32'd3, start_addr: PerMap.i2c1.base, end_addr: PerMap.i2c1.last},
-      '{idx: 32'd2, start_addr: PerMap.i2c0.base, end_addr: PerMap.i2c0.last},
-      '{idx: 32'd1, start_addr: PerMap.mtimer.base, end_addr: PerMap.mtimer.last},
-      '{idx: 32'd0, start_addr: PerMap.uart.base, end_addr: PerMap.uart.last}
+      '{idx: 32'd7, start_addr: PerMap.spi.start_addr, end_addr: PerMap.spi.end_addr},
+      '{idx: 32'd6, start_addr: PerMap.cfg.start_addr, end_addr: PerMap.cfg.end_addr},
+      '{idx: 32'd5, start_addr: PerMap.tq.start_addr, end_addr: PerMap.tq.end_addr},
+      '{idx: 32'd4, start_addr: PerMap.tg.start_addr, end_addr: PerMap.tg.end_addr},
+      '{idx: 32'd3, start_addr: PerMap.i2c1.start_addr, end_addr: PerMap.i2c1.end_addr},
+      '{idx: 32'd2, start_addr: PerMap.i2c0.start_addr, end_addr: PerMap.i2c0.end_addr},
+      '{idx: 32'd1, start_addr: PerMap.mtimer.start_addr, end_addr: PerMap.mtimer.end_addr},
+      '{idx: 32'd0, start_addr: PerMap.uart.start_addr, end_addr: PerMap.uart.end_addr}
   };
 
   logic [          63:0]       mtime;

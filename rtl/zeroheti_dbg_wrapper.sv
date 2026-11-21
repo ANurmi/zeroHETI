@@ -64,7 +64,7 @@ module zeroheti_dbg_wrapper #(
   );
 
   dm_top #(
-      .DmBaseAddress(Cfg.am.core.dbg.base)
+      .DmBaseAddress(Cfg.am.core.dbg.start_addr)
   ) i_dm_obi_top (
       .clk_i,
       .rst_ni,

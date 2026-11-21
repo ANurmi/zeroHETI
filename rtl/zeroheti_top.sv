@@ -173,7 +173,7 @@ module zeroheti_top #(
       .test_i     (1'b0),
       .slv        (axi_mbx),
       .irq_o      (mbx_irq),
-      .base_addr_i({Cfg.am.mbx.base, Cfg.am.mbx.base})
+      .base_addr_i({Cfg.am.mbx.start_addr, Cfg.am.mbx.start_addr})
   );
 
   zeroheti_peripherals #(
@@ -230,14 +230,14 @@ module zeroheti_top #(
     demux_aw_sel = 2;
 
     unique case (axi_core.ar_addr) inside
-      [Cfg.am.mbx.base : Cfg.am.mbx.last - 1]:       demux_ar_sel = 0;
-      [Cfg.am.periph.base : Cfg.am.periph.last - 1]: demux_ar_sel = 1;
+      [Cfg.am.mbx.start_addr : Cfg.am.mbx.end_addr - 1]:       demux_ar_sel = 0;
+      [Cfg.am.periph.start_addr : Cfg.am.periph.end_addr - 1]: demux_ar_sel = 1;
       default:                                       ;
     endcase
 
     unique case (axi_core.aw_addr) inside
-      [Cfg.am.mbx.base : Cfg.am.mbx.last - 1]:       demux_aw_sel = 0;
-      [Cfg.am.periph.base : Cfg.am.periph.last - 1]: demux_aw_sel = 1;
+      [Cfg.am.mbx.start_addr : Cfg.am.mbx.end_addr - 1]:       demux_aw_sel = 0;
+      [Cfg.am.periph.start_addr : Cfg.am.periph.end_addr - 1]: demux_aw_sel = 1;
       default:                                       ;
     endcase
   end

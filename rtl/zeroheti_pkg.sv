@@ -55,8 +55,8 @@ package zeroheti_pkg;
 
   localparam zeroheti_address_map_pkg::addr_map_t AddrMap = zeroheti_address_map_pkg::AddressMap;
 
-  localparam int unsigned SizeImem = AddrMap.core.imem.last - AddrMap.core.imem.base;
-  localparam int unsigned SizeDmem = AddrMap.core.dmem.last - AddrMap.core.dmem.base;
+  localparam int unsigned SizeImem = AddrMap.core.imem.end_addr - AddrMap.core.imem.start_addr;
+  localparam int unsigned SizeDmem = AddrMap.core.dmem.end_addr - AddrMap.core.dmem.start_addr;
 
   localparam mem_t Imem = '{bytes: SizeImem, banks: 8};
   localparam mem_t Dmem = '{bytes: SizeDmem, banks: 8};

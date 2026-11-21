@@ -12,3 +12,4 @@ workspace_dir
 # Terminal UI testing
 **/ui-test/run*.stdout
 
+.python-version

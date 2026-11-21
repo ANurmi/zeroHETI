@@ -121,14 +121,14 @@ module zeroheti_core
     demux_ar_sel = 2;
 
     unique case (demux_cut.aw_addr) inside
-      [Cfg.am.core.dbg.base : Cfg.am.core.dbg.last - 1]: demux_aw_sel = 0;
-      [Cfg.am.intc.base : Cfg.am.intc.last - 1]: demux_aw_sel = 1;
+      [Cfg.am.core.dbg.start_addr : Cfg.am.core.dbg.end_addr - 1]: demux_aw_sel = 0;
+      [Cfg.am.intc.start_addr : Cfg.am.intc.end_addr - 1]: demux_aw_sel = 1;
       default: ;
     endcase
 
     unique case (demux_cut.ar_addr) inside
-      [Cfg.am.core.dbg.base : Cfg.am.core.dbg.last - 1]: demux_ar_sel = 0;
-      [Cfg.am.intc.base : Cfg.am.intc.last - 1]: demux_ar_sel = 1;
+      [Cfg.am.core.dbg.start_addr : Cfg.am.core.dbg.end_addr - 1]: demux_ar_sel = 0;
+      [Cfg.am.intc.start_addr : Cfg.am.intc.end_addr - 1]: demux_ar_sel = 1;
       default: ;
     endcase
 
@@ -167,8 +167,8 @@ module zeroheti_core
   };
 
   localparam axi_pkg::xbar_rule_32_t [XbarCfg.NoAddrRules-1:0] AddrMap = '{
-      '{idx: 32'd2, start_addr: Cfg.am.core.dmem.base, end_addr: Cfg.am.core.dmem.last},
-      '{idx: 32'd1, start_addr: Cfg.am.core.imem.base, end_addr: Cfg.am.core.imem.last}
+      '{idx: 32'd2, start_addr: Cfg.am.core.dmem.start_addr, end_addr: Cfg.am.core.dmem.end_addr},
+      '{idx: 32'd1, start_addr: Cfg.am.core.imem.start_addr, end_addr: Cfg.am.core.imem.end_addr}
   };
 
   axi_lite_mux_intf #(
