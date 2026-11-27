@@ -44,13 +44,11 @@ package zeroheti_pkg;
   };
 
   typedef struct packed {
-    mem_t                                imem;
-    mem_t                                dmem;
-    int unsigned                         size_tg;
-    irq_t                                irq;
-    core_cfg_t                           core;
-    zeroheti_address_map_pkg::addr_map_t am;
-    logic [31:0]                         jtag_idcode;
+    mem_t        imem;
+    mem_t        dmem;
+    irq_t        irq;
+    core_cfg_t   core;
+    logic [31:0] jtag_idcode;
   } platform_cfg_t;
 
   localparam zeroheti_address_map_pkg::addr_map_t AddrMap = zeroheti_address_map_pkg::AddressMap;
@@ -68,19 +66,15 @@ package zeroheti_pkg;
   localparam platform_cfg_t EDFICCfg = '{
       imem: Imem,
       dmem: Dmem,
-      size_tg    : 16,
-      core        : DefaultCoreCfg,
+      core: DefaultCoreCfg,
       irq: IrqEdfic,
-      am: AddrMap,
       jtag_idcode: 32'hFEED_C0D3
   };
   localparam platform_cfg_t CLICCfg = '{
       imem: Imem,
       dmem: Dmem,
-      size_tg : 16,
       core: DefaultCoreCfg,
       irq: IrqClic,
-      am: AddrMap,
       jtag_idcode: 32'hFEED_C0D3
   };
 

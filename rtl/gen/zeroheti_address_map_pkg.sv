@@ -28,7 +28,16 @@ package zeroheti_address_map_pkg;
     logic [AddrWidth-1:0] start_addr;
     logic [AddrWidth-1:0] end_addr;
     int unsigned          num;
-    addr_rule_t           dbg;
+    addr_rule_t           data;
+    addr_rule_t           halt;
+    addr_rule_t           exception;
+  } dbg_map_t;
+
+  typedef struct packed {
+    logic [AddrWidth-1:0] start_addr;
+    logic [AddrWidth-1:0] end_addr;
+    int unsigned          num;
+    dbg_map_t             dbg;
     addr_rule_t           imem;
     addr_rule_t           dmem;
   } core_map_t;
@@ -43,23 +52,26 @@ package zeroheti_address_map_pkg;
     core_map_t   core;
   } addr_map_t;
 
-  localparam addr_rule_t BootromAddr = '{start_addr: 32'h0003_0000, end_addr: 32'h0003_3000};  // BootROM
-  localparam addr_rule_t IntcAddr    = '{start_addr: 32'h0010_0000, end_addr: 32'h0010_2000};  // Interrupt Controller
-  localparam addr_rule_t MbxAddr     = '{start_addr: 32'h0010_8000, end_addr: 32'h0010_8024};  // Mailbox
-  localparam addr_rule_t ExtAddr     = '{start_addr: 32'h0011_0000, end_addr: 32'h0000_0000};  // External Address Space (end_addr 0: extends to the top of the address space)
-  localparam addr_rule_t PeriphAddr  = '{start_addr: 32'h0003_3000, end_addr: 32'h000B_3000};  // Peripherals
-  localparam addr_rule_t UartAddr    = '{start_addr: 32'h0003_3000, end_addr: 32'h0003_3008};  // UART
-  localparam addr_rule_t MtimerAddr  = '{start_addr: 32'h0003_3100, end_addr: 32'h0003_3114};  // Machine Timer
-  localparam addr_rule_t I2c0Addr    = '{start_addr: 32'h0003_3200, end_addr: 32'h0003_3300};  // I2C0
-  localparam addr_rule_t I2c1Addr    = '{start_addr: 32'h0003_3300, end_addr: 32'h0003_3400};  // I2C1
-  localparam addr_rule_t TgAddr      = '{start_addr: 32'h0003_3400, end_addr: 32'h0003_3800};  // Timer Group
-  localparam addr_rule_t TqAddr      = '{start_addr: 32'h0003_3800, end_addr: 32'h0003_3900};  // Timer Queue
-  localparam addr_rule_t CfgAddr     = '{start_addr: 32'h0003_4000, end_addr: 32'h0003_5000};  // Config
-  localparam addr_rule_t SpiAddr     = '{start_addr: 32'h0003_5000, end_addr: 32'h0003_5100};  // SPI
-  localparam addr_rule_t CoreAddr    = '{start_addr: 32'h0000_0000, end_addr: 32'h0003_0000};  // Core
-  localparam addr_rule_t DbgAddr     = '{start_addr: 32'h0000_0000, end_addr: 32'h0000_1000};  // Debug
-  localparam addr_rule_t ImemAddr    = '{start_addr: 32'h0001_0000, end_addr: 32'h0002_0000};  // Instruction Memory
-  localparam addr_rule_t DmemAddr    = '{start_addr: 32'h0002_0000, end_addr: 32'h0003_0000};  // Data Memory
+  localparam addr_rule_t BootromAddr   = '{start_addr: 32'h0003_0000, end_addr: 32'h0003_3000};  // BootROM
+  localparam addr_rule_t IntcAddr      = '{start_addr: 32'h0010_0000, end_addr: 32'h0010_2000};  // Interrupt Controller
+  localparam addr_rule_t MbxAddr       = '{start_addr: 32'h0010_8000, end_addr: 32'h0010_8024};  // Mailbox
+  localparam addr_rule_t ExtAddr       = '{start_addr: 32'h0011_0000, end_addr: 32'h0000_0000};  // External Address Space (end_addr 0: extends to the top of the address space)
+  localparam addr_rule_t PeriphAddr    = '{start_addr: 32'h0003_3000, end_addr: 32'h000B_3000};  // Peripherals
+  localparam addr_rule_t UartAddr      = '{start_addr: 32'h0003_3000, end_addr: 32'h0003_3008};  // UART
+  localparam addr_rule_t MtimerAddr    = '{start_addr: 32'h0003_3100, end_addr: 32'h0003_3114};  // Machine Timer
+  localparam addr_rule_t I2c0Addr      = '{start_addr: 32'h0003_3200, end_addr: 32'h0003_3300};  // I2C0
+  localparam addr_rule_t I2c1Addr      = '{start_addr: 32'h0003_3300, end_addr: 32'h0003_3400};  // I2C1
+  localparam addr_rule_t TgAddr        = '{start_addr: 32'h0003_3400, end_addr: 32'h0003_3800};  // Timer Group
+  localparam addr_rule_t TqAddr        = '{start_addr: 32'h0003_3800, end_addr: 32'h0003_3900};  // Timer Queue
+  localparam addr_rule_t CfgAddr       = '{start_addr: 32'h0003_4000, end_addr: 32'h0003_5000};  // Config
+  localparam addr_rule_t SpiAddr       = '{start_addr: 32'h0003_5000, end_addr: 32'h0003_5100};  // SPI
+  localparam addr_rule_t CoreAddr      = '{start_addr: 32'h0000_0000, end_addr: 32'h0003_0000};  // Core
+  localparam addr_rule_t DbgAddr       = '{start_addr: 32'h0000_0000, end_addr: 32'h0000_1000};  // Debug Buffer
+  localparam addr_rule_t DataAddr      = '{start_addr: 32'h0000_0380, end_addr: 32'h0000_0384};  // Debug Data Address
+  localparam addr_rule_t HaltAddr      = '{start_addr: 32'h0000_0800, end_addr: 32'h0000_0804};  // Debug Halt Address
+  localparam addr_rule_t ExceptionAddr = '{start_addr: 32'h0000_0810, end_addr: 32'h0000_0814};  // Debug Exception Address
+  localparam addr_rule_t ImemAddr      = '{start_addr: 32'h0001_0000, end_addr: 32'h0002_0000};  // Instruction Memory
+  localparam addr_rule_t DmemAddr      = '{start_addr: 32'h0002_0000, end_addr: 32'h0003_0000};  // Data Memory
 
   localparam periph_map_t PeriphMap = '{
     start_addr: PeriphAddr.start_addr,
@@ -75,11 +87,20 @@ package zeroheti_address_map_pkg;
     spi:        SpiAddr
   };
 
+  localparam dbg_map_t DbgMap = '{
+    start_addr: DbgAddr.start_addr,
+    end_addr:   DbgAddr.end_addr,
+    num:        3,
+    data:       DataAddr,
+    halt:       HaltAddr,
+    exception:  ExceptionAddr
+  };
+
   localparam core_map_t CoreMap = '{
     start_addr: CoreAddr.start_addr,
     end_addr:   CoreAddr.end_addr,
     num:        3,
-    dbg:        DbgAddr,
+    dbg:        DbgMap,
     imem:       ImemAddr,
     dmem:       DmemAddr
   };

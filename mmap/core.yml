@@ -4,6 +4,14 @@ regions:
     start: 0x00000000
     size: 192K
     children:
-      - { id: dbg,  start: 0x00000000 ,name: Debug,              size: 4K  }
+      - id: dbg
+        start: 0x00000000
+        name: Debug Buffer
+        size: 4K
+        children:
+        - { id: data,      start: 0x380, name: Debug Data Address,      size: 4 }
+        - { id: halt,      start: 0x800, name: Debug Halt Address,      size: 4 }
+        - { id: exception, start: 0x810, name: Debug Exception Address, size: 4 }
+
       - { id: imem, start: 0x00010000 ,name: Instruction Memory, size: 64K }
       - { id: dmem, start: 0x00020000 ,name: Data Memory,        size: 64K }

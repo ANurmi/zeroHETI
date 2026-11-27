@@ -1,5 +1,7 @@
 module zeroheti_dbg_wrapper #(
-    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CLICCfg
+    parameter zeroheti_pkg::platform_cfg_t Cfg        = zeroheti_pkg::CLICCfg,
+    parameter type                         addr_map_t = zeroheti_address_map_pkg::addr_map_t,
+    parameter addr_map_t                   AddrMap    = zeroheti_address_map_pkg::AddressMap
 ) (
     input  logic           clk_i,
     input  logic           rst_ni,
@@ -64,7 +66,7 @@ module zeroheti_dbg_wrapper #(
   );
 
   dm_top #(
-      .DmBaseAddress(Cfg.am.core.dbg.start_addr)
+      .DmBaseAddress(AddrMap.core.dbg.start_addr)
   ) i_dm_obi_top (
       .clk_i,
       .rst_ni,
