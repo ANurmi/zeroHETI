@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [v1.2.2] - 2026-11-27
+## [v1.2.3] - 2026-11-27
 ### Changed
 - Base address maps on mmapc
 
