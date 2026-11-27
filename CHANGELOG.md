@@ -6,8 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [v1.2.2] - 2026-11-27
 ### Changed
-- Local yml address map generation to mmapc repo
+- Base address maps on mmapc
 
 ## [v1.2.2] - 2026-11-16
 ### Fixed

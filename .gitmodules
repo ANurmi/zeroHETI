@@ -4,6 +4,3 @@
 [submodule "examples/mrtic"]
 	path = examples/mrtic
 	url = https://github.com/hegza/rtic-mc-experiments/
-[submodule "mmap/mmapc"]
-	path = mmap/mmapc
-	url = https://github.com/ANurmi/mmapc.git

@@ -46,7 +46,7 @@ package zeroheti_address_map_pkg;
   localparam addr_rule_t BootromAddr = '{start_addr: 32'h0003_0000, end_addr: 32'h0003_3000};  // BootROM
   localparam addr_rule_t IntcAddr    = '{start_addr: 32'h0010_0000, end_addr: 32'h0010_2000};  // Interrupt Controller
   localparam addr_rule_t MbxAddr     = '{start_addr: 32'h0010_8000, end_addr: 32'h0010_8024};  // Mailbox
-  localparam addr_rule_t ExtAddr     = '{start_addr: 32'h0011_0000, end_addr: 32'h0011_0001};  // External Address Space
+  localparam addr_rule_t ExtAddr     = '{start_addr: 32'h0011_0000, end_addr: 32'h0000_0000};  // External Address Space (end_addr 0: extends to the top of the address space)
   localparam addr_rule_t PeriphAddr  = '{start_addr: 32'h0003_3000, end_addr: 32'h000B_3000};  // Peripherals
   localparam addr_rule_t UartAddr    = '{start_addr: 32'h0003_3000, end_addr: 32'h0003_3008};  // UART
   localparam addr_rule_t MtimerAddr  = '{start_addr: 32'h0003_3100, end_addr: 32'h0003_3114};  // Machine Timer
