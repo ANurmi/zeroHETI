@@ -1,8 +1,10 @@
 module rt_ibex_wrapper #(
-    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CLICCfg,
-    parameter int unsigned PrioWidth = 8,
-    localparam int unsigned NumIrq = Cfg.irq.num_src,
-    localparam int unsigned IrqWidth = $clog2(Cfg.irq.num_src)
+    parameter  zeroheti_pkg::platform_cfg_t Cfg        = zeroheti_pkg::CLICCfg,
+    parameter  type                         addr_map_t = zeroheti_address_map_pkg::addr_map_t,
+    parameter  addr_map_t                   AddrMap    = zeroheti_address_map_pkg::AddressMap,
+    parameter  int unsigned                 PrioWidth  = 8,
+    localparam int unsigned                 NumIrq     = Cfg.irq.num_src,
+    localparam int unsigned                 IrqWidth   = $clog2(Cfg.irq.num_src)
 ) (
     input  logic                           clk_i,
     input  logic                           rst_ni,
@@ -23,8 +25,8 @@ module rt_ibex_wrapper #(
   logic inst_req;
 
   assign inst_mgr.ar_valid = inst_req;
-  assign inst_mgr.aw_addr = 32'h0;
-  assign inst_mgr.r_ready = 1'b1;
+  assign inst_mgr.aw_addr  = 32'h0;
+  assign inst_mgr.r_ready  = 1'b1;
 
   logic [31:0] data_addr;
   logic data_req, data_gnt, data_we, data_rvalid, data_err;
@@ -32,15 +34,14 @@ module rt_ibex_wrapper #(
   assign data_mgr.aw_addr = data_addr;
   assign data_mgr.ar_addr = data_addr;
 
-  assign data_mgr.aw_valid = (data_req &  data_we);
+  assign data_mgr.aw_valid = (data_req & data_we);
   assign data_mgr.ar_valid = (data_req & !data_we);
 
-  assign data_mgr.w_valid  = data_we;
+  assign data_mgr.w_valid = data_we;
 
-  assign data_gnt    = data_mgr.ar_ready  | data_mgr.aw_ready;
-  assign data_rvalid = data_mgr.r_valid   | data_mgr.b_valid;
-  assign data_err    = data_mgr.r_resp[1] & data_mgr.r_valid
-                     | data_mgr.b_resp[1] & data_mgr.b_valid;
+  assign data_gnt = data_mgr.ar_ready | data_mgr.aw_ready;
+  assign data_rvalid = data_mgr.r_valid | data_mgr.b_valid;
+  assign data_err = data_mgr.r_resp[1] & data_mgr.r_valid | data_mgr.b_resp[1] & data_mgr.b_valid;
 
   `ifndef SYNTHESIS
   rt_ibex_top_tracing #(
@@ -68,9 +69,9 @@ module rt_ibex_wrapper #(
       .RndCnstLfsrSeed (rt_ibex_pkg::RndCnstLfsrSeedDefault),
       .RndCnstLfsrPerm (rt_ibex_pkg::RndCnstLfsrPermDefault),
       .DbgTriggerEn    (0),
-      .DmHaltAddr      (32'(dm::HaltAddress)),
-      .DmExceptionAddr (32'(dm::ExceptionAddress)),
-      .MClicBaseAddr   (Cfg.am.intc.start_addr),
+      .DmHaltAddr      (AddrMap.core.dbg.halt),
+      .DmExceptionAddr (AddrMap.core.dbg.exception),
+      .MClicBaseAddr   (AddrMap.intc.start_addr),
       .BranchTargetALU (Cfg.core.bt_alu)
   ) i_rt_ibex (
       .clk_i,

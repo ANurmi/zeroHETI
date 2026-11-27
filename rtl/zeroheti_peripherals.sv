@@ -30,7 +30,7 @@ module zeroheti_peripherals #(
            AXI_LITE.Slave                  axi_sbr
 );
 
-  localparam zeroheti_address_map_pkg::periph_map_t PerMap = Cfg.am.periph;
+  localparam zeroheti_address_map_pkg::periph_map_t PerMap = zeroheti_address_map_pkg::PeriphMap;
   localparam int unsigned NrApbPerip = PerMap.num;
   localparam int unsigned SelWidth = $clog2(NrApbPerip);
   localparam int unsigned ApbWidth = 32;

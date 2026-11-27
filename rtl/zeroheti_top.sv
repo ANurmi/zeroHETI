@@ -1,8 +1,10 @@
 module zeroheti_top #(
-    parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::EDFICCfg,
-    parameter int unsigned AxiUserWidth = 0,
-    localparam int unsigned NumIntIrqs = 64,
-    localparam int unsigned NumExtIrqs = Cfg.irq.num_src - NumIntIrqs
+    parameter  zeroheti_pkg::platform_cfg_t Cfg          = zeroheti_pkg::EDFICCfg,
+    parameter  type                         addr_map_t   = zeroheti_address_map_pkg::addr_map_t,
+    parameter  addr_map_t                   AddrMap      = zeroheti_address_map_pkg::AddressMap,
+    parameter  int unsigned                 AxiUserWidth = 0,
+    localparam int unsigned                 NumIntIrqs   = 64,
+    localparam int unsigned                 NumExtIrqs   = Cfg.irq.num_src - NumIntIrqs
 ) (
     input  logic                  clk_i,
     input  logic                  rst_ni,
@@ -70,7 +72,7 @@ module zeroheti_top #(
   localparam int unsigned DataWidth = 32;
 
   localparam int unsigned NrIrqs = Cfg.irq.num_src;
-  localparam int unsigned TGSize = Cfg.size_tg;
+  localparam int unsigned TGSize = 16;  // Fixed for now
 
   // External, peripherals, mailbox
   localparam int unsigned NumAxiDemux = 3;
@@ -173,7 +175,7 @@ module zeroheti_top #(
       .test_i     (1'b0),
       .slv        (axi_mbx),
       .irq_o      (mbx_irq),
-      .base_addr_i({Cfg.am.mbx.start_addr, Cfg.am.mbx.start_addr})
+      .base_addr_i({AddrMap.mbx.start_addr, AddrMap.mbx.start_addr})
   );
 
   zeroheti_peripherals #(
@@ -230,15 +232,15 @@ module zeroheti_top #(
     demux_aw_sel = 2;
 
     unique case (axi_core.ar_addr) inside
-      [Cfg.am.mbx.start_addr : Cfg.am.mbx.end_addr - 1]:       demux_ar_sel = 0;
-      [Cfg.am.periph.start_addr : Cfg.am.periph.end_addr - 1]: demux_ar_sel = 1;
-      default:                                       ;
+      [AddrMap.mbx.start_addr : AddrMap.mbx.end_addr - 1]:       demux_ar_sel = 0;
+      [AddrMap.periph.start_addr : AddrMap.periph.end_addr - 1]: demux_ar_sel = 1;
+      default:                                                   ;
     endcase
 
     unique case (axi_core.aw_addr) inside
-      [Cfg.am.mbx.start_addr : Cfg.am.mbx.end_addr - 1]:       demux_aw_sel = 0;
-      [Cfg.am.periph.start_addr : Cfg.am.periph.end_addr - 1]: demux_aw_sel = 1;
-      default:                                       ;
+      [AddrMap.mbx.start_addr : AddrMap.mbx.end_addr - 1]:       demux_aw_sel = 0;
+      [AddrMap.periph.start_addr : AddrMap.periph.end_addr - 1]: demux_aw_sel = 1;
+      default:                                                   ;
     endcase
   end
 
@@ -321,7 +323,7 @@ module zeroheti_top #(
   assign axi_tieoff.ar_addr  = 32'h0;
   assign axi_tieoff.ar_prot  = 3'h0;
   assign axi_tieoff.ar_valid = 1'b0;
-  
+
   assign axi_tieoff.r_ready  = 1'h0;
 
 

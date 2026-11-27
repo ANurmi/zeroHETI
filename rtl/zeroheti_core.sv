@@ -1,6 +1,8 @@
 module zeroheti_core
   import zeroheti_pkg::*;
 #(
+    parameter type addr_map_t = zeroheti_address_map_pkg::addr_map_t,
+    parameter addr_map_t AddrMap = zeroheti_address_map_pkg::AddressMap,
     parameter zeroheti_pkg::platform_cfg_t Cfg = zeroheti_pkg::CLICCfg,
     localparam int unsigned IrqWidth = $clog2(Cfg.irq.num_src),
     localparam int unsigned TsWidth = 9,
@@ -21,7 +23,6 @@ module zeroheti_core
            AXI_LITE.Master                       ext_mgr,
            AXI_LITE.Slave                        ext_sbr
 );
-
 
   localparam int unsigned DemuxNum = 3;
   localparam int unsigned DemuxWidth = $clog2(DemuxNum);
@@ -121,15 +122,15 @@ module zeroheti_core
     demux_ar_sel = 2;
 
     unique case (demux_cut.aw_addr) inside
-      [Cfg.am.core.dbg.start_addr : Cfg.am.core.dbg.end_addr - 1]: demux_aw_sel = 0;
-      [Cfg.am.intc.start_addr : Cfg.am.intc.end_addr - 1]: demux_aw_sel = 1;
-      default: ;
+      [AddrMap.core.dbg.start_addr : AddrMap.core.dbg.end_addr - 1]: demux_aw_sel = 0;
+      [AddrMap.intc.start_addr : AddrMap.intc.end_addr - 1]:         demux_aw_sel = 1;
+      default:                                                       ;
     endcase
 
     unique case (demux_cut.ar_addr) inside
-      [Cfg.am.core.dbg.start_addr : Cfg.am.core.dbg.end_addr - 1]: demux_ar_sel = 0;
-      [Cfg.am.intc.start_addr : Cfg.am.intc.end_addr - 1]: demux_ar_sel = 1;
-      default: ;
+      [AddrMap.core.dbg.start_addr : AddrMap.core.dbg.end_addr - 1]: demux_ar_sel = 0;
+      [AddrMap.intc.start_addr : AddrMap.intc.end_addr - 1]:         demux_ar_sel = 1;
+      default:                                                       ;
     endcase
 
   end
@@ -166,9 +167,17 @@ module zeroheti_core
       default: '0
   };
 
-  localparam axi_pkg::xbar_rule_32_t [XbarCfg.NoAddrRules-1:0] AddrMap = '{
-      '{idx: 32'd2, start_addr: Cfg.am.core.dmem.start_addr, end_addr: Cfg.am.core.dmem.end_addr},
-      '{idx: 32'd1, start_addr: Cfg.am.core.imem.start_addr, end_addr: Cfg.am.core.imem.end_addr}
+  localparam axi_pkg::xbar_rule_32_t [XbarCfg.NoAddrRules-1:0] XbarAddrMap = '{
+      '{
+          idx: 32'd2,
+          start_addr: AddrMap.core.dmem.start_addr,
+          end_addr: AddrMap.core.dmem.end_addr
+      },
+      '{
+          idx: 32'd1,
+          start_addr: AddrMap.core.imem.start_addr,
+          end_addr: AddrMap.core.imem.end_addr
+      }
   };
 
   axi_lite_mux_intf #(
@@ -201,7 +210,7 @@ module zeroheti_core
   ) i_xbar (
       .clk_i,
       .rst_ni,
-      .addr_map_i           (AddrMap),
+      .addr_map_i           (XbarAddrMap),
       .test_i               (1'b0),
       .slv_ports            (mgr_bus),
       .mst_ports            (sbr_bus),
@@ -236,8 +245,10 @@ module zeroheti_core
 
 
   rt_ibex_wrapper #(
-      .Cfg(Cfg),
-      .PrioWidth(PrioWidth)
+      .Cfg       (Cfg),
+      .addr_map_t(addr_map_t),
+      .AddrMap   (AddrMap),
+      .PrioWidth (PrioWidth)
   ) i_rt_ibex (
       .clk_i,
       .rst_ni,
@@ -256,7 +267,9 @@ module zeroheti_core
   );
 
   zeroheti_dbg_wrapper #(
-      .Cfg(Cfg)
+      .Cfg(Cfg),
+      .addr_map_t(addr_map_t),
+      .AddrMap   (AddrMap)
   ) i_debug (
       .clk_i,
       .rst_ni,
