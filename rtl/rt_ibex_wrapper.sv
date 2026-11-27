@@ -69,8 +69,8 @@ module rt_ibex_wrapper #(
       .RndCnstLfsrSeed (rt_ibex_pkg::RndCnstLfsrSeedDefault),
       .RndCnstLfsrPerm (rt_ibex_pkg::RndCnstLfsrPermDefault),
       .DbgTriggerEn    (0),
-      .DmHaltAddr      (AddrMap.core.dbg.halt),
-      .DmExceptionAddr (AddrMap.core.dbg.exception),
+      .DmHaltAddr      (AddrMap.core.dbg.halt.start_addr),
+      .DmExceptionAddr (AddrMap.core.dbg.exception.start_addr),
       .MClicBaseAddr   (AddrMap.intc.start_addr),
       .BranchTargetALU (Cfg.core.bt_alu)
   ) i_rt_ibex (
